@@ -697,15 +697,26 @@
             background: rgba(75, 85, 99, 0.45);
         }
         
-        /* 深色模式下的选择框样式 */
+        /* 深色模式下的选择框样式
+           ★2026-08-10 修复 v2：用户反馈夜间模式难度下拉框双箭头 + 箭头不可见。
+           ①双箭头根因：background 简写会重置 background-position/size/repeat，
+           导致自定义箭头图错位平铺 + 系统箭头叠加。
+           修复：改用 background-color 单独设底色（不用简写），并显式写全箭头位置/尺寸/不重复。
+           ②箭头不可见根因：夜间要保留暗色主题（深底浅字），箭头必须浅色反转（否则深色箭头在暗底看不见）。 */
         .dark-mode select {
-            background: rgba(55, 65, 81, 0.9) !important;
+            background-color: rgba(55, 65, 81, 0.95) !important;
             color: #f3f4f6 !important;
             border-color: rgba(75, 85, 99, 0.5) !important;
         }
         
         .dark-mode select.edit-input {
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f3f4f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 8px center !important;
+            background-size: 12px !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
         }
         
         .dark-mode select:focus {
@@ -714,7 +725,7 @@
         }
         
         .dark-mode select option {
-            background: rgba(31, 41, 55, 0.95) !important;
+            background-color: rgba(31, 41, 55, 0.95) !important;
             color: #f3f4f6 !important;
         }
         
@@ -4752,7 +4763,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.4.9.10</div>
+                        <div class="about-version">版本 1.4.10.0</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -8119,7 +8130,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.4.9.10',
+        version: '1.4.10.0',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
