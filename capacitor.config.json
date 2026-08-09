@@ -1,0 +1,9 @@
+{
+  "appId": "com.xixi.hiking",
+  "appName": "XiXiの徒步小记",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

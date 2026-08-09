@@ -1,0 +1,18 @@
+{
+  "name": "hiking-stats",
+  "version": "1.0.0",
+  "description": "徒步统计 - 记录和管理徒步登山活动",
+  "main": "www/index.html",
+  "scripts": {
+    "build:android": "npx cap sync android && cd android && ./gradlew assembleDebug",
+    "sync": "npx cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

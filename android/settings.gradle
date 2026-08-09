@@ -1,0 +1,5 @@
+include ':app'
+// include ':capacitor-cordova-android-plugins'  // 无 Cordova 插件，跳过
+// project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
+
+apply from: 'capacitor.settings.gradle'

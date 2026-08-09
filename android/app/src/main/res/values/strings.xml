@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">XiXiの徒步小记</string>
+    <string name="title_activity_main">XiXiの徒步小记</string>
+    <string name="package_name">com.xixi.hiking</string>
+    <string name="custom_url_scheme">com.xixi.hiking</string>
+</resources>
