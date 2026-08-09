@@ -1,0 +1,28 @@
+# ===== 敏感文件（绝不提交） =====
+# 签名密钥：泄露=他人可伪造你的 App 签名
+*.keystore
+*.jks
+*.p12
+# 本机 SDK 路径（每台电脑不同）
+local.properties
+
+# ===== 构建产物 =====
+node_modules/
+build/
+*.apk
+*.aab
+*.log
+
+# ===== Android/Gradle =====
+.gradle/
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+android/app/build/
+android/build/
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db

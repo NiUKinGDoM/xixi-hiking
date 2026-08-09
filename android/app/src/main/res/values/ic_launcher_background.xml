@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- App 亮色背景色（与 index.html body 背景一致，让系统 splash 视觉无缝） -->
+    <color name="app_bg_light">#eef2ff</color>
+</resources>
