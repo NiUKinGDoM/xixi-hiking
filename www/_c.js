@@ -3351,7 +3351,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.4.9.9',
+        version: '1.4.10.0',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -3873,11 +3873,11 @@ function showImportChoiceModal(count) {
             <div class="space-y-3">
                 <button id="importToRecords" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
                     <span class="material-icons text-xl">hiking</span>
-                    <span>徒步记录（溜达）</span>
+                    <span>徒步记录</span>
                 </button>
                 <button id="importToPlanned" class="w-full py-3 px-4 modal-option-btn green flex items-center justify-center gap-2">
                     <span class="material-icons text-xl">event_note</span>
-                    <span>计划徒步行（计划）</span>
+                    <span>计划徒步</span>
                 </button>
             </div>
             <button id="cancelImport" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
