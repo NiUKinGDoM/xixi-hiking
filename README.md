@@ -44,19 +44,24 @@ hiking-app3/
 # 1. 改完 www/index.html → 同步到 assets
 cp www/index.html android/app/src/main/assets/public/index.html
 
-# 2. 手改 android/app/build.gradle 版本号（versionCode +1，versionName 直接改目标值）
+# 2. 递增版本号：python android/bump-version.py（vc+1，versionName 按公式算四段）或手改 build.gradle
 # 3. 构建 Release（R8 混淆 + 资源压缩 + 签名）
 cd android && ./gradlew assembleRelease
 ```
 
 产物：`android/app/build/outputs/apk/release/app-release.apk`
 
-## 📌 版本号规则（用户定义，务必遵守）
+## 📌 版本号规则（2026-08-11 更新，用户定义，务必遵守）
 
-- 正式版 `1.X.X.X` 四段式：**每次发版第四段+1，第四段加到上限 10 就进位（第三段+1、第四段归零），每段上限 10**
-  - 例：`1.4.9.9 → 1.4.9.10 → 1.4.10.0 → 1.4.10.1 → ... → 1.4.10.10 → 1.4.11.0`
+- **versionName = 按 versionCode 数出的 `1.x.x.x`**（与 versionCode 完全对齐）：
+  - 从 **1.0.0.0** 起算第 1 个版本（vc1=1.0.0.0）
+  - **每段 0~10 共 11 个值，满 10 进位**（第四段满 10 → 第三段+1、第四段归零；第三段满 10 → 第二段+1；第二段满 10 → 第一段+1）
+  - 当前：**vc84 = 1.0.7.6**
+- **生成版本号前必须验证公式**：索引 = vc − 1
+  - 第一段 = 1 + 索引//1331；第二段 = (索引//121)%11；第三段 = (索引//11)%11；第四段 = 索引%11
+  - 对照：vc85=1.0.7.7、vc88=1.0.7.10、vc89=1.0.8.0、vc121=1.0.10.10、vc122=1.1.0.0
 - 测试版 `1.X.test-X`：X 从 1 起递增（当前 1.4.test-11）
-- ⚠️ 四段版本号 bump 脚本不支持，**手改 build.gradle**（versionCode +1 + versionName 直接改目标值）
+- ⚠️ 用 `android/bump-version.py`（或 .ps1）自动递增：vc+1 并按公式算出 versionName（已支持四段 + 同步 index.html），或**手改 build.gradle**（versionCode +1 + versionName 按公式算）
 
 ## 🚀 发布流程（三处同步铁律，缺一不可）
 
