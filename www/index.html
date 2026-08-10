@@ -1048,6 +1048,83 @@
         .settings-section-title {
             color: #475569;
         }
+        /* ========== 设置页 - 分组卡片（v1.4.10.1 设置页优化） ========== */
+        .settings-group {
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(3px) saturate(120%);
+            -webkit-backdrop-filter: blur(3px) saturate(120%);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s ease;
+        }
+        body.dark-mode .settings-group {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .settings-group-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #334155;
+        }
+        body.dark-mode .settings-group-title {
+            color: #e2e8f0;
+        }
+        .settings-group-title .material-icons {
+            color: #4f46e5;
+            font-size: 20px;
+        }
+        body.dark-mode .settings-group-title .material-icons {
+            color: #a5b4fc;
+        }
+        /* 同步配置折叠区 */
+        .sync-config-collapse {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(100, 116, 139, 0.25);
+        }
+        .sync-config-collapse.open {
+            display: block;
+        }
+        .sync-config-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 8px 0;
+            margin-top: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .sync-config-toggle-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+        body.dark-mode .sync-config-toggle-btn {
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+        .sync-config-toggle-btn .material-icons {
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        .sync-config-toggle-btn.open .material-icons {
+            transform: rotate(180deg);
+        }
         /* ========== 设置页 - 杂项开关列表 ========== */
         .settings-item {
             display: flex;
@@ -4665,11 +4742,11 @@
                 </h2>
 
                 <!-- 数据管理 -->
-                <div class="mb-8">
-                    <h3 class="settings-section-title text-base font-semibold mb-4 flex items-center gap-2">
-                        <span class="material-icons text-base text-blue-300">storage</span>
+                <div class="settings-group">
+                    <div class="settings-group-title">
+                        <span class="material-icons">storage</span>
                         <span>数据管理</span>
-                    </h3>
+                    </div>
                     <div class="grid grid-cols-2 gap-3">
                         <button id="importBtn" class="ripple-effect glass-btn corner-glow py-4 flex flex-col items-center justify-center gap-1.5" data-testid="import-button" title="导入徒步记录">
                             <span class="material-icons text-2xl">download</span>
@@ -4684,12 +4761,12 @@
                 </div>
 
                 <!-- 杂项 -->
-                <div class="mb-8">
-                    <h3 class="settings-section-title text-base font-semibold mb-4 flex items-center gap-2">
-                        <span class="material-icons text-base text-blue-300">tune</span>
+                <div class="settings-group">
+                    <div class="settings-group-title">
+                        <span class="material-icons">tune</span>
                         <span>杂项</span>
-                    </h3>
-                    <div class="settings-item">
+                    </div>
+                    <div class="settings-item" style="border-radius: 12px;">
                         <div class="settings-item-icon">
                             <span class="material-icons" style="font-size: 20px;">speed</span>
                         </div>
@@ -4705,12 +4782,44 @@
                 </div>
 
 <!-- 数据同步（WebDAV） -->
-                <div class="mb-8">
-                    <h3 class="settings-section-title text-base font-semibold mb-4 flex items-center gap-2">
-                        <span class="material-icons text-base text-blue-300">cloud_sync</span>
+                <div class="settings-group">
+                    <div class="settings-group-title">
+                        <span class="material-icons">cloud_sync</span>
                         <span>数据同步</span>
-                    </h3>
-                    <div class="glass-panel p-4 mb-3" style="border-radius: 16px;">
+                    </div>
+                    <!-- 操作按钮（平时只显示这三个，配置收进折叠区） -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="syncUploadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-upload-button" title="上传备份到云端">
+                            <span class="material-icons text-xl">cloud_upload</span>
+                            <span class="text-sm font-semibold">上传</span>
+                        </button>
+                        <button id="syncDownloadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-download-button" title="从云端下载恢复">
+                            <span class="material-icons text-xl">cloud_download</span>
+                            <span class="text-sm font-semibold">下载</span>
+                        </button>
+                        <button id="syncManageBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-manage-button" title="管理云端备份文件">
+                            <span class="material-icons text-xl">folder_open</span>
+                            <span class="text-sm font-semibold">管理</span>
+                        </button>
+                    </div>
+                    <div class="settings-item" style="border-radius: 12px;">
+                        <div class="settings-item-icon">
+                            <span class="material-icons" style="font-size: 20px;">autorenew</span>
+                        </div>
+                        <div class="settings-item-text">
+                            <div class="settings-item-title">自动同步</div>
+                            <div class="settings-item-desc">数据变更后自动上传备份（防丢失）</div>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" id="syncAutoToggle">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                    <button id="syncConfigToggleBtn" class="sync-config-toggle-btn" data-testid="sync-config-toggle">
+                        <span class="material-icons">keyboard_arrow_down</span>
+                        <span>配置服务器 / 账号</span>
+                    </button>
+                    <div id="syncConfigCollapse" class="sync-config-collapse">
                         <div class="sync-config-item">
                             <label class="sync-config-label" for="syncServer">服务器地址（WebDAV）</label>
                             <input type="text" id="syncServer" class="sync-input" placeholder="https://dav.jianguoyun.com/dav/" autocomplete="off" spellcheck="false">
@@ -4724,29 +4833,6 @@
                             <input type="password" id="syncPassword" class="sync-input" placeholder="16位应用密码，不是登录密码" autocomplete="off" spellcheck="false">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button id="syncUploadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-upload-button" title="上传备份到云端">
-                            <span class="material-icons text-xl">cloud_upload</span>
-                            <span class="text-sm font-semibold">上传备份</span>
-                        </button>
-                        <button id="syncDownloadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-download-button" title="从云端下载恢复">
-                            <span class="material-icons text-xl">cloud_download</span>
-                            <span class="text-sm font-semibold">下载恢复</span>
-                        </button>
-                    </div>
-                    <div class="settings-item mt-3" style="border-radius: 16px;">
-                        <div class="settings-item-icon">
-                            <span class="material-icons" style="font-size: 20px;">autorenew</span>
-                        </div>
-                        <div class="settings-item-text">
-                            <div class="settings-item-title">启动自动同步</div>
-                            <div class="settings-item-desc">打开 App 时自动合并云端数据</div>
-                        </div>
-                        <label class="settings-switch">
-                            <input type="checkbox" id="syncAutoToggle">
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
                     <div class="sync-status mt-3">
                         <span class="material-icons">info</span>
                         <span id="syncStatusText">尚未同步</span>
@@ -4755,15 +4841,15 @@
 
                 
                 <!-- 关于应用 -->
-                <div>
-                    <h3 class="settings-section-title text-base font-semibold mb-4 flex items-center gap-2">
-                        <span class="material-icons text-base text-blue-300">info</span>
+                <div class="settings-group" style="margin-bottom: 0;">
+                    <div class="settings-group-title">
+                        <span class="material-icons">info</span>
                         <span>关于应用</span>
-                    </h3>
+                    </div>
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.4.10.0</div>
+                        <div class="about-version">版本 1.4.10.1</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -7453,6 +7539,8 @@ async function savePlannedTripsToStorage() {
             }
             
             await window.lingguang.storage.setItem(PLANNED_TRIPS_KEY, { trips: validTrips });
+            // ★自动同步（v1.4.10.1）：计划数据变更后同样触发自动上传
+            maybeAutoUploadAfterChange();
         } catch (error) {
             console.error('Save planned trips storage error:', error);
             showErrorMessage('计划保存失败，请稍后重试');
@@ -7514,11 +7602,25 @@ async function saveToStorage() {
             }
             
             await window.lingguang.storage.setItem(STORAGE_KEY, { records: validRecords });
+            // ★自动同步（v1.4.10.1）：数据变更后若开启自动同步，延迟自动上传备份
+            maybeAutoUploadAfterChange();
         } catch (error) {
             console.error('Save storage error:', error);
             showErrorMessage('数据保存失败，请稍后重试');
         }
     }, 300);
+}
+
+// ★自动上传备份（v1.4.10.1）：自动同步开启 + 已配置 + 非同步进行中 → 防抖后上传
+let autoUploadTimer = null;
+function maybeAutoUploadAfterChange() {
+    if (!syncAuto) return;
+    if (!syncConfig.server || !syncConfig.username || !syncConfig.password) return;
+    if (syncInProgress) return;
+    if (autoUploadTimer) clearTimeout(autoUploadTimer);
+    autoUploadTimer = setTimeout(function () {
+        uploadSyncBackup(true);
+    }, 2000); // 等保存完成 + 避免连续编辑频繁上传
 }
 
 async function performSearch(query, recordId) {
@@ -7709,9 +7811,55 @@ async function loadSyncState() {
             lastSync = statusData.value.lastSyncAt;
         }
         renderSyncForm(lastSync);
+        // ★备份提醒（v1.4.10.1）：配置了同步但超过 7 天没备份 → 提示一次（延迟等页面渲染完）
+        if (syncConfig.server && syncConfig.username && lastSync) {
+            const days = (Date.now() - new Date(lastSync).getTime()) / 86400000;
+            if (days >= 7) {
+                setTimeout(function () {
+                    showBackupReminder(days);
+                }, 1500);
+            }
+        }
     } catch (e) {
         console.error('加载同步配置失败:', e);
     }
+}
+
+// ★备份提醒弹窗（v1.4.10.1）：提示用户去上传备份
+function showBackupReminder(days) {
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #f59e0b;">backup</span>
+                备份提醒
+            </div>
+            <div class="confirm-modal-message">
+                已经 ${Math.floor(days)} 天没有备份数据了。建议定期上传备份到云端，防止数据丢失。
+            </div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-cancel ripple-effect" id="remindLaterBtn">
+                    稍后再说
+                </button>
+                <button class="confirm-btn-delete ripple-effect" id="remindUploadBtn" style="background: #4f46e5;">
+                    <span class="material-icons" style="font-size: 16px;">cloud_upload</span>
+                    去上传备份
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('remindLaterBtn').addEventListener('click', function () {
+        document.body.removeChild(modal);
+    });
+    document.getElementById('remindUploadBtn').addEventListener('click', function () {
+        document.body.removeChild(modal);
+        uploadSyncBackup();
+    });
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) document.body.removeChild(modal);
+    });
 }
 
 function renderSyncForm(lastSync) {
@@ -7808,7 +7956,7 @@ async function testSyncConnection() {
 }
 
 // 上传备份：全量数据打包 JSON → PUT 到云端
-async function uploadSyncBackup() {
+async function uploadSyncBackup(silent) {
     await saveSyncConfigFromForm();
     const fileName = buildSyncFileName(); // 每次备份独立文件名（带时间戳）
     const url = buildSyncFileUrl(fileName);
@@ -7837,7 +7985,8 @@ async function uploadSyncBackup() {
             await recordSyncFile(fileName, payload); // 记录到本地索引
             await window.lingguang.storage.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'upload' });
             setSyncStatus('备份已上传：' + now, 'cloud_upload', 'success');
-            showSuccessMessage('备份上传成功');
+            if (!silent) showSuccessMessage('备份上传成功');
+            else console.log('[Sync] 自动备份已上传:', fileName);
         } else if (result.status === 401 || result.status === 403) {
             setSyncStatus('认证失败，请检查账号和应用密码', 'error', 'error');
             showErrorMessage('认证失败，请检查账号和应用密码');
@@ -8130,7 +8279,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.4.10.0',
+        version: '1.4.10.1',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8223,15 +8372,131 @@ function setupSyncEventListeners() {
         downloadBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => downloadBtn.removeEventListener('click', handler));
     }
+    // ★管理云端备份（v1.4.10.1）：列出 + 删除网盘备份文件
+    const manageBtn = document.getElementById('syncManageBtn');
+    if (manageBtn) {
+        const handler = manageCloudBackups;
+        manageBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => manageBtn.removeEventListener('click', handler));
+    }
+    // ★配置折叠区（v1.4.10.1）
+    const configToggle = document.getElementById('syncConfigToggleBtn');
+    if (configToggle) {
+        const handler = function () {
+            const collapse = document.getElementById('syncConfigCollapse');
+            if (!collapse) return;
+            const isOpen = collapse.classList.contains('open');
+            if (isOpen) {
+                collapse.classList.remove('open');
+                configToggle.classList.remove('open');
+            } else {
+                collapse.classList.add('open');
+                configToggle.classList.add('open');
+            }
+        };
+        configToggle.addEventListener('click', handler);
+        cleanupFunctions.push(() => configToggle.removeEventListener('click', handler));
+    }
     const autoToggle = document.getElementById('syncAutoToggle');
     if (autoToggle) {
         const handler = async function (e) {
             syncAuto = e.target.checked;
             await window.lingguang.storage.setItem(SYNC_AUTO_KEY, { enabled: syncAuto });
+            // 开启自动同步时立即上传一次，确保云端有最新备份
+            if (syncAuto && syncConfig.server && syncConfig.username) {
+                setTimeout(function () { uploadSyncBackup(); }, 500);
+            }
         };
         autoToggle.addEventListener('change', handler);
         cleanupFunctions.push(() => autoToggle.removeEventListener('change', handler));
     }
+}
+
+// ★管理云端备份（v1.4.10.1）：PROPFIND 列出网盘备份文件，支持逐个删除
+async function manageCloudBackups() {
+    await saveSyncConfigFromForm();
+    const url = buildSyncFileUrl();
+    if (!url) {
+        showErrorMessage('请先填写服务器地址');
+        return;
+    }
+    setSyncStatus('正在读取云端备份…', 'info', '');
+    const files = await listSyncFilesFromCloud();
+    if (!files || files.length === 0) {
+        setSyncStatus('云端没有备份文件', 'error', 'error');
+        showErrorMessage('云端没有备份文件');
+        return;
+    }
+    showManageBackupsModal(files);
+}
+
+// 云端备份管理弹窗：列出全部备份 + 每个可删除
+function showManageBackupsModal(files) {
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    const listHtml = files.map((f, i) => `
+        <div class="restore-file-item" style="border-radius: 12px; margin-bottom: 8px;">
+            <span class="material-icons" style="color: #4f46e5;">description</span>
+            <span class="restore-file-info">
+                <span class="restore-file-label">${formatSyncFileLabel(f.name)}</span>
+                <span class="restore-file-desc">云端备份 · 第 ${i + 1} 个</span>
+            </span>
+            <button class="manage-delete-btn" data-name="${f.name}" title="删除此备份" style="border: none; background: none; cursor: pointer; padding: 6px;">
+                <span class="material-icons" style="color: #ef4444; font-size: 20px;">delete</span>
+            </button>
+        </div>
+    `).join('');
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 92vw;">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">folder_open</span>
+                管理云端备份
+            </div>
+            <div class="confirm-modal-message">
+                共 ${files.length} 个备份，点击垃圾桶删除：
+            </div>
+            <div class="restore-file-list" style="max-height: 280px; overflow-y: auto; padding: 2px 0 10px;">
+                ${listHtml}
+            </div>
+            <button id="manageCloseBtn" class="mt-2 w-full py-2 px-4 rounded-lg modal-cancel-btn">
+                关闭
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 删除按钮：确认后 DELETE 云端文件 + 清理本地索引
+    modal.querySelectorAll('.manage-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const name = this.getAttribute('data-name');
+            const ok = confirm('确定删除云端备份「' + formatSyncFileLabel(name) + '」？\n删除后无法恢复！');
+            if (!ok) return;
+            this.disabled = true;
+            this.querySelector('.material-icons').style.opacity = '0.4';
+            try {
+                await saveSyncConfigFromForm();
+                const url = buildSyncFileUrl(name);
+                const r = await webdavRequest(url, 'DELETE', '');
+                if (r.status === 204 || r.status === 200 || r.status === 404) {
+                    await removeSyncFileFromIndex(name);
+                    // 刷新弹窗列表
+                    document.body.removeChild(modal);
+                    showSuccessMessage('已删除：' + formatSyncFileLabel(name));
+                    setTimeout(function () { manageCloudBackups(); }, 300);
+                } else {
+                    showErrorMessage('删除失败（HTTP ' + r.status + '）：' + (r.error || ''));
+                }
+            } catch (e) {
+                showErrorMessage('删除失败：' + (e.message || e));
+            }
+        });
+    });
+    document.getElementById('manageCloseBtn').addEventListener('click', function () {
+        document.body.removeChild(modal);
+    });
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) document.body.removeChild(modal);
+    });
 }
 
 // 设置页 tab 切换时自动检测连接（进入设置页才触发，避免每次启动都联网）
