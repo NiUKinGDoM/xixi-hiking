@@ -4840,7 +4840,57 @@
                             <span class="text-sm font-semibold">导出数据</span>
                         </button>
                     </div>
-                    <p class="text-xs text-white/50 mt-3 leading-relaxed">导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份。</p>
+                    <!-- 操作按钮（平时只显示这三个，配置收进折叠区） -->
+                    <div class="grid grid-cols-3 gap-2" style="margin-top: 10px;">
+                        <button id="syncUploadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-upload-button" title="上传备份到云端">
+                            <span class="material-icons text-xl">cloud_upload</span>
+                            <span class="text-sm font-semibold">上传</span>
+                        </button>
+                        <button id="syncDownloadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-download-button" title="从云端下载恢复">
+                            <span class="material-icons text-xl">cloud_download</span>
+                            <span class="text-sm font-semibold">下载</span>
+                        </button>
+                        <button id="syncManageBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-manage-button" title="管理云端备份文件">
+                            <span class="material-icons text-xl">folder_open</span>
+                            <span class="text-sm font-semibold">管理</span>
+                        </button>
+                    </div>
+                    <div class="settings-item" style="border-radius: 12px;">
+                        <div class="settings-item-icon">
+                            <span class="material-icons" style="font-size: 20px;">autorenew</span>
+                        </div>
+                        <div class="settings-item-text">
+                            <div class="settings-item-title">自动同步</div>
+                            <div class="settings-item-desc">数据变更后自动上传备份（防丢失）</div>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" id="syncAutoToggle">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                    <button id="syncConfigToggleBtn" class="sync-config-toggle-btn" data-testid="sync-config-toggle">
+                        <span class="material-icons">keyboard_arrow_down</span>
+                        <span>配置服务器 / 账号</span>
+                    </button>
+                    <div id="syncConfigCollapse" class="sync-config-collapse">
+                        <div class="sync-config-item">
+                            <label class="sync-config-label" for="syncServer">服务器地址（WebDAV）</label>
+                            <input type="text" id="syncServer" class="sync-input" placeholder="https://dav.jianguoyun.com/dav/" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="sync-config-item">
+                            <label class="sync-config-label" for="syncUsername">账号（坚果云邮箱）</label>
+                            <input type="text" id="syncUsername" class="sync-input" placeholder="你的坚果云账号" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="sync-config-item" style="margin-bottom: 0;">
+                            <label class="sync-config-label" for="syncPassword">应用密码（设置→安全选项→应用密码）</label>
+                            <input type="password" id="syncPassword" class="sync-input" placeholder="16位应用密码，不是登录密码" autocomplete="off" spellcheck="false">
+                        </div>
+                    </div>
+                    <div class="sync-status mt-3">
+                        <span class="material-icons">info</span>
+                        <span id="syncStatusText">尚未同步</span>
+                    </div>
+                    <p class="text-xs text-white/50 mt-3 leading-relaxed">导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份。开启自动同步后，数据变更会自动上传云端，防丢失。</p>
                 </div>
 
                 <!-- 杂项 -->
@@ -4898,66 +4948,7 @@
                     </div>
                 </div>
 
-<!-- 数据同步（WebDAV） -->
-                <div class="settings-group">
-                    <div class="settings-group-title">
-                        <span class="material-icons">cloud_sync</span>
-                        <span>数据同步</span>
-                    </div>
-                    <!-- 操作按钮（平时只显示这三个，配置收进折叠区） -->
-                    <div class="grid grid-cols-3 gap-2">
-                        <button id="syncUploadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-upload-button" title="上传备份到云端">
-                            <span class="material-icons text-xl">cloud_upload</span>
-                            <span class="text-sm font-semibold">上传</span>
-                        </button>
-                        <button id="syncDownloadBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-download-button" title="从云端下载恢复">
-                            <span class="material-icons text-xl">cloud_download</span>
-                            <span class="text-sm font-semibold">下载</span>
-                        </button>
-                        <button id="syncManageBtn" class="ripple-effect glass-btn corner-glow py-3 flex flex-col items-center justify-center gap-1" data-testid="sync-manage-button" title="管理云端备份文件">
-                            <span class="material-icons text-xl">folder_open</span>
-                            <span class="text-sm font-semibold">管理</span>
-                        </button>
-                    </div>
-                    <div class="settings-item" style="border-radius: 12px;">
-                        <div class="settings-item-icon">
-                            <span class="material-icons" style="font-size: 20px;">autorenew</span>
-                        </div>
-                        <div class="settings-item-text">
-                            <div class="settings-item-title">自动同步</div>
-                            <div class="settings-item-desc">数据变更后自动上传备份（防丢失）</div>
-                        </div>
-                        <label class="settings-switch">
-                            <input type="checkbox" id="syncAutoToggle">
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
-                    <button id="syncConfigToggleBtn" class="sync-config-toggle-btn" data-testid="sync-config-toggle">
-                        <span class="material-icons">keyboard_arrow_down</span>
-                        <span>配置服务器 / 账号</span>
-                    </button>
-                    <div id="syncConfigCollapse" class="sync-config-collapse">
-                        <div class="sync-config-item">
-                            <label class="sync-config-label" for="syncServer">服务器地址（WebDAV）</label>
-                            <input type="text" id="syncServer" class="sync-input" placeholder="https://dav.jianguoyun.com/dav/" autocomplete="off" spellcheck="false">
-                        </div>
-                        <div class="sync-config-item">
-                            <label class="sync-config-label" for="syncUsername">账号（坚果云邮箱）</label>
-                            <input type="text" id="syncUsername" class="sync-input" placeholder="你的坚果云账号" autocomplete="off" spellcheck="false">
-                        </div>
-                        <div class="sync-config-item" style="margin-bottom: 0;">
-                            <label class="sync-config-label" for="syncPassword">应用密码（设置→安全选项→应用密码）</label>
-                            <input type="password" id="syncPassword" class="sync-input" placeholder="16位应用密码，不是登录密码" autocomplete="off" spellcheck="false">
-                        </div>
-                    </div>
-                    <div class="sync-status mt-3">
-                        <span class="material-icons">info</span>
-                        <span id="syncStatusText">尚未同步</span>
-                    </div>
-                </div>
-
-                
-                <!-- 关于应用 -->
+<!-- 关于应用 -->
                 <div class="settings-group" style="margin-bottom: 0;">
                     <div class="settings-group-title">
                         <span class="material-icons">info</span>
@@ -4966,7 +4957,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.4.12.10</div>
+                        <div class="about-version">版本 1.0.7.6</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -8240,7 +8231,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.4.12.10',
+        version: '1.0.7.6',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
