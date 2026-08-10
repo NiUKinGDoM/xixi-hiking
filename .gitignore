@@ -6,12 +6,15 @@
 # 本机 SDK 路径（每台电脑不同）
 local.properties
 
-# ===== 构建产物 =====
+# ===== 构建产物 / 临时文件 =====
 node_modules/
 build/
 *.apk
 *.aab
 *.log
+_c.js
+_check.py
+_*.tmp
 
 # ===== Android/Gradle =====
 .gradle/
