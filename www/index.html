@@ -864,6 +864,21 @@
         #appTitle:hover {
             transform: scale(1.02);
         }
+        /* v1.4.12.9：顶栏标题可编辑——铅笔图标提示（浅色深灰/暗色浅灰，hover 变主色） */
+        .edit-title-icon {
+            font-size: 15px !important;
+            color: rgba(51, 65, 85, 0.4);
+            transition: color 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+            margin-top: -4px;
+        }
+        body.dark-mode .edit-title-icon {
+            color: rgba(243, 244, 246, 0.4);
+        }
+        #appTitleWrap:hover .edit-title-icon {
+            color: #4f46e5;
+            transform: scale(1.15);
+        }
         .container {
             margin-left: 0;
             margin-right: 0;
@@ -4537,7 +4552,10 @@
             <div class="header-bar flex justify-between items-center mb-3 py-1.5">
                 <div class="flex items-center gap-1">
                     <span class="text-lg flex-shrink-0 title-mountain-icon">🏔️</span>
-                    <h1 id="appTitle" class="text-lg font-bold text-white mb-0 drop-shadow-lg px-1.5 py-0.5 rounded-lg whitespace-nowrap" data-testid="app-title">XiXiの徒步小记</h1>
+                    <div class="flex items-center gap-1" id="appTitleWrap" title="点击编辑标题" style="cursor: pointer;">
+                        <h1 id="appTitle" class="text-lg font-bold text-white mb-0 drop-shadow-lg px-1.5 py-0.5 rounded-lg whitespace-nowrap" data-testid="app-title">XiXiの徒步小记</h1>
+                        <span class="material-icons edit-title-icon" id="editTitleIcon">edit</span>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <div id="fpsDisplay" class="fps-display" data-testid="fps-display" style="background-color: rgba(251, 146, 60, 0.35);">
@@ -4553,6 +4571,7 @@
                 <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="stats-title">
                     <span class="material-icons text-blue-300 text-xl">analytics</span>
                     <span class="title-text">统计概览✏️</span>
+                    <span class="material-icons edit-title-icon">edit</span>
                 </h2>
                 <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div class="stat-card glass-stat-card blue-accent">
@@ -4685,6 +4704,7 @@
                     <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="records-title">
                         <span class="material-icons text-blue-300 text-xl">terrain</span>
                         <span class="title-text">溜达🚶</span>
+                        <span class="material-icons edit-title-icon">edit</span>
                     </h2>
                     <div class="flex gap-2">
                         <button id="addBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" data-testid="add-button" title="添加徒步记录">
@@ -4743,6 +4763,7 @@
                     <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="planned-title">
                         <span class="material-icons text-green-300 text-xl">event_note</span>
                         <span class="title-text">计划📓</span>
+                        <span class="material-icons edit-title-icon">edit</span>
                     </h2>
                     <div class="flex gap-2">
                         <button id="addPlannedTripBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" data-testid="add-planned-trip-button">
@@ -4800,6 +4821,7 @@
                 <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg cursor-pointer hover:bg-white/10 transition-all" data-testid="settings-title">
                     <span class="material-icons text-blue-300 text-xl">settings</span>
                     <span class="title-text">设置⚙️</span>
+                    <span class="material-icons edit-title-icon">edit</span>
                 </h2>
 
                 <!-- 数据管理 -->
@@ -4944,7 +4966,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.4.12.7</div>
+                        <div class="about-version">版本 1.4.12.10</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5254,15 +5276,6 @@ let plannedTrips = [];
 let plannedEditingId = null;
 let plannedCurrentSort = { field: null, direction: 'asc' };
 
-// 区块标题编辑状态
-let isEditingStatsTitle = false;
-let isEditingRecordsTitle = false;
-let isEditingPlannedTitle = false;
-let isEditingSettingsTitle = false;
-let originalStatsTitle = '';
-let originalRecordsTitle = '';
-let originalPlannedTitle = '';
-let originalSettingsTitle = '';
 
 // DOM操作辅助函数（性能优化：去除try-catch，getElementById在浏览器永不抛异常）
 function safeGetElementById(id) {
@@ -5461,254 +5474,6 @@ function cleanOldestCache() {
 }
 
 
-// 统计概览标题编辑
-function startEditStatsTitle() {
-    if (isEditingStatsTitle) return;
-    
-    const titleElement = document.getElementById('statsTitle');
-    if (!titleElement) return;
-    
-    const titleTextElement = titleElement.querySelector('.title-text');
-    if (!titleTextElement) return;
-    
-    isEditingStatsTitle = true;
-    originalStatsTitle = titleTextElement.textContent;
-    
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = originalStatsTitle;
-    input.className = 'text-2xl font-semibold text-white/90 bg-transparent border-2 border-blue-300 rounded px-2 py-1 outline-none focus:border-blue-500';
-    input.style.minWidth = '100px';
-    input.dataset.testid = 'stats-title-input';
-    
-    titleTextElement.parentNode.replaceChild(input, titleTextElement);
-    input.focus();
-    input.select();
-    
-    const saveTitle = () => {
-        const newTitle = input.value.trim() || originalStatsTitle;
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = newTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        
-        if (newTitle !== originalStatsTitle) {
-            saveStatsTitleToStorage(newTitle);
-        }
-        
-        isEditingStatsTitle = false;
-        titleElement.addEventListener('click', startEditStatsTitle);
-    };
-    
-    const cancelEdit = () => {
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = originalStatsTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        isEditingStatsTitle = false;
-        titleElement.addEventListener('click', startEditStatsTitle);
-    };
-    
-    input.addEventListener('blur', saveTitle);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveTitle();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelEdit();
-        }
-    });
-}
-
-// 徒步记录标题编辑
-function startEditRecordsTitle() {
-    if (isEditingRecordsTitle) return;
-    
-    const titleElement = document.getElementById('recordsTitle');
-    if (!titleElement) return;
-    
-    const titleTextElement = titleElement.querySelector('.title-text');
-    if (!titleTextElement) return;
-    
-    isEditingRecordsTitle = true;
-    originalRecordsTitle = titleTextElement.textContent;
-    
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = originalRecordsTitle;
-    input.className = 'text-2xl font-semibold text-white/90 bg-transparent border-2 border-blue-300 rounded px-2 py-1 outline-none focus:border-blue-500';
-    input.style.minWidth = '100px';
-    input.dataset.testid = 'records-title-input';
-    
-    titleTextElement.parentNode.replaceChild(input, titleTextElement);
-    input.focus();
-    input.select();
-    
-    const saveTitle = () => {
-        const newTitle = input.value.trim() || originalRecordsTitle;
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = newTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        
-        if (newTitle !== originalRecordsTitle) {
-            saveRecordsTitleToStorage(newTitle);
-        }
-        
-        isEditingRecordsTitle = false;
-        titleElement.addEventListener('click', startEditRecordsTitle);
-    };
-    
-    const cancelEdit = () => {
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = originalRecordsTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        isEditingRecordsTitle = false;
-        titleElement.addEventListener('click', startEditRecordsTitle);
-    };
-    
-    input.addEventListener('blur', saveTitle);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveTitle();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelEdit();
-        }
-    });
-}
-
-// 计划徒步行标题编辑
-function startEditPlannedTitle() {
-    if (isEditingPlannedTitle) return;
-    
-    const titleElement = document.getElementById('plannedTitle');
-    if (!titleElement) return;
-    
-    const titleTextElement = titleElement.querySelector('.title-text');
-    if (!titleTextElement) return;
-    
-    isEditingPlannedTitle = true;
-    originalPlannedTitle = titleTextElement.textContent;
-    
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = originalPlannedTitle;
-    input.className = 'text-2xl font-semibold text-white/90 bg-transparent border-2 border-green-300 rounded px-2 py-1 outline-none focus:border-green-500';
-    input.style.minWidth = '100px';
-    input.dataset.testid = 'planned-title-input';
-    
-    titleTextElement.parentNode.replaceChild(input, titleTextElement);
-    input.focus();
-    input.select();
-    
-    const saveTitle = () => {
-        const newTitle = input.value.trim() || originalPlannedTitle;
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = newTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        
-        if (newTitle !== originalPlannedTitle) {
-            savePlannedTitleToStorage(newTitle);
-        }
-        
-        isEditingPlannedTitle = false;
-        titleElement.addEventListener('click', startEditPlannedTitle);
-    };
-    
-    const cancelEdit = () => {
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = originalPlannedTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        isEditingPlannedTitle = false;
-        titleElement.addEventListener('click', startEditPlannedTitle);
-    };
-    
-    input.addEventListener('blur', saveTitle);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveTitle();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelEdit();
-        }
-    });
-}
-
-// 设置页标题编辑
-function startEditSettingsTitle() {
-    if (isEditingSettingsTitle) return;
-    
-    const titleElement = document.getElementById('settingsTitle');
-    if (!titleElement) return;
-    
-    const titleTextElement = titleElement.querySelector('.title-text');
-    if (!titleTextElement) return;
-    
-    isEditingSettingsTitle = true;
-    originalSettingsTitle = titleTextElement.textContent;
-    
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = originalSettingsTitle;
-    input.className = 'text-2xl font-semibold text-white/90 bg-transparent border-2 border-blue-300 rounded px-2 py-1 outline-none focus:border-blue-500';
-    input.style.minWidth = '100px';
-    input.dataset.testid = 'settings-title-input';
-    
-    titleTextElement.parentNode.replaceChild(input, titleTextElement);
-    input.focus();
-    input.select();
-    
-    const saveTitle = () => {
-        const newTitle = input.value.trim() || originalSettingsTitle;
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = newTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        
-        if (newTitle !== originalSettingsTitle) {
-            saveSettingsTitleToStorage(newTitle);
-        }
-        
-        isEditingSettingsTitle = false;
-        titleElement.addEventListener('click', startEditSettingsTitle);
-    };
-    
-    const cancelEdit = () => {
-        const newTitleTextElement = document.createElement('span');
-        newTitleTextElement.className = 'title-text';
-        newTitleTextElement.textContent = originalSettingsTitle;
-        
-        input.parentNode.replaceChild(newTitleTextElement, input);
-        isEditingSettingsTitle = false;
-        titleElement.addEventListener('click', startEditSettingsTitle);
-    };
-    
-    input.addEventListener('blur', saveTitle);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveTitle();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelEdit();
-        }
-    });
-}
-
 // ===== 主题三态逻辑（v1.4.10.2）：auto 跟随系统 / light / dark =====
 
 // 当前是否应启用深色模式（根据 themeMode + 系统偏好）
@@ -5724,6 +5489,12 @@ function applyThemeMode() {
     const dark = isDarkModeActive();
     isDarkMode = dark;
     document.body.classList.toggle('dark-mode', dark);
+    // 状态栏图标颜色跟随主题：浅色→深色图标（白底时间可见），深色→白色图标
+    try {
+        if (window.XixiFileBridge && typeof XixiFileBridge.setStatusBarStyle === 'function') {
+            XixiFileBridge.setStatusBarStyle(dark);
+        }
+    } catch (e) { console.warn('setStatusBarStyle failed:', e); }
     // 同步设置页开关状态（不触发展开动画）
     const followToggle = document.getElementById('themeFollowToggle');
     if (followToggle) followToggle.checked = themeMode === 'auto';
@@ -6982,6 +6753,105 @@ function updateSortIcons() {
 
 
 
+
+// v1.4.12.9：顶栏标题恢复可编辑——点击标题/铅笔图标弹窗修改，保存到本地
+function showEditTitleModal() {
+    const titleEl = document.getElementById('appTitle');
+    const currentTitle = titleEl ? titleEl.textContent : 'XiXiの徒步小记';
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">edit</span>
+                编辑标题
+            </div>
+            <input type="text" id="titleEditInput" class="edit-input" style="width: 100%; margin: 14px 0 4px;" maxlength="20" placeholder="输入新标题">
+            <div class="confirm-modal-message" style="margin-top: 6px;">最多 20 个字符</div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-cancel ripple-effect" id="title-edit-cancel">取消</button>
+                <button class="confirm-btn-delete ripple-effect" id="title-edit-save" style="background: #4f46e5; border-color: #4f46e5;">保存</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const input = document.getElementById('titleEditInput');
+    input.value = currentTitle;
+    input.focus();
+    try { input.setSelectionRange(currentTitle.length, currentTitle.length); } catch (e) {}
+
+    const closeModal = () => { document.body.removeChild(modal); };
+
+    document.getElementById('title-edit-cancel').addEventListener('click', closeModal);
+    document.getElementById('title-edit-save').addEventListener('click', () => {
+        const newTitle = input.value.trim();
+        if (!newTitle) { showErrorMessage('标题不能为空'); return; }
+        saveAppTitle(newTitle);
+        closeModal();
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('title-edit-save').click();
+        if (e.key === 'Escape') closeModal();
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+}
+
+async function saveAppTitle(title) {
+    try {
+        await window.lingguang.storage.setItem(APP_TITLE_KEY, { title });
+        const titleEl = document.getElementById('appTitle');
+        if (titleEl) titleEl.textContent = title;
+        showSuccessMessage('标题已更新');
+    } catch (e) {
+        console.error('保存标题失败:', e);
+        showErrorMessage('保存失败，请重试');
+    }
+}
+
+// v1.4.12.10：区块标题统一弹窗编辑（统计/记录/计划/设置），与顶栏标题同一套交互
+function showSectionTitleModal(titleElementId, saveFn) {
+    const titleEl = document.getElementById(titleElementId);
+    if (!titleEl) return;
+    const titleTextEl = titleEl.querySelector('.title-text');
+    const currentTitle = titleTextEl ? titleTextEl.textContent : '';
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">edit</span>
+                编辑标题
+            </div>
+            <input type="text" id="sectionTitleEditInput" class="edit-input" style="width: 100%; margin: 14px 0 4px;" maxlength="20" placeholder="输入新标题">
+            <div class="confirm-modal-message" style="margin-top: 6px;">最多 20 个字符</div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-cancel ripple-effect" id="section-title-cancel">取消</button>
+                <button class="confirm-btn-delete ripple-effect" id="section-title-save" style="background: #4f46e5; border-color: #4f46e5;">保存</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const input = document.getElementById('sectionTitleEditInput');
+    input.value = currentTitle;
+    input.focus();
+    try { input.setSelectionRange(currentTitle.length, currentTitle.length); } catch (e) {}
+
+    const closeModal = () => { document.body.removeChild(modal); };
+
+    document.getElementById('section-title-cancel').addEventListener('click', closeModal);
+    document.getElementById('section-title-save').addEventListener('click', () => {
+        const newTitle = input.value.trim();
+        if (!newTitle) { showErrorMessage('标题不能为空'); return; }
+        if (titleTextEl) titleTextEl.textContent = newTitle;
+        try { saveFn(newTitle); } catch (e) { console.error('save section title failed:', e); }
+        closeModal();
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('section-title-save').click();
+        if (e.key === 'Escape') closeModal();
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+}
 
 function showDeleteConfirmModal(recordId, recordName) {
     const modal = document.createElement('div');
@@ -8370,7 +8240,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.4.12.7',
+        version: '1.4.12.10',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -9496,6 +9366,13 @@ async function init() {
 }
 
 function setupEventListeners() {
+    // 顶栏标题编辑（v1.4.12.9：点击标题或铅笔图标弹窗修改；只绑 wrap，子元素冒泡触发一次）
+    const appTitleWrap = document.getElementById('appTitleWrap');
+    if (appTitleWrap) {
+        const titleHandler = showEditTitleModal;
+        appTitleWrap.addEventListener('click', titleHandler);
+        cleanupFunctions.push(() => appTitleWrap.removeEventListener('click', titleHandler));
+    }
     const addBtn = document.getElementById('addBtn');
     if (addBtn) {
         const handler = addNewRecord;
@@ -9558,28 +9435,28 @@ function setupEventListeners() {
     // 区块标题点击事件
     const statsTitle = document.getElementById('statsTitle');
     if (statsTitle) {
-        const handler = startEditStatsTitle;
+        const handler = function () { showSectionTitleModal('statsTitle', saveStatsTitleToStorage); };
         statsTitle.addEventListener('click', handler);
         cleanupFunctions.push(() => statsTitle.removeEventListener('click', handler));
     }
     
     const recordsTitle = document.getElementById('recordsTitle');
     if (recordsTitle) {
-        const handler = startEditRecordsTitle;
+        const handler = function () { showSectionTitleModal('recordsTitle', saveRecordsTitleToStorage); };
         recordsTitle.addEventListener('click', handler);
         cleanupFunctions.push(() => recordsTitle.removeEventListener('click', handler));
     }
     
     const plannedTitle = document.getElementById('plannedTitle');
     if (plannedTitle) {
-        const handler = startEditPlannedTitle;
+        const handler = function () { showSectionTitleModal('plannedTitle', savePlannedTitleToStorage); };
         plannedTitle.addEventListener('click', handler);
         cleanupFunctions.push(() => plannedTitle.removeEventListener('click', handler));
     }
     
     const settingsTitle = document.getElementById('settingsTitle');
     if (settingsTitle) {
-        const handler = startEditSettingsTitle;
+        const handler = function () { showSectionTitleModal('settingsTitle', saveSettingsTitleToStorage); };
         settingsTitle.addEventListener('click', handler);
         cleanupFunctions.push(() => settingsTitle.removeEventListener('click', handler));
     }

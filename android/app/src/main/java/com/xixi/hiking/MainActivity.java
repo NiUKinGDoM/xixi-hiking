@@ -4,6 +4,7 @@ import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,6 +12,8 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowInsetsController;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
@@ -80,6 +83,9 @@ public class MainActivity extends BridgeActivity {
             public void onPageLoaded(WebView webView) {
                 setupDownloadListener(webView);
                 setupJsBridge(webView);
+                // 兜底：App 默认浅色模式，页面加载完成时先设置深色状态栏图标（白底时间可见），
+                // JS applyThemeMode 会在初始化时按实际主题再校正一次
+                setStatusBarStyleInternal(false);
             }
         });
 
@@ -213,6 +219,40 @@ public class MainActivity extends BridgeActivity {
                 return "{\"status\":0,\"body\":\"\",\"error\":\"" + msg + "\"}";
             }
         }
+
+        // ===== 状态栏图标颜色：浅色模式用深色图标（白底可见），深色模式用白色图标 =====
+        // JS 调用：window.XixiFileBridge.setStatusBarStyle(isDark)
+        // isDark=true  → 深色模式：白色状态栏图标（背景深蓝）
+        // isDark=false → 浅色模式：深色状态栏图标（背景白，时间可见）
+        @JavascriptInterface
+        public void setStatusBarStyle(boolean isDark) {
+            setStatusBarStyleInternal(isDark);
+        }
+    }
+
+    private void setStatusBarStyleInternal(final boolean isDark) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (Build.VERSION.SDK_INT >= 30) {
+                        getWindow().getInsetsController().setSystemBarsAppearance(
+                                isDark ? 0 : WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+                    } else {
+                        int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                        if (!isDark) {
+                            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                        }
+                        getWindow().getDecorView().setSystemUiVisibility(flags);
+                    }
+                    getWindow().setStatusBarColor(Color.TRANSPARENT);
+                    Log.i(TAG, "StatusBar style set: isDark=" + isDark);
+                } catch (Exception e) {
+                    Log.e(TAG, "setStatusBarStyle failed", e);
+                }
+            }
+        });
     }
 
     private void setupDownloadListener(final WebView webView) {
