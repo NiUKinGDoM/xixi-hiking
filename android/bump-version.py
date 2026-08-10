@@ -45,8 +45,8 @@ m_old = re.search(rb'versionName\s+"([^"]+)"', data)
 old_vn = m_old.group(1).decode() if m_old else '?'
 
 # 写 build.gradle（无 BOM，避免 Gradle 解析报错）
-data = re.sub(rb'versionCode\s+\d+', ('versionCode %d' % vc_new).encode(), data, 1)
-data = re.sub(rb'versionName\s+"[^"]+"', ('versionName "%s"' % new_vn).encode(), data, 1)
+data = re.sub(rb'versionCode\s+\d+', ('versionCode %d' % vc_new).encode(), data, count=1)
+data = re.sub(rb'versionName\s+"[^"]+"', ('versionName "%s"' % new_vn).encode(), data, count=1)
 with io.open(p, 'wb') as f:
     f.write(data)
 
@@ -54,8 +54,8 @@ with io.open(p, 'wb') as f:
 if os.path.exists(html_p):
     with io.open(html_p, 'r', encoding='utf-8') as f:
         h = f.read()
-    h2 = re.sub(r'版本 [\d.]+', '版本 %s' % new_vn, h, 1)
-    h2 = re.sub(r"version:\s*'[\d.]+'", "version: '%s'" % new_vn, h2, 1)
+    h2 = re.sub(r'版本 [\d.]+', '版本 %s' % new_vn, h, count=1)
+    h2 = re.sub(r"version:\s*'[\d.]+'", "version: '%s'" % new_vn, h2, count=1)
     if h2 != h:
         with io.open(html_p, 'w', encoding='utf-8', newline='') as f:
             f.write(h2)

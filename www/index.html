@@ -879,6 +879,41 @@
             color: #4f46e5;
             transform: scale(1.15);
         }
+        /* v1.0.7.7 徒步足迹热力图：红色渐变 + 日历式月视图 */
+        .hm-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 12px;
+            color: rgba(100, 116, 139, 0.7);
+            margin-bottom: 4px;
+        }
+        .hm-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .hm-day {
+            aspect-ratio: 1 / 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(51, 65, 85, 0.55);
+            background-color: rgba(148, 163, 184, 0.15);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.2s ease;
+        }
+        .hm-day.empty { background: transparent; cursor: default; }
+        .hm-day:active { transform: scale(0.88); }
+        .hm-day.hm-red { background-color: rgba(220, 38, 38, 0.72); color: #ffffff; }
+        .hm-day.hm-red:active { background-color: rgba(185, 28, 28, 0.85); }
+        body.dark-mode .hm-day { color: rgba(243, 244, 246, 0.65); background-color: rgba(148, 163, 184, 0.12); }
+        body.dark-mode .hm-day.empty { background: transparent; }
+        body.dark-mode .hm-day.hm-red { background-color: rgba(239, 68, 68, 0.6); color: #ffffff; }
+        body.dark-mode .hm-day.hm-red:active { background-color: rgba(239, 68, 68, 0.8); }
         .container {
             margin-left: 0;
             margin-right: 0;
@@ -1783,18 +1818,25 @@
             background-repeat: no-repeat;
             background-position: right 8px center;
             background-size: 12px;
-            padding: 8px 26px 8px 12px;
+            padding: 8px 28px 8px 12px;
             font-size: 16px;
             line-height: 1.2;
             cursor: pointer;
             width: 100%;
-            max-width: 120px;
+            max-width: 160px; /* v1.0.7.9 难度框加宽：文字显示不全 */
         }
         
         select.edit-input:focus {
             outline: none;
             border-color: #4f46e5;
             box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+        /* v1.0.8.3 编辑模式难度框：原生 width:auto 按内容自适应 + min-width 兜底（不依赖 JS 测量） */
+        select.edit-input[id^="edit-difficulty-"],
+        select.edit-input[id^="edit-planned-difficulty-"] {
+            width: auto !important;
+            max-width: none !important;
+            min-width: 96px;
         }
         
         /* 移动端输入框优化 */
@@ -4547,6 +4589,38 @@
 }
 </style></head>
 <body>
+<script>
+// v1.0.7.10 启动防闪白：渲染前同步读取主题并应用（避免先浅色再切深色导致白屏一闪）
+(function () {
+    try {
+        var mode = null;
+        try {
+            var raw = localStorage.getItem('hiking_theme_mode');
+            if (raw) {
+                var t = JSON.parse(raw);
+                if (t && typeof t.mode === 'string') mode = t.mode;
+            }
+        } catch (e) {}
+        if (!mode) {
+            try {
+                var raw2 = localStorage.getItem('hiking_dark_mode');
+                if (raw2) {
+                    var d = JSON.parse(raw2);
+                    if (d && typeof d.isDarkMode === 'boolean') mode = d.isDarkMode ? 'dark' : 'light';
+                }
+            } catch (e) {}
+        }
+        var isDark = mode === 'dark';
+        if (mode === 'auto' && window.matchMedia) {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        if (isDark && document.body) {
+            document.body.classList.add('dark-mode');
+        }
+    } catch (e) {}
+})();
+</script>
+
     <div class="container">
         <div class="max-w-4xl mx-auto page-transition">
             <div class="header-bar flex justify-between items-center mb-3 py-1.5">
@@ -4611,6 +4685,8 @@
                         </div>
                     </div>
                 </div>
+                
+
                 
                 <div class="mt-6">
                     <h3 class="text-lg font-semibold text-white/70 mb-4 px-3 py-1">难度分布</h3>
@@ -4696,6 +4772,28 @@
                     </div>
                 </div>
             </div>
+<!-- 徒步足迹热力图（v1.0.7.8：统一玻璃红 + 年月可选(仅去过的年月) + 日历式月视图） -->
+                <div class="glass-panel p-6 mb-6" id="heatmapPanel">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <h2 id="heatmapTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="heatmap-title">
+                            <span class="material-icons text-red-400 text-xl">local_fire_department</span>
+                            <span class="title-text">徒步足迹</span>
+                            <span class="material-icons edit-title-icon">edit</span>
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <select id="hmYear" class="edit-input" style="padding: 9px 14px 9px 12px; font-size: 13px; width: auto;"></select>
+                            <select id="hmMonth" class="edit-input" style="padding: 9px 14px 9px 12px; font-size: 13px; width: auto;"></select>
+                        </div>
+                    </div>
+                    <div class="hm-weekdays">
+                        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+                    </div>
+                    <div id="hmCalendar" class="hm-calendar"></div>
+                    <div class="flex items-center justify-between mt-3 flex-wrap gap-2">
+                        <span class="text-xs text-white/50" id="hmSummary"></span>
+
+                    </div>
+                </div>
             </div>
             
             <div id="tab-records" class="tab-page" style="display: none;">
@@ -4957,7 +5055,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.7.6</div>
+                        <div class="about-version">版本 1.0.8.5</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5261,6 +5359,7 @@ const STATS_TITLE_KEY = 'hiking_stats_title';
 const RECORDS_TITLE_KEY = 'hiking_records_title';
 const PLANNED_TITLE_KEY = 'hiking_planned_title';
 const SETTINGS_TITLE_KEY = 'hiking_settings_title';
+const HEATMAP_TITLE_KEY = 'hiking_heatmap_title';
 
 // 计划徒步行相关变量
 let plannedTrips = [];
@@ -5580,7 +5679,48 @@ async function saveSettingsTitleToStorage(title) {
     }
 }
 
-// 区块标题加载函数
+
+
+// 徒步足迹标题保存（v1.0.7.10）
+async function saveHeatmapTitleToStorage(title) {
+    try {
+        await window.lingguang.storage.setItem(HEATMAP_TITLE_KEY, { title });
+        showSuccessMessage('标题已更新');
+    } catch (e) {
+        console.error('保存热力图标题失败:', e);
+        showErrorMessage('保存失败，请重试');
+    }
+}
+
+
+
+// v1.0.7.11 下拉框宽度自适应文字（canvas 精确测量最长选项 + 箭头/padding 余量）
+function fitSelectWidth(sel) {
+    if (!sel) return;
+    try {
+        const ctx = document.createElement('canvas').getContext('2d');
+        const cs = getComputedStyle(sel);
+        ctx.font = (cs.fontWeight || '400') + ' ' + (cs.fontSize || '13px') + ' ' + (cs.fontFamily || 'sans-serif');
+        let maxW = 0;
+        Array.from(sel.options).forEach(function (opt) {
+            const w = ctx.measureText(opt.textContent || '').width;
+            if (w > maxW) maxW = w;
+        });
+        // v1.0.8.2 修复：box-sizing:border-box 下 44px 余量被 padding 吃掉 → 按 padding+箭头动态算
+        const pl = parseFloat(cs.paddingLeft) || 12;
+        const pr = parseFloat(cs.paddingRight) || 14;
+        const arrow = 22;
+        let extra = arrow;
+        if (cs.boxSizing === 'border-box') extra += pl + pr;
+        sel.style.width = Math.ceil(maxW) + extra + 'px';
+    } catch (e) { console.warn('fitSelectWidth failed:', e); }
+}
+
+function fitEditSelects() {
+    document.querySelectorAll('select[id^="edit-difficulty-"], select[id^="edit-planned-difficulty-"]').forEach(function (sel) {
+        fitSelectWidth(sel);
+    });
+}// 区块标题加载函数
 
 
 
@@ -5787,6 +5927,8 @@ function renderTable() {
         
         attachEventListeners();
     });
+
+    fitEditSelects(); // v1.0.7.11 编辑行难度框宽度自适应
 }
 
 function attachEventListeners() {
@@ -7058,7 +7200,155 @@ function updateStatistics() {
             });
         });
     }
+    renderHeatmap(); // v1.0.7.7 切到概览刷新热力图
 }
+
+// ===== 徒步足迹热力图（v1.0.7.7：红色渐变 + 年月可选 + 日历式月视图） =====
+let hmYear = 0, hmMonth = 0;
+// ★2026-08-11 热力图事件只绑定一次（initHeatmap 会被多次调用：初始化 + 底栏刷新重置）
+let hmBound = false;
+function bindHeatmapEvents() {
+    const ySel = document.getElementById('hmYear');
+    const mSel = document.getElementById('hmMonth');
+    if (!ySel || !mSel || hmBound) return;
+    hmBound = true;
+    ySel.addEventListener('change', function () {
+        hmYear = parseInt(ySel.value, 10);
+        fillHmMonths(hmYear, 1);
+        renderHeatmap();
+    });
+    mSel.addEventListener('change', function () {
+        hmMonth = parseInt(mSel.value, 10);
+        renderHeatmap();
+    });
+}
+
+function initHeatmap() {
+    const ySel = document.getElementById('hmYear');
+    const mSel = document.getElementById('hmMonth');
+    if (!ySel || !mSel) return;
+    const now = new Date();
+    // 只显示有记录的年（无记录兜底当前年）
+    const years = getRecordYears();
+    const yearList = years.length ? years : [now.getFullYear()];
+    ySel.innerHTML = '';
+    yearList.forEach(function (y) {
+        const opt = document.createElement('option');
+        opt.value = y; opt.textContent = y + '年';
+        ySel.appendChild(opt);
+    });
+    const curYear = now.getFullYear();
+    const targetYear = yearList.indexOf(curYear) >= 0 ? curYear : yearList[0];
+    ySel.value = targetYear;
+    hmYear = targetYear;
+    fitSelectWidth(ySel);
+    fillHmMonths(targetYear, now.getMonth() + 1);
+    bindHeatmapEvents();
+    renderHeatmap();
+}
+
+function getRecordYears() {
+    const years = [];
+    const seen = {};
+    records.forEach(function (r) {
+        if (!r.createdAt) return;
+        const d = new Date(r.createdAt);
+        if (isNaN(d.getTime())) return;
+        const y = d.getFullYear();
+        if (!seen[y]) { seen[y] = 1; years.push(y); }
+    });
+    return years.sort(function (a, b) { return b - a; });
+}
+
+function getRecordMonths(year) {
+    const months = [];
+    const seen = {};
+    records.forEach(function (r) {
+        if (!r.createdAt) return;
+        const d = new Date(r.createdAt);
+        if (isNaN(d.getTime())) return;
+        if (d.getFullYear() !== year) return;
+        const m = d.getMonth() + 1;
+        if (!seen[m]) { seen[m] = 1; months.push(m); }
+    });
+    return months.sort(function (a, b) { return a - b; });
+}
+
+function fillHmMonths(year, preferred) {
+    const mSel = document.getElementById('hmMonth');
+    if (!mSel) return;
+    const now = new Date();
+    const months = getRecordMonths(year);
+    const list = months.length ? months : [now.getMonth() + 1];
+    mSel.innerHTML = '';
+    list.forEach(function (m) {
+        const opt = document.createElement('option');
+        opt.value = m; opt.textContent = m + '月';
+        mSel.appendChild(opt);
+    });
+    const target = list.indexOf(preferred) >= 0 ? preferred : list[list.length - 1];
+    mSel.value = target;
+    hmMonth = parseInt(mSel.value, 10);
+    fitSelectWidth(mSel);
+}
+function renderHeatmap() {
+    const cal = document.getElementById('hmCalendar');
+    const sumEl = document.getElementById('hmSummary');
+    if (!cal) return;
+    if (!hmYear || !hmMonth) { initHeatmap(); return; }
+    const year = hmYear, month = hmMonth;
+    const dayCount = {};
+    records.forEach(function (r) {
+        if (!r.createdAt) return;
+        const d = new Date(r.createdAt);
+        if (isNaN(d.getTime())) return;
+        if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+            const day = d.getDate();
+            dayCount[day] = (dayCount[day] || 0) + 1;
+        }
+    });
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const firstWeekday = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+    let html = '';
+    for (let i = 0; i < firstWeekday; i++) html += '<div class="hm-day empty"></div>';
+    let total = 0, maxDay = 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+        const c = dayCount[day] || 0;
+        total += c;
+        if (c > maxDay) maxDay = c;
+        const lv = c > 0 ? 'hm-red' : '';
+        html += '<div class="hm-day ' + lv + '" data-day="' + day + '" data-count="' + c + '">' + day + '</div>';
+    }
+    cal.innerHTML = html;
+    if (sumEl) sumEl.textContent = year + '年' + month + '月 · 徒步 ' + total + ' 次';
+    cal.querySelectorAll('.hm-day:not(.empty)').forEach(function (el) {
+        el.addEventListener('click', function () {
+            showHeatmapDayDetail(year, month, parseInt(el.getAttribute('data-day'), 10));
+        });
+    });
+}
+
+function showHeatmapDayDetail(year, month, day) {
+    const dayRecords = records.filter(function (r) {
+        if (!r.createdAt) return false;
+        const d = new Date(r.createdAt);
+        return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() + 1 === month && d.getDate() === day;
+    });
+    if (dayRecords.length === 0) return;
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    let items = dayRecords.map(function (r) {
+        return '<div style="padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:14px;">🏔️ ' + r.name + ' · ' + r.elevation + 'm · 难度' + r.difficulty + '级</div>';
+    }).join('');
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color: #dc2626;">local_fire_department</span>' + year + '年' + month + '月' + day + '日</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;">' + items + '</div>' +
+        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('hm-close').addEventListener('click', function () { document.body.removeChild(modal); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+}
+
 
 // ==================== 计划徒步行功能 ====================
 
@@ -7229,6 +7519,8 @@ function renderPlannedTripsTable() {
         
         attachPlannedTripsEventListeners();
     });
+
+    fitEditSelects(); // v1.0.7.11 编辑行难度框宽度自适应
 }
 
 function attachPlannedTripsEventListeners() {
@@ -7811,6 +8103,43 @@ async function loadSyncState() {
     }
 }
 
+// ★2026-08-11 设置页手动刷新（底栏点击当前"设置"tab 时调用）：
+//   只刷新动态状态行 + 重播逐块浮现动画；不覆盖输入框、不发网络请求（不卡顿）
+async function refreshSettingsUI() {
+    try {
+        const statusData = await window.lingguang.storage.getItem(SYNC_STATUS_KEY);
+        const statusText = document.getElementById('syncStatusText');
+        if (statusText && statusData && statusData.lastSyncAt) {
+            statusText.textContent = '上次同步：' + statusData.lastSyncAt;
+        }
+    } catch (e) { console.error('refresh settings status failed:', e); }
+    const settingsChildren = document.querySelectorAll('#tab-settings .glass-panel > *');
+    settingsChildren.forEach(function (child) {
+        child.classList.remove('block-anim');
+        void child.offsetWidth;
+        child.classList.add('block-anim');
+    });
+    setTimeout(function () {
+        settingsChildren.forEach(function (child) {
+            child.classList.remove('block-anim');
+        });
+    }, 950);
+}
+
+// ★2026-08-11 WebDAV 状态自动回正：点击设置页操作命令后 delay 毫秒，重新检测连接
+//   把状态行刷新回"连接正常 ✓"；未配置完整时跳过（不发无谓请求）；
+//   只挂在命令按钮上，与底栏切换无关 → 不影响切 tab 流畅度
+let syncStatusRefreshTimer = null;
+function scheduleSyncStatusRefresh(delay) {
+    if (syncStatusRefreshTimer) clearTimeout(syncStatusRefreshTimer);
+    syncStatusRefreshTimer = setTimeout(function () {
+        syncStatusRefreshTimer = null;
+        if (syncConfig.server && syncConfig.username && syncConfig.password) {
+            autoCheckSyncConnection(false);
+        }
+    }, delay || 2000);
+}
+
 // ★备份提醒弹窗（v1.4.10.1）：提示用户去上传备份
 function showBackupReminder(days) {
     const modal = document.createElement('div');
@@ -8231,7 +8560,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.7.6',
+        version: '1.0.8.5',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8314,20 +8643,30 @@ async function autoCheckSyncConnection(showTip) {
 function setupSyncEventListeners() {
     const uploadBtn = document.getElementById('syncUploadBtn');
     if (uploadBtn) {
-        const handler = uploadSyncBackup;
+        // ★2026-08-11 命令后 2 秒自动回正 WebDAV 状态（scheduleSyncStatusRefresh 内部防抖+判配置）
+        const handler = function () {
+            uploadSyncBackup();
+            scheduleSyncStatusRefresh(2000);
+        };
         uploadBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => uploadBtn.removeEventListener('click', handler));
     }
     const downloadBtn = document.getElementById('syncDownloadBtn');
     if (downloadBtn) {
-        const handler = downloadSyncBackup;
+        const handler = function () {
+            downloadSyncBackup();
+            scheduleSyncStatusRefresh(2000);
+        };
         downloadBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => downloadBtn.removeEventListener('click', handler));
     }
     // ★管理云端备份（v1.4.10.1）：列出 + 删除网盘备份文件
     const manageBtn = document.getElementById('syncManageBtn');
     if (manageBtn) {
-        const handler = manageCloudBackups;
+        const handler = function () {
+            manageCloudBackups();
+            scheduleSyncStatusRefresh(2000);
+        };
         manageBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => manageBtn.removeEventListener('click', handler));
     }
@@ -9227,7 +9566,7 @@ async function init() {
     try {
         renderTable();
         
-        const [storageData, darkModeData, themeModeData, titleData, statsTitleData, recordsTitleData, plannedTitleData, settingsTitleData, fpsData] = await Promise.allSettled([
+        const [storageData, darkModeData, themeModeData, titleData, statsTitleData, recordsTitleData, plannedTitleData, settingsTitleData, heatmapTitleData, fpsData] = await Promise.allSettled([
             window.lingguang.storage.getItem(STORAGE_KEY),
             window.lingguang.storage.getItem(DARK_MODE_KEY),
             window.lingguang.storage.getItem(THEME_MODE_KEY),
@@ -9236,6 +9575,7 @@ async function init() {
             window.lingguang.storage.getItem(RECORDS_TITLE_KEY),
             window.lingguang.storage.getItem(PLANNED_TITLE_KEY),
             window.lingguang.storage.getItem(SETTINGS_TITLE_KEY),
+            window.lingguang.storage.getItem(HEATMAP_TITLE_KEY),
             window.lingguang.storage.getItem(SHOW_FPS_KEY)
         ]);
         
@@ -9316,6 +9656,16 @@ async function init() {
                     titleTextElement.textContent = settingsTitleData.value.title;
                 }
             }
+
+        if (heatmapTitleData.status === 'fulfilled' && heatmapTitleData.value && typeof heatmapTitleData.value.title === 'string') {
+            const titleElement = document.getElementById('heatmapTitle');
+            if (titleElement) {
+                const titleTextElement = titleElement.querySelector('.title-text');
+                if (titleTextElement) {
+                    titleTextElement.textContent = heatmapTitleData.value.title;
+                }
+            }
+        }
         }
         
         // 帧率显示开关
@@ -9363,6 +9713,8 @@ function setupEventListeners() {
         const titleHandler = showEditTitleModal;
         appTitleWrap.addEventListener('click', titleHandler);
         cleanupFunctions.push(() => appTitleWrap.removeEventListener('click', titleHandler));
+    // 徒步足迹热力图初始化（v1.0.7.7）
+    initHeatmap();
     }
     const addBtn = document.getElementById('addBtn');
     if (addBtn) {
@@ -9374,7 +9726,11 @@ function setupEventListeners() {
     // 导入按钮
     const importBtn = document.getElementById('importBtn');
     if (importBtn) {
-        const handler = showImportModal;
+        // ★2026-08-11 命令后 2 秒自动回正 WebDAV 状态（scheduleSyncStatusRefresh 内部防抖+判配置）
+        const handler = function () {
+            showImportModal();
+            scheduleSyncStatusRefresh(2000);
+        };
         importBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => importBtn.removeEventListener('click', handler));
     }
@@ -9382,7 +9738,10 @@ function setupEventListeners() {
     // 导出按钮
     const exportBtn = document.getElementById('exportBtn');
     if (exportBtn) {
-        const handler = exportRecords;
+        const handler = function () {
+            exportRecords();
+            scheduleSyncStatusRefresh(2000);
+        };
         exportBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => exportBtn.removeEventListener('click', handler));
     }
@@ -9448,6 +9807,13 @@ function setupEventListeners() {
     const settingsTitle = document.getElementById('settingsTitle');
     if (settingsTitle) {
         const handler = function () { showSectionTitleModal('settingsTitle', saveSettingsTitleToStorage); };
+    
+    const heatmapTitle = document.getElementById('heatmapTitle');
+    if (heatmapTitle) {
+        const handler = function () { showSectionTitleModal('heatmapTitle', saveHeatmapTitleToStorage); };
+        heatmapTitle.addEventListener('click', handler);
+        cleanupFunctions.push(() => heatmapTitle.removeEventListener('click', handler));
+    }
         settingsTitle.addEventListener('click', handler);
         cleanupFunctions.push(() => settingsTitle.removeEventListener('click', handler));
     }
@@ -9493,10 +9859,30 @@ function setupEventListeners() {
 
     // ===== 底部悬浮导航栏：概览/计划/记录 切换 =====
     var tabButtons = document.querySelectorAll('#bottomTabBar .tab-btn');
+    // 当前激活的 tab（2026-08-11：点击当前 tab = 手动刷新该页数据）
+    var currentTabId = 'overview';
     function switchTab(tabId) {
         var pages = { overview: 'tab-overview', plans: 'tab-plans', records: 'tab-records', settings: 'tab-settings' };
         var pageId = pages[tabId];
         if (!pageId) return;
+        // ★2026-08-11 点击当前已激活的 tab：强制刷新该页数据（记录/计划重新渲染表格），不重播切换动画
+        if (tabId === currentTabId) {
+            if (tabId === 'records' && typeof renderTable === 'function') {
+                try { renderTable(); } catch (e) { console.error('refresh records failed:', e); }
+            } else if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
+                try { renderPlannedTripsTable(); } catch (e) { console.error('refresh plans failed:', e); }
+            } else if (tabId === 'overview') {
+                if (typeof updateStatistics === 'function') {
+                    try { updateStatistics(); } catch (e) { console.error('refresh overview failed:', e); }
+                }
+                // ★2026-08-11 热力图一并重置到最新日期并刷新数据（initHeatmap 已幂等）
+                try { initHeatmap(); } catch (e) { console.error('refresh heatmap failed:', e); }
+            } else if (tabId === 'settings') {
+                // ★2026-08-11 设置页刷新：状态行 + 逐块浮现动画（不覆盖输入框、不发网络请求）
+                try { refreshSettingsUI(); } catch (e) { console.error('refresh settings failed:', e); }
+            }
+            return;
+        }
         // 切换界面时自动取消正在进行的编辑，恢复编辑前数据
         if (typeof editingId !== 'undefined' && editingId !== null) {
             cancelEdit();
@@ -9543,6 +9929,7 @@ function setupEventListeners() {
                 tbl.parentElement.parentElement.scrollLeft = 0;
             }
         }
+        currentTabId = tabId;
     }
     tabButtons.forEach(function (btn) {
         btn._switchTabHandler = function () {
