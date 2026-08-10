@@ -24,7 +24,7 @@
             position: relative;
             overflow-x: hidden;
             color: #1e293b;
-            transition: background-color 0.4s ease, color 0.4s ease;
+            transition: background-color 0.2s ease; /* 2026-08-10 切换提速+掉帧修复：去掉 color 过渡（全页文字同时过渡→WebView掉帧），文字瞬切 */
         }
         
         /* 全局过渡变量 */
@@ -67,48 +67,10 @@
         .text-purple-300 { color: #7e22ce !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
         
         /* 浮动光球 - 背景氛围（通透渐变蓝，氛围保留） */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background:
-                radial-gradient(circle at 20% 10%, rgba(99, 102, 241, 0.04) 0%, transparent 45%),
-                radial-gradient(circle at 80% 90%, rgba(120, 140, 255, 0.03) 0%, transparent 45%),
-                linear-gradient(135deg, #ffffff 0%, #fafbff 30%, #f7f9ff 60%, #fdfdfe 100%);
-            pointer-events: none;
-            z-index: 0;
-            opacity: 1;
-            /* v1.4.11.0 白块根治：白色渐变氛围层 opacity 淡出 0.4s 会产生"全屏白块"过渡态。
-               改为深色模式下直接隐藏（display:none 瞬间消失，无过渡），
-               body 背景色 0.4s 过渡独立平滑，不依赖氛围层淡出。 */
-            transition: none;
-        }        
-        body::after {
-            content: '';
-            position: fixed;
-            bottom: -40%;
-            right: -20%;
-            width: 70%;
-            height: 70%;
-            background: radial-gradient(circle at center, rgba(99, 102, 241, 0.04) 0%, transparent 60%);
-            border-radius: 50%;
-            animation: orbFloat2 25s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        @keyframes orbFloat2 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(-40px, 20px) scale(1.1); }
-            50% { transform: translate(20px, -35px) scale(1.3); }
-            75% { transform: translate(30px, 10px) scale(0.85); }
-        }
-        
+        /* 2026-08-10 光球全部删除（用户建议，根治白块）：
+           body::before 白色氛围层 + body::after 右下角光球 + orbFloat2 动画 全部移除。
+           渐变氛围层无法平滑过渡是白块根源，删除后 body 纯色背景，切换无渐变可突变。 */
         /* 主题切换期间暂停所有动画，避免与过渡抢 GPU */
-        body.theme-transitioning::after,
         body.theme-transitioning .glass-panel::after,
         body.theme-transitioning .glass-stat-card::after,
         body.theme-transitioning .glass-btn::after,
@@ -125,16 +87,6 @@
         body.dark-mode {
             background-color: #0a1220;
             color: #f3f4f6;
-        }
-        
-        /* 深色模式：渐变氛围层淡出（避免渐变跳变导致卡顿），光球换暗色 */
-        body.dark-mode::before {
-            display: none; /* v1.4.11.0：瞬间隐藏白色氛围层，消除切深色时的全屏白块（原 opacity:0 慢淡出） */
-        }
-        
-        body.dark-mode::after {
-            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.14) 0%, transparent 60%);
-            animation: orbFloat2 25s ease-in-out infinite;
         }
         
         /* 深色模式恢复白色文字（v1.4.10.4：提升灰字亮度，解决深色背景可见度低）
@@ -831,7 +783,7 @@
             color: #ffffff !important;
             font-weight: 700 !important;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
+            transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
             transform: translateY(0);
             border: none !important;
         }
@@ -849,7 +801,7 @@
         /* 图标动画 */
         /* 添加按钮动画 */
         #addBtn {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
         }
         
         #addBtn:hover {
@@ -932,12 +884,22 @@
             0% { opacity: 0; transform: translateY(6px); }
             100% { opacity: 1; transform: translateY(0); }
         }
-        /* 设置页内容逐块"挨住出现"（标题→数据管理→关于应用，依次浮现） */
+        /* 2026-08-10 设置页逐块动效（机制修复）：不用 CSS 常驻动画——class 切换(主题)会被 WebView 重触发
+           → 数据管理框空白1秒。改为：元素默认无动画，切 tab 到设置页时由 JS 临时加 .block-anim 类触发，
+           播完自动移除（见 switchTab）。主题切换时元素无动画，绝不会被重触发 */
         #tab-settings .glass-panel > * {
-            animation: settingsBlockIn 0.32s ease both;
+            opacity: 1;
         }
-        #tab-settings .glass-panel > *:nth-child(2) { animation-delay: 0.12s; }
-        #tab-settings .glass-panel > *:nth-child(3) { animation-delay: 0.24s; }
+        #tab-settings .glass-panel > *.block-anim {
+            animation: settingsBlockIn 0.3s ease both;
+        }
+        #tab-settings .glass-panel > *.block-anim:nth-child(2) { animation-delay: 0.08s; }
+        #tab-settings .glass-panel > *.block-anim:nth-child(3) { animation-delay: 0.16s; }
+        #tab-settings .glass-panel > *.block-anim:nth-child(4) { animation-delay: 0.24s; }
+        #tab-settings .glass-panel > *.block-anim:nth-child(5) { animation-delay: 0.32s; }
+        #tab-settings .glass-panel > *.block-anim:nth-child(6) { animation-delay: 0.40s; }
+        #tab-settings .glass-panel > *.block-anim:nth-child(7) { animation-delay: 0.48s; }
+        #tab-settings .glass-panel > *.block-anim:nth-child(8) { animation-delay: 0.56s; }
         @keyframes settingsBlockIn {
             0% { opacity: 0; transform: translateY(8px); }
             100% { opacity: 1; transform: translateY(0); }
@@ -952,7 +914,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
+            padding: 12px 16px; /* 2026-08-10 底栏增高 8px→12px */
             border-radius: 999px;
             /* 更透明 + 玻璃折射质感：半透明底 + 强模糊折射下方文字（v1.4.10.11 渐变改纯色，让暗/亮切换可平滑过渡，根治底栏透明突变） */
             background-color: rgba(255, 255, 255, calc(var(--glass-alpha-tabbar) * 1.1));
@@ -964,7 +926,7 @@
                 inset 0 1px 0 rgba(255, 255, 255, calc(var(--glass-alpha-tabbar) * 3.5)),
                 inset 0 -1px 0 rgba(0, 0, 0, calc(var(--glass-alpha-tabbar) * 0.2));
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.4s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: background-color 0.2s ease, border-color 0.3s ease, box-shadow 0.3s ease; /* 切换提速 */
             /* v1.4.10.5 修复：提升渲染层 + 原地淡入，避免 WebView 加载期 fixed+translateX 抖动（从左边滑向中间） */
             transform: translateX(-50%) translateZ(0);
             will-change: transform;
@@ -1013,6 +975,7 @@
         /* 底栏图标点击弹跳动画 */
         .tab-icon-bounce {
             animation: tabIconBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform; /* 2026-08-10 帧率优化：提前建合成层 */
         }
         @keyframes tabIconBounce {
             0% { transform: scale(1) translateY(0); }
@@ -1090,14 +1053,15 @@
         }
         /* ========== 设置页 - 分组卡片（v1.4.10.1 设置页优化） ========== */
         .settings-group {
-            background: rgba(255, 255, 255, 0.10);
+            background-color: rgba(255, 255, 255, 0.10);
             backdrop-filter: blur(3px) saturate(120%);
             -webkit-backdrop-filter: blur(3px) saturate(120%);
             border: 1px solid rgba(0, 0, 0, 0.06);
             border-radius: 20px;
             padding: 16px;
             margin-bottom: 16px;
-            transition: border-color 0.3s ease;
+            /* 2026-08-10 修复数据管理框短暂不可见：背景改 background-color + 过渡（原 background 简写+仅border过渡→dark跳变几乎透明） */
+            transition: border-color 0.3s ease, background-color 0.2s ease;
         }
         /* 卡片内开关行间距（v1.4.10.3 优化：避免开关行挤在一起） */
         .settings-group .settings-item + .settings-item {
@@ -1121,7 +1085,7 @@
             margin-top: 10px;
         }
         body.dark-mode .settings-group {
-            background: rgba(255, 255, 255, 0.05);
+            background-color: rgba(255, 255, 255, 0.05);
             border-color: rgba(255, 255, 255, 0.08);
         }
         .settings-group-title {
@@ -1199,7 +1163,7 @@
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(100, 116, 139, 0.2);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
         }
         .sync-config-toggle-btn:hover {
             background: rgba(99, 102, 241, 0.1);
@@ -1222,7 +1186,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            background: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.6));
+            background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.6));
             border: 1px solid rgba(15, 23, 42, 0.08);
             border-radius: 16px;
             padding: 14px 16px;
@@ -1295,7 +1259,7 @@
             transform: translateX(20px);
         }
         body.dark-mode .settings-item {
-            background: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.4));
+            background-color: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.4));
             border-color: rgba(148, 180, 255, 0.14);
         }
         body.dark-mode .settings-item-icon {
@@ -1353,15 +1317,15 @@
             color: #1e293b;
             outline: none;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.1s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
         }
         .sync-input::placeholder {
             color: rgba(100, 116, 139, 0.55);
         }
         .sync-input:focus {
             background: rgba(255, 255, 255, 0.16);
-            border-color: rgba(99, 122, 235, 0.45);
-            box-shadow: 0 0 0 3px rgba(99, 122, 235, 0.12);
+            border-color: rgba(79, 70, 229, 0.45);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
         }
         body.dark-mode .sync-config-label {
             color: rgba(255, 255, 255, 0.55);
@@ -1476,13 +1440,13 @@
             border-radius: 20px;
             box-shadow: 
                 0 4px 24px rgba(0, 0, 0, 0.02);
-            transition: box-shadow 0.3s ease, border-color 0.3s ease;
-            transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.4s ease, background 0.4s ease; /* v1.4.10.5 修复：切夜间模式白色区块闪烁 */
+            /* 2026-08-10 清理：删除被覆盖的旧 transition（死代码） */
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.2s ease, background 0.2s ease; /* 切换提速 */
         }
         /* v1.4.10.5：所有半透明玻璃元素统一背景过渡，避免主题切换时白块闪现 */
         .glass-stat-card, .glass-btn, .glass-modal, .glass-chip, .settings-group, .settings-item {
             transition-property: background-color, background, box-shadow, border-color, color, transform;
-            transition-duration: 0.4s, 0.4s, 0.3s, 0.3s, 0.3s, 0.15s;
+            transition-duration: 0.2s, 0.2s, 0.3s, 0.3s, 0.3s, 0.15s; /* 切换提速 */
             transition-timing-function: ease, ease, cubic-bezier(0.4, 0, 0.2, 1), ease, ease, cubic-bezier(0.4, 0, 0.2, 1);
         }
         
@@ -1578,7 +1542,7 @@
                 0 2px 16px rgba(0, 0, 0, 0.02);
             overflow: hidden;
             position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, background 0.4s ease; /* v1.4.10.5 切主题平滑 */
+            transition: transform 0.1s ease, background-color 0.2s ease, background 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease; /* 切换提速 */
         }
         
         /* 玻璃卡片扫描光效 */
@@ -1770,7 +1734,7 @@
             font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
             font-weight: 900;
             font-size: 16px;
-            transition: all 0.2s ease;
+            transition: transform 0.1s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
@@ -1784,8 +1748,8 @@
         }
         .edit-input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
             background: rgba(255, 255, 255, 1);
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -1814,8 +1778,8 @@
         
         select.edit-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
         }
         
         /* 移动端输入框优化 */
@@ -1892,7 +1856,7 @@
             padding: 12px 16px;
             cursor: pointer;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease;
             font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
             font-weight: 900;
             font-size: 16px;
@@ -1934,7 +1898,7 @@
         .sort-header {
             cursor: pointer;
             user-select: none;
-            transition: all 0.2s;
+            transition: transform 0.1s ease, background-color 0.2s ease, color 0.2s ease;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -1945,7 +1909,7 @@
         .sort-header-planned {
             cursor: pointer;
             user-select: none;
-            transition: all 0.2s;
+            transition: transform 0.1s ease, background-color 0.2s ease, color 0.2s ease;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -1959,7 +1923,7 @@
         }
         /* 排序图标动画 */
         .sort-icon {
-            transition: all 0.3s ease;
+            transition: transform 0.1s ease, color 0.3s ease, opacity 0.3s ease;
         }
         
         .sort-icon:hover {
@@ -1968,7 +1932,7 @@
         
         .sort-icon.active {
             opacity: 1;
-            color: #667eea;
+            color: #4f46e5;
             animation: sortPulse 0.3s ease;
         }
         
@@ -2504,11 +2468,11 @@
         /* 6. 输入框聚焦动画 */
         .input-glow {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+            box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
         }
         
         .input-glow:focus {
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 4px 12px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15), 0 4px 12px rgba(79, 70, 229, 0.2);
             transform: translateY(-1px);
         }
         
@@ -2691,7 +2655,7 @@
             color: #374151;
             box-shadow: 
                 0 2px 8px rgba(0, 0, 0, 0.04);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.1s ease, background-color 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
         }
         
         .glass-btn:hover {
@@ -2752,7 +2716,7 @@
                 0 4px 20px rgba(0, 0, 0, 0.3);
         }
         .hover-lift {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.1s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
         }
         
         .hover-lift:hover {
@@ -2761,7 +2725,7 @@
         }
         
         .hover-scale {
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: transform 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-10 帧率优化：0.3s→0.15s 更跟手 */
         }
         
         .hover-scale:hover {
@@ -2769,7 +2733,7 @@
         }
         
         .hover-rotate {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
         }
         
         .hover-rotate:hover {
@@ -2789,6 +2753,7 @@
         /* 11. 数字滚动动画 */
         .number-scroll {
             animation: numberScroll 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+            will-change: transform, opacity; /* 2026-08-10 帧率优化 */
         }
         
         @keyframes numberScroll {
@@ -2804,7 +2769,7 @@
         
         /* 12. 难度徽章动画 */
         .difficulty-badge-advanced {
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
             transform-style: preserve-3d;
         }
         
@@ -4888,7 +4853,7 @@
                             <span class="material-icons" style="font-size: 20px;">brightness_auto</span>
                         </div>
                         <div class="settings-item-text">
-                            <div class="settings-item-title">跟随系统深色模式</div>
+                            <div class="settings-item-title">跟随系统外观模式</div>
                             <div class="settings-item-desc">自动跟随系统深色/浅色切换</div>
                         </div>
                         <label class="settings-switch">
@@ -4901,7 +4866,7 @@
                             <span class="material-icons" style="font-size: 20px;">dark_mode</span>
                         </div>
                         <div class="settings-item-text">
-                            <div class="settings-item-title">夜间模式</div>
+                            <div class="settings-item-title">外观模式</div>
                             <div class="settings-item-desc">手动切换深色 / 浅色（关闭跟随系统时生效）</div>
                         </div>
                         <label class="settings-switch">
@@ -4979,7 +4944,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.4.11.0</div>
+                        <div class="about-version">版本 1.4.12.7</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5209,8 +5174,8 @@ function updateFPS() {
     const currentTime = performance.now();
     const elapsed = currentTime - fpsLastTime;
     
-    // 每2秒更新一次FPS显示（v1.4.10.2 修复：计时重置移到条件外，避免值未变时计时漂移导致 FPS 失真）
-    if (elapsed >= 2000) {
+    // 每1秒更新一次FPS显示（v1.4.10.2 修复计时漂移；2026-08-10 改1s更灵敏）
+    if (elapsed >= 1000) {
         const fps = Math.round((fpsFrameCount * 1000) / elapsed);
         const fpsValueElement = document.getElementById('fpsValue');
         if (fpsValueElement && fpsValueElement.textContent !== String(fps)) {
@@ -5817,13 +5782,6 @@ function initSystemThemeListener() {
 
 
 
-async function saveTitleToStorage(title) {
-    try {
-        await window.lingguang.storage.setItem(APP_TITLE_KEY, { title });
-    } catch (error) {
-        console.error('保存应用标题失败:', error);
-    }
-}
 
 
 
@@ -8087,40 +8045,6 @@ async function webdavRequest(url, method, bodyBase64) {
     }
 }
 
-// 测试连接：OPTIONS 请求服务器根
-async function testSyncConnection() {
-    await saveSyncConfigFromForm();
-    const url = buildSyncFileUrl();
-    if (!url) {
-        showErrorMessage('请先填写服务器地址');
-        return;
-    }
-    if (syncInProgress) return;
-    syncInProgress = true;
-    setSyncBusy(true, '测试中…');
-    try {
-        const result = await webdavRequest(url, 'OPTIONS', '');
-        if (result.status >= 200 && result.status < 300) {
-            setSyncStatus('连接成功 ✓', 'check_circle', 'success');
-            showSuccessMessage('连接成功，可以同步');
-        } else if (result.status === 401 || result.status === 403) {
-            setSyncStatus('账号或应用密码错误', 'error', 'error');
-            showErrorMessage('认证失败，请检查账号和应用密码');
-        } else if (result.error) {
-            setSyncStatus('连接失败：' + result.error, 'error', 'error');
-            showErrorMessage('连接失败：' + result.error);
-        } else {
-            setSyncStatus('服务器响应异常（状态码 ' + result.status + '）', 'error', 'error');
-            showErrorMessage('服务器响应异常（状态码 ' + result.status + '）');
-        }
-    } catch (e) {
-        setSyncStatus('连接失败：' + (e.message || e), 'error', 'error');
-        showErrorMessage('连接失败：' + (e.message || e));
-    } finally {
-        syncInProgress = false;
-        setSyncBusy(false);
-    }
-}
 
 // 上传备份：全量数据打包 JSON → PUT 到云端
 async function uploadSyncBackup(silent) {
@@ -8446,7 +8370,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.4.11.0',
+        version: '1.4.12.7',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8674,17 +8598,10 @@ function showManageBackupsModal(files) {
 
 // 设置页 tab 切换时自动检测连接（进入设置页才触发，避免每次启动都联网）
 function bindAutoCheckOnSettingsTab() {
-    const settingsTabBtn = document.querySelector('#bottomTabBar .tab-btn[data-tab="settings"]');
-    if (settingsTabBtn) {
-        const handler = function () {
-            setTimeout(function () {
-                autoCheckSyncConnection(false);
-            }, 400); // 等设置页渲染动画结束再检测，避免闪烁
-        };
-        settingsTabBtn.addEventListener('click', handler);
-        cleanupFunctions.push(() => settingsTabBtn.removeEventListener('click', handler));
-    }
-    // ★输入配置后自动检测：服务器/账号/密码任一变化 → 防抖 800ms 后自动检测并提示
+    // 2026-08-10 修复"设置页切走卡顿"：删除进设置页自动发网络请求(autoCheckSyncConnection)
+    // 根因：每次点设置 tab 都发起 WebDAV 连接检测（async 网络请求），切走时请求还在飞 → 卡
+    // 保留：输入配置变化后防抖检测（下方）
+    // 输入配置后自动检测：服务器/账号/密码任一变化 → 防抖 800ms 后自动检测并提示
     ['syncServer', 'syncUsername', 'syncPassword'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -9726,10 +9643,23 @@ function setupEventListeners() {
         var page = safeGetElementById(pageId);
         if (page) {
             page.style.display = 'block';
-            // 重新触发淡入动画
-            page.style.animation = 'none';
-            void page.offsetHeight;
-            page.style.animation = '';
+            // 2026-08-10 修复切tab卡顿：去掉强制重排（animation重置+offsetHeight），设置页DOM大重排慢
+            // 页面自带 tabPageFadeIn 淡入，无需手动重启动画
+        }
+        // ★设置页逐块动画（2026-08-10 机制修复）：切到设置页时临时加 .block-anim 触发逐块浮现，
+        //   播完(0.9s)自动移除——平时元素无动画，主题切换不会被重触发，数据管理框不再空白
+        if (tabId === 'settings') {
+            try {
+                var settingsChildren = document.querySelectorAll('#tab-settings .glass-panel > *');
+                settingsChildren.forEach(function (child) {
+                    child.classList.add('block-anim');
+                });
+                setTimeout(function () {
+                    settingsChildren.forEach(function (child) {
+                        child.classList.remove('block-anim');
+                    });
+                }, 950);
+            } catch (e) { console.error('settings block anim failed:', e); }
         }
         tabButtons.forEach(function (b) {
             b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
