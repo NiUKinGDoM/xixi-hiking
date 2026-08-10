@@ -852,7 +852,7 @@
         
         /* 标题动画 */
         #appTitle {
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease; /* 2026-08-11 3条优化：只过渡 hover 的 transform */
             /* 顶栏标题 = 全 App 最大标题（不受移动端 h1 覆盖） */
             font-size: 27px !important;
             line-height: 1.3;
@@ -1206,7 +1206,7 @@
             width: 100%;
             padding: 8px 0;
             margin-top: 12px;
-            border-radius: 10px;
+            border-radius: 12px; /* 2026-08-11 3条优化：与全局按钮圆角统一(12px) */
             font-size: 13px;
             font-weight: 600;
             color: #64748b;
@@ -1361,7 +1361,7 @@
             backdrop-filter: blur(3px) saturate(120%);
             -webkit-backdrop-filter: blur(3px) saturate(120%);
             border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 12px;
+            border-radius: 10px; /* 2026-08-11 3条优化：输入框圆角统一(10px) */
             padding: 10px 14px;
             font-size: 14px;
             color: #1e293b;
@@ -1432,7 +1432,7 @@
             color: #374151;
             cursor: pointer;
             text-align: left;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
         }
         .restore-file-item:hover {
             background: rgba(255, 255, 255, 0.16);
@@ -1477,7 +1477,7 @@
         }
         .restore-file-list::-webkit-scrollbar-thumb {
             background: rgba(100, 116, 139, 0.3);
-            border-radius: 2px;
+            border-radius: 4px; /* 2026-08-11 3条优化：与全局滚动条圆角统一(4px) */
         }
 
 
@@ -1776,7 +1776,7 @@
         }
         .edit-input {
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
+            border-radius: 10px; /* 2026-08-11 3条优化：输入框圆角统一(10px) */
             padding: 8px 12px;
             width: 100%;
             background: rgba(255, 255, 255, 0.95);
@@ -2290,7 +2290,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             opacity: 0;
             transform: translateY(-10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.3s, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
         }
         
         .search-dropdown.show {
@@ -2482,7 +2482,7 @@
         .toast-glass {
             backdrop-filter: blur(12px) saturate(160%);
             -webkit-backdrop-filter: blur(12px) saturate(160%);
-            border-radius: 14px;
+            border-radius: 12px; /* 2026-08-11 3条优化：与弹窗按钮圆角统一(12px) */
             font-weight: 600;
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
         }
@@ -2524,7 +2524,7 @@
         
         /* 6. 输入框聚焦动画 */
         .input-glow {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: box-shadow 0.3s, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
             box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
         }
         
@@ -2545,7 +2545,7 @@
             width: 0;
             height: 2px;
             background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: width 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-11 3条优化：只过渡 width */
             transform: translateX(-50%);
         }
         
@@ -2557,7 +2557,7 @@
         .scroll-reveal {
             opacity: 0;
             transform: translateY(30px);
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
         }
         
         .scroll-reveal.revealed {
@@ -2568,7 +2568,7 @@
         .scroll-reveal-left {
             opacity: 0;
             transform: translateX(-30px);
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
         }
         
         .scroll-reveal-left.revealed {
@@ -2579,7 +2579,7 @@
         .scroll-reveal-right {
             opacity: 0;
             transform: translateX(30px);
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
         }
         
         .scroll-reveal-right.revealed {
@@ -2938,7 +2938,7 @@
         
         /* 20. 标签动画 */
         .tag-animate {
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-11 3条优化：只过渡 hover 的 transform */
         }
         
         .tag-animate:hover {
@@ -2990,7 +2990,7 @@
         
         /* 23. 复选框动画 */
         .checkbox-animate {
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-11 3条优化：去掉 transition:all */
         }
         
         .checkbox-animate:checked {
@@ -3028,7 +3028,7 @@
         ::-webkit-scrollbar-thumb {
             background: rgba(102, 126, 234, 0.15);
             border-radius: 4px;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease; /* 2026-08-11 3条优化：只过渡 hover 的背景色 */
         }
         
         ::-webkit-scrollbar-thumb:hover {
@@ -5055,7 +5055,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.8.5</div>
+                        <div class="about-version">版本 1.0.8.6</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -8560,7 +8560,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.8.5',
+        version: '1.0.8.6',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
