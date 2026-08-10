@@ -1,8 +1,15 @@
 # ============================================================
 #  bump-version.ps1 - 每次打包前自动递增 versionCode/versionName
 #  用法：在 hiking-app3/android/ 目录下执行 .\bump-version.ps1
+#
+#  ★新版本号规则（2026-08-11 工具化，用户确认）：
+#    versionName = 按 versionCode 数出的 1.x.x.x
+#    - 从 1.0.0.0 起算第 1 个版本；每段 0~10 共 11 个值；满 10 进位
+#    - 公式：索引 = vc_new - 1；第四段=索引%11；第三段=(索引//11)%11；第二段=(索引//121)%11
+#    - 对照：vc84=1.0.7.6、85=1.0.7.7、88=1.0.7.10、89=1.0.8.0、121=1.0.10.10、122=1.1.0.0
 # ============================================================
 $gradleFile = Join-Path $PSScriptRoot "app\build.gradle"
+$htmlFile = Join-Path $PSScriptRoot "..\www\index.html"
 if (-not (Test-Path $gradleFile)) {
     Write-Error "找不到 $gradleFile"
     exit 1
@@ -18,35 +25,38 @@ if ($content -match 'versionCode\s+(\d+)') {
 }
 $newCode = $currentCode + 1
 
-# 读取当前 versionName
+# ★新规则：按公式算出四段版本号
+$idx = $newCode - 1
+$seg4 = $idx % 11
+$seg3 = [math]::Floor($idx / 11) % 11
+$seg2 = [math]::Floor($idx / 121) % 11
+$seg1 = 1 + [math]::Floor($idx / 1331)
+$newName = "$seg1.$seg2.$seg3.$seg4"
+
+# 读取旧 versionName（仅日志）
+$currentName = "?"
 if ($content -match 'versionName\s+"([^"]+)"') {
     $currentName = $Matches[1]
-} else {
-    $currentName = "1.0"
 }
 
-# 生成新 versionName：patch 到 10 封顶（1.1.10 后进位到 1.2.0）
-$today = Get-Date -Format "yyyyMMdd"
-if ($currentName -match '^(\d+)\.(\d+)\.(\d+)$') {
-    $major = [int]$Matches[1]; $minor = [int]$Matches[2]; $patch = [int]$Matches[3]
-    if ($patch -ge 10) {
-        # patch 封顶 10，进位 minor：1.1.10 -> 1.2.0
-        $minor = $minor + 1
-        $patch = 0
-    } else {
-        $patch = $patch + 1
-    }
-    $newName = "$major.$minor.$patch"
-} else {
-    $newName = "1.0.1"
-}
-
-# 替换
+# 替换 build.gradle
 $newContent = $content -replace 'versionCode\s+\d+', "versionCode $newCode"
 $newContent = $newContent -replace 'versionName\s+"[^"]+"', "versionName `"$newName`""
 
-# 替换（使用无 BOM 的 UTF8 写入，避免 Gradle 解析 BOM 报错）
+# 无 BOM UTF8 写入（避免 Gradle 解析 BOM 报错）
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($gradleFile, $newContent, $utf8NoBom)
+
+# 同步 index.html：版本显示 + version 字段
+if (Test-Path $htmlFile) {
+    $html = Get-Content $htmlFile -Raw
+    $html2 = $html -replace '版本 [\d.]+', "版本 $newName"
+    $html2 = $html2 -replace "version:\s*'[\d.]+'", "version: '$newName'"
+    if ($html2 -ne $html) {
+        [System.IO.File]::WriteAllText($htmlFile, $html2, $utf8NoBom)
+        Write-Output "[bump-version] index.html 已同步版本号"
+    }
+}
+
 Write-Output "[bump-version] versionCode: $currentCode -> $newCode"
 Write-Output "[bump-version] versionName: $currentName -> $newName"
