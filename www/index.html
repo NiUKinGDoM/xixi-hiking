@@ -2245,12 +2245,16 @@
         .chart-bar {
             transform-origin: bottom;
             animation: growUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            /* 2026-08-11 3条优化：Tailwind transition-transform 类未编译生成，用 CSS 直写（只过渡 hover 的 scale） */
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* 玻璃质感柱状图 */
         .glass-bar {
             transform-origin: bottom;
             animation: growUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            /* 2026-08-11 3条优化：同上，只过渡 transform */
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* 图表容器（难度分布框）跟随全局玻璃透明度 */
@@ -4642,7 +4646,7 @@
             
             <div id="tab-overview" class="tab-page">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
-                <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="stats-title">
+                <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="stats-title">
                     <span class="material-icons text-blue-300 text-xl">analytics</span>
                     <span class="title-text">统计概览</span>
                     <span class="material-icons edit-title-icon">edit</span>
@@ -4694,7 +4698,7 @@
                         <div class="absolute inset-0 flex items-end justify-around px-4 pb-8" id="difficultyChart">
                 <div class="flex flex-col items-center flex-1">
                     <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-green-400 to-green-600 rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer shadow-lg" style="height: 50%; min-height: 8px; animation-delay: 0.15s;" title="简单级: 2个 (20.0%)">
+                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-green-400 to-green-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 50%; min-height: 8px; animation-delay: 0.15s;" title="简单级: 2个 (20.0%)">
                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
                                 2
                             </div>
@@ -4704,7 +4708,7 @@
             
                 <div class="flex flex-col items-center flex-1">
                     <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-lime-400 to-lime-600 rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer shadow-lg" style="height: 100%; min-height: 8px; animation-delay: 0.3s;" title="较易级: 4个 (40.0%)">
+                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-lime-400 to-lime-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 100%; min-height: 8px; animation-delay: 0.3s;" title="较易级: 4个 (40.0%)">
                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
                                 4
                             </div>
@@ -4714,7 +4718,7 @@
             
                 <div class="flex flex-col items-center flex-1">
                     <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-amber-400 to-amber-600 rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer shadow-lg" style="height: 50%; min-height: 8px; animation-delay: 0.44999999999999996s;" title="中等级: 2个 (20.0%)">
+                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-amber-400 to-amber-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 50%; min-height: 8px; animation-delay: 0.44999999999999996s;" title="中等级: 2个 (20.0%)">
                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
                                 2
                             </div>
@@ -4724,7 +4728,7 @@
             
                 <div class="flex flex-col items-center flex-1">
                     <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-orange-400 to-orange-600 rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer shadow-lg" style="height: 25%; min-height: 8px; animation-delay: 0.6s;" title="较难级: 1个 (10.0%)">
+                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-orange-400 to-orange-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 25%; min-height: 8px; animation-delay: 0.6s;" title="较难级: 1个 (10.0%)">
                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
                                 1
                             </div>
@@ -4734,7 +4738,7 @@
             
                 <div class="flex flex-col items-center flex-1">
                     <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-red-400 to-red-600 rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer shadow-lg" style="height: 25%; min-height: 8px; animation-delay: 0.75s;" title="困难级: 1个 (10.0%)">
+                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-red-400 to-red-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 25%; min-height: 8px; animation-delay: 0.75s;" title="困难级: 1个 (10.0%)">
                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
                                 1
                             </div>
@@ -4775,7 +4779,7 @@
 <!-- 徒步足迹热力图（v1.0.7.8：统一玻璃红 + 年月可选(仅去过的年月) + 日历式月视图） -->
                 <div class="glass-panel p-6 mb-6" id="heatmapPanel">
                     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                        <h2 id="heatmapTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="heatmap-title">
+                        <h2 id="heatmapTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="heatmap-title">
                             <span class="material-icons text-red-400 text-xl">local_fire_department</span>
                             <span class="title-text">徒步足迹</span>
                             <span class="material-icons edit-title-icon">edit</span>
@@ -4799,7 +4803,7 @@
             <div id="tab-records" class="tab-page" style="display: none;">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="records-title">
+                    <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="records-title">
                         <span class="material-icons text-blue-300 text-xl">terrain</span>
                         <span class="title-text">记录</span>
                         <span class="material-icons edit-title-icon">edit</span>
@@ -4858,7 +4862,7 @@
             <div id="tab-plans" class="tab-page" style="display: none;">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="planned-title">
+                    <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="planned-title">
                         <span class="material-icons text-green-300 text-xl">event_note</span>
                         <span class="title-text">计划</span>
                         <span class="material-icons edit-title-icon">edit</span>
@@ -4916,7 +4920,7 @@
             <!-- 设置模块 -->
             <div id="tab-settings" class="tab-page" style="display: none;">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
-                <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg cursor-pointer hover:bg-white/10 transition-all" data-testid="settings-title">
+                <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg cursor-pointer hover:bg-white/10 transition-colors" data-testid="settings-title">
                     <span class="material-icons text-blue-300 text-xl">settings</span>
                     <span class="title-text">设置</span>
                     <span class="material-icons edit-title-icon">edit</span>
@@ -5066,7 +5070,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.8.8</div>
+                        <div class="about-version">版本 1.0.8.10</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5358,7 +5362,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.8.8';
+var APP_VERSION = '1.0.8.10';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -6925,8 +6929,7 @@ function showEditTitleModal() {
     document.body.appendChild(modal);
     const input = document.getElementById('titleEditInput');
     input.value = currentTitle;
-    input.focus();
-    try { input.setSelectionRange(currentTitle.length, currentTitle.length); } catch (e) {}
+    // 2026-08-11 用户要求：点击可编辑栏不直接弹输入法——不自动聚焦，用户点输入框才弹键盘
 
     const closeModal = () => { document.body.removeChild(modal); };
 
@@ -6981,8 +6984,7 @@ function showSectionTitleModal(titleElementId, saveFn) {
     document.body.appendChild(modal);
     const input = document.getElementById('sectionTitleEditInput');
     input.value = currentTitle;
-    input.focus();
-    try { input.setSelectionRange(currentTitle.length, currentTitle.length); } catch (e) {}
+    // 2026-08-11 用户要求：点击可编辑栏不直接弹输入法——不自动聚焦
 
     const closeModal = () => { document.body.removeChild(modal); };
 
@@ -7180,7 +7182,7 @@ function updateStatistics() {
             chartHtml += `
                 <div class="flex flex-col items-center flex-1">
                     <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar glass-bar absolute bottom-0 w-full rounded-t-lg transition-all duration-700 hover:scale-105 cursor-pointer"
+                        <div class="chart-bar glass-bar absolute bottom-0 w-full rounded-t-lg hover:scale-105 cursor-pointer"
                              style="height: ${percentage}%; min-height: ${count > 0 ? '8px' : '0'}; animation-delay: ${parseInt(difficulty) * 0.15}s; background: linear-gradient(to top, ${getDifficultyColor(difficulty)}cc, ${getDifficultyColor(difficulty)}85); box-shadow: 0 0 8px ${getDifficultyColor(difficulty)}40;"
                              title="${name}级: ${count}个 (${((count/total)*100).toFixed(1)}%)">
                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold whitespace-nowrap" style="color: ${getDifficultyColor(difficulty)}">
@@ -7581,14 +7583,7 @@ function attachPlannedTripsEventListeners() {
 function startPlannedEdit(id) {
     plannedEditingId = id;
     renderPlannedTripsTable();
-    
-    setTimeout(() => {
-        const nameInput = safeGetElementById(`edit-planned-name-${id}`);
-        if (nameInput) {
-            nameInput.focus();
-            nameInput.select();
-        }
-    }, 50);
+    // 2026-08-11 用户要求：点击可编辑栏不直接弹输入法——不再自动聚焦输入框
 }
 
 function cancelPlannedEdit() {
@@ -8716,7 +8711,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.8.8',
+        version: '1.0.8.10',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -10032,8 +10027,17 @@ function setupEventListeners() {
         // ★2026-08-11 点击当前已激活的 tab：强制刷新该页数据（记录/计划重新渲染表格），不重播切换动画
         if (tabId === currentTabId) {
             if (tabId === 'records' && typeof renderTable === 'function') {
-                try { renderTable(); } catch (e) { console.error('refresh records failed:', e); }
+                // ★2026-08-11 二次点击刷新：若正在行内编辑，先取消编辑恢复显示态再渲染
+                if (typeof editingId !== 'undefined' && editingId !== null) {
+                    try { cancelEdit(); } catch (e) { console.error('cancel edit failed:', e); }
+                } else {
+                    try { renderTable(); } catch (e) { console.error('refresh records failed:', e); }
+                }
             } else if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
+                // ★2026-08-11 二次点击刷新：先退出计划编辑态再渲染
+                if (typeof plannedEditingId !== 'undefined' && plannedEditingId !== null) {
+                    plannedEditingId = null;
+                }
                 try { renderPlannedTripsTable(); } catch (e) { console.error('refresh plans failed:', e); }
             } else if (tabId === 'overview') {
                 if (typeof updateStatistics === 'function') {
