@@ -5066,7 +5066,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.9.2</div>
+                        <div class="about-version">版本 1.0.9.3</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5358,7 +5358,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.9.2';
+var APP_VERSION = '1.0.9.3';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -7010,7 +7010,7 @@ function showDataInfoModal() {
                 数据管理说明
             </div>
             <div class="confirm-modal-message" style="line-height: 1.4;">
-                导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。
+                导出支持徒步记录、计划徒步；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-delete ripple-effect" id="data-info-close" style="background: #4f46e5; border-color: #4f46e5; color: #fff;">知道了</button>
@@ -8732,7 +8732,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.9.2',
+        version: '1.0.9.3',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -9023,10 +9023,6 @@ function showExportModal() {
                         <span class="material-icons text-xl">event_note</span>
                         <span>导出计划徒步</span>
                     </button>
-                    <button id="exportCodeBtn" class="w-full py-3 px-4 modal-option-btn purple flex items-center justify-center gap-2">
-                        <span class="material-icons text-xl">code</span>
-                        <span>导出应用代码</span>
-                    </button>
                 </div>
                 <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
                     取消
@@ -9041,7 +9037,6 @@ function showExportModal() {
     const closeBtn = document.getElementById('closeExportModal');
     const exportRecordsBtn = document.getElementById('exportRecordsBtn');
     const exportPlannedBtn = document.getElementById('exportPlannedBtn');
-    const exportCodeBtn = document.getElementById('exportCodeBtn');
 
     const closeModal = () => {
         // 淡出后移除：淡出期间加 body.modal-closing 禁用 backdrop-filter（避免重模糊卡顿），完成后清理
@@ -9069,11 +9064,6 @@ function showExportModal() {
     exportPlannedBtn.addEventListener('click', async () => {
         closeModal();
         await performExport('planned', 'csv');
-    });
-
-    exportCodeBtn.addEventListener('click', async () => {
-        closeModal();
-        await exportAppCode();
     });
 }
 
@@ -9454,254 +9444,6 @@ function showImportChoiceModal(count) {
             modal.remove();
         }
     });
-}
-
-// ==================== 导出应用代码 ====================
-
-// 嵌入的文件内容（在构建时注入）
-const EMBEDDED_MANIFEST = '{"navigationBar": {"visible": false, "title": "XiXiの徒步小记", "backgroundColor": "#667eea", "foregroundColor": "#ffffff"}}';
-
-const EMBEDDED_README = `# XiXiの徒步小记 应用
-
-一个用于记录和管理徒步登山活动的移动端轻应用。
-
-## 功能特点
-
-- **记录管理**：添加、编辑、删除徒步记录
-- **山峰信息**：自动搜索山峰海拔、难度等信息
-- **数据统计**：总记录数、平均海拔、最高海拔、平均难度
-- **难度分布**：柱状图展示不同难度的记录分布
-- **深色模式**：支持深色模式切换
-- **可编辑标题**：点击标题可自定义应用名称
-- **数据持久化**：自动保存数据到本地存储
-
-## 使用方式
-
-1. 点击右上角 **+** 按钮添加新记录
-2. 输入山峰名称，系统会自动搜索相关信息
-3. 从搜索结果中选择山峰，自动填充海拔和难度
-4. 点击 **保存** 完成记录
-5. 点击记录行可编辑，点击删除按钮可删除
-6. 点击右上角月亮图标切换深色模式
-7. 点击标题可自定义应用名称
-
-## 技术说明
-
-- 使用 \`lingguang.storage\` API 进行数据持久化
-- 使用 \`lingguang.data.fetch\` API 进行山峰信息搜索
-- 支持离线缓存，提升搜索响应速度
-- 优化的防抖策略，减少不必要的搜索请求
-- 响应式设计，适配移动端显示`;
-
-async function exportAppCode() {
-    try {
-        showLoadingMessage('正在获取代码文件...');
-
-        // 获取当前时间戳
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const exportTime = new Date().toLocaleString('zh-CN');
-
-        // 获取所有代码文件内容
-        let indexHtmlContent = '';
-        let appJsContent = '';
-        let manifestContent = EMBEDDED_MANIFEST;
-        let readmeContent = EMBEDDED_README;
-
-        // 1. 获取 index.html
-        try {
-            const htmlResponse = await fetch('index.html');
-            if (htmlResponse.ok) {
-                indexHtmlContent = await htmlResponse.text();
-            } else {
-                throw new Error('HTTP error ' + htmlResponse.status);
-            }
-        } catch (e) {
-            // 如果 fetch 失败，使用当前页面的 HTML
-            indexHtmlContent = document.documentElement.outerHTML;
-        }
-
-        // 2. 获取 app.js - 尝试多种方式
-        try {
-            // 方式1: 直接 fetch
-            const appJsResponse = await fetch('app.js');
-            if (appJsResponse.ok) {
-                appJsContent = await appJsResponse.text();
-            } else {
-                throw new Error('HTTP error ' + appJsResponse.status);
-            }
-        } catch (e) {
-            console.warn('fetch app.js 失败，尝试其他方式...');
-            try {
-                // 方式2: 使用 XMLHttpRequest
-                appJsContent = await new Promise((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('GET', 'app.js', true);
-                    xhr.onload = function() {
-                        if (this.status === 200) {
-                            resolve(this.responseText);
-                        } else {
-                            reject(new Error('XHR error: ' + this.status));
-                        }
-                    };
-                    xhr.onerror = function() {
-                        reject(new Error('XHR network error'));
-                    };
-                    xhr.send();
-                });
-            } catch (e2) {
-                console.warn('XMLHttpRequest 也失败，尝试获取内联脚本...');
-                // 方式3: 检查是否有内联脚本或通过其他方式获取
-                const scripts = document.querySelectorAll('script');
-                for (const script of scripts) {
-                    if (script.src && script.src.includes('app.js')) {
-                        // 尝试重新 fetch
-                        try {
-                            const resp = await fetch(script.src);
-                            if (resp.ok) {
-                                appJsContent = await resp.text();
-                                break;
-                            }
-                        } catch (e3) {
-                            console.warn('通过 script.src 获取失败');
-                        }
-                    }
-                }
-            }
-        }
-
-        // 如果仍然没有获取到 app.js，尝试从 HTML 中提取内联脚本
-        if (!appJsContent && indexHtmlContent) {
-            console.log('尝试从 HTML 中提取内联脚本...');
-            // 查找内联 script 标签（不包含 src 属性的 script 标签）
-            const scriptMatch = indexHtmlContent.match(/<script>([\s\S]*?)<\/script>/);
-            if (scriptMatch && scriptMatch[1]) {
-                appJsContent = scriptMatch[1].trim();
-                console.log('成功从 HTML 中提取内联脚本，长度:', appJsContent.length);
-            }
-        }
-
-        // 如果仍然没有获取到 app.js，添加提示
-        if (!appJsContent) {
-            appJsContent = '// 注意：app.js 内容需要手动从源文件复制\n// 请从应用的 app.js 文件中复制完整内容';
-        }
-
-        hideLoadingMessage();
-
-        // 创建包含所有代码文件的文档
-        const separator = '\n\n' + '='.repeat(80) + '\n\n';
-        const fileSeparator = (filename) => `\n\n${'='.repeat(80)}\n文件: ${filename}\n${'='.repeat(80)}\n\n`;
-
-        const fullContent = `# XiXiの徒步小记 - 完整代码导出
-导出时间: ${exportTime}
-
-================================================================================
-使用说明
-================================================================================
-
-本文档包含应用的所有源代码文件，每个文件用分隔线标注文件名。
-
-使用方法：
-1. 复制本文档内容
-2. 根据分隔线标注的文件名，将对应内容保存为相应文件
-3. 或使用下方的分割脚本自动提取文件
-
-================================================================================
-自动分割脚本 (保存为 split.py 后运行)
-================================================================================
-
-import re
-
-with open('代码导出.txt', 'r', encoding='utf-8') as f:
-    content = f.read()
-
-# 找到所有文件分隔符
-pattern = r'=+\n文件: (.+?)\n=+\n'
-parts = re.split(pattern, content)
-
-# 第一个部分是说明文档，跳过
-i = 1
-while i < len(parts) - 1:
-    filename = parts[i].strip()
-    file_content = parts[i + 1].strip()
-    # 移除末尾的下一个分隔符之前的内容
-    if i + 2 < len(parts):
-        file_content = file_content.split('=\\n' + '='.repeat(80))[0].strip()
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(file_content)
-    print(f'已提取: {filename}')
-    i += 2
-
-print('提取完成！')
-
-================================================================================
-部署说明
-================================================================================
-
-方式一：直接打开
-双击 index.html 文件即可在浏览器中打开使用。
-
-方式二：静态网站部署
-将所有文件上传到任意静态网站托管平台：
-- GitHub Pages
-- Vercel
-- Netlify
-- 阿里云 OSS + CDN
-- 腾讯云 COS + CDN
-
-方式三：打包为移动端 App
-使用 Cordova 或 Capacitor 打包为 Android/iOS 应用。
-
-================================================================================
-重要注意事项
-================================================================================
-
-1. 平台特定 API 替换：
-   window.lingguang.storage.setItem() → localStorage.setItem()
-   window.lingguang.storage.getItem() → localStorage.getItem()
-   lingguang.storage.removeItem() → localStorage.removeItem()
-   lingguang.data.fetch() → fetch() 或 axios
-
-2. 外部依赖（已通过 CDN 引入）：
-   - Tailwind CSS
-   - Material Icons
-   - 基础库
-
-独立部署时需替换为公共 CDN 或下载到本地引用。
-
-================================================================================
-源代码文件
-================================================================================
-${fileSeparator('index.html')}${indexHtmlContent}${fileSeparator('app.js')}${appJsContent}${fileSeparator('manifest.json')}${manifestContent}${fileSeparator('README.md')}${readmeContent}${separator}
-导出完成！共 4 个文件。
-`;
-
-        // 转换为 Base64
-        const base64Content = btoa(encodeURIComponent(fullContent).replace(/%([0-9A-F]{2})/g,
-            function toSolidBytes(match, p1) {
-                return String.fromCharCode('0x' + p1);
-            }));
-
-        // 保存文件
-        const filename = `XiXi徒步小记_代码_${timestamp.replace(/-/g, '').replace(/T/g, '_').slice(0, 15)}.txt`;
-        const result = await window.lingguang.saveFile({
-            data: base64Content,
-            filename: filename
-        });
-
-        if (result.success) {
-            showSuccessMessage('代码文件已导出，保存到「下载」文件夹');
-        } else {
-            showErrorMessage('导出失败，请重试');
-        }
-    } catch (error) {
-        console.error('代码导出失败:', error);
-        hideLoadingMessage();
-        if (error.name === 'PERMISSION_DENIED') {
-            showErrorMessage('保存权限被拒绝');
-        } else {
-            showErrorMessage('导出失败，请重试');
-        }
-    }
 }
 
 function showLoadingMessage(message) {
