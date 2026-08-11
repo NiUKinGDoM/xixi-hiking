@@ -1055,8 +1055,9 @@
         }
         /* ========== 设置页 - 关于卡片 ========== */
         .about-card {
-            background: rgba(15, 23, 42, calc(var(--glass-alpha) * 0.4));
-                    border: 1px solid rgba(15, 23, 42, 0.08);
+            /* 2026-08-11 用户要求：简介框颜色太深 → 与其他玻璃卡片一致（浅色玻璃白底） */
+            background: rgba(255, 255, 255, 0.10);
+            border: 1px solid rgba(0, 0, 0, 0.06);
             border-radius: 20px;
             padding: 30px 20px;
             display: flex;
@@ -1169,33 +1170,29 @@
             display: block;
             animation: configCollapseExpand 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        /* 2026-08-11 用户反馈帧率低：去掉 max-height 动画（layout 属性触发重排），只保留 opacity+transform（GPU 合成） */
         @keyframes configCollapseExpand {
             0% {
                 opacity: 0;
                 transform: translateY(-10px) scaleY(0.9);
-                max-height: 0;
             }
             70% {
                 opacity: 1;
                 transform: translateY(2px) scaleY(1.02);
-                max-height: 300px;
             }
             100% {
                 opacity: 1;
                 transform: translateY(0) scaleY(1);
-                max-height: 300px;
             }
         }
         @keyframes configCollapseCollapse {
             0% {
                 opacity: 1;
                 transform: translateY(0) scaleY(1);
-                max-height: 300px;
             }
             100% {
                 opacity: 0;
                 transform: translateY(-6px) scaleY(0.92);
-                max-height: 0;
             }
         }
         .sync-config-toggle-btn {
@@ -3063,6 +3060,15 @@
             animation: countUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
+        /* 28b. 概览二次点击刷新动画（2026-08-11 用户要求：刷新有视觉反馈；纯 transform/opacity 不触发重排） */
+        .refresh-pop {
+            animation: refreshPop 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes refreshPop {
+            0% { opacity: 0.55; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
         @keyframes countUp {
             0% {
                 transform: translateY(20px);
@@ -3264,9 +3270,9 @@
             font-weight: 600;
         }
 
-        /* ========== 主界面按钮灰调（导入/导出/添加） ========== */
-        /* 灰色填充 + 保留玻璃光泽与边框折射，和白色背景区别开 */
-        #importBtn, #exportBtn, #addBtn, #addPlannedTripBtn {
+        /* ========== 主界面按钮灰调（添加按钮） ========== */
+        /* 2026-08-11 用户要求：导入/导出按钮颜色与上传/下载管理一致（玻璃白），已从灰调规则中移除，仅保留添加按钮 */
+        #addBtn, #addPlannedTripBtn {
             background-image:
                 linear-gradient(115deg, transparent 18%, rgba(255,255,255,0.22) 38%, rgba(255,255,255,0.05) 50%, transparent 64%),
                 linear-gradient(180deg, rgba(214,220,230,0.72) 0%, rgba(190,199,213,0.55) 100%),
@@ -3279,7 +3285,7 @@
             background-origin: padding-box, padding-box, border-box !important;
             background-clip: padding-box, padding-box, border-box !important;
         }
-        body.dark-mode #importBtn, body.dark-mode #exportBtn, body.dark-mode #addBtn,
+        body.dark-mode #addBtn,
         body.dark-mode #addPlannedTripBtn {
             background-image:
                 linear-gradient(115deg, transparent 18%, rgba(147,197,253,0.16) 38%, rgba(147,197,253,0.04) 50%, transparent 64%),
@@ -4931,6 +4937,8 @@
                     <div class="settings-group-title">
                         <span class="material-icons">storage</span>
                         <span>数据管理</span>
+                        <!-- 2026-08-11 用户要求：说明信息收进 i 标识弹窗，不再单独放底部 -->
+                        <span id="dataInfoIcon" class="material-icons" style="font-size: 15px; color: rgba(100,116,139,0.65); cursor: pointer; margin-left: 2px;">info</span>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <button id="importBtn" class="ripple-effect glass-btn corner-glow py-4 flex flex-col items-center justify-center gap-1.5" data-testid="import-button" title="导入徒步记录">
@@ -4992,7 +5000,7 @@
                         <span class="material-icons">info</span>
                         <span id="syncStatusText">尚未同步</span>
                     </div>
-                    <p class="text-xs text-white/50 mt-3 leading-relaxed">导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份。开启自动同步后，数据变更会自动上传云端，防丢失。</p>
+                    <!-- 2026-08-11 说明文字已移入「数据管理」标题旁的 i 标识弹窗 -->
                 </div>
 
                 <!-- 外观（v1.4.10.2：跟随系统 + 日夜模式切换） -->
@@ -5070,7 +5078,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.8.10</div>
+                        <div class="about-version">版本 1.0.9.1</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5362,7 +5370,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.8.10';
+var APP_VERSION = '1.0.9.1';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -7000,6 +7008,31 @@ function showSectionTitleModal(titleElementId, saveFn) {
         if (e.key === 'Enter') document.getElementById('section-title-save').click();
         if (e.key === 'Escape') closeModal();
     });
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+}
+
+/* 2026-08-11 数据管理说明弹窗（i 标识点击显示） */
+function showDataInfoModal() {
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">info</span>
+                数据管理说明
+            </div>
+            <div class="confirm-modal-message" style="line-height: 1.8;">
+                导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。<br><br>数据仅保存在本机，建议定期导出备份。<br><br>开启自动同步后，数据变更会自动上传云端，防丢失。
+            </div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-delete ripple-effect" id="data-info-close" style="background: #4f46e5; border-color: #4f46e5; color: #fff;">知道了</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const closeBtn = document.getElementById('data-info-close');
+    const closeModal = () => document.body.removeChild(modal);
+    closeBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 }
 
@@ -8711,7 +8744,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.8.10',
+        version: '1.0.9.1',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -9881,6 +9914,14 @@ function setupEventListeners() {
         checkUpdateItem.addEventListener('click', handler);
         cleanupFunctions.push(() => checkUpdateItem.removeEventListener('click', handler));
     }
+
+    // 数据管理 i 标识 → 说明弹窗（2026-08-11）
+    const dataInfoIcon = document.getElementById('dataInfoIcon');
+    if (dataInfoIcon) {
+        const handler = showDataInfoModal;
+        dataInfoIcon.addEventListener('click', handler);
+        cleanupFunctions.push(() => dataInfoIcon.removeEventListener('click', handler));
+    }
     
     // 导入按钮
     const importBtn = document.getElementById('importBtn');
@@ -10045,6 +10086,16 @@ function setupEventListeners() {
                 }
                 // ★2026-08-11 热力图一并重置到最新日期并刷新数据（initHeatmap 已幂等）
                 try { initHeatmap(); } catch (e) { console.error('refresh heatmap failed:', e); }
+                // ★2026-08-11 用户要求：概览二次点击刷新要有视觉反馈（统计卡+热力图面板轻量浮现，纯 transform/opacity）
+                const overviewCards = document.querySelectorAll('#tab-overview .glass-stat-card, #heatmapPanel');
+                overviewCards.forEach(card => {
+                    card.classList.remove('refresh-pop');
+                    void card.offsetWidth;
+                    card.classList.add('refresh-pop');
+                });
+                setTimeout(() => {
+                    overviewCards.forEach(card => card.classList.remove('refresh-pop'));
+                }, 500);
             } else if (tabId === 'settings') {
                 // ★2026-08-11 设置页刷新：状态行 + 逐块浮现动画（不覆盖输入框、不发网络请求）
                 try { refreshSettingsUI(); } catch (e) { console.error('refresh settings failed:', e); }
