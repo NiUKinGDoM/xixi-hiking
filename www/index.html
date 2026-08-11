@@ -1158,30 +1158,36 @@
         body.dark-mode .settings-group-title .material-icons {
             color: #a5b4fc;
         }
-        /* 同步配置折叠区（2026-08-11 四次迭代最终版：max-height 大值动画，不测高度、内容自然高度、绝不裁切/跳变） */
+        /* 同步配置折叠区（2026-08-11 v1.0.9.8 最终版：grid-template-rows 0fr↔1fr 动画——
+           真实布局同步（状态行随文档流平滑移动）+ 浏览器原生合成优化（比 max-height 不卡），折叠动画行业标准做法） */
         .sync-config-collapse {
             display: none; /* JS 控制显隐（收起动画播完再隐藏） */
-            margin-top: 0; /* 收起时同步归零 */
-            padding-top: 0; /* 收起时同步归零 */
-            border-top: 1px dashed transparent; /* 收起时同步透明 */
-            box-sizing: border-box;
-            overflow: hidden;
-            max-height: 0;
-            opacity: 0;
-            transition:
-                max-height 0.3s cubic-bezier(0.25, 0.85, 0.3, 1),
-                opacity 0.3s ease,
-                padding-top 0.3s ease,
-                margin-top 0.3s ease,
-                border-top-color 0.3s ease;
-        }
-        .sync-config-collapse.open {
-            display: block;
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px dashed rgba(100, 116, 139, 0.25);
-            max-height: 800px; /* 远大于内容实际高度（3 项约 250px），内容自然高度不受限 */
+            box-sizing: border-box;
+        }
+        .sync-config-collapse.open {
+            display: grid;
+            grid-template-rows: 0fr;
+            padding-top: 0;
+            border-top: 1px dashed transparent;
+            transition:
+                grid-template-rows 0.3s cubic-bezier(0.25, 0.85, 0.3, 1),
+                opacity 0.25s ease,
+                padding-top 0.3s ease,
+                border-top-color 0.3s ease;
+            opacity: 0;
+        }
+        .sync-config-collapse.open.expanded {
+            grid-template-rows: 1fr;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(100, 116, 139, 0.25);
             opacity: 1;
+        }
+        .sync-config-collapse.open .sync-config-inner {
+            overflow: hidden;
+            min-height: 0; /* grid item 默认 min-height:auto 会阻止收缩，必须归零 */
         }
         /* 2026-08-11 折叠动画期间禁用 backdrop-filter（sync-input blur 重采样是卡顿元凶），动画结束移除 */
         .no-blur, .no-blur * {
@@ -4976,6 +4982,7 @@
                         <span>配置服务器 / 账号</span>
                     </button>
                     <div id="syncConfigCollapse" class="sync-config-collapse">
+                        <div class="sync-config-inner"><!-- 2026-08-11 grid 折叠方案：inner 负责裁切 -->
                         <div class="sync-config-item">
                             <label class="sync-config-label" for="syncServer">服务器地址（WebDAV）</label>
                             <input type="text" id="syncServer" class="sync-input" placeholder="https://dav.jianguoyun.com/dav/" autocomplete="off" spellcheck="false">
@@ -4988,6 +4995,7 @@
                             <label class="sync-config-label" for="syncPassword">应用密码（设置→安全选项→应用密码）</label>
                             <input type="password" id="syncPassword" class="sync-input" placeholder="16位应用密码，不是登录密码" autocomplete="off" spellcheck="false">
                         </div>
+                        </div><!-- /sync-config-inner -->
                     </div>
                     <div class="sync-status mt-3">
                         <span class="material-icons">info</span>
@@ -5071,7 +5079,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.9.7</div>
+                        <div class="about-version">版本 1.0.9.8</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5363,7 +5371,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.9.7';
+var APP_VERSION = '1.0.9.8';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -8737,7 +8745,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.9.7',
+        version: '1.0.9.8',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8856,25 +8864,24 @@ function setupSyncEventListeners() {
             const isOpen = collapse.classList.contains('open');
             const group = collapse.parentElement;
             if (isOpen) {
-                // 收起（2026-08-11 v1.0.9.6 最终方案：max-height 真实收拢=状态行被文档流平滑顶上去，天然同步永不跳；
-                // 动画期间给组加 .no-blur 禁用 backdrop-filter（sync-input blur 重采样才是卡顿元凶），播完移除）
+                // 收起（2026-08-11 v1.0.9.8 grid 方案：remove expanded → grid-template-rows 1fr→0fr 真实收缩，
+                // 状态行随文档流平滑上移天然同步；动画期间禁 blur 防卡；播完隐藏）
                 group.classList.add('no-blur');
-                collapse.style.maxHeight = collapse.offsetHeight + 'px';
-                void collapse.offsetHeight;
-                collapse.classList.remove('open');
+                collapse.classList.remove('expanded');
                 configToggle.classList.remove('open');
                 setTimeout(function () {
-                    collapse.style.display = 'none';
-                    collapse.style.maxHeight = '';
+                    collapse.classList.remove('open');
+                    collapse.style.display = '';
                     group.classList.remove('no-blur');
-                }, 320);
+                }, 330);
             } else {
-                // 展开（max-height 0→800 自然展开，动画期间同样禁 blur 防卡）
-                collapse.style.display = 'block';
+                // 展开（grid 方案：open=0fr → rAF 加 expanded=1fr，transition 触发平滑展开）
+                collapse.style.display = 'grid';
+                collapse.classList.add('open');
                 configToggle.classList.add('open');
                 group.classList.add('no-blur');
                 requestAnimationFrame(function () {
-                    collapse.classList.add('open');
+                    collapse.classList.add('expanded');
                 });
                 setTimeout(function () {
                     group.classList.remove('no-blur');
