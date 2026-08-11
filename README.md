@@ -57,10 +57,10 @@ cd android && ./gradlew assembleRelease
 - **versionName = 按 versionCode 数出的 `1.x.x.x`**（与 versionCode 完全对齐）：
   - 从 **1.0.0.0** 起算第 1 个版本（vc1=1.0.0.0）
   - **每段 0~10 共 11 个值，满 10 进位**（第四段满 10 → 第三段+1、第四段归零；第三段满 10 → 第二段+1；第二段满 10 → 第一段+1）
-  - 当前：**vc97 = 1.0.8.8**
+  - 当前：**vc99 = 1.0.8.10**
 - **生成版本号前必须验证公式**：索引 = vc − 1
   - 第一段 = 1 + 索引//1331；第二段 = (索引//121)%11；第三段 = (索引//11)%11；第四段 = 索引%11
-  - 对照：vc85=1.0.7.7、vc88=1.0.7.10、vc89=1.0.8.0、vc97=1.0.8.8、vc121=1.0.10.10、vc122=1.1.0.0
+  - 对照：vc85=1.0.7.7、vc88=1.0.7.10、vc89=1.0.8.0、vc97=1.0.8.8、vc99=1.0.8.10、vc100=1.0.9.0、vc121=1.0.10.10、vc122=1.1.0.0
 - 测试版 `1.X.test-X`：X 从 1 起递增（当前 1.4.test-11）
 - ⚠️ 用 `android/bump-version.py`（或 .ps1）自动递增：vc+1 并按公式算出 versionName（已支持四段 + 同步 index.html），或**手改 build.gradle**（versionCode +1 + versionName 按公式算）
 
@@ -71,6 +71,7 @@ cd android && ./gradlew assembleRelease
 3. **本地归档**：`XiXiの徒步小记-vX.Y.Z.apk`（项目根 + backups/apk-history/）+ 源码归档 backups/hiking-app3-vX.Y.Z/
 
 > ⚠️ 应用内更新前提：本仓库必须为 **public**（App 匿名请求 GitHub API，私有仓库返回 404）；bump 时除 build.gradle 和版本显示外，**必须同步 `www/index.html` 里的 `APP_VERSION` 全局变量**，否则 App 会误判自身版本
+> ⚠️ **Release body 约定（用户 2026-08-11 指定）**：只写更新内容 + `Made by XiXi 💛`，**不写**「APK：...（签名 SHA-256 ...）」描述段
 
 ## 构建要点（踩坑记录）
 
