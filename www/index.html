@@ -4644,7 +4644,7 @@
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="stats-title">
                     <span class="material-icons text-blue-300 text-xl">analytics</span>
-                    <span class="title-text">统计概览✏️</span>
+                    <span class="title-text">统计概览</span>
                     <span class="material-icons edit-title-icon">edit</span>
                 </h2>
                 <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -4801,7 +4801,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="records-title">
                         <span class="material-icons text-blue-300 text-xl">terrain</span>
-                        <span class="title-text">溜达🚶</span>
+                        <span class="title-text">记录</span>
                         <span class="material-icons edit-title-icon">edit</span>
                     </h2>
                     <div class="flex gap-2">
@@ -4860,7 +4860,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-all" data-testid="planned-title">
                         <span class="material-icons text-green-300 text-xl">event_note</span>
-                        <span class="title-text">计划📓</span>
+                        <span class="title-text">计划</span>
                         <span class="material-icons edit-title-icon">edit</span>
                     </h2>
                     <div class="flex gap-2">
@@ -4918,7 +4918,7 @@
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg cursor-pointer hover:bg-white/10 transition-all" data-testid="settings-title">
                     <span class="material-icons text-blue-300 text-xl">settings</span>
-                    <span class="title-text">设置⚙️</span>
+                    <span class="title-text">设置</span>
                     <span class="material-icons edit-title-icon">edit</span>
                 </h2>
 
@@ -4991,27 +4991,6 @@
                     <p class="text-xs text-white/50 mt-3 leading-relaxed">导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份。开启自动同步后，数据变更会自动上传云端，防丢失。</p>
                 </div>
 
-                <!-- 杂项 -->
-                <div class="settings-group">
-                    <div class="settings-group-title">
-                        <span class="material-icons">tune</span>
-                        <span>杂项</span>
-                    </div>
-                    <div class="settings-item" style="border-radius: 12px;">
-                        <div class="settings-item-icon">
-                            <span class="material-icons" style="font-size: 20px;">speed</span>
-                        </div>
-                        <div class="settings-item-text">
-                            <div class="settings-item-title">显示帧率（FPS）</div>
-                            <div class="settings-item-desc">在顶栏显示实时帧率监控</div>
-                        </div>
-                        <label class="settings-switch">
-                            <input type="checkbox" id="fpsToggle" checked>
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
                 <!-- 外观（v1.4.10.2：跟随系统 + 日夜模式切换） -->
                 <div class="settings-group">
                     <div class="settings-group-title">
@@ -5046,6 +5025,38 @@
                     </div>
                 </div>
 
+                <!-- 杂项（2026-08-11：与外观框对调位置） -->
+                <div class="settings-group">
+                    <div class="settings-group-title">
+                        <span class="material-icons">tune</span>
+                        <span>杂项</span>
+                    </div>
+                    <div class="settings-item" style="border-radius: 12px;">
+                        <div class="settings-item-icon">
+                            <span class="material-icons" style="font-size: 20px;">speed</span>
+                        </div>
+                        <div class="settings-item-text">
+                            <div class="settings-item-title">显示帧率（FPS）</div>
+                            <div class="settings-item-desc">在顶栏显示实时帧率监控</div>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" id="fpsToggle" checked>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                    <!-- 检查更新（2026-08-11：GitHub Release + 国内镜像，应用内自更） -->
+                    <div class="settings-item" style="border-radius: 12px; cursor: pointer;" id="checkUpdateItem">
+                        <div class="settings-item-icon">
+                            <span class="material-icons" style="font-size: 20px;">system_update_alt</span>
+                        </div>
+                        <div class="settings-item-text">
+                            <div class="settings-item-title">检查更新</div>
+                            <div class="settings-item-desc" id="checkUpdateDesc">检测并安装新版本（联网）</div>
+                        </div>
+                        <span class="material-icons" style="color: rgba(100,116,139,0.6); font-size: 20px;">chevron_right</span>
+                    </div>
+                </div>
+
 <!-- 关于应用 -->
                 <div class="settings-group" style="margin-bottom: 0;">
                     <div class="settings-group-title">
@@ -5055,7 +5066,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.8.6</div>
+                        <div class="about-version">版本 1.0.8.8</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5346,6 +5357,10 @@ function applyFpsPreference() {
 }
 
 const STORAGE_KEY = 'hiking_records';
+// ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
+var APP_VERSION = '1.0.8.7';
+// 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
+var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
 const SHOW_FPS_KEY = 'hiking_show_fps';
 let showFps = true;
@@ -8140,6 +8155,147 @@ function scheduleSyncStatusRefresh(delay) {
     }, delay || 2000);
 }
 
+// ==================== 应用内更新（2026-08-11：GitHub Release + 国内镜像） ====================
+// 版本比较：1.0.8.6 vs 1.0.10.0 逐段数字比较（正确处理进位）
+function versionGreater(a, b) {
+    const pa = String(a || '').split('.').map(n => parseInt(n, 10) || 0);
+    const pb = String(b || '').split('.').map(n => parseInt(n, 10) || 0);
+    const len = Math.max(pa.length, pb.length);
+    for (let i = 0; i < len; i++) {
+        const x = pa[i] || 0, y = pb[i] || 0;
+        if (x !== y) return x > y;
+    }
+    return false;
+}
+function parseTagVersion(tag) {
+    return String(tag || '').replace(/^v/i, '').trim();
+}
+function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+let updaterBusy = false;
+let pendingUpdate = null;
+
+// 检查更新：调原生桥读 GitHub 最新 Release
+function checkForUpdate() {
+    if (updaterBusy) return;
+    if (!window.XixiFileBridge || typeof window.XixiFileBridge.checkUpdate !== 'function') {
+        showErrorMessage('网页版无需更新（请使用安装版）');
+        return;
+    }
+    updaterBusy = true;
+    const desc = document.getElementById('checkUpdateDesc');
+    if (desc) desc.textContent = '正在检查更新…';
+    setTimeout(function () {
+        try {
+            const raw = window.XixiFileBridge.checkUpdate();
+            let info = null;
+            try { info = JSON.parse(raw); } catch (e) { info = { error: raw }; }
+            if (info && info.error) {
+                if (desc) desc.textContent = '检查失败，请稍后重试';
+                showErrorMessage('检查更新失败：' + info.error);
+                return;
+            }
+            const latest = parseTagVersion(info.tag);
+            if (!latest) {
+                if (desc) desc.textContent = '未获取到版本信息';
+                showErrorMessage('未获取到版本信息');
+                return;
+            }
+            if (versionGreater(latest, APP_VERSION)) {
+                if (desc) desc.textContent = '发现新版本 v' + latest;
+                pendingUpdate = { apkUrl: info.apkUrl || '', tag: latest, name: info.name || '', body: info.body || '' };
+                showUpdateModal(pendingUpdate);
+            } else {
+                if (desc) desc.textContent = '已是最新版本 v' + APP_VERSION;
+                showSuccessMessage('已是最新版本 v' + APP_VERSION);
+            }
+        } catch (e) {
+            if (desc) desc.textContent = '检查更新失败';
+            showErrorMessage('检查更新失败：' + (e.message || e));
+        } finally {
+            updaterBusy = false;
+        }
+    }, 100);
+}
+
+// 新版本弹窗：版本号 + 更新内容 + 立即更新
+function showUpdateModal(info) {
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    const bodyText = (info.body || '').slice(0, 400);
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>发现新版本 v' + escapeHtml(info.tag) + '</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;">' +
+        '<div style="font-weight:600;margin-bottom:4px;">当前 v' + APP_VERSION + ' → 新 v' + escapeHtml(info.tag) + '</div>' +
+        (bodyText ? '<div style="color:rgba(100,116,139,0.9);white-space:pre-wrap;">' + escapeHtml(bodyText) + '</div>' : '') +
+        '</div>' +
+        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="updateLaterBtn">稍后</button>' +
+        '<button class="confirm-btn-delete ripple-effect" id="updateNowBtn" style="background:#185fa5;">立即更新</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('updateLaterBtn').addEventListener('click', function () { document.body.removeChild(modal); });
+    document.getElementById('updateNowBtn').addEventListener('click', function () {
+        document.body.removeChild(modal);
+        startUpdate();
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+}
+
+// 开始下载并安装：镜像优先（原生内部失败自动兜底官方直链）
+function startUpdate() {
+    if (!pendingUpdate || !pendingUpdate.apkUrl) {
+        showErrorMessage('缺少下载地址');
+        return;
+    }
+    if (!window.XixiFileBridge || typeof window.XixiFileBridge.downloadAndInstall !== 'function') {
+        showErrorMessage('当前环境不支持应用内更新');
+        return;
+    }
+    const mirrorUrl = UPDATE_MIRROR_PREFIX + pendingUpdate.apkUrl.replace(/^https?:\/\//, '');
+    const desc = document.getElementById('checkUpdateDesc');
+    if (desc) desc.textContent = '正在下载新版本（镜像加速）…';
+    showLoadingToast('正在下载新版本…');
+    window.XixiFileBridge.downloadAndInstall(pendingUpdate.apkUrl, mirrorUrl);
+}
+
+// 原生下载/安装回调
+window.XixiUpdaterCallback = function (state, message) {
+    const desc = document.getElementById('checkUpdateDesc');
+    try {
+        if (state === 'need_permission') {
+            hideLoadingToast();
+            showErrorMessage('首次更新需在系统设置中允许安装未知应用，开启后重新点击更新');
+            if (desc) desc.textContent = '请允许安装未知应用后重试';
+        } else if (state === 'installing') {
+            hideLoadingToast();
+            showSuccessMessage('已下载完成，正在安装…');
+            if (desc) desc.textContent = '已下载完成，请按系统提示安装';
+            pendingUpdate = null;
+        } else if (state === 'error') {
+            hideLoadingToast();
+            showErrorMessage(message || '更新失败，请稍后重试');
+            if (desc) desc.textContent = '更新失败，可重试';
+        }
+    } catch (e) { console.error('updater callback error:', e); }
+};
+
+// 下载中常驻提示（toast 1 秒消失不够用）
+let loadingToastEl = null;
+function showLoadingToast(message) {
+    hideLoadingToast();
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:100;max-width:90vw;';
+    div.className = 'toast-glass px-5 py-3';
+    div.innerHTML = '<div class="flex items-center gap-2"><span class="material-icons" style="animation:spin 1s linear infinite;">autorenew</span><span style="font-size:14px;">' + escapeHtml(message) + '</span></div>';
+    document.body.appendChild(div);
+    loadingToastEl = div;
+}
+function hideLoadingToast() {
+    if (loadingToastEl && loadingToastEl.parentNode) loadingToastEl.parentNode.removeChild(loadingToastEl);
+    loadingToastEl = null;
+}
+
 // ★备份提醒弹窗（v1.4.10.1）：提示用户去上传备份
 function showBackupReminder(days) {
     const modal = document.createElement('div');
@@ -8560,7 +8716,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.8.6',
+        version: '1.0.8.8',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -9721,6 +9877,14 @@ function setupEventListeners() {
         const handler = addNewRecord;
         addBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => addBtn.removeEventListener('click', handler));
+    }
+
+    // 检查更新（2026-08-11：GitHub Release + 国内镜像，应用内自更）
+    const checkUpdateItem = document.getElementById('checkUpdateItem');
+    if (checkUpdateItem) {
+        const handler = checkForUpdate;
+        checkUpdateItem.addEventListener('click', handler);
+        cleanupFunctions.push(() => checkUpdateItem.removeEventListener('click', handler));
     }
     
     // 导入按钮
