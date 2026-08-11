@@ -1158,42 +1158,30 @@
         body.dark-mode .settings-group-title .material-icons {
             color: #a5b4fc;
         }
-        /* 同步配置折叠区（v1.4.10.10 加回弹展开动画） */
+        /* 同步配置折叠区（2026-08-11 四次迭代最终版：max-height 大值动画，不测高度、内容自然高度、绝不裁切/跳变） */
         .sync-config-collapse {
-            display: none;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed rgba(100, 116, 139, 0.25);
-            transform-origin: top center;
+            display: none; /* JS 控制显隐（收起动画播完再隐藏） */
+            margin-top: 0; /* 收起时同步归零 */
+            padding-top: 0; /* 收起时同步归零 */
+            border-top: 1px dashed transparent; /* 收起时同步透明 */
+            box-sizing: border-box;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition:
+                max-height 0.3s cubic-bezier(0.25, 0.85, 0.3, 1),
+                opacity 0.3s ease,
+                padding-top 0.3s ease,
+                margin-top 0.3s ease,
+                border-top-color 0.3s ease;
         }
         .sync-config-collapse.open {
             display: block;
-            animation: configCollapseExpand 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        /* 2026-08-11 用户反馈帧率低：去掉 max-height 动画（layout 属性触发重排），只保留 opacity+transform（GPU 合成） */
-        @keyframes configCollapseExpand {
-            0% {
-                opacity: 0;
-                transform: translateY(-10px) scaleY(0.9);
-            }
-            70% {
-                opacity: 1;
-                transform: translateY(2px) scaleY(1.02);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scaleY(1);
-            }
-        }
-        @keyframes configCollapseCollapse {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scaleY(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-6px) scaleY(0.92);
-            }
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(100, 116, 139, 0.25);
+            max-height: 800px; /* 远大于内容实际高度（3 项约 250px），内容自然高度不受限 */
+            opacity: 1;
         }
         .sync-config-toggle-btn {
             display: flex;
@@ -2044,7 +2032,7 @@
             -webkit-backdrop-filter: blur(14px) saturate(150%);
             border: 1px solid rgba(255, 255, 255, 0.32);
             border-radius: 20px;
-            padding: 24px;
+            padding: 20px;  /* 2026-08-11 用户要求：弹窗排版紧凑，减少留白（原 24px） */
             max-width: 400px;
             width: 100%;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -2053,7 +2041,7 @@
             font-size: 20px;
             font-weight: 900;
             color: #111827;
-            margin-bottom: 8px;
+            margin-bottom: 6px;  /* 2026-08-11 紧凑：原 8px */
             display: flex;
             align-items: center;
             gap: 8px;
@@ -2062,8 +2050,8 @@
         }
         .confirm-modal-message {
             color: #4b5563;  /* 亮色下更清晰 */
-            margin-bottom: 24px;
-            line-height: 1.5;
+            margin-bottom: 16px;  /* 2026-08-11 紧凑：原 24px */
+            line-height: 1.4;  /* 2026-08-11 紧凑：原 1.5 */
             font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
             font-weight: 900;
         }
@@ -5078,7 +5066,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.9.1</div>
+                        <div class="about-version">版本 1.0.9.2</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5370,7 +5358,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.9.1';
+var APP_VERSION = '1.0.9.2';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -7021,8 +7009,8 @@ function showDataInfoModal() {
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
             </div>
-            <div class="confirm-modal-message" style="line-height: 1.8;">
-                导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。<br><br>数据仅保存在本机，建议定期导出备份。<br><br>开启自动同步后，数据变更会自动上传云端，防丢失。
+            <div class="confirm-modal-message" style="line-height: 1.4;">
+                导出支持徒步记录、计划徒步与应用代码；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-delete ripple-effect" id="data-info-close" style="background: #4f46e5; border-color: #4f46e5; color: #fff;">知道了</button>
@@ -8744,7 +8732,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.9.1',
+        version: '1.0.9.2',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8862,17 +8850,19 @@ function setupSyncEventListeners() {
             if (!collapse) return;
             const isOpen = collapse.classList.contains('open');
             if (isOpen) {
-                // 收起：先播放收缩动画再隐藏
-                collapse.style.animation = 'configCollapseCollapse 0.22s ease forwards';
-                setTimeout(function () {
-                    collapse.classList.remove('open');
-                    collapse.style.animation = '';
-                }, 220);
+                // 收起（2026-08-11 最终版：max-height/padding/margin/opacity 全同步过渡，无测量无跳变）
+                collapse.classList.remove('open');
                 configToggle.classList.remove('open');
+                setTimeout(function () {
+                    collapse.style.display = 'none';
+                }, 320);
             } else {
-                collapse.classList.add('open');
-                collapse.style.animation = '';
+                // 展开（2026-08-11 最终版：display 后 rAF 加 open 类触发 transition，max-height 大值不裁内容）
+                collapse.style.display = 'block';
                 configToggle.classList.add('open');
+                requestAnimationFrame(function () {
+                    collapse.classList.add('open');
+                });
             }
         };
         configToggle.addEventListener('click', handler);
@@ -10086,16 +10076,29 @@ function setupEventListeners() {
                 }
                 // ★2026-08-11 热力图一并重置到最新日期并刷新数据（initHeatmap 已幂等）
                 try { initHeatmap(); } catch (e) { console.error('refresh heatmap failed:', e); }
-                // ★2026-08-11 用户要求：概览二次点击刷新要有视觉反馈（统计卡+热力图面板轻量浮现，纯 transform/opacity）
-                const overviewCards = document.querySelectorAll('#tab-overview .glass-stat-card, #heatmapPanel');
-                overviewCards.forEach(card => {
-                    card.classList.remove('refresh-pop');
-                    void card.offsetWidth;
-                    card.classList.add('refresh-pop');
+                // ★2026-08-11 用户要求：概览二次点击刷新要有视觉反馈（统计卡+热力图面板轻量渐入）
+                // 2026-08-11 v1.0.9.2 修复：改用 WAAPI animate 一次性渐入（无类切换/无回退/绝不二次播放），
+                // 且先取消统计卡内数字滚动动画（number-scroll/countUp）避免叠加成"两次刷新"
+                const statCards = document.querySelectorAll('#tab-overview .glass-stat-card');
+                statCards.forEach(card => {
+                    card.querySelectorAll('.number-scroll').forEach(el => {
+                        el.classList.remove('number-scroll');
+                        if (typeof el.getAnimations === 'function') {
+                            el.getAnimations().forEach(a => a.cancel());
+                        }
+                    });
                 });
-                setTimeout(() => {
-                    overviewCards.forEach(card => card.classList.remove('refresh-pop'));
-                }, 500);
+                const fadeTargets = document.querySelectorAll('#tab-overview .glass-stat-card, #heatmapPanel');
+                fadeTargets.forEach(el => {
+                    if (typeof el.animate === 'function') {
+                        try {
+                            el.animate(
+                                [{ opacity: 0.45, transform: 'scale(0.99)' }, { opacity: 1, transform: 'scale(1)' }],
+                                { duration: 380, easing: 'ease-out', fill: 'both' }
+                            );
+                        } catch (e) { /* 动画失败静默，不影响刷新 */ }
+                    }
+                });
             } else if (tabId === 'settings') {
                 // ★2026-08-11 设置页刷新：状态行 + 逐块浮现动画（不覆盖输入框、不发网络请求）
                 try { refreshSettingsUI(); } catch (e) { console.error('refresh settings failed:', e); }
