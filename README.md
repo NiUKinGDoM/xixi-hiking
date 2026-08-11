@@ -52,7 +52,7 @@ cd android && ./gradlew assembleRelease
 
 产物：`android/app/build/outputs/apk/release/app-release.apk`
 
-## 📌 版本号规则（2026-08-11 更新，用户定义，务必遵守）
+## 📌 版本号规则（2026-08-11 更新）
 
 - **versionName = 按 versionCode 数出的 `1.x.x.x`**（与 versionCode 完全对齐）：
   - 从 **1.0.0.0** 起算第 1 个版本（vc1=1.0.0.0）
