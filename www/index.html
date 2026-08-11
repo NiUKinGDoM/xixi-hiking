@@ -8850,11 +8850,15 @@ function setupSyncEventListeners() {
             if (!collapse) return;
             const isOpen = collapse.classList.contains('open');
             if (isOpen) {
-                // 收起（2026-08-11 最终版：max-height/padding/margin/opacity 全同步过渡，无测量无跳变）
+                // 收起（2026-08-11 修复：先固化实际高度再收拢——max-height 800 大值会让收起前半段高度空转、
+                // 内容先淡出占位后收，状态行被顶得跳变；固化后全程真实收拢，状态行平滑上移）
+                collapse.style.maxHeight = collapse.offsetHeight + 'px';
+                void collapse.offsetHeight;
                 collapse.classList.remove('open');
                 configToggle.classList.remove('open');
                 setTimeout(function () {
                     collapse.style.display = 'none';
+                    collapse.style.maxHeight = '';
                 }, 320);
             } else {
                 // 展开（2026-08-11 最终版：display 后 rAF 加 open 类触发 transition，max-height 大值不裁内容）
