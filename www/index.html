@@ -1121,19 +1121,12 @@
         .settings-group .sync-config-item + .sync-config-item {
             margin-top: 10px;
         }
-        .settings-group .settings-item + .sync-status {
-            margin-top: 10px;
-        }
         .settings-group > .grid + .settings-item,
         .settings-group > .grid + .sync-config-toggle-btn {
             margin-top: 12px;
         }
         .sync-config-toggle-btn + .sync-config-collapse {
             margin-top: 12px; /* v1.4.10.5 修复：虚线要有上间距（原 margin-top:0 导致虚线贴按钮） */
-        }
-        .settings-group > .sync-config-toggle-btn + .sync-status,
-        .settings-group > .sync-config-collapse + .sync-status {
-            margin-top: 10px;
         }
         body.dark-mode .settings-group {
             background-color: rgba(255, 255, 255, 0.05);
@@ -1176,6 +1169,33 @@
         .no-blur, .no-blur * {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
+        }
+        /* 2026-08-12 同步状态 i 标识：同步中旋转动画 */
+        .sync-spin {
+            animation: syncSpin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes syncSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        /* 2026-08-12 同步状态弹窗行样式 */
+        .sync-status-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .sync-status-line:last-child {
+            margin-bottom: 0;
+        }
+        .sync-status-time {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(100, 116, 139, 0.25);
+            color: #64748b;
+            font-size: 13px;
         }
         .sync-config-toggle-btn {
             display: flex;
@@ -1373,27 +1393,7 @@
             border-color: rgba(129, 140, 248, 0.55);
             box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
         }
-        .sync-status {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-size: 12px;
-            color: #64748b;
-            line-height: 1.6;
-            margin-top: 4px;
-        }
-        .sync-status .material-icons {
-            font-size: 15px;
-            color: #4f46e5;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-        body.dark-mode .sync-status {
-            color: rgba(255, 255, 255, 0.55);
-        }
-        body.dark-mode .sync-status .material-icons {
-            color: #a5b4fc;
-        }
+        /* 2026-08-12 清理：.sync-status 状态行样式已删（改为自动同步 i 标识） */
 
         /* ========== 下载恢复 - 备份文件选择列表 ========== */
         .restore-file-item {
@@ -4963,7 +4963,8 @@
                             <span class="material-icons" style="font-size: 20px;">autorenew</span>
                         </div>
                         <div class="settings-item-text">
-                            <div class="settings-item-title">自动同步</div>
+                            <!-- 2026-08-12 同步状态收进 i 标识（自动同步标题右侧），点击弹窗显示上次同步时间/连接状态 -->
+                            <div class="settings-item-title"><span style="display:inline-flex;align-items:center;gap:4px;">自动同步<span id="syncStatusIcon" class="material-icons" style="font-size:15px;cursor:pointer;color:rgba(100,116,139,0.65);margin-left:2px;" title="同步状态">info</span></span></div>
                             <div class="settings-item-desc">数据变更后自动上传备份（防丢失）</div>
                         </div>
                         <label class="settings-switch">
@@ -4991,11 +4992,7 @@
                         </div>
                         </div><!-- /sync-config-inner -->
                     </div>
-                    <div class="sync-status mt-3">
-                        <span class="material-icons">info</span>
-                        <span id="syncStatusText">尚未同步</span>
-                    </div>
-                    <!-- 2026-08-11 说明文字已移入「数据管理」标题旁的 i 标识弹窗 -->
+                    <!-- 2026-08-12 同步状态行已删除，改为「自动同步」标题旁 i 标识 + 弹窗 -->
                 </div>
 
                 <!-- 外观（v1.4.10.2：跟随系统 + 日夜模式切换） -->
@@ -5073,7 +5070,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.9.9</div>
+                        <div class="about-version">版本 1.0.9.10</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5365,7 +5362,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.9.9';
+var APP_VERSION = '1.0.9.10';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -8154,9 +8151,8 @@ async function loadSyncState() {
 async function refreshSettingsUI() {
     try {
         const statusData = await window.lingguang.storage.getItem(SYNC_STATUS_KEY);
-        const statusText = document.getElementById('syncStatusText');
-        if (statusText && statusData && statusData.lastSyncAt) {
-            statusText.textContent = '上次同步：' + statusData.lastSyncAt;
+        if (statusData && statusData.lastSyncAt) {
+            syncUiState.lastSyncAt = statusData.lastSyncAt; // 2026-08-12 状态行删除 → 存全局
         }
     } catch (e) { console.error('refresh settings status failed:', e); }
     const settingsChildren = document.querySelectorAll('#tab-settings .glass-panel > *');
@@ -8369,14 +8365,11 @@ function renderSyncForm(lastSync) {
     const userInput = document.getElementById('syncUsername');
     const passInput = document.getElementById('syncPassword');
     const autoToggle = document.getElementById('syncAutoToggle');
-    const statusText = document.getElementById('syncStatusText');
     if (serverInput) serverInput.value = syncConfig.server || '';
     if (userInput) userInput.value = syncConfig.username || '';
     if (passInput) passInput.value = syncConfig.password || '';
     if (autoToggle) autoToggle.checked = syncAuto;
-    if (statusText) {
-        statusText.textContent = lastSync ? '上次同步：' + lastSync : '尚未同步';
-    }
+    syncUiState.lastSyncAt = lastSync || ''; // 2026-08-12 状态行删除 → 存全局，弹窗读取
 }
 
 // 从表单读取并保存配置
@@ -8747,7 +8740,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.9.9',
+        version: '1.0.9.10',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8761,20 +8754,11 @@ function formatSyncTime(date) {
 }
 
 function setSyncStatus(text, icon, type) {
-    const statusText = document.getElementById('syncStatusText');
-    if (!statusText) return;
-    statusText.innerHTML = '';
-    const container = statusText.closest('.sync-status');
-    if (container) {
-        const iconEl = container.querySelector('.material-icons');
-        if (iconEl) {
-            iconEl.textContent = icon || 'info';
-            if (type === 'success') iconEl.style.color = '#16a34a';
-            else if (type === 'error') iconEl.style.color = '#dc2626';
-            else iconEl.style.color = '';
-        }
-    }
-    statusText.textContent = text;
+    // 2026-08-12 重构：状态行删除 → 更新全局状态 + 「自动同步」标题旁 i 标识视觉
+    syncUiState.text = text || '';
+    syncUiState.icon = icon || 'info';
+    syncUiState.status = type === 'success' ? 'success' : (type === 'error' ? 'error' : 'idle');
+    updateSyncIconVisual();
 }
 
 function setSyncBusy(busy, label) {
@@ -8790,16 +8774,91 @@ function setSyncBusy(busy, label) {
             btn.style.opacity = '';
         }
     });
-    const statusText = document.getElementById('syncStatusText');
-    if (busy && label && statusText) {
-        statusText.textContent = label;
+    syncUiBusy = !!busy;
+    if (busy && label) {
+        syncUiState.text = label;
+        syncUiState.status = 'busy';
+    }
+    updateSyncIconVisual();
+}
+
+// 2026-08-12 同步状态 UI 重构：状态行 → 自动同步标题旁 i 标识
+let syncUiState = { status: 'idle', text: '', icon: 'info', lastSyncAt: '' };
+let syncUiBusy = false;
+
+function updateSyncIconVisual() {
+    const icon = document.getElementById('syncStatusIcon');
+    if (!icon) return;
+    if (syncUiBusy) {
+        icon.textContent = 'sync';
+        icon.className = 'material-icons sync-spin';
+        icon.style.color = '#4f46e5';
+        icon.style.fontSize = '15px';
+    } else if (syncUiState.status === 'success') {
+        icon.textContent = 'check_circle';
+        icon.className = 'material-icons';
+        icon.style.color = '#16a34a';
+        icon.style.fontSize = '15px';
+    } else if (syncUiState.status === 'error') {
+        icon.textContent = 'error';
+        icon.className = 'material-icons';
+        icon.style.color = '#dc2626';
+        icon.style.fontSize = '15px';
+    } else {
+        icon.textContent = 'info';
+        icon.className = 'material-icons';
+        icon.style.color = 'rgba(100,116,139,0.65)';
+        icon.style.fontSize = '15px';
     }
 }
 
-// 自动检测连接：进入设置页或输入配置后调用，结果展示在状态行 + 可选 toast 提示
+// 2026-08-12 i 标识点击弹窗：上次同步时间 + 连接状态（成功✓绿/失败✗红/同步中转圈）
+async function showSyncStatusModal() {
+    let lastSyncAt = '';
+    try {
+        const d = await window.lingguang.storage.getItem(SYNC_STATUS_KEY);
+        if (d && d.lastSyncAt) lastSyncAt = d.lastSyncAt;
+    } catch (e) { /* 读取失败静默 */ }
+
+    let statusHtml = '';
+    if (syncUiBusy) {
+        statusHtml = '<div class="sync-status-line"><span class="material-icons sync-spin" style="color:#4f46e5;">sync</span>同步中…</div>';
+    } else if (syncUiState.status === 'success') {
+        statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:#16a34a;">check_circle</span>连接成功</div>';
+    } else if (syncUiState.status === 'error') {
+        statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:#dc2626;">error</span>' + (syncUiState.text || '连接失败') + '</div>';
+    } else {
+        statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:rgba(100,116,139,0.65);">info</span>尚未检测连接</div>';
+    }
+    const timeHtml = '<div class="sync-status-time">上次同步时间：' + (lastSyncAt || '暂无同步记录') + '</div>';
+
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">sync_alt</span>
+                同步状态
+            </div>
+            <div class="confirm-modal-message">
+                ${statusHtml}
+                ${timeHtml}
+            </div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-delete ripple-effect" id="sync-status-close" style="background: #4f46e5; border-color: #4f46e5; color: #fff;">知道了</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const closeBtn = document.getElementById('sync-status-close');
+    const closeModal = () => document.body.removeChild(modal);
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+}
+
+// 自动检测连接：进入设置页或输入配置后调用，结果展示在 i 标识 + 可选 toast 提示
 async function autoCheckSyncConnection(showTip) {
-    const statusText = document.getElementById('syncStatusText');
-    if (!statusText) return;
+    if (!document.getElementById('syncStatusIcon')) return; // 2026-08-12 状态行已删，i 标识存在才检测
     await saveSyncConfigFromForm();
     const url = buildSyncFileUrl();
     if (!url) {
@@ -8811,23 +8870,35 @@ async function autoCheckSyncConnection(showTip) {
         return;
     }
     setSyncStatus('正在检测连接…', 'info', '');
+    syncUiBusy = true; // 2026-08-12 检测中转圈
+    updateSyncIconVisual();
     try {
         const dirsResult = await ensureSyncParentDirs(url);
         if (!dirsResult.ok) {
+            syncUiBusy = false;
             setSyncStatus(dirsResult.detail, 'error', 'error');
             if (showTip) showErrorMessage('连接失败：' + dirsResult.detail);
             return;
         }
         // 目录存在：再试一次真实连通性（探测目录 GET 成功即代表认证+网络都通）
+        syncUiBusy = false;
         setSyncStatus('连接正常 ✓ 云端目录就绪', 'check_circle', 'success');
         if (showTip) showSuccessMessage('连接成功，可以同步');
     } catch (e) {
+        syncUiBusy = false;
         setSyncStatus('连接失败：' + (e.message || e), 'error', 'error');
         if (showTip) showErrorMessage('连接失败：' + (e.message || e));
     }
 }
 
 function setupSyncEventListeners() {
+    // 2026-08-12 同步状态 i 标识 → 状态弹窗（上次同步时间 + 连接状态）
+    const syncStatusIcon = document.getElementById('syncStatusIcon');
+    if (syncStatusIcon) {
+        const handler = showSyncStatusModal;
+        syncStatusIcon.addEventListener('click', handler);
+        cleanupFunctions.push(() => syncStatusIcon.removeEventListener('click', handler));
+    }
     const uploadBtn = document.getElementById('syncUploadBtn');
     if (uploadBtn) {
         // ★2026-08-11 命令后 2 秒自动回正 WebDAV 状态（scheduleSyncStatusRefresh 内部防抖+判配置）
