@@ -1158,36 +1158,19 @@
         body.dark-mode .settings-group-title .material-icons {
             color: #a5b4fc;
         }
-        /* 同步配置折叠区（2026-08-11 v1.0.9.8 最终版：grid-template-rows 0fr↔1fr 动画——
-           真实布局同步（状态行随文档流平滑移动）+ 浏览器原生合成优化（比 max-height 不卡），折叠动画行业标准做法） */
+        /* 同步配置折叠区（2026-08-12 v1.0.9.9 最终版：height 动画（JS 固化高度）——
+           WebView 兼容性最稳的布局动画（grid 1fr→0fr 反向动画部分内核失效会瞬间跳变）；
+           状态行随文档流平滑移动天然同步；动画期间禁 blur 防卡） */
         .sync-config-collapse {
             display: none; /* JS 控制显隐（收起动画播完再隐藏） */
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px dashed rgba(100, 116, 139, 0.25);
             box-sizing: border-box;
+            overflow: hidden;
         }
         .sync-config-collapse.open {
-            display: grid;
-            grid-template-rows: 0fr;
-            padding-top: 0;
-            border-top: 1px dashed transparent;
-            transition:
-                grid-template-rows 0.3s cubic-bezier(0.25, 0.85, 0.3, 1),
-                opacity 0.25s ease,
-                padding-top 0.3s ease,
-                border-top-color 0.3s ease;
-            opacity: 0;
-        }
-        .sync-config-collapse.open.expanded {
-            grid-template-rows: 1fr;
-            padding-top: 12px;
-            border-top: 1px dashed rgba(100, 116, 139, 0.25);
-            opacity: 1;
-        }
-        .sync-config-collapse.open .sync-config-inner {
-            overflow: hidden;
-            min-height: 0; /* grid item 默认 min-height:auto 会阻止收缩，必须归零 */
+            display: block;
         }
         /* 2026-08-11 折叠动画期间禁用 backdrop-filter（sync-input blur 重采样是卡顿元凶），动画结束移除 */
         .no-blur, .no-blur * {
@@ -1578,6 +1561,15 @@
                 0 12px 40px rgba(0, 0, 0, 0.3);
         }
         
+        /* 2026-08-12 记录/计划页"总计"徽标：样式同柱状图右上角，颜色深浅色自适应（浅色深灰/暗色白） */
+        .total-badge {
+            color: rgba(30, 41, 59, 0.62);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        body.dark-mode .total-badge {
+            color: rgba(255, 255, 255, 0.62);
+        }
         /* ========== 玻璃统计卡片 ========== */
         .glass-stat-card {
             background: rgba(255, 255, 255, var(--glass-alpha));
@@ -4813,7 +4805,8 @@
                         <span class="title-text">记录</span>
                         <span class="material-icons edit-title-icon">edit</span>
                     </h2>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 items-center">
+                        <span id="recordsTotalBadge" class="total-badge text-xs mr-1" data-testid="records-total"></span>
                         <button id="addBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" data-testid="add-button" title="添加徒步记录">
                             <span class="material-icons">add</span>
                         </button>
@@ -4872,7 +4865,8 @@
                         <span class="title-text">计划</span>
                         <span class="material-icons edit-title-icon">edit</span>
                     </h2>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 items-center">
+                        <span id="plannedTotalBadge" class="total-badge text-xs mr-1" data-testid="planned-total"></span>
                         <button id="addPlannedTripBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" data-testid="add-planned-trip-button">
                             <span class="material-icons">add</span>
                         </button>
@@ -5079,7 +5073,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.9.8</div>
+                        <div class="about-version">版本 1.0.9.9</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5371,7 +5365,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.9.8';
+var APP_VERSION = '1.0.9.9';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -5841,6 +5835,10 @@ function renderTable() {
         const sortedRecords = getSortedRecords();
         
         updateStatistics();
+        
+        // ★2026-08-12 记录页"总计"徽标（样式同柱状图右上角，颜色深浅色自适应）
+        const totalBadge = safeGetElementById('recordsTotalBadge');
+        if (totalBadge) totalBadge.textContent = '总计: ' + records.length + '条记录';
         
         if (sortedRecords.length === 0) {
             if (tbody) safeSetElementContent('recordsTable', '');
@@ -7450,6 +7448,10 @@ function renderPlannedTripsTable() {
         const emptyState = safeGetElementById('plannedEmptyState');
         const sortedTrips = getSortedPlannedTrips();
         
+        // ★2026-08-12 计划页"总计"徽标（样式同柱状图右上角，颜色深浅色自适应）
+        const totalBadge = safeGetElementById('plannedTotalBadge');
+        if (totalBadge) totalBadge.textContent = '总计: ' + plannedTrips.length + '条计划';
+        
         if (sortedTrips.length === 0) {
             if (tbody) safeSetElementContent('plannedTripsTable', '');
             if (emptyState) safeSetElementStyle('plannedEmptyState', 'display', 'block');
@@ -8745,7 +8747,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.9.8',
+        version: '1.0.9.9',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8864,26 +8866,53 @@ function setupSyncEventListeners() {
             const isOpen = collapse.classList.contains('open');
             const group = collapse.parentElement;
             if (isOpen) {
-                // 收起（2026-08-11 v1.0.9.8 grid 方案：remove expanded → grid-template-rows 1fr→0fr 真实收缩，
-                // 状态行随文档流平滑上移天然同步；动画期间禁 blur 防卡；播完隐藏）
+                // 收起（2026-08-12 v1.0.9.9 height 动画：固化当前高度后过渡到 0，
+                // 状态行随文档流平滑上移（真实布局同步无错位）；禁 blur 防卡；播完隐藏）
                 group.classList.add('no-blur');
-                collapse.classList.remove('expanded');
+                collapse.style.transition = 'height 0.24s cubic-bezier(0.25, 0.85, 0.3, 1), padding-top 0.24s ease, opacity 0.18s ease, border-top-color 0.24s ease';
+                collapse.style.height = collapse.offsetHeight + 'px';
+                void collapse.offsetHeight;
+                collapse.style.height = '0px';
+                collapse.style.paddingTop = '0px';
+                collapse.style.opacity = '0';
+                collapse.style.borderTopColor = 'transparent';
                 configToggle.classList.remove('open');
                 setTimeout(function () {
                     collapse.classList.remove('open');
-                    collapse.style.display = '';
+                    collapse.style.display = 'none';
+                    collapse.style.transition = '';
+                    collapse.style.height = '';
+                    collapse.style.paddingTop = '';
+                    collapse.style.opacity = '';
+                    collapse.style.borderTopColor = '';
                     group.classList.remove('no-blur');
-                }, 330);
+                }, 300);
             } else {
-                // 展开（grid 方案：open=0fr → rAF 加 expanded=1fr，transition 触发平滑展开）
-                collapse.style.display = 'grid';
+                // 展开（height 0→实际高度：先 auto 实测完整高度（含 margin/padding），再动画展开，绝不裁切）
+                collapse.style.display = 'block';
                 collapse.classList.add('open');
                 configToggle.classList.add('open');
                 group.classList.add('no-blur');
+                collapse.style.height = 'auto';
+                collapse.style.paddingTop = '12px';
+                collapse.style.opacity = '0';
+                collapse.style.borderTopColor = 'transparent';
+                const target = collapse.offsetHeight; // 真实完整高度（含 padding，含子项 margin）
+                collapse.style.height = '0px';
+                collapse.style.paddingTop = '0px';
                 requestAnimationFrame(function () {
-                    collapse.classList.add('expanded');
+                    collapse.style.transition = 'height 0.3s cubic-bezier(0.25, 0.85, 0.3, 1), padding-top 0.3s ease, opacity 0.25s ease, border-top-color 0.3s ease';
+                    collapse.style.height = target + 'px';
+                    collapse.style.paddingTop = '12px';
+                    collapse.style.opacity = '1';
+                    collapse.style.borderTopColor = '';
                 });
                 setTimeout(function () {
+                    collapse.style.transition = '';
+                    collapse.style.height = '';
+                    collapse.style.paddingTop = '';
+                    collapse.style.opacity = '';
+                    collapse.style.borderTopColor = '';
                     group.classList.remove('no-blur');
                 }, 360);
             }
