@@ -865,20 +865,6 @@
             transform: scale(1.02);
         }
         /* v1.4.12.9：顶栏标题可编辑——铅笔图标提示（浅色深灰/暗色浅灰，hover 变主色） */
-        .edit-title-icon {
-            font-size: 15px !important;
-            color: rgba(51, 65, 85, 0.4);
-            transition: color 0.2s ease, transform 0.2s ease;
-            cursor: pointer;
-            margin-top: -4px;
-        }
-        body.dark-mode .edit-title-icon {
-            color: rgba(243, 244, 246, 0.4);
-        }
-        #appTitleWrap:hover .edit-title-icon {
-            color: #4f46e5;
-            transform: scale(1.15);
-        }
         /* v1.0.7.7 徒步足迹热力图：红色渐变 + 日历式月视图 */
         .hm-weekdays {
             display: grid;
@@ -1165,11 +1151,8 @@
         .sync-config-collapse.open {
             display: block;
         }
-        /* 2026-08-11 折叠动画期间禁用 backdrop-filter（sync-input blur 重采样是卡顿元凶），动画结束移除 */
-        .no-blur, .no-blur * {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-        }
+        /* 2026-08-12 移除 .no-blur 机制：它会在动画期间禁用设置组自身的毛玻璃背景，
+           导致"背景跳亮一下再变暗"（用户复现）；去掉后背景恒定，无跳变 */
         /* 2026-08-12 同步状态 i 标识：同步中旋转动画 */
         .sync-spin {
             animation: syncSpin 1s linear infinite;
@@ -1357,8 +1340,8 @@
         .sync-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.10);
-            backdrop-filter: blur(3px) saturate(120%);
-            -webkit-backdrop-filter: blur(3px) saturate(120%);
+            /* 2026-08-12 移除 backdrop-filter：display 切换瞬间 blur+saturate 突然生效，
+               深色模式下输入框会"亮一下"；输入框有半透明背景已足够，去掉更稳更省性能 */
             border: 1px solid rgba(0, 0, 0, 0.08);
             border-radius: 10px; /* 2026-08-11 3条优化：输入框圆角统一(10px) */
             padding: 10px 14px;
@@ -4629,7 +4612,6 @@
                     <span class="text-lg flex-shrink-0 title-mountain-icon">🏔️</span>
                     <div class="flex items-center gap-1" id="appTitleWrap" title="点击编辑标题" style="cursor: pointer;">
                         <h1 id="appTitle" class="text-lg font-bold text-white mb-0 drop-shadow-lg px-1.5 py-0.5 rounded-lg whitespace-nowrap" data-testid="app-title">XiXiの徒步小记</h1>
-                        <span class="material-icons edit-title-icon" id="editTitleIcon">edit</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -4646,7 +4628,6 @@
                 <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="stats-title">
                     <span class="material-icons text-blue-300 text-xl">analytics</span>
                     <span class="title-text">统计概览</span>
-                    <span class="material-icons edit-title-icon">edit</span>
                 </h2>
                 <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div class="stat-card glass-stat-card blue-accent">
@@ -4779,7 +4760,6 @@
                         <h2 id="heatmapTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="heatmap-title">
                             <span class="material-icons text-red-400 text-xl">local_fire_department</span>
                             <span class="title-text">徒步足迹</span>
-                            <span class="material-icons edit-title-icon">edit</span>
                         </h2>
                         <div class="flex items-center gap-2">
                             <select id="hmYear" class="edit-input" style="padding: 9px 14px 9px 12px; font-size: 13px; width: auto;"></select>
@@ -4803,7 +4783,6 @@
                     <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="records-title">
                         <span class="material-icons text-blue-300 text-xl">terrain</span>
                         <span class="title-text">记录</span>
-                        <span class="material-icons edit-title-icon">edit</span>
                     </h2>
                     <div class="flex gap-2 items-center">
                         <span id="recordsTotalBadge" class="total-badge text-xs mr-1" data-testid="records-total"></span>
@@ -4863,7 +4842,6 @@
                     <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="planned-title">
                         <span class="material-icons text-green-300 text-xl">event_note</span>
                         <span class="title-text">计划</span>
-                        <span class="material-icons edit-title-icon">edit</span>
                     </h2>
                     <div class="flex gap-2 items-center">
                         <span id="plannedTotalBadge" class="total-badge text-xs mr-1" data-testid="planned-total"></span>
@@ -4922,7 +4900,6 @@
                 <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg cursor-pointer hover:bg-white/10 transition-colors" data-testid="settings-title">
                     <span class="material-icons text-blue-300 text-xl">settings</span>
                     <span class="title-text">设置</span>
-                    <span class="material-icons edit-title-icon">edit</span>
                 </h2>
 
                 <!-- 数据管理 -->
@@ -5070,7 +5047,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.9.10</div>
+                        <div class="about-version">版本 1.0.10.0</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5362,7 +5339,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.9.10';
+var APP_VERSION = '1.0.10.0';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -8740,7 +8717,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.9.10',
+        version: '1.0.10.0',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -8935,35 +8912,25 @@ function setupSyncEventListeners() {
             const collapse = document.getElementById('syncConfigCollapse');
             if (!collapse) return;
             const isOpen = collapse.classList.contains('open');
-            const group = collapse.parentElement;
             if (isOpen) {
-                // 收起（2026-08-12 v1.0.9.9 height 动画：固化当前高度后过渡到 0，
-                // 状态行随文档流平滑上移（真实布局同步无错位）；禁 blur 防卡；播完隐藏）
-                group.classList.add('no-blur');
-                collapse.style.transition = 'height 0.24s cubic-bezier(0.25, 0.85, 0.3, 1), padding-top 0.24s ease, opacity 0.18s ease, border-top-color 0.24s ease';
-                collapse.style.height = collapse.offsetHeight + 'px';
-                void collapse.offsetHeight;
-                collapse.style.height = '0px';
-                collapse.style.paddingTop = '0px';
-                collapse.style.opacity = '0';
-                collapse.style.borderTopColor = 'transparent';
+                // 收起（2026-08-12 v1.0.10.0 终版：无动画瞬间收起！
+                // 8 版动画方案（max-height/transform/grid/height）在用户 WebView 上均有跳变/错位，
+                // 无动画过程=物理上不存在"跳一下"；展开保留平滑动画）
+                collapse.classList.remove('open');
+                collapse.style.display = 'none';
+                collapse.style.transition = '';
+                collapse.style.height = '';
+                collapse.style.paddingTop = '';
+                collapse.style.opacity = '';
+                collapse.style.borderTopWidth = '';
+                collapse.style.borderTopColor = '';
                 configToggle.classList.remove('open');
-                setTimeout(function () {
-                    collapse.classList.remove('open');
-                    collapse.style.display = 'none';
-                    collapse.style.transition = '';
-                    collapse.style.height = '';
-                    collapse.style.paddingTop = '';
-                    collapse.style.opacity = '';
-                    collapse.style.borderTopColor = '';
-                    group.classList.remove('no-blur');
-                }, 300);
             } else {
-                // 展开（height 0→实际高度：先 auto 实测完整高度（含 margin/padding），再动画展开，绝不裁切）
+                // 展开（height 0→实际高度：先 auto 实测完整高度（含 margin/padding），再动画展开，绝不裁切；
+                // 2026-08-12 不再加 no-blur（它会导致背景跳亮变暗））
                 collapse.style.display = 'block';
                 collapse.classList.add('open');
                 configToggle.classList.add('open');
-                group.classList.add('no-blur');
                 collapse.style.height = 'auto';
                 collapse.style.paddingTop = '12px';
                 collapse.style.opacity = '0';
@@ -8984,7 +8951,6 @@ function setupSyncEventListeners() {
                     collapse.style.paddingTop = '';
                     collapse.style.opacity = '';
                     collapse.style.borderTopColor = '';
-                    group.classList.remove('no-blur');
                 }, 360);
             }
         };
