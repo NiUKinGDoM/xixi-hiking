@@ -5,6 +5,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="XiXiの徒步小记">
+    <!-- 2026-08-14 iPhone 适配：添加到主屏幕图标（无则 iOS 用网页截图当图标，很丑） -->
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>XiXiの徒步小记</title>
     <link rel="manifest" href="manifest.json">
     
@@ -16,6 +18,7 @@
             margin: 0;
             padding: 0;
             min-height: 100vh;
+            min-height: 100dvh; /* 2026-08-14 iPhone 适配：dvh=动态视口（Safari 地址栏收起/展开不跳动），低版本回退 100vh */
             font-size: 16px;
             font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
             font-weight: 900;
@@ -23,6 +26,7 @@
             letter-spacing: 0.02em;
             position: relative;
             overflow-x: hidden;
+            touch-action: manipulation; /* 2026-08-14 iPhone 适配：禁双击缩放/去 300ms 触摸延迟 */
             color: #1e293b;
             transition: background-color 0.2s ease; /* 2026-08-10 切换提速+掉帧修复：去掉 color 过渡（全页文字同时过渡→WebView掉帧），文字瞬切 */
         }
@@ -908,6 +912,7 @@
             /* 底部留出悬浮底栏的高度；min-height:100vh 含 padding，内容不足一屏时页面恰好一屏不滚动 */
             padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
             min-height: 100vh;
+            min-height: 100dvh; /* 2026-08-14 iPhone 适配：动态视口 */
             position: relative;
             z-index: 1;
         }
@@ -943,7 +948,8 @@
         .bottom-tabbar {
             /* 悬浮固定：始终位于屏幕下方，不随内容滚动 */
             position: fixed;
-            bottom: 14px;
+            /* 2026-08-14 iPhone 适配：底部安全区（home 指示条）避开 */
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%);
             z-index: 40;
@@ -5044,7 +5050,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">XiXiの徒步小记</div>
-                        <div class="about-version">版本 1.0.10.2</div>
+                        <div class="about-version">版本 1.0.10.3</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次登山的足迹与心情，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5336,7 +5342,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.10.2';
+var APP_VERSION = '1.0.10.3';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -8714,7 +8720,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: 'XiXiの徒步小记',
-        version: '1.0.10.2',
+        version: '1.0.10.3',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
