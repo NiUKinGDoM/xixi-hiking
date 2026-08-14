@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -83,6 +84,14 @@ public class MainActivity extends BridgeActivity {
             public void onPageLoaded(WebView webView) {
                 setupDownloadListener(webView);
                 setupJsBridge(webView);
+                // ★2026-08-14 禁用双指捏合缩放（软件感，非网页感）：关闭内置缩放/手势缩放/缩放按钮
+                try {
+                    webView.getSettings().setSupportZoom(false);
+                    webView.getSettings().setBuiltInZoomControls(false);
+                    webView.getSettings().setDisplayZoomControls(false);
+                } catch (Exception e) {
+                    Log.e(TAG, "disable pinch zoom failed", e);
+                }
                 // 兜底：App 默认浅色模式，页面加载完成时先设置深色状态栏图标（白底时间可见），
                 // JS applyThemeMode 会在初始化时按实际主题再校正一次
                 setStatusBarStyleInternal(false);
@@ -102,7 +111,7 @@ public class MainActivity extends BridgeActivity {
     private void setupJsBridge(WebView webView) {
         if (webView == null) return;
         try {
-            webView.addJavascriptInterface(new JsFileBridge(), "XixiFileBridge");
+            webView.addJavascriptInterface(new JsFileBridge(webView), "XixiFileBridge");
             Log.i(TAG, "JS bridge XixiFileBridge installed");
         } catch (Exception e) {
             Log.e(TAG, "Failed to install JS bridge", e);
@@ -110,6 +119,12 @@ public class MainActivity extends BridgeActivity {
     }
 
     private class JsFileBridge {
+        private final WebView webView;
+
+        JsFileBridge(WebView webView) {
+            this.webView = webView;
+        }
+
         @JavascriptInterface
         public boolean saveBase64(String base64, String filename) {
             try {
@@ -227,6 +242,179 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void setStatusBarStyle(boolean isDark) {
             setStatusBarStyleInternal(isDark);
+        }
+
+        // ===== 应用内更新（2026-08-11）：GitHub Release 检查 =====
+        // JS 调用：window.XixiFileBridge.checkUpdate()
+        // 返回 JSON：{"tag":"v1.0.8.6","name":"...","apkUrl":"https://...apk","body":"..."} 或 {"error":"..."}
+        @JavascriptInterface
+        public String checkUpdate() {
+            final String[] result = new String[1];
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    result[0] = doCheckUpdate();
+                }
+            });
+            thread.start();
+            try {
+                thread.join(15000);
+            } catch (InterruptedException e) {
+                return "{\"error\":\"request interrupted\"}";
+            }
+            return result[0] != null ? result[0] : "{\"error\":\"timeout\"}";
+        }
+
+        private String doCheckUpdate() {
+            try {
+                okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
+                        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                        .build();
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url("https://api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/latest")
+                        .header("User-Agent", "XiXiHiking/1.0")
+                        .header("Accept", "application/vnd.github+json")
+                        .build();
+                okhttp3.Response response = client.newCall(request).execute();
+                String body = response.body() != null ? response.body().string() : "";
+                int status = response.code();
+                response.close();
+                if (status != 200) {
+                    return "{\"error\":\"HTTP " + status + "\"}";
+                }
+                org.json.JSONObject json = new org.json.JSONObject(body);
+                String tag = json.optString("tag_name", "");
+                String name = json.optString("name", "");
+                String relBody = json.optString("body", "");
+                String apkUrl = "";
+                org.json.JSONArray assets = json.optJSONArray("assets");
+                if (assets != null && assets.length() > 0) {
+                    apkUrl = assets.optJSONObject(0).optString("browser_download_url", "");
+                }
+                return "{\"tag\":\"" + escapeJson(tag)
+                        + "\",\"name\":\"" + escapeJson(name)
+                        + "\",\"apkUrl\":\"" + escapeJson(apkUrl)
+                        + "\",\"body\":\"" + escapeJson(relBody)
+                        + "\"}";
+            } catch (Exception e) {
+                Log.e(TAG, "checkUpdate failed", e);
+                return "{\"error\":\"" + escapeJson(e.getMessage() != null ? e.getMessage() : "unknown") + "\"}";
+            }
+        }
+
+        // ===== 应用内更新：镜像下载 + 系统安装器安装 =====
+        // JS 调用：window.XixiFileBridge.downloadAndInstall(apkUrl, mirrorUrl)
+        // 镜像优先（快），失败自动兜底官方直链；完成后回调 window.XixiUpdaterCallback(state, message)
+        // state: 'need_permission'(去授权未知来源) / 'downloaded'(下载完待装，一般自动继续) /
+        //        'installing'(已跳系统安装器) / 'error'(失败)
+        @JavascriptInterface
+        public void downloadAndInstall(final String apkUrl, final String mirrorUrl) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    File apk = downloadApk(apkUrl, mirrorUrl);
+                    if (apk == null) {
+                        notifyJs("error", "下载失败，请检查网络后重试");
+                        return;
+                    }
+                    notifyJs("downloaded", apk.getAbsolutePath());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            installApk(apk);
+                        }
+                    });
+                }
+            });
+            thread.start();
+        }
+
+        private File downloadApk(String apkUrl, String mirrorUrl) {
+            String[] urls = new String[]{mirrorUrl, apkUrl};
+            for (String u : urls) {
+                if (u == null || u.isEmpty()) continue;
+                try {
+                    okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
+                            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                            .build();
+                    okhttp3.Request request = new okhttp3.Request.Builder().url(u)
+                            .header("User-Agent", "XiXiHiking/1.0").build();
+                    okhttp3.Response response = client.newCall(request).execute();
+                    if (!response.isSuccessful()) {
+                        response.close();
+                        continue;
+                    }
+                    byte[] bytes = response.body() != null ? response.body().bytes() : new byte[0];
+                    response.close();
+                    if (bytes.length < 1000) continue; // 太小基本是错误页
+                    File dir = new File(getCacheDir(), "downloads");
+                    if (!dir.exists()) dir.mkdirs();
+                    File apk = new File(dir, "xixi_update.apk");
+                    FileOutputStream fos = new FileOutputStream(apk);
+                    fos.write(bytes);
+                    fos.flush();
+                    fos.close();
+                    Log.i(TAG, "APK downloaded from " + u + " size=" + bytes.length);
+                    return apk;
+                } catch (Exception e) {
+                    Log.e(TAG, "download from " + u + " failed", e);
+                }
+            }
+            return null;
+        }
+
+        private void installApk(File apk) {
+            try {
+                if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+                    // Android 8+ 首次需授权"安装未知应用"
+                    notifyJs("need_permission", "");
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                            Uri.parse("package:" + getPackageName()));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    return;
+                }
+                Uri apkUri;
+                if (Build.VERSION.SDK_INT >= 24) {
+                    apkUri = androidx.core.content.FileProvider.getUriForFile(MainActivity.this,
+                            getPackageName() + ".fileprovider", apk);
+                } else {
+                    apkUri = Uri.fromFile(apk);
+                }
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(intent);
+                notifyJs("installing", "");
+            } catch (Exception e) {
+                Log.e(TAG, "install failed", e);
+                notifyJs("error", "安装失败：" + (e.getMessage() != null ? e.getMessage() : "unknown"));
+            }
+        }
+
+        private void notifyJs(final String state, final String message) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String msg = message != null
+                                ? message.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "") : "";
+                        String js = "try{if(window.XixiUpdaterCallback){XixiUpdaterCallback('" + state + "','" + msg + "');}}catch(e){}";
+                        webView.evaluateJavascript(js, null);
+                    } catch (Exception e) {
+                        Log.e(TAG, "notifyJs failed", e);
+                    }
+                }
+            });
+        }
+
+        private String escapeJson(String s) {
+            if (s == null) return "";
+            return s.replace("\\", "\\\\").replace("\"", "\\\"")
+                    .replace("\n", "\\n").replace("\r", "\\r");
         }
     }
 
