@@ -1025,6 +1025,28 @@
             70% { transform: scale(0.92) translateY(1px); }
             100% { transform: scale(1) translateY(0); }
         }
+        /* ★2026-08-19 v1.1.0.3 底栏拖动果冻质感：拖动中按钮弹性形变 + 相邻粘连拉扯 + 松手确认弹跳 */
+        .bottom-tabbar .tab-btn {
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform;
+        }
+        .bottom-tabbar .tab-btn.drag-target {
+            transform: scale(1.18, 0.88); /* 手指下按钮果冻压扁拉伸 */
+        }
+        .bottom-tabbar .tab-btn.drag-adj-left {
+            transform: translateX(-7px) scale(1.04); /* 左侧相邻按钮粘连拉扯 */
+        }
+        .bottom-tabbar .tab-btn.drag-adj-right {
+            transform: translateX(7px) scale(1.04); /* 右侧相邻按钮粘连拉扯 */
+        }
+        @keyframes tabDragConfirm {
+            0% { transform: scale(1.18, 0.86); }
+            45% { transform: scale(0.94, 1.1); }
+            100% { transform: scale(1, 1); }
+        }
+        .bottom-tabbar .tab-btn.drag-confirm {
+            animation: tabDragConfirm 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
         .bottom-tabbar .tab-btn.active {
             background: linear-gradient(135deg, rgba(99, 122, 235, 0.92), rgba(128, 84, 199, 0.92));
             color: #ffffff;
@@ -5050,7 +5072,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.0.1</div>
+                        <div class="about-version">版本 1.1.0.2</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5342,7 +5364,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.0.1';
+var APP_VERSION = '1.1.0.2';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -8818,7 +8840,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: '徒步小记',
-        version: '1.1.0.1',
+        version: '1.1.0.2',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
@@ -10109,6 +10131,96 @@ function setupEventListeners() {
             btn.removeEventListener('click', btn._switchTabHandler);
         });
     });
+    // ★2026-08-19 v1.1.0.3 底栏按住滑动切换：拖动时只做果冻视觉（不切页面），松手时确认切换到手指所在 tab（点击行为保留）
+    var tabDragActive = false;
+    var tabDragMoved = false;
+    var tabDragSuppressClick = false;
+    var tabDragTouchId = null;
+    var tabDragTarget = null; // 拖动过程中手指当前所在的 tab
+    var tabDragBar = document.getElementById('bottomTabBar');
+    // 果冻视觉：手指下按钮拉伸 + 相邻按钮粘连；无目标时清除全部
+    function setTabDragVisual(targetBtn) {
+        var all = document.querySelectorAll('.bottom-tabbar .tab-btn.drag-target, .bottom-tabbar .tab-btn.drag-adj-left, .bottom-tabbar .tab-btn.drag-adj-right, .bottom-tabbar .tab-btn.drag-preview');
+        all.forEach(function (el) { el.classList.remove('drag-target', 'drag-adj-left', 'drag-adj-right', 'drag-preview'); });
+        if (!targetBtn) return;
+        targetBtn.classList.add('drag-target');
+        // ★tabButtons 是 NodeList，无 indexOf —— 用 Array.prototype 调（2026-08-19 修崩溃）
+        var idx = Array.prototype.indexOf.call(tabButtons, targetBtn);
+        if (idx > 0) tabButtons[idx - 1].classList.add('drag-adj-left');
+        if (idx < tabButtons.length - 1) tabButtons[idx + 1].classList.add('drag-adj-right');
+    }
+    if (tabDragBar) {
+        tabDragBar.addEventListener('touchstart', function (e) {
+            var t = e.touches[0];
+            var el = document.elementFromPoint(t.clientX, t.clientY);
+            if (!el || !el.closest('.tab-btn')) return;
+            tabDragActive = true;
+            tabDragMoved = false;
+            tabDragTouchId = t.identifier;
+            var btn = el.closest('.tab-btn');
+            tabDragTarget = btn.getAttribute('data-tab');
+            setTabDragVisual(btn); // 按下即有果冻反馈
+        }, { passive: true });
+        tabDragBar.addEventListener('touchmove', function (e) {
+            if (!tabDragActive) return;
+            var t = null;
+            for (var i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].identifier === tabDragTouchId) { t = e.touches[i]; break; }
+            }
+            if (!t) return;
+            e.preventDefault(); // 拖动时不滚动页面
+            var el = document.elementFromPoint(t.clientX, t.clientY);
+            if (!el) return;
+            var btn = el.closest('.tab-btn');
+            if (btn) {
+                var tb = btn.getAttribute('data-tab');
+                tabDragMoved = true;
+                if (tb !== tabDragTarget) {
+                    tabDragTarget = tb;
+                    setTabDragVisual(btn); // 果冻视觉跟随（页面不变）
+                }
+            }
+        }, { passive: false });
+        tabDragBar.addEventListener('touchend', function () {
+            if (tabDragActive && tabDragMoved) {
+                tabDragSuppressClick = true; // 抑制拖动后自动触发的 click（防"刷新+回顶"误触发）
+                setTimeout(function () { tabDragSuppressClick = false; }, 120);
+                // ★松手确认切换：手指最终所在 tab ≠ 当前才切换（NodeList 用 Array.prototype.find）
+                if (tabDragTarget && tabDragTarget !== currentTabId) {
+                    var targetBtn = Array.prototype.find.call(tabButtons, function (b) { return b.getAttribute('data-tab') === tabDragTarget; }) || null;
+                    if (targetBtn) {
+                        targetBtn.classList.remove('drag-target', 'drag-adj-left', 'drag-adj-right', 'drag-preview');
+                        targetBtn.classList.add('drag-confirm'); // 松手果冻弹跳
+                        setTimeout(function () { targetBtn.classList.remove('drag-confirm'); }, 400);
+                    }
+                    switchTab(tabDragTarget);
+                } else {
+                    setTabDragVisual(null); // 松开仍在当前 tab：直接恢复
+                }
+            } else {
+                setTabDragVisual(null); // 无拖动（轻点）：恢复视觉，点击逻辑照常
+            }
+            tabDragActive = false;
+            tabDragMoved = false;
+            tabDragTouchId = null;
+            tabDragTarget = null;
+        });
+        tabDragBar.addEventListener('touchcancel', function () {
+            setTabDragVisual(null);
+            tabDragActive = false;
+            tabDragMoved = false;
+            tabDragTouchId = null;
+            tabDragTarget = null;
+        });
+        // 捕获阶段拦截拖拽后的 click
+        document.addEventListener('click', function (e) {
+            if (tabDragSuppressClick) {
+                e.preventDefault();
+                e.stopPropagation();
+                tabDragSuppressClick = false;
+            }
+        }, true);
+    }
 }
 
 if (document.readyState === 'loading') {
