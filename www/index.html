@@ -5050,7 +5050,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.0.10.10</div>
+                        <div class="about-version">版本 1.1.0.0</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5342,7 +5342,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.0.10.10';
+var APP_VERSION = '1.1.0.0';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -5444,7 +5444,7 @@ function showErrorMessage(message) {
     // 内联定位（left 50% + transform translateX(-50%)），避免 Tailwind translate 属性与动画 transform 叠加导致二次偏移
     errorDiv.className = 'error-message toast-pop toast-glass error fixed z-[100] max-w-[90vw] text-sm px-5 py-3';
     errorDiv.style.left = '50%';
-    errorDiv.style.bottom = '110px';
+    errorDiv.style.bottom = '140px';
     errorDiv.style.transform = 'translateX(-50%)';
     errorDiv.innerHTML = `
         <div class="flex items-center gap-2">
@@ -5486,7 +5486,7 @@ function showSuccessMessage(message) {
     // 内联定位（left 50% + transform translateX(-50%)），避免 Tailwind translate 属性与动画 transform 叠加导致二次偏移
     successDiv.className = 'success-message toast-pop toast-glass success fixed z-[100] max-w-[90vw] text-sm px-5 py-3';
     successDiv.style.left = '50%';
-    successDiv.style.bottom = '110px';
+    successDiv.style.bottom = '140px';
     successDiv.style.transform = 'translateX(-50%)';
     successDiv.innerHTML = `
         <div class="flex items-center gap-2">
@@ -8184,47 +8184,69 @@ function escapeHtml(s) {
 let updaterBusy = false;
 let pendingUpdate = null;
 
-// 检查更新：调原生桥读 GitHub 最新 Release
+// ★2026-08-19 v1.1.0.0：检查更新改异步 fetch——根治没网卡死
+// （原生 checkUpdate 是同步 join(15s)，主线程被占=卡死；navigator.onLine 在 WebView 也不可靠）
+// fetch + AbortController 8s 超时，失败走 catch，永远不阻塞 UI
+function fetchLatestRelease(timeoutMs) {
+    var ctrl = null;
+    var timer = null;
+    if (typeof AbortController !== 'undefined') {
+        ctrl = new AbortController();
+        timer = setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, timeoutMs || 8000);
+    }
+    return fetch('https://api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/latest', {
+        signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+    }).then(function (d) {
+        return {
+            tag: d.tag_name || '',
+            apkUrl: (d.assets && d.assets.length ? d.assets[0].browser_download_url : '') || '',
+            name: d.name || '',
+            body: d.body || ''
+        };
+    }).then(function (v) {
+        if (timer) clearTimeout(timer);
+        return v;
+    }, function (e) {
+        if (timer) clearTimeout(timer);
+        throw e;
+    });
+}
+
+// 检查更新（设置页按钮）：异步 fetch，永不卡死
 function checkForUpdate() {
     if (updaterBusy) return;
-    if (!window.XixiFileBridge || typeof window.XixiFileBridge.checkUpdate !== 'function') {
+    // App 判定：有下载桥（无桥 = 网页版）
+    if (!window.XixiFileBridge || typeof window.XixiFileBridge.downloadAndInstall !== 'function') {
         showErrorMessage('网页版无需更新（请使用安装版）');
         return;
     }
     updaterBusy = true;
     const desc = document.getElementById('checkUpdateDesc');
     if (desc) desc.textContent = '正在检查更新…';
-    setTimeout(function () {
-        try {
-            const raw = window.XixiFileBridge.checkUpdate();
-            let info = null;
-            try { info = JSON.parse(raw); } catch (e) { info = { error: raw }; }
-            if (info && info.error) {
-                if (desc) desc.textContent = '检查失败，请稍后重试';
-                showErrorMessage('检查更新失败：' + info.error);
-                return;
-            }
-            const latest = parseTagVersion(info.tag);
-            if (!latest) {
-                if (desc) desc.textContent = '未获取到版本信息';
-                showErrorMessage('未获取到版本信息');
-                return;
-            }
-            if (versionGreater(latest, APP_VERSION)) {
-                if (desc) desc.textContent = '发现新版本 v' + latest;
-                pendingUpdate = { apkUrl: info.apkUrl || '', tag: latest, name: info.name || '', body: info.body || '' };
-                showUpdateModal(pendingUpdate);
-            } else {
-                if (desc) desc.textContent = '已是最新版本 v' + APP_VERSION;
-                showSuccessMessage('已是最新版本 v' + APP_VERSION);
-            }
-        } catch (e) {
-            if (desc) desc.textContent = '检查更新失败';
-            showErrorMessage('检查更新失败：' + (e.message || e));
-        } finally {
-            updaterBusy = false;
+    fetchLatestRelease(8000).then(function (info) {
+        const latest = parseTagVersion(info.tag);
+        if (!latest) {
+            if (desc) desc.textContent = '未获取到版本信息';
+            showErrorMessage('未获取到版本信息');
+            return;
         }
-    }, 100);
+        if (versionGreater(latest, APP_VERSION)) {
+            if (desc) desc.textContent = '发现新版本 v' + latest;
+            pendingUpdate = { apkUrl: info.apkUrl || '', tag: latest, name: info.name || '', body: info.body || '' };
+            showUpdateModal(pendingUpdate);
+        } else {
+            if (desc) desc.textContent = '已是最新版本 v' + APP_VERSION;
+            showSuccessMessage('已是最新版本 v' + APP_VERSION);
+        }
+        updaterBusy = false;
+    }, function (e) {
+        if (desc) desc.textContent = '检查失败，请稍后重试';
+        showErrorMessage('检查更新失败：网络异常或超时');
+        updaterBusy = false;
+    });
 }
 
 // ★2026-08-19 打开应用自动检测更新：
@@ -8236,30 +8258,11 @@ var autoUpdateOnlineHandler = null;
 function autoCheckUpdateOnLaunch() {
     if (autoUpdateCheckedOnce) return; // 每次启动只自动检查一次
     autoUpdateCheckedOnce = true;
-    // 网页版无原生桥 → 跳过（静默，不打扰）
-    if (!window.XixiFileBridge || typeof window.XixiFileBridge.checkUpdate !== 'function') return;
-    // 没网：不调桥（防卡死），小提示 + 网络恢复后自动重试
-    if (!navigator.onLine) {
-        showErrorMessage('检测更新失败：网络未连接，恢复网络后自动重试');
-        if (!autoUpdateOnlineHandler) {
-            autoUpdateOnlineHandler = function () {
-                window.removeEventListener('online', autoUpdateOnlineHandler);
-                autoUpdateOnlineHandler = null;
-                autoUpdateCheckedOnce = false; // 允许恢复后重试一次
-                setTimeout(autoCheckUpdateOnLaunch, 1500);
-            };
-            window.addEventListener('online', autoUpdateOnlineHandler);
-        }
-        return;
-    }
-    // 有网：延迟 1.5s 检查（让首屏先渲染，不卡启动）
+    // 网页版无下载桥 → 跳过（静默，不打扰）
+    if (!window.XixiFileBridge || typeof window.XixiFileBridge.downloadAndInstall !== 'function') return;
+    // 延迟 1.5s 检查（让首屏先渲染）；异步 fetch，任何网络状况都不卡 UI
     setTimeout(function () {
-        try {
-            if (updaterBusy) return;
-            const raw = window.XixiFileBridge.checkUpdate();
-            let info = null;
-            try { info = JSON.parse(raw); } catch (e) { info = { error: raw }; }
-            if (info && info.error) return; // 检查失败静默（不打扰启动）
+        fetchLatestRelease(8000).then(function (info) {
             const latest = parseTagVersion(info.tag);
             if (!latest) return;
             if (versionGreater(latest, APP_VERSION)) {
@@ -8267,7 +8270,22 @@ function autoCheckUpdateOnLaunch() {
                 showUpdateModal(pendingUpdate); // ★大弹窗
             }
             // 无新版：静默
-        } catch (e) { /* 静默，不影响使用 */ }
+        }, function () {
+            // 检查失败：只有明确离线才提示；网络恢复后自动重试
+            showErrorMessage('检测更新失败：网络异常，请检查网络后重试');
+                // 网络恢复后自动重试
+                if (navigator.onLine === false) {
+                if (!autoUpdateOnlineHandler) {
+                    autoUpdateOnlineHandler = function () {
+                        window.removeEventListener('online', autoUpdateOnlineHandler);
+                        autoUpdateOnlineHandler = null;
+                        autoUpdateCheckedOnce = false; // 允许恢复后重试一次
+                        setTimeout(autoCheckUpdateOnLaunch, 1500);
+                    };
+                    window.addEventListener('online', autoUpdateOnlineHandler);
+                }
+            }
+        });
     }, 1500);
 }
 
@@ -8336,7 +8354,7 @@ let loadingToastEl = null;
 function showLoadingToast(message) {
     hideLoadingToast();
     const div = document.createElement('div');
-    div.style.cssText = 'position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:100;max-width:90vw;';
+    div.style.cssText = 'position:fixed;left:50%;bottom:140px;transform:translateX(-50%);z-index:100;max-width:90vw;';
     div.className = 'toast-glass px-5 py-3';
     div.innerHTML = '<div class="flex items-center gap-2"><span class="material-icons" style="animation:spin 1s linear infinite;">autorenew</span><span style="font-size:14px;">' + escapeHtml(message) + '</span></div>';
     document.body.appendChild(div);
@@ -8764,7 +8782,7 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: '徒步小记',
-        version: '1.0.10.10',
+        version: '1.1.0.0',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
