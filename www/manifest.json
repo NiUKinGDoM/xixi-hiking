@@ -1,6 +1,6 @@
 {
-  "name": "XiXiの徒步小记",
-  "short_name": "XiXi徒步小记",
+  "name": "徒步小记",
+  "short_name": "徒步小记",
   "description": "XiXi的徒步登山活动记录小助手",
   "start_url": "./",
   "scope": "./",
