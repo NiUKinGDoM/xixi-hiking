@@ -18,6 +18,9 @@
 
 ## 新版号阶段（vc84 起，有完整记录）
 
+### v1.1.0.2（vc124 · 2026-08-19）
+- 更新内容见 [Release v1.1.0.2](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.2)（底栏按住滑动切换 + 果冻质感 + 相邻粘连 + 松手确认切换）
+
 ### v1.1.0.1（vc123 · 2026-08-19）
 - 更新内容见 [Release v1.1.0.1](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.1)（WebDAV 桥全异步化 / 弱网零卡死 / 超时兜底）
 
