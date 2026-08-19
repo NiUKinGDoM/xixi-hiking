@@ -185,19 +185,47 @@ public class MainActivity extends BridgeActivity {
             });
             thread.start();
             try {
-                thread.join(30000); // 最多等 30 秒
+                thread.join(8000); // ★2026-08-19 v1.1.0.1 根治卡死：30s→8s（网络差时快速放弃，UI 不再卡死）
             } catch (InterruptedException e) {
                 return "{\"status\":0,\"body\":\"\",\"error\":\"request interrupted\"}";
             }
             return result[0] != null ? result[0] : "{\"status\":0,\"body\":\"\",\"error\":\"timeout\"}";
         }
 
+        // ★2026-08-19 v1.1.0.2 异步版 WebDAV 桥：调用立即返回，后台线程请求，完成后回调 JS 全局函数。
+        // JS 侧 window.XixiFileBridge.webdavRequestAsync(url, method, username, password, bodyBase64, callbackName)
+        // 回调：window[callbackName](jsonString)——UI 零阻塞，彻底消除同步桥卡死
+        @JavascriptInterface
+        public void webdavRequestAsync(final String url, final String method, final String username, final String password, final String bodyBase64, final String callbackName) {
+            final WebView wv = webView;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    final String result = doWebdavRequest(url, method, username, password, bodyBase64);
+                    if (wv != null && callbackName != null) {
+                        try {
+                            wv.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    String escaped = result.replace("\\", "\\\\").replace("\"", "\\\"")
+                                            .replace("\n", "\\n").replace("\r", "\\r");
+                                    wv.evaluateJavascript("window['" + callbackName + "'](\"" + escaped + "\");", null);
+                                }
+                            });
+                        } catch (Exception e) {
+                            Log.e(TAG, "webdavRequestAsync callback failed", e);
+                        }
+                    }
+                }
+            }).start();
+        }
+
         private String doWebdavRequest(String url, String method, String username, String password, String bodyBase64) {
             try {
                 String upper = method != null ? method.toUpperCase(Locale.US) : "GET";
                 okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
-                        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-                        .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+                        .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)   // ★15s→5s
+                        .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)      // ★20s→8s
                         .build();
                 okhttp3.Request.Builder rb = new okhttp3.Request.Builder().url(url)
                         .header("User-Agent", "XiXiHiking/1.0");
@@ -258,7 +286,7 @@ public class MainActivity extends BridgeActivity {
             });
             thread.start();
             try {
-                thread.join(15000);
+                thread.join(6000); // ★2026-08-19 v1.1.0.1 防御：15s→6s（JS 已改 fetch 异步，此桥保留兜底）
             } catch (InterruptedException e) {
                 return "{\"error\":\"request interrupted\"}";
             }
