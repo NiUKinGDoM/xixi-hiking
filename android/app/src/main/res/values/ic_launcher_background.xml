@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 2026-08-19 v1.0.10.5 适配新图标深绿背景（采样 #1c4928） -->
-    <color name="ic_launcher_background">#1c4928</color>
+    <!-- 2026-08-19 v1.0.10.6 适配新图标深绿背景（采样 #28431a，更纯净均匀） -->
+    <color name="ic_launcher_background">#28431a</color>
     <!-- App 亮色背景色（与 index.html body 背景一致，让系统 splash 视觉无缝） -->
     <color name="app_bg_light">#eef2ff</color>
 </resources>
