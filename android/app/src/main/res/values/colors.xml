@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-08-19 v1.0.10.5：styles.xml 引用 colorPrimary/colorPrimaryDark/colorAccent 但 colors.xml 缺失
+     （清 gradle 缓存后某些传递依赖不再带默认色，露出自定义缺失），补上紫蓝系三色 -->
+<resources>
+    <color name="colorPrimary">#667eea</color>
+    <color name="colorPrimaryDark">#4f46e5</color>
+    <color name="colorAccent">#fb923c</color>
+</resources>
