@@ -18,25 +18,21 @@
 
 ## 新版号阶段（vc84 起，有完整记录）
 
+### v1.1.0.7（vc129 · 2026-08-20）
+
 ### v1.1.0.6（vc128 · 2026-08-20）
 
 ### v1.1.0.5（vc127 · 2026-08-20）
-- 更新内容见 [Release v1.1.0.5](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.5)（灯箱图片缩小显示 / 云端备份统一 .html 不再兼容老格式）
 
 ### v1.1.0.4（vc126 · 2026-08-20）
-- 更新内容见 [Release v1.1.0.4](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.4)（导出/云端备份格式统一修复：MIME 类型按扩展名识别 / WebDAV 备份扩展名统一 .html / 下载恢复兼容新旧格式）
 
 ### v1.1.0.3（vc125 · 2026-08-20）
-- 更新内容见 [Release v1.1.0.3](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.3)（照片功能完善：灯箱保存到相册 / 表格照片按钮 / 弹窗文字颜色修复 / 默认时间排序 / 导出标题跟随设置）
 
 ### v1.1.0.2（vc124 · 2026-08-19）
-- 更新内容见 [Release v1.1.0.2](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.2)（底栏按住滑动切换 + 果冻质感 + 相邻粘连 + 松手确认切换）
 
 ### v1.1.0.1（vc123 · 2026-08-19）
-- 更新内容见 [Release v1.1.0.1](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.1)（WebDAV 桥全异步化 / 弱网零卡死 / 超时兜底）
 
 ### v1.1.0.0（vc122 · 2026-08-19）
-- 更新内容见 [Release v1.1.0.0](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.0)（版本号进位 / 没网卡死根治 / toast 调高 / 提示必弹）
 
 ### v1.0.10.10（vc121 · 2026-08-19）
 - 简介文案更新：所有 App 简介"记录每一次登山的足迹与心情" → "记录每一次徒步、登山的足迹"（含关于应用/GitHub README）
