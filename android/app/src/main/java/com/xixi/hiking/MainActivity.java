@@ -224,31 +224,20 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
-        // ★2026-08-21 v1.1.1.1 震动反馈：点击按钮短震，跟随系统触摸反馈强度
-        // JS 调用：window.XixiVibration.vibrate(15) → boolean（系统关闭触摸反馈时返回 false 不震）
+        // ★2026-08-21 v1.1.1.1 震动反馈：点击按钮短震，强度跟随系统全局振动设置
+        // v1.1.1.3 修复：去掉 HAPTIC_FEEDBACK_ENABLED 检查 + 去掉 USAGE_TOUCH——
+        // 两者都受系统「触摸反馈」设置抑制（关闭/强度0时 App 不震），
+        // 现改为 App 开关=唯一开关，DEFAULT_AMPLITUDE 跟随系统振动强度，保证必震
+        // JS 调用：window.XixiFileBridge.vibrate(15) → boolean
         @JavascriptInterface
         public boolean vibrate(int durationMs) {
             try {
-                // 尊重系统「触摸反馈」总开关（关闭时 App 也不震）
-                if (android.provider.Settings.System.getInt(getContentResolver(),
-                        android.provider.Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) == 0) {
-                    return false;
-                }
                 int ms = (durationMs > 0 && durationMs <= 100) ? durationMs : 15;
                 android.os.Vibrator v = (android.os.Vibrator) getSystemService(VIBRATOR_SERVICE);
                 if (v == null || !v.hasVibrator()) return false;
                 if (android.os.Build.VERSION.SDK_INT >= 26) {
-                    android.os.VibrationEffect effect = android.os.VibrationEffect.createOneShot(
-                            ms, android.os.VibrationEffect.DEFAULT_AMPLITUDE);
-                    if (android.os.Build.VERSION.SDK_INT >= 30) {
-                        // Android 11+：USAGE_TOUCH → 系统按用户设置的「触摸反馈强度」执行
-                        android.os.VibrationAttributes attrs = new android.os.VibrationAttributes.Builder()
-                                .setUsage(android.os.VibrationAttributes.USAGE_TOUCH)
-                                .build();
-                        v.vibrate(effect, attrs);
-                    } else {
-                        v.vibrate(effect);
-                    }
+                    v.vibrate(android.os.VibrationEffect.createOneShot(
+                            ms, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
                 } else {
                     // Android 7 及以下：默认强度短震
                     v.vibrate(ms);
