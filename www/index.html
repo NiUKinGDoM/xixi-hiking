@@ -40,21 +40,6 @@
             --glass-alpha-tabbar: 0.10;
         }
         
-        /* 只对关键容器做颜色过渡，避免全页面元素同时动画导致卡顿 */
-        .dark-mode body,
-        .dark-mode .container,
-        .dark-mode .glass-panel,
-        .dark-mode .glass-stat-card,
-        .dark-mode .glass-btn,
-        .dark-mode .header-bar,
-        .dark-mode .stat-card,
-        .dark-mode .chart-container {
-            transition: background-color var(--theme-transition), 
-                        color var(--theme-transition),
-                        border-color var(--theme-transition),
-                        box-shadow var(--theme-transition) !important;
-        }
-        
         /* 白色模式文字覆盖 */
         .text-white { color: #1e293b !important; }
         .text-white\/90 { color: #334155 !important; }
@@ -69,19 +54,6 @@
         .text-green-300 { color: #15803d !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
         .text-orange-300 { color: #c2410c !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
         .text-purple-300 { color: #7e22ce !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
-        
-        /* 浮动光球 - 背景氛围（通透渐变蓝，氛围保留） */
-        /* 2026-08-10 光球全部删除（用户建议，根治白块）：
-           body::before 白色氛围层 + body::after 右下角光球 + orbFloat2 动画 全部移除。
-           渐变氛围层无法平滑过渡是白块根源，删除后 body 纯色背景，切换无渐变可突变。 */
-        /* 主题切换期间暂停所有动画，避免与过渡抢 GPU */
-        body.theme-transitioning .glass-panel::after,
-        body.theme-transitioning .glass-stat-card::after,
-        body.theme-transitioning .glass-btn::after,
-        body.theme-transitioning .icon-pulse,
-        body.theme-transitioning .hover-scale {
-            animation-play-state: paused !important;
-        }
         /* v1.4.10.11 自检根治：彻底移除"切换期间禁用 backdrop-filter"逻辑！
            它就是所有闪烁的元凶（设置页白块/数据管理小框闪/帧率闪/底栏透明突变）——
            blur 从有到无再从无到有 = 两次突变；而 blur 保持开启时，
@@ -121,72 +93,6 @@
         .dark-mode .bg-white.bg-opacity-90 {
             background: rgba(15, 23, 42, 0.35) !important;
             border-color: rgba(255, 255, 255, 0.06) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-br {
-            background: rgba(15, 23, 42, 0.3) !important;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-color: rgba(255, 255, 255, 0.06) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-br.from-blue-50 {
-            background: rgba(15, 23, 42, 0.3) !important;
-            border-left: 3px solid rgba(59, 130, 246, 0.3);
-        }
-        
-        .dark-mode .bg-gradient-to-br.from-green-50 {
-            background: rgba(15, 23, 42, 0.3) !important;
-            border-left: 3px solid rgba(34, 197, 94, 0.3);
-        }
-        
-        .dark-mode .bg-gradient-to-br.from-orange-50 {
-            background: rgba(15, 23, 42, 0.3) !important;
-            border-left: 3px solid rgba(251, 146, 60, 0.3);
-        }
-        
-        .dark-mode .bg-gradient-to-br.from-purple-50 {
-            background: rgba(15, 23, 42, 0.3) !important;
-            border-left: 3px solid rgba(168, 85, 247, 0.3);
-        }
-        
-        .dark-mode .bg-gradient-to-r {
-            background: rgba(15, 23, 42, 0.3) !important;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-blue-50 {
-            background: rgba(15, 23, 42, 0.3) !important;
-            border-left: 3px solid rgba(59, 130, 246, 0.3);
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-green-50 {
-            background: linear-gradient(90deg, rgba(34, 197, 94, 0.2), rgba(55, 65, 81, 0.8)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-orange-50 {
-            background: linear-gradient(90deg, rgba(251, 146, 60, 0.2), rgba(55, 65, 81, 0.8)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-amber-400 {
-            background: linear-gradient(90deg, rgba(251, 191, 36, 0.3), rgba(217, 119, 6, 0.3)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-lime-400 {
-            background: linear-gradient(90deg, rgba(163, 230, 53, 0.3), rgba(132, 204, 22, 0.3)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-green-400 {
-            background: linear-gradient(90deg, rgba(74, 222, 128, 0.3), rgba(34, 197, 94, 0.3)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-red-400 {
-            background: linear-gradient(90deg, rgba(248, 113, 113, 0.3), rgba(220, 38, 38, 0.3)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-orange-400 {
-            background: linear-gradient(90deg, rgba(251, 146, 60, 0.3), rgba(249, 115, 22, 0.3)) !important;
         }
         
         .dark-mode .bg-gradient-to-t {
@@ -471,11 +377,6 @@
             border-color: rgba(59, 130, 246, 0.5) !important;
         }
         
-        .dark-mode .search-dropdown {
-            background: rgba(31, 41, 55, 0.95) !important;
-            border-color: rgba(75, 85, 99, 0.3) !important;
-        }
-        
         .dark-mode .search-option {
             color: #e5e7eb !important;
             border-color: rgba(75, 85, 99, 0.2) !important;
@@ -507,14 +408,6 @@
         }
         
         /* 深色模式下的按钮样式优化 */
-        .dark-mode .bg-gradient-to-r.from-blue-500 {
-            background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-r.from-blue-500:hover {
-            background: linear-gradient(90deg, rgba(59, 130, 246, 0.9), rgba(99, 102, 241, 0.9)) !important;
-        }
-        
         /* 浅色模式操作按钮 - 液态玻璃风 */
         .bg-red-600 {
             background: rgba(239, 68, 68, 0.15) !important;
@@ -627,11 +520,6 @@
             background-color: rgba(59, 130, 246, 0.8) !important;
         }
         
-        /* 深色模式下的表格行悬停效果 */
-        .dark-mode .table-row-hover:hover {
-            background-color: rgba(59, 130, 246, 0.1) !important;
-        }
-        
         /* 深色模式下的输入框聚焦效果 */
         .dark-mode .edit-input:focus {
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
@@ -734,10 +622,6 @@
         }
         
         /* 深色模式下图表容器优化 */
-        .dark-mode .bg-gradient-to-br.from-gray-50 {
-            background: linear-gradient(135deg, rgba(55, 65, 81, 0.6), rgba(75, 85, 99, 0.4)) !important;
-            border-color: rgba(75, 85, 99, 0.4) !important;
-        }
         
         /* 深色模式下图表文字优化 */
         .dark-mode #chartLabels .text-xs {
@@ -1113,9 +997,6 @@
         .about-highlight {
             color: #4f46e5;
         }
-        .settings-section-title {
-            color: #475569;
-        }
         /* ========== 设置页 - 分组卡片（v1.4.10.1 设置页优化） ========== */
         .settings-group {
             background-color: rgba(255, 255, 255, 0.10);
@@ -1353,9 +1234,6 @@
         body.dark-mode .about-highlight {
             color: #a5b4fc;
         }
-        body.dark-mode .settings-section-title {
-            color: rgba(255, 255, 255, 0.7);
-        }
 /* ========== 设置页 - 数据同步（WebDAV） ========== */
         .sync-config-item {
             margin-bottom: 12px;
@@ -1484,12 +1362,6 @@
                 0 4px 24px rgba(0, 0, 0, 0.02);
             /* 2026-08-10 清理：删除被覆盖的旧 transition（死代码） */
             transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.2s ease, background 0.2s ease; /* 切换提速 */
-        }
-        /* v1.4.10.5：所有半透明玻璃元素统一背景过渡，避免主题切换时白块闪现 */
-        .glass-stat-card, .glass-btn, .glass-modal, .glass-chip, .settings-group, .settings-item {
-            transition-property: background-color, background, box-shadow, border-color, color, transform;
-            transition-duration: 0.2s, 0.2s, 0.3s, 0.3s, 0.3s, 0.15s; /* 切换提速 */
-            transition-timing-function: ease, ease, cubic-bezier(0.4, 0, 0.2, 1), ease, ease, cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* 导入/导出弹窗 - 液态玻璃样式（亮暗自适应） */
@@ -1758,16 +1630,10 @@
                 font-size: 1rem !important;
             }
         }
-        .table-row-hover {
-            transition: background-color 0.2s ease;
-        }
         
         /* 标题图标比文字稍大 */
         h2 .material-icons:first-child {
             font-size: 1.3em;
-        }
-        .table-row-hover:hover {
-            background-color: rgba(255, 255, 255, 0.08);
         }
         
         /* 表格布局 */
@@ -1914,14 +1780,6 @@
             .edit-input:-ms-input-placeholder {
                 color: #999;
             }
-        }
-        .difficulty-slider {
-            width: 100%;
-        }
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         .search-option {
             padding: 12px 16px;
@@ -2291,31 +2149,6 @@
             }
         }
         
-        /* 搜索下拉框动画优化 */
-        .search-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: opacity 0.3s, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
-        }
-        
-        .search-dropdown.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
         .search-option {
             padding: 12px 16px;
             cursor: pointer;
@@ -2379,10 +2212,6 @@
             }
         }
         
-        .icon-float {
-            animation: iconFloat 3s ease-in-out infinite;
-        }
-        
         @keyframes iconFloat {
             0%, 100% {
                 transform: translateY(0) rotate(0deg);
@@ -2395,10 +2224,6 @@
             }
         }
         
-        .icon-spin-hover:hover {
-            animation: iconSpin 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        
         @keyframes iconSpin {
             0% {
                 transform: rotate(0deg);
@@ -2406,46 +2231,6 @@
             100% {
                 transform: rotate(360deg);
             }
-        }
-        
-        /* 3. 卡片高级动画 */
-        .card-3d {
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform-style: preserve-3d;
-            perspective: 1000px;
-            will-change: transform;
-        }
-        
-        .card-3d:hover {
-            transform: translateY(-8px) rotateX(2deg) rotateY(-2deg);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(102, 126, 234, 0.1);
-        }
-        
-        .card-shine {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .card-shine::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                45deg,
-                transparent 30%,
-                rgba(255, 255, 255, 0.1) 50%,
-                transparent 70%
-            );
-            transform: rotate(45deg) translateX(-100%);
-            transition: transform 0.6s ease;
-            pointer-events: none;
-        }
-        
-        .card-shine:hover::after {
-            transform: rotate(45deg) translateX(100%);
         }
         
         /* 4. 表格行高级动画 */
@@ -2551,86 +2336,6 @@
             transform: translateY(-1px);
         }
         
-        .input-underline {
-            position: relative;
-        }
-        
-        .input-underline::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-11 3条优化：只过渡 width */
-            transform: translateX(-50%);
-        }
-        
-        .input-underline:focus-within::after {
-            width: 100%;
-        }
-        
-        /* 7. 滚动渐入动画 */
-        .scroll-reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
-        }
-        
-        .scroll-reveal.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .scroll-reveal-left {
-            opacity: 0;
-            transform: translateX(-30px);
-            transition: opacity 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
-        }
-        
-        .scroll-reveal-left.revealed {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .scroll-reveal-right {
-            opacity: 0;
-            transform: translateX(30px);
-            transition: opacity 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 2026-08-11 3条优化：去掉 transition:all */
-        }
-        
-        .scroll-reveal-right.revealed {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        /* 8. 加载动画 */
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-        }
-        
-        .loading-dots {
-            display: inline-flex;
-            gap: 4px;
-        }
-        
-        .loading-dots span {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: currentColor;
-            animation: loadingDot 1.4s ease-in-out infinite both;
-        }
-        
-        .loading-dots span:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-        
-        .loading-dots span:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-        
         @keyframes loadingDot {
             0%, 80%, 100% {
                 transform: scale(0);
@@ -2642,10 +2347,6 @@
             }
         }
         
-        .loading-pulse {
-            animation: loadingPulse 1.5s ease-in-out infinite;
-        }
-        
         @keyframes loadingPulse {
             0%, 100% {
                 opacity: 1;
@@ -2655,11 +2356,6 @@
                 opacity: 0.5;
                 transform: scale(0.95);
             }
-        }
-        
-        /* 9. 成功/失败反馈动画 */
-        .success-bounce {
-            animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
         
         @keyframes successBounce {
@@ -2676,10 +2372,6 @@
             }
         }
         
-        .success-check {
-            animation: successCheck 0.4s ease-out forwards;
-        }
-        
         @keyframes successCheck {
             0% {
                 stroke-dashoffset: 100;
@@ -2687,10 +2379,6 @@
             100% {
                 stroke-dashoffset: 0;
             }
-        }
-        
-        .error-shake {
-            animation: errorShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
         }
         
         @keyframes errorShake {
@@ -2703,10 +2391,6 @@
             20%, 40%, 60%, 80% {
                 transform: translateX(8px);
             }
-        }
-        
-        .error-fade {
-            animation: errorFade 0.3s ease-out;
         }
         
         @keyframes errorFade {
@@ -2793,40 +2477,6 @@
             box-shadow: 
                 0 4px 20px rgba(0, 0, 0, 0.3);
         }
-        .hover-lift {
-            transition: transform 0.1s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-        }
-        
-        .hover-lift:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        }
-        
-        .hover-scale {
-            transition: transform 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-10 帧率优化：0.3s→0.15s 更跟手 */
-        }
-        
-        .hover-scale:hover {
-            transform: scale(1.05);
-        }
-        
-        .hover-rotate {
-            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-        }
-        
-        .hover-rotate:hover {
-            transform: rotate(5deg);
-        }
-        
-        .click-shrink:active {
-            transform: scale(0.95);
-            transition: transform 0.1s ease;
-        }
-        
-        .focus-ring:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
-        }
         
         /* 11. 数字滚动动画 */
         .number-scroll {
@@ -2854,32 +2504,6 @@
         .difficulty-badge-advanced:hover {
             transform: translateY(-4px) rotateX(10deg);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* 13. 标题动画（未使用，已清理） */
-        
-        /* 14. 渐变背景动画（未使用，已清理） */
-        
-        /* 15. 按钮悬停光效 */
-        .btn-glow {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-glow::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.5s ease;
-        }
-        
-        .btn-glow:hover::before {
-            transform: translateX(100%);
         }
         
         /* 16. 空状态动画增强 */
@@ -2940,12 +2564,6 @@
             }
         }
         
-        /* 19. 下拉菜单动画 */
-        .dropdown-animate {
-            animation: dropdownSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-origin: top;
-        }
-        
         @keyframes dropdownSlide {
             0% {
                 opacity: 0;
@@ -2955,15 +2573,6 @@
                 opacity: 1;
                 transform: scaleY(1) translateY(0);
             }
-        }
-        
-        /* 20. 标签动画 */
-        .tag-animate {
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-11 3条优化：只过渡 hover 的 transform */
-        }
-        
-        .tag-animate:hover {
-            transform: scale(1.1) rotate(-2deg);
         }
         
         /* 21. 进度条动画 */
@@ -2993,11 +2602,6 @@
             }
         }
         
-        /* 22. 通知动画 */
-        .notification-slide {
-            animation: notificationSlide 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        
         @keyframes notificationSlide {
             0% {
                 opacity: 0;
@@ -3007,15 +2611,6 @@
                 opacity: 1;
                 transform: translateX(0);
             }
-        }
-        
-        /* 23. 复选框动画 */
-        .checkbox-animate {
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* 2026-08-11 3条优化：去掉 transition:all */
-        }
-        
-        .checkbox-animate:checked {
-            animation: checkboxBounce 0.4s ease;
         }
         
         @keyframes checkboxBounce {
@@ -3071,19 +2666,6 @@
                 transform: translateY(0) scale(1);
             }
         }
-        
-        /* 26. 骨架屏动画（未使用，已清理） */
-        /* 27. 图表柱状图动画增强（未使用，已清理） */
-        
-        /* 28. 数字计数动画 */
-        .count-animate {
-            animation: countUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* 28b. 概览二次点击刷新动画（2026-08-11 用户要求：刷新有视觉反馈；纯 transform/opacity 不触发重排） */
-        .refresh-pop {
-            animation: refreshPop 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-        }
         @keyframes refreshPop {
             0% { opacity: 0.55; transform: scale(0.98); }
             100% { opacity: 1; transform: scale(1); }
@@ -3098,20 +2680,6 @@
                 transform: translateY(0);
                 opacity: 1;
             }
-        }
-        
-        /* 29. 卡片翻转动画 */
-        .card-flip {
-            perspective: 1000px;
-        }
-        
-        .card-flip-inner {
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
-        }
-        
-        .card-flip:hover .card-flip-inner {
-            transform: rotateY(180deg);
         }
         
         /* 30. 脉冲波纹动画 */
@@ -3762,9 +3330,6 @@
   }
   .rounded {
     border-radius: 0.25rem;
-  }
-  .rounded-2xl {
-    border-radius: var(--radius-2xl);
   }
   .rounded-full {
     border-radius: calc(infinity * 1px);
@@ -5094,7 +4659,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.0.8</div>
+                        <div class="about-version">版本 1.1.0.9</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5389,7 +4954,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.0.8';
+var APP_VERSION = '1.1.0.9';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
