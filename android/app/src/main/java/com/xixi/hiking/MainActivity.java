@@ -224,6 +224,42 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // ★2026-08-21 v1.1.1.1 震动反馈：点击按钮短震，跟随系统触摸反馈强度
+        // JS 调用：window.XixiVibration.vibrate(15) → boolean（系统关闭触摸反馈时返回 false 不震）
+        @JavascriptInterface
+        public boolean vibrate(int durationMs) {
+            try {
+                // 尊重系统「触摸反馈」总开关（关闭时 App 也不震）
+                if (android.provider.Settings.System.getInt(getContentResolver(),
+                        android.provider.Settings.System.HAPTIC_FEEDBACK_ENABLED, 0) == 0) {
+                    return false;
+                }
+                int ms = (durationMs > 0 && durationMs <= 100) ? durationMs : 15;
+                android.os.Vibrator v = (android.os.Vibrator) getSystemService(VIBRATOR_SERVICE);
+                if (v == null || !v.hasVibrator()) return false;
+                if (android.os.Build.VERSION.SDK_INT >= 26) {
+                    android.os.VibrationEffect effect = android.os.VibrationEffect.createOneShot(
+                            ms, android.os.VibrationEffect.DEFAULT_AMPLITUDE);
+                    if (android.os.Build.VERSION.SDK_INT >= 30) {
+                        // Android 11+：USAGE_TOUCH → 系统按用户设置的「触摸反馈强度」执行
+                        android.os.VibrationAttributes attrs = new android.os.VibrationAttributes.Builder()
+                                .setUsage(android.os.VibrationAttributes.USAGE_TOUCH)
+                                .build();
+                        v.vibrate(effect, attrs);
+                    } else {
+                        v.vibrate(effect);
+                    }
+                } else {
+                    // Android 7 及以下：默认强度短震
+                    v.vibrate(ms);
+                }
+                return true;
+            } catch (Exception e) {
+                Log.e(TAG, "vibrate failed", e);
+                return false;
+            }
+        }
+
         // ===== WebDAV 桥：绕开 WebView 跨域限制，原生发起 HTTP 请求 =====
         // JS 调用：window.XixiFileBridge.webdavRequest(url, method, username, password, bodyBase64)
         // 支持方法：GET / PUT / OPTIONS / MKCOL / PROPFIND / DELETE
