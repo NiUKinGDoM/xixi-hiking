@@ -1539,6 +1539,19 @@
             background: rgba(255, 255, 255, 0.14);
             border-color: rgba(0, 0, 0, 0.1);
         }
+        /* ★2026-08-20 v1.1.0.3 玻璃弹窗文字深浅自适应（修复浅色模式下白色文字看不见） */
+        .glass-modal h3, .glass-modal .modal-title {
+            color: #1e293b;
+        }
+        body.dark-mode .glass-modal h3, body.dark-mode .glass-modal .modal-title {
+            color: #f8fafc;
+        }
+        .glass-modal p {
+            color: rgba(30, 41, 59, 0.7);
+        }
+        body.dark-mode .glass-modal p {
+            color: rgba(248, 250, 252, 0.7);
+        }
         .modal-option-btn .material-icons { color: #4f46e5; }
         .modal-option-btn.green .material-icons { color: #16a34a; }
         .modal-option-btn.purple .material-icons { color: #9333ea; }
@@ -5072,7 +5085,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.0.2</div>
+                        <div class="about-version">版本 1.1.0.3</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5125,7 +5138,7 @@
             try {
                 // App 原生环境：直接用原生桥把 base64 保存到系统下载目录
                 if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
-                    var saved = window.XixiFileBridge.saveBase64(options.data, options.filename || 'export.csv');
+                    var saved = window.XixiFileBridge.saveBase64(options.data, options.filename || 'export.html');
                     return { success: !!saved };
                 }
                 // 网页版：降级为 blob + <a download> 下载
@@ -5138,7 +5151,7 @@
                 var url = URL.createObjectURL(blob);
                 var link = document.createElement('a');
                 link.href = url;
-                link.download = options.filename || 'export.csv';
+                link.download = options.filename || 'export.html';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -5202,11 +5215,14 @@ if (typeof window.requestIdleCallback !== 'function') {
 // 全局变量
 let records = [];
 let editingId = null;
+// ★2026-08-20 编辑中的照片临时 ID 列表（保存时写回记录，取消时回收孤儿）
+let editingPhotoIds = [];
 let searchTimers = new Map();
 let searchResults = new Map();
 let searchCache = new Map();
 let cacheExpiry = new Map();
-let currentSort = { field: null, direction: 'asc' };
+// ★2026-08-20 v1.1.0.3 默认排序：记录时间，从近到远（用户要求"默认以记录时间为主"）
+let currentSort = { field: 'createdAt', direction: 'desc' };
 let isDarkMode = false;
 const CACHE_DURATION = 30 * 60 * 1000;
 const MAX_CACHE_SIZE = 30;
@@ -5364,7 +5380,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.0.2';
+var APP_VERSION = '1.1.0.3';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -5453,6 +5469,165 @@ async function dataFetchWithRetry(query, schema, maxRetries = 3, baseDelay = 200
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
+
+// ===== ★2026-08-20 v1.1.0.3 照片存储层（IndexedDB 大仓库：记录存 localStorage，照片二进制存这里）=====
+var photoDB = {
+    db: null,
+    ready: false,
+    failed: false,
+    dbName: 'xixi_photos',
+    store: 'photos'
+};
+function photoDBOpen() {
+    return new Promise(function (resolve, reject) {
+        if (photoDB.failed) { reject(new Error('idb-failed')); return; }
+        if (photoDB.db) { resolve(photoDB.db); return; }
+        try {
+            if (!window.indexedDB) { photoDB.failed = true; reject(new Error('no-idb')); return; }
+            var req = indexedDB.open(photoDB.dbName, 1);
+            req.onupgradeneeded = function (e) {
+                var db = e.target.result;
+                if (!db.objectStoreNames.contains(photoDB.store)) {
+                    db.createObjectStore(photoDB.store, { keyPath: 'id' });
+                }
+            };
+            req.onsuccess = function (e) {
+                photoDB.db = e.target.result;
+                photoDB.ready = true;
+                resolve(photoDB.db);
+            };
+            req.onerror = function () { photoDB.failed = true; reject(new Error('idb-open-error')); };
+        } catch (e) { photoDB.failed = true; reject(e); }
+    });
+}
+function photoDBTx(mode, fn) {
+    return photoDBOpen().then(function (db) {
+        return new Promise(function (resolve, reject) {
+            var tx = db.transaction(photoDB.store, mode);
+            var store = tx.objectStore(photoDB.store);
+            var r = fn(store);
+            tx.oncomplete = function () { resolve(r && r.result !== undefined ? r.result : r); };
+            tx.onerror = function () { reject(tx.error || new Error('tx-error')); };
+            tx.onabort = function () { reject(new Error('tx-abort')); };
+        });
+    });
+}
+function photoPut(id, blob, w, h) {
+    return photoDBTx('readwrite', function (store) {
+        return store.put({ id: id, blob: blob, w: w || 0, h: h || 0, created: Date.now() });
+    });
+}
+function photoGet(id) {
+    return photoDBTx('readonly', function (store) { return store.get(id); });
+}
+function photoDelete(id) {
+    return photoDBTx('readwrite', function (store) { return store.delete(id); });
+}
+function photoGetAll() {
+    return photoDBTx('readonly', function (store) { return store.getAll(); });
+}
+function photoDeleteMany(ids) {
+    return photoDBTx('readwrite', function (store) {
+        ids.forEach(function (id) { store.delete(id); });
+    });
+}
+// 孤儿回收：删除不属于任何记录的照片（防"删记录但照片残留"）
+function photoCollectOrphans() {
+    var used = {};
+    (records || []).forEach(function (r) {
+        (r.photos || []).forEach(function (p) { used[p] = true; });
+    });
+    return photoGetAll().then(function (all) {
+        var orphans = (all || []).filter(function (p) { return !used[p.id]; });
+        if (orphans.length) {
+            return photoDeleteMany(orphans.map(function (p) { return p.id; }));
+        }
+    }).catch(function () {});
+}
+// 容量统计：返回 { count, bytes }
+function photoGetUsage() {
+    return photoGetAll().then(function (all) {
+        var total = (all || []).reduce(function (s, p) { return s + (p.blob ? p.blob.size : 0); }, 0);
+        return { count: (all || []).length, bytes: total };
+    }).catch(function () { return { count: 0, bytes: 0 }; });
+}
+// 照片功能是否可用（IndexedDB 打开失败 → 隐藏照片功能，不影响记录）
+function photosEnabled() {
+    return !photoDB.failed;
+}
+
+// ===== ★2026-08-20 取图 + 压缩管线（相机/相册 → canvas 压缩 1280px/JPEG0.7）=====
+var photoInputEl = null;
+function ensurePhotoInput(capture) {
+    if (!photoInputEl) {
+        photoInputEl = document.createElement('input');
+        photoInputEl.type = 'file';
+        photoInputEl.accept = 'image/*';
+        photoInputEl.style.display = 'none';
+        document.body.appendChild(photoInputEl);
+    }
+    if (capture) photoInputEl.setAttribute('capture', 'environment');
+    else photoInputEl.removeAttribute('capture');
+    return photoInputEl;
+}
+// 打开相机(capture=true)或相册(false)，resolve 压缩后 {blob,w,h,name}
+function pickPhoto(capture) {
+    return new Promise(function (resolve, reject) {
+        var input = ensurePhotoInput(capture);
+        input.value = '';
+        input.onchange = function () {
+            var file = input.files && input.files[0];
+            if (!file) { reject(new Error('no-file')); return; }
+            compressImage(file).then(resolve, reject);
+        };
+        input.oncancel = function () { reject(new Error('cancel')); };
+        try { input.click(); } catch (e) { reject(e); }
+    });
+}
+function compressImage(file, maxSide) {
+    maxSide = maxSide || 1280;
+    return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var img = new Image();
+            img.onload = function () {
+                var scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                var w = Math.max(1, Math.round(img.width * scale));
+                var h = Math.max(1, Math.round(img.height * scale));
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); // 透明背景转白
+                ctx.drawImage(img, 0, 0, w, h);
+                canvas.toBlob(function (blob) {
+                    if (!blob) { reject(new Error('compress-fail')); return; }
+                    resolve({ blob: blob, w: w, h: h, name: file.name || ('photo-' + Date.now() + '.jpg') });
+                }, 'image/jpeg', 0.7);
+            };
+            img.onerror = function () { reject(new Error('image-load-fail')); };
+            img.src = e.target.result;
+        };
+        reader.onerror = function () { reject(new Error('read-fail')); };
+        reader.readAsDataURL(file);
+    });
+}
+function blobToDataURL(blob) {
+    return new Promise(function (resolve, reject) {
+        var r = new FileReader();
+        r.onload = function () { resolve(r.result); };
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+    });
+}
+function dataURLToBlob(dataURL) {
+    var parts = dataURL.split(',');
+    var mime = (parts[0].match(/data:(.*?);/) || [])[1] || 'image/jpeg';
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+}
+
 
 // 错误消息显示函数
 function showErrorMessage(message) {
@@ -5912,12 +6087,36 @@ function renderTable() {
                         </div>
                     </td>
                 </tr>
+                <!-- ★2026-08-20 照片区（编辑行下方，最多 9 张） -->
+                <tr id="photo-row-${record.id}" class="border-b border-gray-200 bg-white/5">
+                    <td colspan="5" class="p-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <div id="photo-thumbs-${record.id}" class="flex flex-wrap items-center">
+                                ${photoThumbsHTML(editingPhotoIds, record.id)}
+                            </div>
+                            <button id="photo-camera-btn-${record.id}" 
+                                    class="photo-add-btn ripple-effect btn-click-effect px-2 py-1 rounded text-xs text-white"
+                                    style="background:linear-gradient(135deg,rgba(99,122,235,0.9),rgba(128,84,199,0.9));">
+                                📷 拍照
+                            </button>
+                            <button id="photo-album-btn-${record.id}" 
+                                    class="photo-add-btn ripple-effect btn-click-effect px-2 py-1 rounded text-xs text-white"
+                                    style="background:linear-gradient(135deg,rgba(34,197,94,0.9),rgba(16,185,129,0.9));">
+                                🖼️ 相册
+                            </button>
+                            <span class="photo-count text-xs" style="color:rgba(255,255,255,0.5);">${editingPhotoIds.length}/9</span>
+                        </div>
+                    </td>
+                </tr>
             `;
         } else {
             return `
                 <tr class="table-row-advanced table-row-animate border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="animation-delay: ${idx * 0.05}s;">
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
-                        ${record.name}
+                        <span class="inline-flex items-center gap-1.5">
+                            ${record.name}
+                            ${record.photos && record.photos.length ? '<button id="photos-btn-' + record.id + '" data-testid="photos-button-' + record.id + '" class="ripple-effect btn-click-effect glass-btn inline-flex items-center justify-center" style="width:26px;height:26px;padding:0;border-radius:8px;" title="查看照片"><span class="material-icons" style="font-size:14px;line-height:1;">photo_library</span></button>' : ''}
+                        </span>
                     </td>
                     <td class="p-2 text-white/80 text-base font-medium" data-label="海拔">
                         ${record.elevation}
@@ -6017,6 +6216,38 @@ function attachEventListeners() {
                     { element: nameInput, event: 'focus', handler: focusHandler }
                 );
             }
+            // ★2026-08-20 照片区按钮（拍照/相册/删除缩略图）
+            const photoCameraBtn = safeGetElementById(`photo-camera-btn-${record.id}`);
+            const photoAlbumBtn = safeGetElementById(`photo-album-btn-${record.id}`);
+            const photoThumbsBox = safeGetElementById(`photo-thumbs-${record.id}`);
+            if (photoCameraBtn) {
+                const camHandler = () => addPhotosToEdit(record.id, true);
+                photoCameraBtn.addEventListener('click', camHandler);
+                eventListeners.push({ element: photoCameraBtn, event: 'click', handler: camHandler });
+            }
+            if (photoAlbumBtn) {
+                const albHandler = () => addPhotosToEdit(record.id, false);
+                photoAlbumBtn.addEventListener('click', albHandler);
+                eventListeners.push({ element: photoAlbumBtn, event: 'click', handler: albHandler });
+            }
+            if (photoThumbsBox) {
+                const thumbsHandler = (e) => {
+                    const delBtn = e.target.closest('.photo-del-btn');
+                    if (delBtn) {
+                        const pid = delBtn.getAttribute('data-pid');
+                        if (pid) removePhotoFromEdit(pid);
+                        return;
+                    }
+                    const img = e.target.closest('.photo-thumb-img');
+                    if (img) {
+                        const pid = img.getAttribute('data-pid');
+                        if (pid) openPhotoLightbox(record.id, pid);
+                    }
+                };
+                photoThumbsBox.addEventListener('click', thumbsHandler);
+                eventListeners.push({ element: photoThumbsBox, event: 'click', handler: thumbsHandler });
+            }
+            loadPhotoThumbs(record.id);
         } else {
             const row = safeGetElementById(`row-${record.id}`);
             const deleteBtn = safeGetElementById(`delete-btn-${record.id}`);
@@ -6032,6 +6263,17 @@ function attachEventListeners() {
                 row.addEventListener('click', rowHandler);
                 eventListeners.push({ element: row, event: 'click', handler: rowHandler });
             }
+            // ★2026-08-20 照片按钮 → 灯箱查看（不撑宽表格，按钮形式）
+            const photosBtn = safeGetElementById(`photos-btn-${record.id}`);
+            if (photosBtn) {
+                const photosHandler = (e) => {
+                    e.stopPropagation();
+                    const pids = record.photos || [];
+                    if (pids.length) openPhotoLightbox(record.id, pids[0]);
+                };
+                photosBtn.addEventListener('click', photosHandler);
+                eventListeners.push({ element: photosBtn, event: 'click', handler: photosHandler });
+            }
             
             if (deleteBtn) {
                 const deleteHandler = () => showDeleteConfirmModal(record.id, record.name);
@@ -6046,6 +6288,9 @@ function attachEventListeners() {
 
 function startEdit(id) {
     editingId = id;
+    // ★2026-08-20 照片：进入编辑时从记录拷贝当前照片列表
+    const rec = records.find(r => r.id === id);
+    editingPhotoIds = rec && rec.photos ? rec.photos.slice() : [];
     renderTable();
 }
 
@@ -6061,6 +6306,9 @@ function cancelEdit() {
     }
     
     editingId = null;
+    // ★2026-08-20 照片：取消编辑 → 新增未保存的照片回收为孤儿
+    editingPhotoIds = [];
+    photoCollectOrphans();
     
     searchTimers.forEach((timer) => {
         clearTimeout(timer);
@@ -6077,6 +6325,183 @@ function cancelEdit() {
     updateStatistics();
     saveToStorage();
     renderTable();
+}
+
+// ★2026-08-20 编辑行照片区渲染辅助：生成照片缩略图占位（异步填充在 loadPhotoThumbs）
+function photoThumbsHTML(ids, recordId) {
+    if (!ids || !ids.length) return '';
+    return ids.map(function (pid) {
+        return '<div class="relative inline-block" style="margin:2px;">' +
+            '<img data-pid="' + pid + '" data-record="' + recordId + '" ' +
+            'class="photo-thumb-img rounded-lg cursor-pointer" ' +
+            'style="width:64px;height:64px;object-fit:cover;background:#e2e8f0;" ' +
+            'alt="照片">' +
+            '<span class="photo-del-btn" data-pid="' + pid + '" data-record="' + recordId + '" ' +
+            'style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,0.9);color:#fff;font-size:11px;line-height:18px;text-align:center;cursor:pointer;">×</span>' +
+            '</div>';
+    }).join('');
+}
+// 异步填充缩略图（从 IndexedDB 取 blob → objectURL）
+function loadPhotoThumbs(recordId) {
+    var imgs = document.querySelectorAll('img[data-record="' + recordId + '"]');
+    if (!imgs.length) return;
+    Array.prototype.forEach.call(imgs, function (img) {
+        var pid = img.getAttribute('data-pid');
+        if (!pid || img._photoLoaded) return;
+        img._photoLoaded = true;
+        photoGet(pid).then(function (p) {
+            if (p && p.blob) {
+                var url = URL.createObjectURL(p.blob);
+                img.onload = function () { URL.revokeObjectURL(url); };
+                img.src = url;
+            }
+        }).catch(function () {});
+    });
+}
+// ★2026-08-20 添加照片到当前编辑（拍照 capture=true / 相册 false）
+function addPhotosToEdit(recordId, capture) {
+    if (editingPhotoIds.length >= 9) { showErrorMessage('最多添加 9 张照片'); return; }
+    if (!photosEnabled()) { showErrorMessage('照片存储不可用，请刷新重试'); return; }
+    pickPhoto(capture).then(function (r) {
+        var pid = generateId();
+        return photoPut(pid, r.blob, r.w, r.h).then(function () {
+            editingPhotoIds.push(pid);
+            refreshPhotoStrip(recordId);
+        });
+    }).catch(function (e) {
+        if (e && e.message !== 'cancel' && e.message !== 'no-file' && e.message !== 'image-load-fail') {
+            showErrorMessage('添加照片失败，请重试');
+        }
+    });
+}
+// ★2026-08-20 删除编辑中的照片（IndexedDB 同步删，防止残留）
+function removePhotoFromEdit(pid) {
+    var idx = editingPhotoIds.indexOf(pid);
+    if (idx >= 0) editingPhotoIds.splice(idx, 1);
+    photoDelete(pid).catch(function () {});
+    refreshPhotoStrip(editingId);
+}
+// 重渲染编辑行照片区（缩略图 + 计数）
+function refreshPhotoStrip(recordId) {
+    if (!recordId) return;
+    var box = document.getElementById('photo-thumbs-' + recordId);
+    if (!box) return;
+    box.innerHTML = photoThumbsHTML(editingPhotoIds, recordId);
+    loadPhotoThumbs(recordId);
+    var c = document.querySelector('#photo-row-' + recordId + ' .photo-count');
+    if (c) c.textContent = editingPhotoIds.length + '/9';
+}
+
+// ===== ★2026-08-20 灯箱（全屏查看 + 滑动 + 单独保存）=====
+var photoLightboxEl = null;
+function ensureLightbox() {
+    if (photoLightboxEl) return photoLightboxEl;
+    var div = document.createElement('div');
+    div.id = 'photoLightbox';
+    div.innerHTML =
+        '<div style="position:absolute;top:0;left:0;right:0;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;z-index:2;color:#fff;">' +
+        '<span id="lb-title" style="font-size:15px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.5);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>' +
+        '<button id="lb-close" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;">✕</button>' +
+        '</div>' +
+        '<div id="lb-index" style="position:absolute;top:16px;left:16px;color:rgba(255,255,255,0.55);font-size:12px;z-index:2;"></div>' +
+        '<img id="lb-img" style="position:absolute;inset:0;margin:auto;max-width:94%;max-height:80%;object-fit:contain;">' +
+        '<div style="position:absolute;bottom:22px;left:0;right:0;display:flex;justify-content:center;gap:16px;z-index:2;">' +
+        '<button id="lb-prev" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;line-height:1;">‹</button>' +
+        '<button id="lb-save" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:10px 28px;border-radius:22px;font-size:14px;cursor:pointer;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">保存</button>' +
+        '<button id="lb-next" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);color:#fff;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;line-height:1;">›</button>' +
+        '</div>';
+    div.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.93);display:none;';
+    document.body.appendChild(div);
+    div.querySelector('#lb-close').addEventListener('click', closePhotoLightbox);
+    div.querySelector('#lb-prev').addEventListener('click', function () { lbStep(-1); });
+    div.querySelector('#lb-next').addEventListener('click', function () { lbStep(1); });
+    div.querySelector('#lb-save').addEventListener('click', saveCurrentPhoto);
+    div.addEventListener('click', function (e) { if (e.target === div) closePhotoLightbox(); });
+    var sx = null;
+    div.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+    div.addEventListener('touchend', function (e) {
+        if (sx === null) return;
+        var dx = e.changedTouches[0].clientX - sx;
+        if (Math.abs(dx) > 50) { if (dx < 0) lbStep(1); else lbStep(-1); }
+        sx = null;
+    }, { passive: true });
+    photoLightboxEl = div;
+    return div;
+}
+function openPhotoLightbox(recordId, startPid) {
+    var rec = records.find(r => r.id === recordId);
+    if (!rec || !rec.photos || !rec.photos.length) return;
+    var lb = ensureLightbox();
+    lb._recordId = recordId;
+    lb._ids = rec.photos.slice();
+    lb._idx = lb._ids.indexOf(startPid);
+    if (lb._idx < 0) lb._idx = 0;
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lbLoadImg();
+}
+function lbStep(delta) {
+    var lb = photoLightboxEl;
+    if (!lb || !lb._ids || !lb._ids.length) return;
+    lb._idx = (lb._idx + delta + lb._ids.length) % lb._ids.length;
+    lbLoadImg();
+}
+function lbLoadImg() {
+    var lb = photoLightboxEl;
+    if (!lb) return;
+    var img = lb.querySelector('#lb-img');
+    var title = lb.querySelector('#lb-title');
+    var idxEl = lb.querySelector('#lb-index');
+    var rec = records.find(r => r.id === lb._recordId);
+    title.textContent = rec ? rec.name : '';
+    idxEl.textContent = (lb._idx + 1) + ' / ' + lb._ids.length;
+    img.style.opacity = '0.3';
+    var pid = lb._ids[lb._idx];
+    lb._currentPid = pid;
+    photoGet(pid).then(function (p) {
+        if (lb._currentPid !== pid) return;
+        if (p && p.blob) {
+            var url = URL.createObjectURL(p.blob);
+            img.onload = function () { URL.revokeObjectURL(url); };
+            img.src = url;
+            img.style.opacity = '1';
+        }
+    }).catch(function () {});
+}
+function closePhotoLightbox() {
+    var lb = photoLightboxEl;
+    if (!lb) return;
+    lb.style.display = 'none';
+    document.body.style.overflow = '';
+    lb.querySelector('#lb-img').src = '';
+}
+// 保存当前照片：App 版走原生桥存相册（M6），网页版浏览器下载
+function saveCurrentPhoto() {
+    var lb = photoLightboxEl;
+    if (!lb || !lb._currentPid) return;
+    var pid = lb._currentPid;
+    photoGet(pid).then(function (p) {
+        if (!p || !p.blob) { showErrorMessage('照片读取失败'); return; }
+        if (window.XixiFileBridge && typeof window.XixiFileBridge.saveImageToGallery === 'function') {
+            blobToDataURL(p.blob).then(function (durl) {
+                var base64 = durl.split(',')[1] || '';
+                try {
+                    var ok = window.XixiFileBridge.saveImageToGallery(base64, 'xixi-' + pid + '.jpg');
+                    if (ok === true || ok === 'true' || ok === null) showSuccessMessage('已保存到相册');
+                    else showErrorMessage('保存失败');
+                } catch (e) { showErrorMessage('保存失败'); }
+            });
+            return;
+        }
+        var url = URL.createObjectURL(p.blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'xixi-' + pid + '.jpg';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+        showSuccessMessage('已开始下载');
+    }).catch(function () { showErrorMessage('保存失败'); });
 }
 
 async function searchLocation(query, recordId) {
@@ -6855,6 +7280,10 @@ function saveRecord(id) {
         record.createdAt = new Date(createdAtInput.value).toISOString();
     }
     
+    // ★2026-08-20 照片：编辑结果写回记录
+    record.photos = editingPhotoIds.slice();
+    editingPhotoIds = [];
+    
     editingId = null;
     updateStatistics();
     saveToStorage();
@@ -7020,7 +7449,7 @@ function showDataInfoModal() {
                 数据管理说明
             </div>
             <div class="confirm-modal-message" style="line-height: 1.4;">
-                导出支持徒步记录、计划徒步；导入支持 CSV 格式文件。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。
+                导出/导入完整备份（HTML 单文件，含徒步记录、计划与照片）。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-delete ripple-effect" id="data-info-close" style="background: #4f46e5; border-color: #4f46e5; color: #fff;">知道了</button>
@@ -7081,6 +7510,11 @@ function showDeleteConfirmModal(recordId, recordName) {
 }
 
 function deleteRecord(id) {
+    // ★2026-08-20 级联删除照片
+    const recToDelete = records.find(r => r.id === id);
+    if (recToDelete && recToDelete.photos && recToDelete.photos.length) {
+        photoDeleteMany(recToDelete.photos).catch(function () {});
+    }
     const row = document.getElementById('row-' + id);
     if (row) {
         row.classList.add('row-exit');
@@ -8529,9 +8963,9 @@ async function uploadSyncBackup(silent) {
     syncInProgress = true;
     setSyncBusy(true, '上传中…');
     try {
-        const payload = buildFullBackupPayload();
-        const json = JSON.stringify(payload, null, 2);
-        const bodyBase64 = utf8ToBase64(json);
+        // ★2026-08-20 v1.1.0.3 备份升级为 HTML 单文件（含照片，回忆册可看）
+        const html = await buildFullBackupHTML();
+        const bodyBase64 = utf8ToBase64(html);
         // 坚果云要求目录先存在：上传前无条件先逐级创建目录（幂等，已存在返回 405/409 视为 OK）
         const dirsResult = await ensureSyncParentDirs(url);
         if (!dirsResult.ok) {
@@ -8543,7 +8977,7 @@ async function uploadSyncBackup(silent) {
         const result = await webdavRequest(url, 'PUT', bodyBase64);
         if (result.status >= 200 && result.status < 300) {
             const now = formatSyncTime(new Date());
-            await recordSyncFile(fileName, payload); // 记录到本地索引
+            await recordSyncFile(fileName, buildFullBackupPayload()); // 记录到本地索引
             await window.lingguang.storage.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'upload' });
             setSyncStatus('备份已上传：' + now, 'cloud_upload', 'success');
             if (!silent) showSuccessMessage('备份上传成功');
@@ -8762,9 +9196,15 @@ async function mergeSyncBackup(silent) {
             return;
         }
         if (result.status >= 200 && result.status < 300 && result.body) {
-            const json = base64ToUtf8(result.body);
-            const payload = JSON.parse(json);
+            const text = base64ToUtf8(result.body);
+            // ★2026-08-20 v1.1.0.3 兼容：HTML 完整备份（含照片）/ 老格式 JSON
+            const payload = extractBackupData(text);
             if (payload && Array.isArray(payload.records) && Array.isArray(payload.plannedTrips)) {
+                // ★照片恢复：本地缺哪张补哪张
+                if (payload.photos) {
+                    const added = await restorePhotosFromPayload(payload);
+                    if (added > 0 && !silent) showSuccessMessage('已恢复 ' + added + ' 张照片');
+                }
                 // 合并记录：按 id 去重，时间戳（createdAt）取新
                 const localMap = new Map(records.map(r => [r.id, r]));
                 const cloudMap = new Map(payload.records.map(r => [r.id, r]));
@@ -8840,11 +9280,90 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: '徒步小记',
-        version: '1.1.0.2',
+        version: '1.1.0.3',
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []
     };
+}
+
+// ===== ★2026-08-20 v1.1.0.3 HTML 单文件完整备份（回忆册样式 + script 数据块，App 可导入恢复）=====
+function buildBackupHTMLString(payload) {
+    var esc = function (s) { return escapeHtml(s === undefined || s === null ? '' : String(s)); };
+    // ★2026-08-20 导出文档标题跟随 App 顶栏设置标题（#appTitle）
+    var appTitleEl = document.getElementById('appTitle');
+    var appTitle = (appTitleEl && appTitleEl.textContent && appTitleEl.textContent.trim()) || 'XiXiの徒步小记';
+    var escTitle = esc(appTitle);
+    var photos = payload.photos || {};
+    var recCards = (payload.records || []).map(function (r) {
+        var imgs = (r.photos || []).map(function (pid) {
+            var d = photos[pid];
+            return d ? '<img src="' + d + '" style="max-width:140px;max-height:140px;border-radius:8px;margin:4px;vertical-align:top;">' : '';
+        }).join('');
+        return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin:12px 0;background:#ffffff;">' +
+            '<h3 style="margin:0 0 6px;color:#1e293b;">' + esc(r.name || '未命名') + '</h3>' +
+            '<div style="color:#64748b;font-size:13px;">难度 ' + esc(r.difficulty !== undefined ? r.difficulty : '-') + ' 级 · 海拔 ' + esc(r.elevation || 0) + ' m · ' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</div>' +
+            (imgs ? '<div style="margin-top:8px;">' + imgs + '</div>' : '') +
+            '</div>';
+    }).join('');
+    var planCards = (payload.plannedTrips || []).map(function (t) {
+        return '<div style="border:1px dashed #cbd5e1;border-radius:12px;padding:12px;margin:10px 0;background:#f1f5f9;">' +
+            '<h4 style="margin:0 0 4px;color:#334155;">' + esc(t.name || '未命名') + '</h4>' +
+            '<div style="color:#64748b;font-size:13px;">难度 ' + esc(t.difficulty !== undefined ? t.difficulty : '-') + ' 级 · ' + esc(t.createdAt || '') + '</div>' +
+            '</div>';
+    }).join('');
+    var dataJson = JSON.stringify(payload).replace(/<\/script/g, '<\\/script');
+    return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>' + escTitle + ' · 完整备份</title>' +
+        '<style>body{font-family:"SimSun",serif;max-width:720px;margin:0 auto;padding:20px 16px;background:#f8fafc;color:#1e293b;}h1{text-align:center;margin-bottom:4px;}p.sub{text-align:center;color:#64748b;font-size:14px;}h2{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-top:28px;}footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:40px;}</style></head><body>' +
+        '<h1>🥾 ' + escTitle + '</h1><p class="sub">完整备份 · 共 ' + (payload.records || []).length + ' 条徒步记录 · ' + (payload.plannedTrips || []).length + ' 条计划 · 导出于 ' + new Date(payload.exportedAt || Date.now()).toLocaleString() + '</p>' +
+        '<h2>📝 徒步记录</h2>' + (recCards || '<p style="color:#94a3b8;">暂无记录</p>') +
+        '<h2>🗓️ 计划徒步</h2>' + (planCards || '<p style="color:#94a3b8;">暂无计划</p>') +
+        '<footer>Made by XiXi 💛 · 此文件可在 App 内导入恢复</footer>' +
+        '<script id="backup-data" type="application/json">' + dataJson + '</' + 'script>' +
+        '</body></html>';
+}
+// 组装完整备份 HTML（文字 + 照片 base64）
+async function buildFullBackupHTML() {
+    var payload = buildFullBackupPayload();
+    var allIds = {};
+    (payload.records || []).forEach(function (r) { (r.photos || []).forEach(function (p) { allIds[p] = true; }); });
+    var ids = Object.keys(allIds);
+    var photos = {};
+    for (var i = 0; i < ids.length; i++) {
+        try {
+            var p = await photoGet(ids[i]);
+            if (p && p.blob) photos[ids[i]] = await blobToDataURL(p.blob);
+        } catch (e) { /* 单张失败跳过 */ }
+    }
+    payload.photos = photos;
+    return buildBackupHTMLString(payload);
+}
+// 从备份文本提取数据（HTML 数据块 or 老格式纯 JSON）
+function extractBackupData(text) {
+    if (!text) return null;
+    var m = text.match(/<script id="backup-data"[^>]*>([\s\S]*?)<\/script>/);
+    if (m) {
+        try { return JSON.parse(m[1]); } catch (e) { return null; }
+    }
+    try { return JSON.parse(text); } catch (e) { return null; }
+}
+// 恢复照片入库：本地已存在的跳过（缺哪张补哪张）
+async function restorePhotosFromPayload(payload) {
+    var photos = payload.photos || {};
+    var ids = Object.keys(photos);
+    if (!ids.length) return 0;
+    var added = 0;
+    for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        try {
+            var existing = await photoGet(id);
+            if (existing && existing.blob) continue;
+            var blob = dataURLToBlob(photos[id]);
+            await photoPut(id, blob);
+            added++;
+        } catch (e) { /* 单张失败继续 */ }
+    }
+    return added;
 }
 
 function formatSyncTime(date) {
@@ -9224,16 +9743,13 @@ function showExportModal() {
     const modalHtml = `
         <div id="exportModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-animate" style="background: rgba(0,0,0,0.5);">
             <div class="glass-modal modal-fade-scale p-6 w-80 max-w-[90vw]">
-                <h3 class="text-lg font-semibold mb-4 text-white">导出</h3>
+                <h3 class="text-lg font-semibold mb-2">导出</h3>
+                <p class="text-sm mb-4">导出完整备份（徒步记录 + 照片 + 计划），可导入恢复，也能用浏览器打开查看</p>
 
                 <div class="space-y-3">
                     <button id="exportRecordsBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
-                        <span class="material-icons text-xl">hiking</span>
-                        <span>导出徒步记录</span>
-                    </button>
-                    <button id="exportPlannedBtn" class="w-full py-3 px-4 modal-option-btn green flex items-center justify-center gap-2">
-                        <span class="material-icons text-xl">event_note</span>
-                        <span>导出计划徒步</span>
+                        <span class="material-icons text-xl">backup</span>
+                        <span>导出完整备份</span>
                     </button>
                 </div>
                 <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
@@ -9270,145 +9786,40 @@ function showExportModal() {
 
     exportRecordsBtn.addEventListener('click', async () => {
         closeModal();
-        await performExport('records', 'csv');
-    });
-
-    exportPlannedBtn.addEventListener('click', async () => {
-        closeModal();
-        await performExport('planned', 'csv');
+        await performBackupExport();
     });
 }
 
-function escapeCsvField(field) {
-    if (field === null || field === undefined) {
-        return '';
-    }
-    const str = String(field);
-    // 如果包含逗号、引号或换行符，需要用引号包裹并转义内部引号
-    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-        return '"' + str.replace(/"/g, '""') + '"';
-    }
-    return str;
-}
-
-function formatDateForExport(timestamp) {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-async function performExport(type, format = 'csv') {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-    
-    // 准备数据
-    let recordsData = [];
-    let plannedData = [];
-    
-    if (type === 'records') {
-        if (records && records.length > 0) {
-            recordsData = records.map(record => ({
-                '名称': record.name || '',
-                '海拔(米)': record.elevation || 0,
-                '难度': record.difficulty || 1,
-                '记录时间': formatDateForExport(record.createdAt)
-            }));
-        }
-    }
-    
-    if (type === 'planned') {
-        if (plannedTrips && plannedTrips.length > 0) {
-            plannedData = plannedTrips.map(trip => ({
-                '名称': trip.name || '',
-                '海拔(米)': trip.elevation || 0,
-                '难度': trip.difficulty || 1,
-                '记录时间': formatDateForExport(trip.createdAt)
-            }));
-        }
-    }
-    
-    // 检查是否有数据
-    const hasRecords = recordsData.length > 0;
-    const hasPlanned = plannedData.length > 0;
-
-    if (type === 'records' && !hasRecords) {
-        showErrorMessage('没有徒步记录可导出');
-        return;
-    }
-
-    if (type === 'planned' && !hasPlanned) {
-        showErrorMessage('没有计划徒步可导出');
-        return;
-    }
-
-
-    // 导出 CSV
-    await exportToCsv(type, recordsData, plannedData, dateStr);
-}
-
-async function exportToCsv(type, recordsData, plannedData, dateStr) {
-    let csvContent = '';
-    let filename = '';
-    
-    // UTF-8 BOM for Excel compatibility
-    const BOM = '\uFEFF';
-    
-    if (type === 'records') {
-        csvContent = BOM + '名称,海拔(米),难度,记录时间\n';
-        recordsData.forEach(record => {
-            csvContent += `${escapeCsvField(record['名称'])},${record['海拔(米)']},${record['难度']},${record['记录时间']}\n`;
-        });
-        filename = `徒步记录_${dateStr}.csv`;
-    } else if (type === 'planned') {
-        csvContent = BOM + '名称,海拔(米),难度,记录时间\n';
-        plannedData.forEach(trip => {
-            csvContent += `${escapeCsvField(trip['名称'])},${trip['海拔(米)']},${trip['难度']},${trip['记录时间']}\n`;
-        });
-        filename = `计划徒步_${dateStr}.csv`;
-
-    }
-    
-    await downloadCsvFile(csvContent, filename);
-}
-
-async function downloadCsvFile(content, filename) {
-    // 使用 lingguang.saveFile API 直接保存文件
+// ★2026-08-20 导出完整备份（HTML 单文件，含照片）
+async function performBackupExport() {
     try {
-        // 将内容转换为纯 Base64 格式（不包含 Data URL 前缀）
-        const base64Content = btoa(encodeURIComponent(content).replace(/%([0-9A-F]{2})/g,
-            function toSolidBytes(match, p1) {
-                return String.fromCharCode('0x' + p1);
-            }));
-
-        const result = await window.lingguang.saveFile({
-            data: base64Content,
-            filename: filename
-        });
-
-        if (result.success) {
-            showSuccessMessage(`导出成功，已保存到「下载」文件夹：${filename}`);
+        showLoadingToast('正在打包备份…');
+        const html = await buildFullBackupHTML();
+        const dateStr = new Date().toISOString().replace(/[-:TZ]/g, '').slice(0, 14);
+        const fileName = 'XiXi徒步备份-' + dateStr + '.html';
+        if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
+            const ok = window.XixiFileBridge.saveBase64(utf8ToBase64(html), fileName);
+            if (ok === true || ok === 'true' || ok === null) showSuccessMessage('备份已导出：' + fileName);
+            else showErrorMessage('导出失败');
         } else {
-            showErrorMessage('导出失败，请重试');
+            // 网页版：下载
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+            showSuccessMessage('备份已开始下载');
         }
-    } catch (error) {
-        console.error('CSV 导出失败:', error);
-        if (error.name === 'PERMISSION_DENIED') {
-            showErrorMessage('保存权限被拒绝');
-        } else {
-            showErrorMessage('导出失败，请重试');
-        }
+    } catch (e) {
+        showErrorMessage('导出失败：' + (e.message || e));
+    } finally {
+        hideLoadingToast();
     }
 }
 
-// ==================== CSV 导入功能 ====================
-
-let pendingImportData = null;
+// ==================== 完整备份导入功能 ====================
 
 function showImportModal() {
     const existing = document.getElementById('importMethodModal');
@@ -9420,16 +9831,12 @@ function showImportModal() {
     modal.style.background = 'rgba(0,0,0,0.5)';
     modal.innerHTML = `
         <div class="glass-modal modal-fade-scale p-6 w-80 max-w-[90vw]">
-            <h3 class="text-lg font-semibold mb-2 text-white">导入徒步数据</h3>
-            <p class="text-sm text-white/60 mb-4">请选择操作</p>
+            <h3 class="text-lg font-semibold mb-2">导入</h3>
+            <p class="text-sm mb-4">导入完整备份，含照片</p>
             <div class="space-y-3">
                 <button id="selectFileBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
                     <span class="material-icons text-xl">upload_file</span>
-                    <span>选择CSV文件</span>
-                </button>
-                <button id="downloadSampleBtn" class="w-full py-3 px-4 modal-option-btn purple flex items-center justify-center gap-2">
-                    <span class="material-icons text-xl">description</span>
-                    <span>下载导入示例</span>
+                    <span>选择备份文件</span>
                 </button>
             </div>
             <button id="cancelImportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
@@ -9439,7 +9846,7 @@ function showImportModal() {
     `;
     document.body.appendChild(modal);
 
-    // 淡出关闭（用于下载示例和取消）
+    // 淡出关闭
     const fadeOutModal = () => {
         modal.style.transition = 'opacity 0.25s ease';
         modal.style.opacity = '0';
@@ -9450,13 +9857,8 @@ function showImportModal() {
 
     document.getElementById('selectFileBtn').addEventListener('click', () => {
         // 先触发文件选择（保持用户手势上下文，Android WebView 要求），再移除弹窗
-        importCSV();
+        importBackup();
         fadeOutModal();
-    });
-
-    document.getElementById('downloadSampleBtn').addEventListener('click', () => {
-        fadeOutModal();
-        downloadSampleCSV();
     });
 
     document.getElementById('cancelImportModal').addEventListener('click', () => {
@@ -9471,192 +9873,72 @@ function showImportModal() {
     });
 }
 
-function downloadSampleCSV() {
-    const BOM = '\uFEFF';
-    const header = '名称,海拔(米),难度,记录时间\n';
-    const samples = [
-        ['太白山拔仙台', '3767', '5', '2026-07-15 08:00:00'],
-        ['华山北峰', '2155', '4', '2026-06-20 06:30:00'],
-        ['终南山', '2604', '3', '2026-05-10 07:00:00'],
-        ['光头山', '2887', '4', '2026-04-18 06:00:00'],
-        ['翠华山', '2132', '3', '2026-03-22 08:30:00'],
-        ['骊山', '1302', '2', '2026-02-14 09:00:00'],
-        ['牛背梁', '2802', '4', '2026-01-08 07:30:00'],
-    ];
-
-    let csvContent = BOM + header;
-    samples.forEach(s => {
-        csvContent += `${escapeCsvField(s[0])},${s[1]},${s[2]},${s[3]}\n`;
-    });
-
-    downloadCsvFile(csvContent, '徒步导入示例.csv');
-}
-
-function importCSV() {
-    const fileInput = document.getElementById('csvFileInput');
+// ★2026-08-20 v1.1.0.3 导入完整备份（HTML 数据块 / 老 JSON），照片一起恢复
+function importBackup() {
+    const fileInput = document.getElementById('backupFileInput');
     if (!fileInput) return;
     fileInput.click();
-    fileInput.onchange = function(e) {
+    fileInput.onchange = function (e) {
         const file = e.target.files[0];
         if (!file) return;
-        
         const reader = new FileReader();
-        reader.onload = function(ev) {
+        reader.onload = function (ev) {
             try {
-                const text = ev.target.result;
-                const cleanText = text.replace(/^\uFEFF/, '');
-                const lines = cleanText.trim().split('\n');
-                if (lines.length < 2) {
-                    showErrorMessage('CSV 文件为空');
+                const payload = extractBackupData(ev.target.result);
+                if (!payload || !Array.isArray(payload.records)) {
+                    showErrorMessage('不是有效的备份文件（需为 HTML 完整备份）');
                     return;
                 }
-                
-                const header = lines[0].split(',');
-                const nameIdx = header.findIndex(h => h.includes('名称'));
-                const altIdx = header.findIndex(h => h.includes('海拔'));
-                const diffIdx = header.findIndex(h => h.includes('难度'));
-                const timeIdx = header.findIndex(h => h.includes('时间'));
-                
-                const parsedRecords = [];
-                for (let i = 1; i < lines.length; i++) {
-                    const cols = lines[i].split(',');
-                    if (cols.length < 3) continue;
-                    
-                    // 解析日期：支持 "2026/6/22 13:16" 和 "2026-08-07 13:56:00" 两种格式
-                    let isoDate;
-                    if (cols[timeIdx]) {
-                        const raw = cols[timeIdx].trim();
-                        // 尝试用 Date 对象解析（兼容 / 和 - 分隔符）
-                        const d = new Date(raw.replace(/\//g, '-'));
-                        if (!isNaN(d.getTime())) {
-                            isoDate = d.toISOString();
-                        } else {
-                            isoDate = new Date().toISOString();
-                        }
-                    } else {
-                        isoDate = new Date().toISOString();
-                    }
-                    
-                    const record = {
-                        id: Date.now().toString(36) + Math.random().toString(36).substr(2) + i,
-                        name: (cols[nameIdx] || '').trim(),
-                        elevation: parseInt(cols[altIdx]) || 0,
-                        difficulty: parseInt(cols[diffIdx]) || 3,
-                        createdAt: isoDate
-                    };
-                    
-                    if (!record.name) continue;
-                    parsedRecords.push(record);
-                }
-                
-                if (parsedRecords.length === 0) {
-                    showErrorMessage('CSV 中没有有效记录');
-                    return;
-                }
-                
-                // 弹出选择：导入到徒步记录还是计划徒步行
-                pendingImportData = parsedRecords;
-                showImportChoiceModal(parsedRecords.length);
-                
+                importFullBackupPayload(payload);
             } catch (err) {
-                console.error('CSV 导入失败:', err);
-                showErrorMessage('CSV 解析失败，请检查文件格式');
+                console.error('导入备份失败:', err);
+                showErrorMessage('备份解析失败，请确认文件是完整备份');
             }
         };
         reader.readAsText(file, 'UTF-8');
         fileInput.value = '';
     };
 }
+async function importFullBackupPayload(payload) {
+    try {
+        if (payload.photos) {
+            const added = await restorePhotosFromPayload(payload);
+            if (added > 0) showSuccessMessage('已恢复 ' + added + ' 张照片');
+        }
+        const localMap = new Map(records.map(r => [r.id, r]));
+        const cloudMap = new Map(payload.records.map(r => [r.id, r]));
+        const merged = new Map();
+        localMap.forEach((r, id) => {
+            const c = cloudMap.get(id);
+            if (!c) { merged.set(id, r); return; }
+            merged.set(id, (c.createdAt || '') > (r.createdAt || '') ? c : r);
+        });
+        cloudMap.forEach((r, id) => { if (!merged.has(id)) merged.set(id, r); });
+        records = Array.from(merged.values());
 
-function showImportChoiceModal(count) {
-    const existing = document.getElementById('importChoiceModal');
-    if (existing) existing.remove();
-    
-    const modal = document.createElement('div');
-    modal.id = 'importChoiceModal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center modal-backdrop-animate';
-    modal.style.background = 'rgba(0,0,0,0.5)';
-    modal.innerHTML = `
-        <div class="glass-modal modal-fade-scale p-6 w-80 max-w-[90vw]">
-            <h3 class="text-lg font-semibold mb-2 text-white">导入 ${count} 条记录到...</h3>
-            <p class="text-sm text-white/60 mb-4">请选择导入目标</p>
-            <div class="space-y-3">
-                <button id="importToRecords" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
-                    <span class="material-icons text-xl">hiking</span>
-                    <span>徒步记录</span>
-                </button>
-                <button id="importToPlanned" class="w-full py-3 px-4 modal-option-btn green flex items-center justify-center gap-2">
-                    <span class="material-icons text-xl">event_note</span>
-                    <span>计划徒步</span>
-                </button>
-            </div>
-            <button id="cancelImport" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
-                取消
-            </button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    
-    // 淡出关闭
-    const fadeOutModal = () => {
-        modal.style.transition = 'opacity 0.25s ease';
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            if (modal.parentNode) modal.remove();
-        }, 250);
-    };
-    
-    function finishImport(targetArray, targetKey, tableName) {
-        let imported = 0;
-        for (const rec of pendingImportData) {
-            const exists = targetArray.some(r => r.name === rec.name && r.createdAt === rec.createdAt);
-            if (exists) continue;
-            targetArray.push(rec);
-            imported++;
-        }
-        
-        if (imported > 0) {
-            // 保存到对应的 storage
-            if (targetKey === 'planned_trips') {
-                window.lingguang.storage.setItem(targetKey, { trips: targetArray });
-            } else {
-                saveToStorage();
-            }
-            updateStatistics();
-            renderTable();
-            if (targetKey === 'planned_trips') {
-                renderPlannedTripsTable();
-            }
-            showSuccessMessage(`已导入 ${imported} 条到"${tableName}"`);
-        } else {
-            showErrorMessage('没有新记录可导入（可能已存在）');
-        }
-        
-        pendingImportData = null;
-        fadeOutModal();
+        const localPMap = new Map(plannedTrips.map(t => [t.id, t]));
+        const cloudPMap = new Map((payload.plannedTrips || []).map(t => [t.id, t]));
+        const mergedP = new Map();
+        localPMap.forEach((t, id) => {
+            const c = cloudPMap.get(id);
+            if (!c) { mergedP.set(id, t); return; }
+            mergedP.set(id, (c.createdAt || '') > (t.createdAt || '') ? c : t);
+        });
+        cloudPMap.forEach((t, id) => { if (!mergedP.has(id)) mergedP.set(id, t); });
+        plannedTrips = Array.from(mergedP.values());
+
+        await saveToStorage();
+        await savePlannedTripsToStorage();
+        updateStatistics();
+        renderTable();
+        renderPlannedTripsTable();
+        showSuccessMessage('完整备份导入成功：' + records.length + ' 条记录');
+    } catch (e) {
+        console.error('导入完整备份失败:', e);
+        showErrorMessage('导入失败：' + (e.message || e));
     }
-    
-    document.getElementById('importToRecords').addEventListener('click', () => {
-        finishImport(records, 'hiking_records', '徒步记录');
-    });
-    
-    document.getElementById('importToPlanned').addEventListener('click', () => {
-        finishImport(plannedTrips, 'planned_trips', '计划徒步行');
-    });
-    
-    document.getElementById('cancelImport').addEventListener('click', () => {
-        pendingImportData = null;
-        fadeOutModal();
-    });
-    
-    // 点击遮罩关闭
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            pendingImportData = null;
-            modal.remove();
-        }
-    });
 }
+
 
 function showLoadingMessage(message) {
     // 移除已存在的提示
@@ -10239,7 +10521,7 @@ if (document.readyState === 'loading') {
     setTimeout(autoCheckUpdateOnLaunch, 900);
 }</script>
 
-        <input type="file" id="csvFileInput" accept=".csv" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;">
+        <input type="file" id="backupFileInput" accept=".html,.htm,text/html,application/json" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;">
     
         <!-- 底部悬浮液态玻璃导航栏（container 内：内容少时页面恰好一屏不滚动） -->
         <div id="bottomTabBar" class="bottom-tabbar">
