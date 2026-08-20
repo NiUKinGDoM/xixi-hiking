@@ -168,6 +168,54 @@ public class MainActivity extends BridgeActivity {
             return name.replaceAll("[\\\\/:*?\"<>|]", "_");
         }
 
+        // ★2026-08-20 v1.1.0.3 保存照片到系统相册（灯箱「保存」按钮）
+        // JS 调用：window.XixiFileBridge.saveImageToGallery(base64, filename) → boolean
+        @JavascriptInterface
+        public boolean saveImageToGallery(String base64, String filename) {
+            try {
+                if (base64 == null || base64.isEmpty()) return false;
+                byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                String name = sanitizeFilename(filename != null && !filename.isEmpty() ? filename : "xixi-" + System.currentTimeMillis() + ".jpg");
+                if (!name.endsWith(".jpg")) name = name + ".jpg";
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    // Android 10+：MediaStore 直接写入相册，无需任何权限
+                    android.content.ContentValues values = new android.content.ContentValues();
+                    values.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name);
+                    values.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                    values.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/XiXiHiking");
+                    android.net.Uri uri = getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                    if (uri == null) return false;
+                    java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                    if (os != null) {
+                        os.write(data);
+                        os.close();
+                        return true;
+                    }
+                    return false;
+                } else {
+                    // Android 7-9：写入公共 Pictures（需存储权限；未授权时返回 false，由 JS 提示）
+                    if (android.os.Build.VERSION.SDK_INT >= 23 &&
+                            checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 9001);
+                        return false;
+                    }
+                    java.io.File dir = new java.io.File(
+                            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES),
+                            "XiXiHiking");
+                    if (!dir.exists()) dir.mkdirs();
+                    java.io.File f = new java.io.File(dir, name);
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(f);
+                    fos.write(data);
+                    fos.close();
+                    sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, android.net.Uri.fromFile(f)));
+                    return true;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "saveImageToGallery failed", e);
+                return false;
+            }
+        }
+
         // ===== WebDAV 桥：绕开 WebView 跨域限制，原生发起 HTTP 请求 =====
         // JS 调用：window.XixiFileBridge.webdavRequest(url, method, username, password, bodyBase64)
         // 支持方法：GET / PUT / OPTIONS / MKCOL / PROPFIND / DELETE
