@@ -5085,7 +5085,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.0.3</div>
+                        <div class="about-version">版本 1.1.0.4</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -5234,7 +5234,7 @@ const SYNC_AUTO_KEY = 'hiking_sync_auto';
 const SYNC_STATUS_KEY = 'hiking_sync_status';
 const SYNC_FILES_KEY = 'hiking_sync_files'; // 本地维护的备份文件索引
 const SYNC_FILE_PREFIX = 'xixi_hiking_backup_'; // 备份文件名前缀（后面带时间戳，每次备份独立文件）
-const SYNC_FILE_EXT = '.json';
+const SYNC_FILE_EXT = '.html'; // ★2026-08-20 v1.1.0.4 备份扩展名统一 .html（内容即 HTML 单文件，云端可直接浏览）
 const SYNC_MAX_FILES = 20; // 本地索引最多保留 20 条
 let syncConfig = { server: '', username: '', password: '' };
 let syncAuto = false;
@@ -5380,7 +5380,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.0.3';
+var APP_VERSION = '1.1.0.4';
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -9050,11 +9050,11 @@ async function listSyncFilesFromCloud() {
             const h = decodeURIComponent(m[1]).trim();
             if (h) hrefs.push(h);
         }
-        // 转成备份文件列表（只保留 xixi_hiking_backup_*.json）
-        const files = [];
-        for (const h of hrefs) {
-            const name = h.split('/').filter(Boolean).pop() || '';
-            if (name.startsWith(SYNC_FILE_PREFIX) && name.endsWith(SYNC_FILE_EXT)) {
+            // 转成备份文件列表（新 .html + 兼容老 .json）
+            const files = [];
+            for (const h of hrefs) {
+                const name = h.split('/').filter(Boolean).pop() || '';
+                if (name.startsWith(SYNC_FILE_PREFIX) && (name.endsWith(SYNC_FILE_EXT) || name.endsWith('.json'))) {
                 files.push({
                     name: name,
                     time: '',
@@ -9133,9 +9133,15 @@ async function doRestoreFromCloud(fileName) {
     try {
         const result = await webdavRequest(url, 'GET', '');
         if (result.status >= 200 && result.status < 300 && result.body) {
-            const json = base64ToUtf8(result.body);
-            const payload = JSON.parse(json);
+            // ★2026-08-20 v1.1.0.4 兼容：HTML 完整备份（含照片）/ 老格式 JSON
+            const text = base64ToUtf8(result.body);
+            const payload = extractBackupData(text);
             if (payload && Array.isArray(payload.records) && Array.isArray(payload.plannedTrips)) {
+                // ★照片恢复：本地缺哪张补哪张
+                if (payload.photos) {
+                    const added = await restorePhotosFromPayload(payload);
+                    if (added > 0) showSuccessMessage('已恢复 ' + added + ' 张照片');
+                }
                 records = payload.records;
                 plannedTrips = payload.plannedTrips;
                 await saveToStorage();

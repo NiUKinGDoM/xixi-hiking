@@ -134,7 +134,15 @@ public class MainActivity extends BridgeActivity {
                     // Android 10+：用 MediaStore 保存到公共 Downloads，无需权限
                     ContentValues values = new ContentValues();
                     values.put(MediaStore.MediaColumns.DISPLAY_NAME, safeName);
-                    values.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
+                    // ★2026-08-20 v1.1.0.4 MIME 按扩展名映射（原来写死 text/csv 导致 .html 备份被识别为 CSV）
+                    String mime = "application/octet-stream";
+                    String lowerName = safeName.toLowerCase();
+                    if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) mime = "text/html";
+                    else if (lowerName.endsWith(".csv")) mime = "text/csv";
+                    else if (lowerName.endsWith(".json")) mime = "application/json";
+                    else if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) mime = "image/jpeg";
+                    else if (lowerName.endsWith(".png")) mime = "image/png";
+                    values.put(MediaStore.MediaColumns.MIME_TYPE, mime);
                     values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
                     Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                     if (uri == null) return false;
