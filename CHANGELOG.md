@@ -18,6 +18,9 @@
 
 ## 新版号阶段（vc84 起，有完整记录）
 
+### v1.1.0.5（vc127 · 2026-08-20）
+- 更新内容见 [Release v1.1.0.5](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.5)（灯箱图片缩小显示 / 云端备份统一 .html 不再兼容老格式）
+
 ### v1.1.0.4（vc126 · 2026-08-20）
 - 更新内容见 [Release v1.1.0.4](https://github.com/NiUKinGDoM/xixi-hiking/releases/tag/v1.1.0.4)（导出/云端备份格式统一修复：MIME 类型按扩展名识别 / WebDAV 备份扩展名统一 .html / 下载恢复兼容新旧格式）
 
