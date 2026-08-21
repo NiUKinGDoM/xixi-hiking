@@ -4227,6 +4227,11 @@
                         </div>
                     </div>
                 </div>
+                <!-- 2026-08-21 v1.1.1.6 本月小结（独立横条，不进统计卡，避免挤表格） -->
+                <div id="monthlySummary" class="mt-3 text-sm flex items-center gap-2 px-1" style="min-height: 20px;">
+                    <span class="material-icons" style="font-size: 16px;">event</span>
+                    <span id="monthlySummaryText">本月暂无徒步记录</span>
+                </div>
                 
                 <div class="mt-6">
                     <h3 class="text-lg font-semibold text-white/70 mb-4 px-3 py-1">难度分布</h3>
@@ -4493,14 +4498,21 @@
                             <span class="text-sm font-semibold">管理</span>
                         </button>
                     </div>
-                    <!-- 2026-08-21 v1.1.1.5 照片占用统计 -->
-                    <div class="settings-item" style="border-radius: 12px; margin-top: 10px; cursor: default;">
-                        <div class="settings-item-icon">
-                            <span class="material-icons" style="font-size: 20px;">photo_library</span>
+                    <!-- 2026-08-21 v1.1.1.7 照片占用 + 导出诊断 合并一行 -->
+                    <div class="grid grid-cols-2 gap-2" style="margin-top: 10px;">
+                        <div class="settings-item" style="border-radius: 12px; cursor: default; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px;">
+                            <div class="flex items-center gap-2" style="width: 100%;">
+                                <span class="material-icons" style="font-size: 18px;">photo_library</span>
+                                <span class="text-sm font-semibold">照片占用</span>
+                            </div>
+                            <div class="settings-item-desc" id="photoUsageDesc" style="font-size: 12px;">统计中…</div>
                         </div>
-                        <div class="settings-item-text">
-                            <div class="settings-item-title">照片占用</div>
-                            <div class="settings-item-desc" id="photoUsageDesc">统计中…</div>
+                        <div class="settings-item" style="border-radius: 12px; cursor: pointer; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px;" id="exportDiagItem">
+                            <div class="flex items-center gap-2" style="width: 100%;">
+                                <span class="material-icons" style="font-size: 18px;">bug_report</span>
+                                <span class="text-sm font-semibold">导出诊断</span>
+                            </div>
+                            <div class="settings-item-desc" style="font-size: 12px;">版本/数据量/错误日志，出问题可附上</div>
                         </div>
                     </div>
                     <div class="settings-item" style="border-radius: 12px;">
@@ -4627,7 +4639,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.1.5</div>
+                        <div class="about-version">版本 1.1.1.8</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4654,6 +4666,57 @@ window.addEventListener('unhandledrejection', function(e) {
     e.preventDefault();
     return true;
 });
+
+// ★2026-08-21 v1.1.1.6 错误日志收集（最近 100 条，内存缓存，设置页可导出诊断）
+window.__diagLogs = [];
+(function () {
+    function push(level, args) {
+        try {
+            var parts = Array.prototype.slice.call(args).map(function (a) {
+                if (typeof a === 'string') return a;
+                try { return JSON.stringify(a); } catch (e) { return String(a); }
+            });
+            window.__diagLogs.push(new Date().toLocaleString() + ' [' + level + '] ' + parts.join(' '));
+            if (window.__diagLogs.length > 100) window.__diagLogs.shift();
+        } catch (e) { /* 日志收集失败不影响业务 */ }
+    }
+    var oe = console.error, ow = console.warn;
+    console.error = function () { push('ERROR', arguments); return oe.apply(console, arguments); };
+    console.warn = function () { push('WARN', arguments); return ow.apply(console, arguments); };
+    window.addEventListener('error', function (e) {
+        push('ERROR', [e && e.message, e && e.filename + ':' + e.lineno]);
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+        push('ERROR', ['unhandledrejection', e && e.reason && e.reason.message]);
+    });
+})();
+// ★2026-08-21 导出诊断信息（版本/数据量/错误日志 → txt）
+function exportDiagnostics() {
+    var base = '=== XiXiの徒步小记 诊断信息 ===\n'
+        + '版本: ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?') + '\n'
+        + '导出时间: ' + new Date().toLocaleString() + '\n'
+        + '记录数: ' + (typeof records !== 'undefined' ? records.length : '?')
+        + ' | 计划数: ' + (typeof plannedTrips !== 'undefined' ? plannedTrips.length : '?') + '\n\n';
+    function save(text) {
+        var full = base + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---\n' + ((window.__diagLogs || []).join('\n') || '无');
+        try {
+            if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
+                window.XixiFileBridge.saveBase64(utf8ToBase64(full), 'xixi_diagnostics.txt');
+            } else {
+                var blob = new Blob([full], { type: 'text/plain;charset=utf-8' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url; a.download = 'xixi_diagnostics.txt';
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+            }
+        } catch (e) { showErrorMessage('导出诊断失败'); }
+    }
+    photoGetUsage().then(function (u) {
+        base += '照片数: ' + (u ? u.count : '?') + '（占用 ' + (u && u.bytes ? Math.ceil(u.bytes / 1024) + ' KB' : '0 KB') + '）\n\n';
+        save(base);
+    }).catch(function () { save(base); });
+}
 
 // Polyfill for requestIdleCallback
 if (typeof window.requestIdleCallback !== 'function') {
@@ -4823,7 +4886,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.1.5';
+var APP_VERSION = '1.1.1.8';
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
     setItem: function (key, value) {
@@ -4888,6 +4951,134 @@ function safeSetElementStyle(elementId, styleProperty, value) {
 }
 
 // 测试搜索功能
+
+// ★2026-08-21 v1.1.1.6 分享卡生成：canvas 绘制 → 保存 PNG（App 原生桥 / 网页下载）
+// ★2026-08-21 v1.1.1.7 分享卡生成（动漫清新风，无照片）：天空渐变 + 云朵太阳小山装饰
+async function generateShareCard(record) {
+    if (!record) return;
+    try { showLoadingToast('正在生成分享卡…'); } catch (e) { /* 无 loading 也不影响 */ }
+    var W = 720, H = 960;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var FONT_HEAD = '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
+    var FONT_BODY = '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif';
+    // 深色夜空渐变（衬托玻璃）
+    var grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#1b2440');
+    grad.addColorStop(0.55, '#2c2a55');
+    grad.addColorStop(1, '#3d2b5c');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    // 柔和光斑（radial 渐变模拟虚化光源，玻璃感的关键）
+    function glow(cx, cy, r, color) {
+        var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, color);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+    glow(120, 160, 260, 'rgba(120,160,255,0.28)');
+    glow(620, 300, 220, 'rgba(255,140,220,0.18)');
+    glow(560, 760, 260, 'rgba(100,220,255,0.16)');
+    // 细星光点
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    [[80, 90], [200, 60], [640, 110], [430, 70], [700, 220], [60, 260], [680, 480]].forEach(function (p) {
+        ctx.beginPath(); ctx.arc(p[0], p[1], 2, 0, Math.PI * 2); ctx.fill();
+    });
+    // 顶部品牌（细体，克制）
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.font = '300 28px ' + FONT_HEAD;
+    ctx.textAlign = 'center';
+    ctx.fillText('XiXiの徒步小记', W / 2, 86);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '300 20px ' + FONT_HEAD;
+    ctx.fillText('H I K I N G   D I A R Y', W / 2, 122);
+    // 山名（粗现代字体 + 投影）
+    var name = record.name || '未命名';
+    ctx.font = 'bold 64px ' + FONT_HEAD;
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(name, W / 2, 400);
+    ctx.shadowBlur = 0;
+    // 日期小字（山名下方）
+    var date = new Date(record.createdAt);
+    var dateStr = date.getFullYear() + ' 年 ' + (date.getMonth() + 1) + ' 月 ' + date.getDate() + ' 日';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '300 28px ' + FONT_BODY;
+    ctx.fillText(dateStr, W / 2, 452);
+    // 玻璃信息卡
+    var info = [];
+    info.push({ icon: '⛰️', txt: '海拔 ' + (record.elevation || 0) + ' m   难度 ' + (record.difficulty || '-') + ' 级' });
+    if (record.mood) info.push({ icon: '😊', txt: '心情 ' + record.mood });
+    if (record.weather) info.push({ icon: '☀️', txt: '天气 ' + record.weather });
+    if (record.companions) info.push({ icon: '👥', txt: '同行 ' + record.companions });
+    var padX = 52, cardW = W - padX * 2, rowH = 58, cardPad = 34;
+    var cardTop = 500, cardH = cardPad * 2 + info.length * rowH;
+    // 玻璃卡片：半透明渐变 + 高光边框
+    var cg = ctx.createLinearGradient(0, cardTop, 0, cardTop + cardH);
+    cg.addColorStop(0, 'rgba(255,255,255,0.16)');
+    cg.addColorStop(1, 'rgba(255,255,255,0.07)');
+    roundRect(ctx, padX, cardTop, cardW, cardH, 26);
+    ctx.fillStyle = cg;
+    ctx.fill();
+    // 顶部高光线
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX + 26, cardTop + 1.5);
+    ctx.lineTo(padX + cardW - 26, cardTop + 1.5);
+    ctx.stroke();
+    // 边框
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, padX, cardTop, cardW, cardH, 26);
+    ctx.stroke();
+    // 信息行
+    ctx.textAlign = 'left';
+    var iy = cardTop + cardPad + 40;
+    info.forEach(function (row) {
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.font = '500 30px ' + FONT_BODY;
+        ctx.fillText(row.icon + '  ' + row.txt, padX + 28, iy);
+        iy += rowH;
+    });
+    // 底部品牌
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '300 24px ' + FONT_BODY;
+    ctx.fillText('Made by XiXi 💛', W / 2, H - 44);
+    // 输出
+    var dataUrl = canvas.toDataURL('image/png');
+    var fileName = 'XiXi分享-' + (record.name || '徒步') + '-' + date.getFullYear() + (date.getMonth() + 1) + date.getDate() + '.png';
+    try { hideLoadingToast(); } catch (e) { /* 忽略 */ }
+    try {
+        if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
+            var ok = window.XixiFileBridge.saveBase64(dataUrl.split(',')[1] || '', fileName);
+            if (ok === true || ok === 'true' || ok === null) showSuccessMessage('分享卡已保存');
+            else showErrorMessage('分享卡保存失败');
+        } else {
+            var a = document.createElement('a');
+            a.href = dataUrl; a.download = fileName;
+            document.body.appendChild(a); a.click();
+            setTimeout(function () { a.remove(); }, 500);
+            showSuccessMessage('分享卡已开始下载');
+        }
+    } catch (e) {
+        showErrorMessage('分享卡生成失败');
+    }
+}
+// 圆角矩形辅助
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
 
 // 生成唯一ID
 function generateId() {
@@ -5464,15 +5655,29 @@ function renderTable() {
                             <div id="photo-thumbs-${record.id}" class="flex flex-wrap items-center">
                                 ${photoThumbsHTML(editingPhotoIds, record.id)}
                             </div>
-                            <button id="photo-camera-btn-${record.id}" 
-                                    class="photo-add-btn ripple-effect btn-click-effect px-2 py-1 rounded text-xs text-white"
-                                    style="background:linear-gradient(135deg,rgba(99,122,235,0.9),rgba(128,84,199,0.9));">
-                                📷 拍照
-                            </button>
+                            <!-- ★2026-08-21 v1.1.1.7 心情/天气/同行人 + 添加照片 一行（心情天气仅表情，可选） -->
+                            <select id="edit-mood-${record.id}" class="edit-input input-glow" style="max-width:100px;" title="心情（可选）">
+                                <option value="">心情</option>
+                                <option value="😄" ${record.mood === '😄' ? 'selected' : ''}>😄 开心</option>
+                                <option value="😌" ${record.mood === '😌' ? 'selected' : ''}>😌 平静</option>
+                                <option value="🤩" ${record.mood === '🤩' ? 'selected' : ''}>🤩 兴奋</option>
+                                <option value="😮‍💨" ${record.mood === '😮‍💨' ? 'selected' : ''}>😮‍💨 疲惫</option>
+                                ${record.mood && ['😄','😌','🤩','😮‍💨'].indexOf(record.mood) < 0 ? '<option value="' + record.mood + '" selected>' + record.mood + '</option>' : ''}
+                            </select>
+                            <select id="edit-weather-${record.id}" class="edit-input input-glow" style="max-width:100px;" title="天气（可选）">
+                                <option value="">天气</option>
+                                <option value="☀️" ${record.weather === '☀️' ? 'selected' : ''}>☀️ 晴</option>
+                                <option value="🌤️" ${record.weather === '🌤️' ? 'selected' : ''}>🌤️ 多云</option>
+                                <option value="☁️" ${record.weather === '☁️' ? 'selected' : ''}>☁️ 阴</option>
+                                <option value="🌧️" ${record.weather === '🌧️' ? 'selected' : ''}>🌧️ 雨</option>
+                                <option value="❄️" ${record.weather === '❄️' ? 'selected' : ''}>❄️ 雪</option>
+                                ${record.weather && ['☀️','🌤️','☁️','🌧️','❄️'].indexOf(record.weather) < 0 ? '<option value="' + record.weather + '" selected>' + record.weather + '</option>' : ''}
+                            </select>
+                            <input type="text" id="edit-companions-${record.id}" placeholder="同行人" class="edit-input input-glow" style="max-width:130px;" value="${record.companions || ''}">
                             <button id="photo-album-btn-${record.id}" 
                                     class="photo-add-btn ripple-effect btn-click-effect px-2 py-1 rounded text-xs text-white"
                                     style="background:linear-gradient(135deg,rgba(34,197,94,0.9),rgba(16,185,129,0.9));">
-                                🖼️ 相册
+                                🖼️ 添加照片
                             </button>
                             <span class="photo-count text-xs">${editingPhotoIds.length}/9</span>
                         </div>
@@ -5485,6 +5690,7 @@ function renderTable() {
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
                         <span class="inline-flex items-center gap-1.5">
                             ${record.name}
+                            ${record.weather ? '<span class="text-base" title="天气">' + record.weather + '</span>' : ''}
                             ${record.photos && record.photos.length ? '<button id="photos-btn-' + record.id + '" data-testid="photos-button-' + record.id + '" class="ripple-effect btn-click-effect glass-btn inline-flex items-center justify-center" style="width:26px;height:26px;padding:0;border-radius:8px;" title="查看照片"><span class="material-icons" style="font-size:14px;line-height:1;">photo_library</span></button>' : ''}
                         </span>
                     </td>
@@ -5550,15 +5756,9 @@ function attachEventListeners() {
                 eventListeners.push({ element: cancelBtn, event: 'click', handler: cancelHandler });
             }
             
-            // ★2026-08-20 照片区按钮（拍照/相册/删除缩略图）
-            const photoCameraBtn = safeGetElementById(`photo-camera-btn-${record.id}`);
+            // ★2026-08-20 照片区按钮（相册/删除缩略图；2026-08-21 v1.1.1.7 去掉拍照按钮）
             const photoAlbumBtn = safeGetElementById(`photo-album-btn-${record.id}`);
             const photoThumbsBox = safeGetElementById(`photo-thumbs-${record.id}`);
-            if (photoCameraBtn) {
-                const camHandler = () => addPhotosToEdit(record.id, true);
-                photoCameraBtn.addEventListener('click', camHandler);
-                eventListeners.push({ element: photoCameraBtn, event: 'click', handler: camHandler });
-            }
             if (photoAlbumBtn) {
                 const albHandler = () => addPhotosToEdit(record.id, false);
                 photoAlbumBtn.addEventListener('click', albHandler);
@@ -5609,6 +5809,7 @@ function attachEventListeners() {
                 eventListeners.push({ element: photosBtn, event: 'click', handler: photosHandler });
             }
             
+            // ★2026-08-21 v1.1.1.7 分享按钮已移到热力图详情弹窗（记录行内不再显示）
             if (deleteBtn) {
                 const deleteHandler = () => showDeleteConfirmModal(record.id, record.name);
                 deleteBtn.addEventListener('click', deleteHandler);
@@ -5860,6 +6061,14 @@ function saveRecord(id) {
     // ★2026-08-20 照片：编辑结果写回记录
     record.photos = editingPhotoIds.slice();
     editingPhotoIds = [];
+    
+    // ★2026-08-21 v1.1.1.6 扩展信息：心情/天气/同行人（可选）
+    const moodInput = document.getElementById(`edit-mood-${id}`);
+    const weatherInput = document.getElementById(`edit-weather-${id}`);
+    const companionsInput = document.getElementById(`edit-companions-${id}`);
+    if (moodInput) record.mood = moodInput.value || '';
+    if (weatherInput) record.weather = weatherInput.value.trim();
+    if (companionsInput) record.companions = companionsInput.value.trim();
     
     editingId = null;
     updateStatistics();
@@ -6145,8 +6354,27 @@ function updateStatistics() {
         if (difficultyChart) safeSetElementContent('difficultyChart', '<div class="text-white/50 text-center w-full">暂无数据</div>');
         if (chartLabels) safeSetElementContent('chartLabels', '');
         if (chartLegend) safeSetElementContent('chartLegend', '');
+        var mEl = safeGetElementById('monthlySummaryText');
+        if (mEl) mEl.textContent = '本月暂无徒步记录';
         return;
     }
+    
+    // ★2026-08-21 v1.1.1.6 本月小结（按 createdAt 统计当月）
+    (function () {
+        var mEl = safeGetElementById('monthlySummaryText');
+        if (!mEl) return;
+        var now = new Date();
+        var ym = now.getFullYear() * 100 + now.getMonth() + 1;
+        var monthRecords = records.filter(function (r) {
+            var d = new Date(r.createdAt);
+            return d.getFullYear() * 100 + d.getMonth() + 1 === ym;
+        });
+        var cnt = monthRecords.length;
+        var elev = monthRecords.reduce(function (s, r) { return s + (r.elevation || 0); }, 0);
+        mEl.textContent = cnt === 0
+            ? '本月暂无徒步记录'
+            : '本月徒步 ' + cnt + ' 次 · 累计爬升 ' + elev + ' 米';
+    })();
     
     const total = records.length;
     const totalElevation = records.reduce((sum, record) => sum + record.elevation, 0);
@@ -6374,14 +6602,54 @@ function showHeatmapDayDetail(year, month, day) {
     if (dayRecords.length === 0) return;
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
+    // ★2026-08-21 v1.1.1.7 详情增强：心情/天气/同行人/图片缩略图/分享按钮
     let items = dayRecords.map(function (r) {
-        return '<div style="padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:14px;">🏔️ ' + r.name + ' · ' + r.elevation + 'm · 难度' + r.difficulty + '级</div>';
+        const moodTxt = r.mood ? '<span style="font-size:16px;" title="心情">' + r.mood + '</span>' : '';
+        const weatherTxt = r.weather ? '<span style="font-size:16px;" title="天气">' + r.weather + '</span>' : '';
+        const companionTxt = r.companions ? '<span style="opacity:0.7;">👥 ' + r.companions + '</span>' : '';
+        // ★2026-08-21 v1.1.1.8 心情/天气/同行人 一行展示
+        const metaRow = (moodTxt || weatherTxt || companionTxt)
+            ? '<div style="margin-top:3px;display:flex;align-items:center;gap:8px;">' + moodTxt + weatherTxt + companionTxt + '</div>'
+            : '';
+        const picBox = (r.photos && r.photos.length)
+            ? '<div class="flex flex-wrap gap-1" style="margin-top:6px;"><span class="hm-day-photo" data-pid="' + r.photos[0] + '" style="display:inline-block;width:56px;height:56px;border-radius:8px;background:#e2e8f0;cursor:pointer;overflow:hidden;" data-lightbox="' + r.id + '"><span style="font-size:20px;line-height:56px;">📷</span></span></div>'
+            : '';
+        return '<div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:14px;">' +
+            '<div style="font-weight:600;">🏔️ ' + r.name + ' · ' + r.elevation + 'm · 难度' + r.difficulty + '级</div>' +
+            metaRow +
+            picBox +
+            '<button class="ripple-effect btn-click-effect hm-share-btn" data-share="' + r.id + '" style="margin-top:6px;background:linear-gradient(135deg,rgba(99,122,235,0.9),rgba(128,84,199,0.9));color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;">分享</button>' +
+            '</div>';
     }).join('');
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">' +
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #dc2626;">local_fire_department</span>' + year + '年' + month + '月' + day + '日</div>' +
         '<div class="confirm-modal-message" style="text-align:left;">' + items + '</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
     document.body.appendChild(modal);
+    // 异步加载照片缩略图
+    modal.querySelectorAll('.hm-day-photo').forEach(function (box) {
+        (function (b) {
+            const pid = b.getAttribute('data-pid');
+            const recordId = b.getAttribute('data-lightbox');
+            photoGet(pid).then(function (p) {
+                if (!p || !p.blob) return;
+                return blobToDataURL(p.blob).then(function (durl) {
+                    b.innerHTML = '<img src="' + durl + '" style="width:100%;height:100%;object-fit:cover;" alt="照片">';
+                    b.addEventListener('click', function (ev) {
+                        ev.stopPropagation();
+                        if (typeof openPhotoLightbox === 'function') openPhotoLightbox(recordId, pid);
+                    });
+                });
+            }).catch(function () { /* 加载失败保留占位 */ });
+        })(box);
+    });
+    // 分享按钮
+    modal.querySelectorAll('.hm-share-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const r = records.find(function (x) { return x.id === btn.getAttribute('data-share'); });
+            if (r) { document.body.removeChild(modal); generateShareCard(r); }
+        });
+    });
     document.getElementById('hm-close').addEventListener('click', function () { document.body.removeChild(modal); });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
@@ -7502,6 +7770,24 @@ async function uploadSyncBackup(silent) {
             setSyncStatus('备份已上传：' + now, 'cloud_upload', 'success');
             if (!silent) showSuccessMessage('备份上传成功');
             else console.log('[Sync] 自动备份已上传:', fileName);
+            // ★2026-08-21 v1.1.1.6 云端自动清理：保留最近 2 份，更旧的自动删除（防备份堆积）
+            try {
+                const cloudFiles = await listSyncFilesFromCloud();
+                if (cloudFiles && cloudFiles.length > 2) {
+                    // 文件名带时间戳（xixi_hiking_backup_YYYYMMDD_HHMMSS.html），字典序=时间序
+                    const sorted = cloudFiles.slice().sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+                    const toDelete = sorted.slice(0, cloudFiles.length - 2);
+                    for (let i = 0; i < toDelete.length; i++) {
+                        try {
+                            const delUrl = buildSyncFileUrl(toDelete[i].name);
+                            if (delUrl) await webdavRequest(delUrl, 'DELETE');
+                        } catch (e) { /* 单个删除失败不影响后续 */ }
+                    }
+                    console.log('[Sync] 云端自动清理旧备份', toDelete.length, '个（保留最近 2 份）');
+                }
+            } catch (e) {
+                console.warn('[Sync] 云端自动清理失败:', e && e.message);
+            }
         } else if (result.status === 401 || result.status === 403) {
             setSyncStatus('认证失败，请检查账号和应用密码', 'error', 'error');
             showErrorMessage('认证失败，请检查账号和应用密码');
@@ -7784,20 +8070,35 @@ async function mergeSyncBackup(silent) {
             if (!silent) {
                 setSyncStatus('认证失败，请检查账号和应用密码', 'error', 'error');
                 showErrorMessage('认证失败，请检查账号和应用密码');
+            } else {
+                notifySyncFailure('自动同步失败：认证错误，请检查账号和应用密码');
             }
         } else if (!silent) {
             const msg = result.error ? result.error : ('状态码 ' + result.status);
             setSyncStatus('合并失败：' + msg, 'error', 'error');
             showErrorMessage('合并失败：' + msg);
+        } else {
+            notifySyncFailure('自动同步失败：' + (result.error ? result.error : ('状态码 ' + result.status)));
         }
     } catch (e) {
         if (!silent) {
             setSyncStatus('合并失败：' + (e.message || e), 'error', 'error');
             showErrorMessage('合并失败：' + (e.message || e));
+        } else {
+            notifySyncFailure('自动同步失败：' + (e.message || e));
         }
     } finally {
         syncInProgress = false;
         if (!silent) setSyncBusy(false);
+    }
+}
+
+// ★2026-08-21 v1.1.1.6 自动同步失败提醒：限频（10 分钟内最多提示一次，避免静默也避免轰炸）
+function notifySyncFailure(msg) {
+    var now = Date.now();
+    if (!window._lastSyncErrAt || now - window._lastSyncErrAt > 600000) {
+        window._lastSyncErrAt = now;
+        showErrorMessage(msg);
     }
 }
 
@@ -7849,8 +8150,13 @@ function buildBackupHTMLString(payload) {
         '</body></html>';
 }
 // 组装完整备份 HTML（文字 + 照片 base64）
-async function buildFullBackupHTML() {
+async function buildFullBackupHTML(includePhotos) {
     var payload = buildFullBackupPayload();
+    if (includePhotos === false) {
+        // ★2026-08-21 v1.1.1.6 纯数据备份：不含照片（体积小，日常快速备份用）
+        payload.photos = {};
+        return buildBackupHTMLString(payload);
+    }
     var allIds = {};
     (payload.records || []).forEach(function (r) { (r.photos || []).forEach(function (p) { allIds[p] = true; }); });
     var ids = Object.keys(allIds);
@@ -8268,13 +8574,18 @@ function showExportModal() {
     const modalHtml = `
         <div id="exportModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-animate" style="background: rgba(0,0,0,0.5);">
             <div class="glass-modal modal-fade-scale p-6 w-80 max-w-[90vw]">
-                <h3 class="text-lg font-semibold mb-2">导出</h3>
-                <p class="text-sm mb-4">导出完整备份（徒步记录 + 照片 + 计划），可导入恢复，也能用浏览器打开查看</p>
+                <h3 class="text-lg font-semibold mb-2">导出备份</h3>
+                <p class="text-sm mb-4">导出后可导入恢复，也能用浏览器打开查看</p>
 
                 <div class="space-y-3">
                     <button id="exportRecordsBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">backup</span>
-                        <span>导出完整备份</span>
+                        <span>导出完整备份（含照片）</span>
+                    </button>
+                    <!-- 2026-08-21 v1.1.1.6 纯数据备份（不含照片，体积小，适合日常快速备份） -->
+                    <button id="exportDataOnlyBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
+                        <span class="material-icons text-xl">description</span>
+                        <span>导出纯数据备份（不含照片）</span>
                     </button>
                 </div>
                 <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
@@ -8289,7 +8600,7 @@ function showExportModal() {
     const modal = document.getElementById('exportModal');
     const closeBtn = document.getElementById('closeExportModal');
     const exportRecordsBtn = document.getElementById('exportRecordsBtn');
-    const exportPlannedBtn = document.getElementById('exportPlannedBtn');
+    const exportDataOnlyBtn = document.getElementById('exportDataOnlyBtn');
 
     const closeModal = () => {
         // 淡出后移除：淡出期间加 body.modal-closing 禁用 backdrop-filter（避免重模糊卡顿），完成后清理
@@ -8311,17 +8622,21 @@ function showExportModal() {
 
     exportRecordsBtn.addEventListener('click', async () => {
         closeModal();
-        await performBackupExport();
+        await performBackupExport(true);
+    });
+    exportDataOnlyBtn.addEventListener('click', async () => {
+        closeModal();
+        await performBackupExport(false);
     });
 }
 
-// ★2026-08-20 导出完整备份（HTML 单文件，含照片）
-async function performBackupExport() {
+// ★2026-08-20 导出备份（HTML 单文件；includePhotos=false 为纯数据备份不含照片）
+async function performBackupExport(includePhotos) {
     try {
         showLoadingToast('正在打包备份…');
-        const html = await buildFullBackupHTML();
+        const html = await buildFullBackupHTML(includePhotos === false ? false : true);
         const dateStr = new Date().toISOString().replace(/[-:TZ]/g, '').slice(0, 14);
-        const fileName = 'XiXi徒步备份-' + dateStr + '.html';
+        const fileName = (includePhotos === false ? 'XiXi纯数据备份-' : 'XiXi徒步备份-') + dateStr + '.html';
         if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
             const ok = window.XixiFileBridge.saveBase64(utf8ToBase64(html), fileName);
             if (ok === true || ok === 'true' || ok === null) showSuccessMessage('备份已导出：' + fileName);
@@ -8666,6 +8981,12 @@ function triggerHaptic(ms) {
 function setupEventListeners() {
     // ★2026-08-21 照片占用统计（设置页）
     refreshPhotoUsage();
+    // ★2026-08-21 v1.1.1.6 导出诊断信息
+    const exportDiagItem = document.getElementById('exportDiagItem');
+    if (exportDiagItem) {
+        exportDiagItem.addEventListener('click', exportDiagnostics);
+        cleanupFunctions.push(() => exportDiagItem.removeEventListener('click', exportDiagnostics));
+    }
     // ★2026-08-21 v1.1.1.1 震动反馈：全局点击委托——只对按钮/可点击控件短震，空白处不震
     const hapticClickHandler = function (e) {
         if (!hapticEnabled) return;

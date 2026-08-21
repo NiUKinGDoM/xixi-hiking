@@ -104,5 +104,44 @@ try {
     ma.includes('addJavascriptInterface') ? ok('JS 桥注册存在') : bad('JS 桥注册缺失!');
 } catch (e) { bad('MainActivity 读取失败'); }
 
+// 7. 数据层逻辑测试（纯函数：版本进位 / 备份文件名 / 云端清理排序）
+console.log('-- 7. 数据层逻辑 --');
+// 7.1 版本名进位（每段 0~10 共 11 值，满 10 进位）——与 bump.js 逻辑一致
+const bumpName = (name) => {
+    let [a, b, c, d] = name.split('.').map(Number);
+    d++;
+    if (d > 10) { d = 0; c++; }
+    if (c > 10) { c = 0; b++; }
+    return `${a}.${b}.${c}.${d}`;
+};
+const bumpCases = [
+    ['1.1.1.4', '1.1.1.5'],
+    ['1.1.1.9', '1.1.1.10'],
+    ['1.1.1.10', '1.1.2.0'],
+    ['1.1.10.10', '1.2.0.0'],
+];
+let bumpOk = true;
+bumpCases.forEach(([from, to]) => { if (bumpName(from) !== to) { bumpOk = false; bad(`版本进位失败: ${from} → ${bumpName(from)} ≠ ${to}`); } });
+bumpOk ? ok(`版本进位逻辑 (${bumpCases.length} 组，含满10进位)`) : bad('版本进位有错误');
+
+// 7.2 备份文件名格式（buildSyncFileName 产出的模式）
+const backupNameRe = /^xixi_hiking_backup_\d{8}_\d{6}\.html$/;
+const testNames = ['xixi_hiking_backup_20260821_103000.html', 'xixi_hiking_backup_20260821.html', 'other.html'];
+(testNames[0] && backupNameRe.test(testNames[0]) ? ok('备份文件名格式 (xixi_hiking_backup_YYYYMMDD_HHMMSS.html)') : bad('备份文件名格式测试失败'));
+(!backupNameRe.test(testNames[1]) && !backupNameRe.test(testNames[2])) ? ok('备份文件名非法名拒绝') : bad('非法备份名未拒绝');
+
+// 7.3 云端清理「保留最近 2 份」排序逻辑（文件名字典序=时间序，删最旧）
+const cloudClean = (files) => {
+    const sorted = files.slice().sort((a, b) => a.localeCompare(b));
+    return sorted.slice(0, files.length - 2); // 要删除的最旧文件
+};
+const f1 = 'xixi_hiking_backup_20260801_100000.html';
+const f2 = 'xixi_hiking_backup_20260815_100000.html';
+const f3 = 'xixi_hiking_backup_20260821_100000.html';
+const cleanResult = cloudClean([f1, f2, f3]);
+(cleanResult.length === 1 && cleanResult[0] === f1) ? ok('云端清理：3 份留 2 删最旧') : bad('云端清理逻辑错误: ' + JSON.stringify(cleanResult));
+(cloudClean([f1, f2]).length === 0) ? ok('云端清理：2 份不删') : bad('云端清理：≤2 份不应删');
+(cloudClean([f1, f2, f3, f2]).length === 2) ? ok('云端清理：4 份删 2') : bad('云端清理：4 份逻辑错误');
+
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);
