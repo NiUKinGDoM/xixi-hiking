@@ -140,6 +140,7 @@ public class MainActivity extends BridgeActivity {
                     if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) mime = "text/html";
                     else if (lowerName.endsWith(".csv")) mime = "text/csv";
                     else if (lowerName.endsWith(".json")) mime = "application/json";
+                    else if (lowerName.endsWith(".txt")) mime = "text/plain"; /* 2026-08-21 v1.1.1.6 诊断导出：缺 text/plain 被当 octet-stream，系统按错误编码打开致乱码 */
                     else if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) mime = "image/jpeg";
                     else if (lowerName.endsWith(".png")) mime = "image/png";
                     values.put(MediaStore.MediaColumns.MIME_TYPE, mime);
