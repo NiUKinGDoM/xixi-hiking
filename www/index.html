@@ -4498,21 +4498,21 @@
                             <span class="text-sm font-semibold">管理</span>
                         </button>
                     </div>
-                    <!-- 2026-08-21 v1.1.1.7 照片占用 + 导出诊断 合并一行 -->
+                    <!-- 2026-08-21 v1.1.1.7 照片占用 + 导出诊断 合并一行（v1.1.1.9 统一高度+文字截断防错位） -->
                     <div class="grid grid-cols-2 gap-2" style="margin-top: 10px;">
-                        <div class="settings-item" style="border-radius: 12px; cursor: default; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px;">
+                        <div class="settings-item" style="border-radius: 12px; cursor: default; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; min-height: 76px; justify-content: flex-start;">
                             <div class="flex items-center gap-2" style="width: 100%;">
                                 <span class="material-icons" style="font-size: 18px;">photo_library</span>
                                 <span class="text-sm font-semibold">照片占用</span>
                             </div>
-                            <div class="settings-item-desc" id="photoUsageDesc" style="font-size: 12px;">统计中…</div>
+                            <div class="settings-item-desc" id="photoUsageDesc" style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">统计中…</div>
                         </div>
-                        <div class="settings-item" style="border-radius: 12px; cursor: pointer; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px;" id="exportDiagItem">
+                        <div class="settings-item" style="border-radius: 12px; cursor: pointer; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; min-height: 76px; justify-content: flex-start;" id="exportDiagItem">
                             <div class="flex items-center gap-2" style="width: 100%;">
                                 <span class="material-icons" style="font-size: 18px;">bug_report</span>
                                 <span class="text-sm font-semibold">导出诊断</span>
                             </div>
-                            <div class="settings-item-desc" style="font-size: 12px;">版本/数据量/错误日志，出问题可附上</div>
+                            <div class="settings-item-desc" style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">版本/数据量/错误日志，出问题可附上</div>
                         </div>
                     </div>
                     <div class="settings-item" style="border-radius: 12px;">
@@ -4639,7 +4639,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.1.8</div>
+                        <div class="about-version">版本 1.1.1.9</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4701,7 +4701,10 @@ function exportDiagnostics() {
         var full = base + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---\n' + ((window.__diagLogs || []).join('\n') || '无');
         try {
             if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
-                window.XixiFileBridge.saveBase64(utf8ToBase64(full), 'xixi_diagnostics.txt');
+                // ★2026-08-21 v1.1.1.9 加成功/失败提示（原来静默导出，用户以为没反应）
+                var ok = window.XixiFileBridge.saveBase64(utf8ToBase64(full), 'xixi_diagnostics.txt');
+                if (ok === true || ok === 'true' || ok === null) showSuccessMessage('诊断信息已导出（下载目录 xixi_diagnostics.txt）');
+                else showErrorMessage('导出诊断失败');
             } else {
                 var blob = new Blob([full], { type: 'text/plain;charset=utf-8' });
                 var url = URL.createObjectURL(blob);
@@ -4709,6 +4712,7 @@ function exportDiagnostics() {
                 a.href = url; a.download = 'xixi_diagnostics.txt';
                 document.body.appendChild(a); a.click();
                 setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+                showSuccessMessage('诊断信息已开始下载');
             }
         } catch (e) { showErrorMessage('导出诊断失败'); }
     }
@@ -4802,11 +4806,24 @@ function cleanupEventListeners() {
 window.addEventListener('beforeunload', cleanupResources);
 window.addEventListener('pagehide', cleanupResources);
 
+// ★2026-08-21 v1.1.1.9 全局错误降噪：错误全量进 __diagLogs，toast 限频（30 秒最多 1 次），
+// 避免任何小异常（单张图片加载失败/单次网络超时）都弹「刷新页面」轰炸用户
+var _lastGlobalErrToast = 0;
+function notifyGlobalError(msg) {
+    try {
+        var now = Date.now();
+        if (now - _lastGlobalErrToast > 30000) {
+            _lastGlobalErrToast = now;
+            showErrorMessage(msg);
+        }
+    } catch (e) { /* 提示失败静默 */ }
+}
+
 // 全局错误处理
 window.addEventListener('error', function(event) {
     console.error('Global error caught:', event.error);
     // 显示用户友好的错误信息
-    showErrorMessage('应用发生错误，请刷新页面重试');
+    notifyGlobalError('应用发生错误，请刷新页面重试');
     return false;
 });
 
@@ -4814,7 +4831,7 @@ window.addEventListener('error', function(event) {
 window.addEventListener('unhandledrejection', function(event) {
     console.error('Unhandled promise rejection:', event.reason);
     // 显示用户友好的错误信息
-    showErrorMessage('网络请求失败，请检查连接后重试');
+    notifyGlobalError('网络请求失败，请检查连接后重试');
     event.preventDefault();
 });
 
@@ -4886,7 +4903,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.1.8';
+var APP_VERSION = '1.1.1.9';
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
     setItem: function (key, value) {

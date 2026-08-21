@@ -305,10 +305,18 @@ public class MainActivity extends BridgeActivity {
         private String doWebdavRequest(String url, String method, String username, String password, String bodyBase64) {
             try {
                 String upper = method != null ? method.toUpperCase(Locale.US) : "GET";
-                okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
-                        .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)   // ★15s→5s
-                        .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)      // ★20s→8s
-                        .build();
+                // ★2026-08-21 v1.1.1.9 WebDAV 超时修复：上传（PUT，含照片的大备份）用长超时（60s），
+                // 否则几 MB 的 body 在 8s 内传不完必超时；其余请求（PROPFIND/GET/DELETE 等）20s 足够
+                okhttp3.OkHttpClient.Builder clientBuilder = new okhttp3.OkHttpClient.Builder()
+                        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS);
+                if ("PUT".equals(upper)) {
+                    clientBuilder.readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS);
+                } else {
+                    clientBuilder.readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+                            .writeTimeout(20, java.util.concurrent.TimeUnit.SECONDS);
+                }
+                okhttp3.OkHttpClient client = clientBuilder.build();
                 okhttp3.Request.Builder rb = new okhttp3.Request.Builder().url(url)
                         .header("User-Agent", "XiXiHiking/1.0");
                 if (username != null && !username.isEmpty()) {
