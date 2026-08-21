@@ -1,92 +1,95 @@
 # 🏔️ XiXiの徒步小记
 
-一款由 **XiXi** 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。
+一款由 **XiXi** 亲手制作的徒步日记软件：记录每一次徒步、登山的足迹与照片，统计里程与难度，规划下一次出发。
 
 **Made by XiXi 💛**
 
-> 📜 完整版本演进史见 [CHANGELOG.md](CHANGELOG.md)（从 v1.1.2 到当前版本）
+> 📜 完整版本演进史见 [CHANGELOG.md](CHANGELOG.md)
 
 ## 功能
 
-- 📊 **概览**：总次数 / 总里程 / 总爬升统计、难度分布柱状图
-- 📝 **记录**：徒步记录增删改、排序、行内编辑、难度 1-5 级
-- 📅 **计划**：计划徒步管理、难度选择
+- 📊 **概览**：总次数 / 总里程 / 总爬升统计、难度分布柱状图、**年度足迹热力图**
+- 📝 **记录**：徒步记录增删改、排序、行内编辑、难度 1-5 级、默认按时间排序
+- 📷 **照片**：每条记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB 存储）、灯箱查看（滑动/保存到相册）、完整备份含照片
+- 📅 **计划**：计划徒步管理、难度选择、完成标记
+- 📳 **震动反馈**：点击按钮短震（设置可开关，默认开，强度跟随系统）
 - ⚙️ **设置**：
-  - 导入/导出 CSV（徒步记录 / 计划徒步）
-  - **WebDAV 数据同步**（坚果云）：上传备份（时间戳独立文件）、下载恢复（**备份文件选择器，PROPFIND 实时列网盘**）、打开设置页/输入配置自动检测连接、自动同步开关
-  - **应用内检查更新**（GitHub Release 源 + 国内镜像）：设置页「杂项 → 检查更新」检测并安装新版本，无需手动下载 APK；**打开 App 自动检测**（有新版自动弹窗，没网不卡 + 网络恢复自动重试）
-  - 暗色模式（夜间模式）、帧率开关（开发者用）
-- 🎨 **液态玻璃 UI**：底栏悬浮导航（4 tab：概览/计划/记录/设置）、**底栏按住滑动切换 + 果冻质感 + 相邻粘连**
-- 🔄 **当前版本**：v1.1.0.2（vc124 · 2026-08-19）
+  - **完整备份**（HTML 单文件：记录 + 照片 + 计划，可导入恢复、浏览器可看）
+  - **WebDAV 数据同步**（坚果云）：上传/下载/管理云端备份、自动同步开关
+  - **应用内检查更新**（GitHub Release + 国内镜像）：检查更新直接装新版
+  - 主题（跟随系统/浅色/深色）、震动开关、照片占用统计
+  - **6 个可编辑标题**（顶栏/概览/记录/计划/设置/足迹）
+- 🎨 **液态玻璃 UI**：底栏悬浮导航 4 tab、统一圆角/色系/字体（SimSun 手写风）
+- 🔄 **当前版本**：v1.1.1.4（vc136 · 2026-08-21）
 
 ## 技术栈
 
 - **Capacitor 6.2.1** + Android WebView
-- 纯 HTML/JS 单文件应用（`www/index.html`，约 9300 行，无前端框架）
-- **原生桥**：OkHttp 3.14.9（WebDAV 请求，支持 PROPFIND/MKCOL 等任意 HTTP 方法）+ 文件保存
+- 纯 HTML/JS 单文件应用（`www/index.html`，约 8750 行，无前端框架）
+- **原生桥**：OkHttp 3.14.9（WebDAV，PROPFIND/MKCOL 等任意方法）+ 文件保存 + 震动（跟随系统强度）
 - 最低支持 Android 7（minSdk 22），target/compileSdk 36（Android 16）
-- 数据存储：localStorage（徒步记录 / 计划 / 标题 / 暗色模式 / 帧率）
+- 数据存储：localStorage（记录/计划/设置）+ IndexedDB（照片）
 
 ## 目录结构
 
 ```
 hiking-app3/
 ├── www/                    # 前端源码（单文件应用）
-│   └── index.html          # 全部逻辑（约 9300 行）
+│   └── index.html          # 全部逻辑（约 8750 行）
 ├── android/                # Android 工程
 │   └── app/
-│       ├── src/main/java/com/xixi/hiking/MainActivity.java  # 原生桥（WebDAV + 文件）
-│       ├── src/main/assets/public/index.html  # 打包进 APK 的 index.html（改完要同步）
+│       ├── src/main/java/com/xixi/hiking/MainActivity.java  # 原生桥（WebDAV/文件/震动）
+│       ├── src/main/AndroidManifest.xml    # 权限（INTERNET/VIBRATE 等）
+│       ├── src/main/assets/public/index.html  # 打包进 APK（改完要同步）
 │       ├── proguard-rules.pro    # R8 规则（★JS 桥类名禁 allowobfuscation）
-│       └── build.gradle          # 版本号在这里手改
-└── capacitor.config.json
+│       └── build.gradle          # 版本号（用 bump.js 改，勿手改）
+├── bump.js                  # 版本号递增脚本（一条命令四处同步）
+└── test.js                  # 自动测试（改完必跑：语法/关键函数/死代码/结构/版本）
 ```
 
-## 构建（Release + R8）
+## 开发流程
 
 ```bash
-# 1. 改完 www/index.html → 同步到 assets
+# 1. 改 www/index.html
+# 2. 自动测试（语法 + 关键函数 + 死代码残留 + HTML 结构 + 版本同步）
+node test.js
+# 3. 版本号递增（vc+1 + 版本名自动进位 + 四处同步 + 校验）
+node bump.js
+# 4. 同步到 assets
 cp www/index.html android/app/src/main/assets/public/index.html
-
-# 2. 递增版本号：python android/bump-version.py（vc+1，versionName 按公式算四段）或手改 build.gradle
-# 3. 构建 Release（R8 混淆 + 资源压缩 + 签名）
+# 5. 构建 Release（R8 混淆 + 资源压缩 + 签名）
 cd android && ./gradlew assembleRelease
 ```
 
 产物：`android/app/build/outputs/apk/release/app-release.apk`
 
-## 📌 版本号规则（2026-08-11 更新）
+## 📌 版本号规则
 
-- **versionName = 按 versionCode 数出的 `1.x.x.x`**（与 versionCode 完全对齐）：
-  - 从 **1.0.0.0** 起算第 1 个版本（vc1=1.0.0.0）
-  - **每段 0~10 共 11 个值，满 10 进位**（第四段满 10 → 第三段+1、第四段归零；第三段满 10 → 第二段+1；第二段满 10 → 第一段+1）
-  - 当前：**vc99 = 1.0.8.10**
-- **生成版本号前必须验证公式**：索引 = vc − 1
-  - 第一段 = 1 + 索引//1331；第二段 = (索引//121)%11；第三段 = (索引//11)%11；第四段 = 索引%11
-  - 对照：vc85=1.0.7.7、vc88=1.0.7.10、vc89=1.0.8.0、vc97=1.0.8.8、vc99=1.0.8.10、vc100=1.0.9.0、vc121=1.0.10.10、vc122=1.1.0.0
-- 测试版 `1.X.test-X`：X 从 1 起递增（当前 1.4.test-11）
-- ⚠️ 用 `android/bump-version.py`（或 .ps1）自动递增：vc+1 并按公式算出 versionName（已支持四段 + 同步 index.html），或**手改 build.gradle**（versionCode +1 + versionName 按公式算）
+- **versionName = 按 versionCode 数出的 `1.x.x.x`**：每段 0~10 共 11 个值，满 10 进位
+- 公式：索引 = vc−1；第二段=(索引//121)%11；第三段=(索引//11)%11；第四段=索引%11
+- 对照：vc99=1.0.8.10、vc100=1.0.9.0、vc122=1.1.0.0、vc131=1.1.0.9
+- ⚠️ **历史说明**：v1.1.1.0~1.1.1.4（vc132~136）为错位命名（比公式 +1，v1.1.1.0 发布时 D4=10 误算为 0），已发布固定；当前序列由 bump.js 基于当前名递增，不再用公式反推
+- ⚠️ bump 必须同步四处：build.gradle（versionCode + versionName）+ index.html（`APP_VERSION` 全局变量 + 版本显示），用 `node bump.js` 一键完成
+- ⚠️ **已发布的版本号不可复用**（App 内检查更新按 versionCode 判定）
 
-## 🚀 发布流程（2026-08-11 新版，按序执行）
+## 🚀 发布流程（按序执行）
 
-1. **网页先行（用户验收）**：部署 `hiking-app3/www` 到 CloudStudio（https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net）→ **用户看网页版确认后**再继续
-2. **GitHub 同步**：提交源码到本仓库（排除签名 keystore / local.properties / APK）+ 建 Release 挂 APK 附件 → 用户即可在 **App 内「检查更新」** 直接下载安装
-3. **本地归档**：`XiXiの徒步小记-vX.Y.Z.apk`（项目根 + backups/apk-history/）+ 源码归档 backups/hiking-app3-vX.Y.Z/
+1. **网页先行（用户验收）**：部署 `hiking-app3/www` 到 CloudStudio → **用户看网页版确认后**再继续
+2. **GitHub 同步**：提交源码（排除签名 keystore / local.properties / APK）+ 建 Release 挂 APK → 用户 **App 内「检查更新」** 装新版
+3. **本地归档**：APK 复制到项目根 + `backups/apk-history/`
 
-> ⚠️ 应用内更新前提：本仓库必须为 **public**（App 匿名请求 GitHub API，私有仓库返回 404）；bump 时除 build.gradle 和版本显示外，**必须同步 `www/index.html` 里的 `APP_VERSION` 全局变量**，否则 App 会误判自身版本
-> ⚠️ **Release body 约定（用户 2026-08-11 指定）**：只写更新内容 + `Made by XiXi 💛`，**不写**「APK：...（签名 SHA-256 ...）」描述段
+> ⚠️ 应用内更新前提：仓库 **public**；Release body 只写更新内容 + `Made by XiXi 💛`（不写签名描述段）
 
 ## 构建要点（踩坑记录）
 
-- **桌面路径构建会文件锁报错** → 先 robocopy 到 `%TEMP%\hiking-build` 再构建
-- **Android HttpURLConnection 反射发 PROPFIND/MKCOL 不可靠**（Android 9+ hidden API 拦截，实际按 GET 发出）→ **必须用 OkHttp**
-- **R8 keep 规则**：JS 桥 `MainActivity$JsFileBridge` 禁加 `allowobfuscation`（会改类名导致 JS 调不到）→ `-keep class com.xixi.hiking.MainActivity$JsFileBridge { *; }`
-- **夜间模式 select**：用 `background-color` 单设（`background` 简写会重置箭头位置导致双箭头），箭头要浅色反转才可见
-- bump 后必须把整个 android 目录同步到构建目录，否则打包出旧版本号
-- GitHub 更新流程：**clone 远程 → 覆盖文件 → 提交推送**（不要 git init 新仓库，会被历史冲突拒绝）
+- **桌面路径构建会文件锁** → 先复制到 `%TEMP%\hiking-build` 再构建
+- **WebDAV 必须 OkHttp**（HttpURLConnection 反射在 Android 9+ 被 hidden API 拦截）
+- **R8 keep 规则**：JS 桥 `MainActivity$JsFileBridge` 禁 `allowobfuscation`
+- **旧 WebView 兼容**：不用 `inset`/`aspect-ratio` 等新 CSS 属性（用户 WebView 较老），必要时加兜底
+- GitHub 更新流程：**clone 远程 → 覆盖文件 → 提交推送**（勿 git init 重建）
 
 ## 签名与安全
 
-- ⚠️ **签名密钥（debug.keystore）绝不在本仓库**——本地备份在 `backups/android-signing/`，构建前需放回 `android/app/debug.keystore`
-- APK 签名 SHA-256：`9396fee4e13f3fd1f939d66820d0ca623187be62234fcfcc621577b63ccf8899`（保持签名不变 → 覆盖安装数据不丢）
-- 坚果云账号/应用密码是用户隐私，不入库、不索要
+- ⚠️ **签名密钥（debug.keystore）绝不在本仓库**——本地备份在 `backups/android-signing/`
+- APK 签名 SHA-256：`9396fee4e13f3fd1f939d66820d0ca623187be62234fcfcc621577b63ccf8899`（保持签名 → 覆盖安装数据不丢）
+- 坚果云账号/密码是用户隐私，不入库

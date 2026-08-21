@@ -380,15 +380,6 @@
             border-color: rgba(59, 130, 246, 0.5) !important;
         }
         
-        .dark-mode .search-option {
-            color: #e5e7eb !important;
-            border-color: rgba(75, 85, 99, 0.2) !important;
-        }
-        
-        .dark-mode .search-option:hover {
-            background-color: rgba(59, 130, 246, 0.1) !important;
-        }
-        
         .dark-mode .confirm-modal-content {
             background: rgba(15, 23, 42, calc(var(--glass-alpha) * 6)) !important;
             border-color: rgba(148, 180, 255, 0.18) !important;
@@ -772,6 +763,7 @@
         }
         .hm-day {
             aspect-ratio: 1 / 1;
+            min-height: 24px; /* 2026-08-21 旧WebView兼容：aspect-ratio 不支持时格子不塌陷 */
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -1353,9 +1345,6 @@
             border-radius: 4px; /* 2026-08-11 3条优化：与全局滚动条圆角统一(4px) */
         }
 
-
-        
-        
         /* ========== 液态玻璃面板 ========== */
         .glass-panel {
             background: rgba(255, 255, 255, var(--glass-alpha));
@@ -1784,46 +1773,12 @@
                 color: #999;
             }
         }
-        .search-option {
-            padding: 12px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease;
-            font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
-            font-weight: 900;
-            font-size: 16px;
-            line-height: 1.5;
-            position: relative;
-            transform: translateX(0);
-        }
-        .search-option:hover {
-            background-color: rgba(103, 126, 234, 0.1);
-            transform: translateX(4px) scale(1.01);
-            padding-left: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .search-option::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 3px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-        .search-option:hover::before {
-            opacity: 1;
-        }
-        .search-option:last-child {
-            border-bottom: none;
-        }
-        .search-loading {
-            padding: 10px 14px;
-            text-align: center;
-            color: #666;
-        }
+        
+        
+        
         .input-with-search {
             position: relative;
         }
@@ -2152,20 +2107,7 @@
             }
         }
         
-        .search-option {
-            padding: 12px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
-            font-weight: 900;
-            font-size: 16px;
-            line-height: 1.5;
-            position: relative;
-            transform: translateX(0);
-            opacity: 0;
-            animation: slideInRight 0.3s ease-out forwards;
-        }
+        
         
         @keyframes slideInRight {
             from {
@@ -2292,36 +2234,37 @@
             font-weight: 600;
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
         }
+        /* 2026-08-21 v1.1.1.5 toast 颜色修复：保持玻璃质感（半透明深底+blur），白字任何背景可读（灯箱黑底也清楚） */
         .toast-glass.success {
-            background: rgba(74, 222, 128, 0.22);
-            border: 1px solid rgba(74, 222, 128, 0.38);
-            color: #14532d;
+            background: rgba(10, 60, 40, 0.72);
+            border: 1px solid rgba(74, 222, 128, 0.45);
+            color: #ffffff;
         }
         .toast-glass.error {
-            background: rgba(248, 113, 113, 0.22);
-            border: 1px solid rgba(248, 113, 113, 0.38);
-            color: #7f1d1d;
+            background: rgba(70, 15, 20, 0.78);
+            border: 1px solid rgba(248, 113, 113, 0.5);
+            color: #ffffff;
         }
         body.dark-mode .toast-glass.success {
-            background: rgba(34, 197, 94, 0.20);
-            border-color: rgba(134, 239, 172, 0.35);
-            color: #dcfce7;
+            background: rgba(10, 60, 40, 0.72);
+            border-color: rgba(74, 222, 128, 0.45);
+            color: #ffffff;
         }
         body.dark-mode .toast-glass.error {
-            background: rgba(239, 68, 68, 0.20);
-            border-color: rgba(252, 165, 165, 0.35);
-            color: #fee2e2;
+            background: rgba(70, 15, 20, 0.78);
+            border-color: rgba(248, 113, 113, 0.5);
+            color: #ffffff;
         }
         /* loading 提示（统一玻璃设计语言，替代原黑框） */
         .toast-glass.loading {
-            background: rgba(148, 163, 184, 0.28);
-            border: 1px solid rgba(148, 163, 184, 0.42);
-            color: #334155;
+            background: rgba(40, 50, 68, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            color: #ffffff;
         }
         body.dark-mode .toast-glass.loading {
-            background: rgba(148, 163, 184, 0.18);
-            border-color: rgba(203, 213, 225, 0.35);
-            color: #e2e8f0;
+            background: rgba(40, 50, 68, 0.78);
+            border-color: rgba(148, 163, 184, 0.45);
+            color: #ffffff;
         }
         .toast-fade-out {
             opacity: 0;
@@ -4285,8 +4228,6 @@
                     </div>
                 </div>
                 
-
-                
                 <div class="mt-6">
                     <h3 class="text-lg font-semibold text-white/70 mb-4 px-3 py-1">难度分布</h3>
                     <div class="relative h-60 chart-box backdrop-blur-md rounded-xl p-4 border">
@@ -4552,6 +4493,16 @@
                             <span class="text-sm font-semibold">管理</span>
                         </button>
                     </div>
+                    <!-- 2026-08-21 v1.1.1.5 照片占用统计 -->
+                    <div class="settings-item" style="border-radius: 12px; margin-top: 10px; cursor: default;">
+                        <div class="settings-item-icon">
+                            <span class="material-icons" style="font-size: 20px;">photo_library</span>
+                        </div>
+                        <div class="settings-item-text">
+                            <div class="settings-item-title">照片占用</div>
+                            <div class="settings-item-desc" id="photoUsageDesc">统计中…</div>
+                        </div>
+                    </div>
                     <div class="settings-item" style="border-radius: 12px;">
                         <div class="settings-item-icon">
                             <span class="material-icons" style="font-size: 20px;">autorenew</span>
@@ -4676,7 +4627,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.1.4</div>
+                        <div class="about-version">版本 1.1.1.5</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4684,91 +4635,10 @@
             </div>
             </div>
         
-        
     </div>
     </div>
 
-        
-    
     <script>
-// ===== POLYFILL: lingguang API (移动端/浏览器兼容层) =====
-(function() {
-    // 如果已经有 lingguang 对象（桌面端），直接复用
-    if (window.lingguang) {
-        console.log('[PF] lingguang already exists, skip polyfill');
-        return;
-    }
-
-    console.log('[PF] Installing lingguang polyfill...');
-
-    // 封装 localStorage，带错误处理
-    function safeStorage(method, key, value) {
-        try {
-            if (method === 'setItem') {
-                localStorage.setItem(key, JSON.stringify(value));
-            } else if (method === 'getItem') {
-                var raw = localStorage.getItem(key);
-                return raw ? JSON.parse(raw) : null;
-            } else if (method === 'removeItem') {
-                localStorage.removeItem(key);
-            }
-        } catch (e) {
-            console.warn('[PF] localStorage.' + method + ' failed:', e.message);
-            return null;
-        }
-    }
-
-    window.lingguang = {
-        data: {
-            fetch: async function(query, schema) {
-                return null; // 移动端不调用搜索 API，直接返回空
-            }
-        },
-
-        saveFile: async function(options) {
-            try {
-                // App 原生环境：直接用原生桥把 base64 保存到系统下载目录
-                if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
-                    var saved = window.XixiFileBridge.saveBase64(options.data, options.filename || 'export.html');
-                    return { success: !!saved };
-                }
-                // 网页版：降级为 blob + <a download> 下载
-                var decoded = atob(options.data);
-                var bytes = new Uint8Array(decoded.length);
-                for (var i = 0; i < decoded.length; i++) {
-                    bytes[i] = decoded.charCodeAt(i);
-                }
-                var blob = new Blob([bytes], { type: 'text/csv;charset=utf-8' });
-                var url = URL.createObjectURL(blob);
-                var link = document.createElement('a');
-                link.href = url;
-                link.download = options.filename || 'export.html';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                return { success: true };
-            } catch (e) {
-                console.warn('[PF] saveFile failed:', e.message);
-                return { success: false };
-            }
-        },
-
-        storage: {
-            setItem: function(key, value) {
-                safeStorage('setItem', key, value);
-            },
-            getItem: function(key) {
-                return safeStorage('getItem', key);
-            },
-            removeItem: function(key) {
-                safeStorage('removeItem', key);
-            }
-        }
-    };
-
-    console.log('[PF] Polyfill ready');
-})();
 
 // ===== 全局错误保护（防止移动端 WebView 闪退） =====
 window.addEventListener('error', function(e) {
@@ -4784,9 +4654,6 @@ window.addEventListener('unhandledrejection', function(e) {
     e.preventDefault();
     return true;
 });
-
-
-/* global lingguang */
 
 // Polyfill for requestIdleCallback
 if (typeof window.requestIdleCallback !== 'function') {
@@ -4808,15 +4675,9 @@ let records = [];
 let editingId = null;
 // ★2026-08-20 编辑中的照片临时 ID 列表（保存时写回记录，取消时回收孤儿）
 let editingPhotoIds = [];
-let searchTimers = new Map();
-let searchResults = new Map();
-let searchCache = new Map();
-let cacheExpiry = new Map();
 // ★2026-08-20 v1.1.0.3 默认排序：记录时间，从近到远（用户要求"默认以记录时间为主"）
 let currentSort = { field: 'createdAt', direction: 'desc' };
 let isDarkMode = false;
-const CACHE_DURATION = 30 * 60 * 1000;
-const MAX_CACHE_SIZE = 30;
 let isInitialized = false;
 let cleanupFunctions = [];
 // ===== WebDAV 数据同步 =====
@@ -4843,11 +4704,6 @@ function cleanupResources() {
         // 停止FPS监控
         stopFPSMonitor();
         
-        searchTimers.forEach((timer) => {
-            clearTimeout(timer);
-        });
-        searchTimers.clear();
-        
         if (window.currentEventListeners) {
             window.currentEventListeners.forEach(({ element, event, handler }) => {
                 if (element && element.removeEventListener) {
@@ -4861,10 +4717,6 @@ function cleanupResources() {
             try { fn(); } catch (e) { console.warn('Cleanup function error:', e); }
         });
         cleanupFunctions = [];
-        
-        searchCache.clear();
-        cacheExpiry.clear();
-        searchResults.clear();
         
         console.log('Resources cleaned up');
     } catch (error) {
@@ -4971,7 +4823,22 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.1.4';
+var APP_VERSION = '1.1.1.5';
+// ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
+var AppStore = {
+    setItem: function (key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.warn('[Store] setItem failed:', key, e && e.message); }
+    },
+    getItem: function (key) {
+        try {
+            var raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { console.warn('[Store] getItem failed:', key, e && e.message); return null; }
+    },
+    removeItem: function (key) {
+        try { localStorage.removeItem(key); } catch (e) { console.warn('[Store] removeItem failed:', key, e && e.message); }
+    }
+};
 // 更新下载镜像源（国内加速；原生下载失败自动兜底官方直链，改这里一处即可换源）
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
@@ -4995,7 +4862,6 @@ const HEATMAP_TITLE_KEY = 'hiking_heatmap_title';
 let plannedTrips = [];
 let plannedEditingId = null;
 let plannedCurrentSort = { field: null, direction: 'asc' };
-
 
 // DOM操作辅助函数（性能优化：去除try-catch，getElementById在浏览器永不抛异常）
 function safeGetElementById(id) {
@@ -5022,41 +4888,6 @@ function safeSetElementStyle(elementId, styleProperty, value) {
 }
 
 // 测试搜索功能
-
-
-// 测试API可用性
-
-
-// 带重试机制的DATAFETCH搜索
-async function dataFetchWithRetry(query, schema, maxRetries = 3, baseDelay = 2000) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            console.log(`DATAFETCH搜索尝试 ${attempt}/${maxRetries}:`, query.substring(0, 50) + '...');
-            const result = await window.lingguang.data.fetch(query, schema);
-            
-            if (result && (result.locations || result.mountain_info)) {
-                console.log(`DATAFETCH搜索成功，尝试次数: ${attempt}`);
-                return result;
-            } else {
-                console.warn(`DATAFETCH搜索返回空结果，尝试次数: ${attempt}`);
-                if (attempt === maxRetries) return null;
-            }
-        } catch (error) {
-            console.warn(`DATAFETCH搜索失败，尝试次数: ${attempt}, 错误:`, error.message);
-            
-            if (attempt === maxRetries) {
-                throw error;
-            }
-            
-            // 指数退避延迟
-            const delay = baseDelay * Math.pow(2, attempt - 1);
-            console.log(`等待 ${delay}ms 后重试...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    
-    return null;
-}
 
 // 生成唯一ID
 function generateId() {
@@ -5148,6 +4979,16 @@ function photoGetUsage() {
 function photosEnabled() {
     return !photoDB.failed;
 }
+// ★2026-08-21 v1.1.1.5 照片占用统计（设置页显示）
+function refreshPhotoUsage() {
+    var el = document.getElementById('photoUsageDesc');
+    if (!el) return;
+    photoGetUsage().then(function (u) {
+        if (!u || !u.count) { el.textContent = '暂无照片'; return; }
+        var txt = '照片 ' + u.count + ' 张 · ' + (u.bytes >= 1048576 ? (u.bytes / 1048576).toFixed(1) + ' MB' : Math.ceil(u.bytes / 1024) + ' KB');
+        el.textContent = txt;
+    }).catch(function () { el.textContent = '统计失败'; });
+}
 
 // ===== ★2026-08-20 取图 + 压缩管线（相机/相册 → canvas 压缩 1280px/JPEG0.7）=====
 var photoInputEl = null;
@@ -5220,7 +5061,6 @@ function dataURLToBlob(dataURL) {
     for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     return new Blob([arr], { type: mime });
 }
-
 
 // 错误消息显示函数
 function showErrorMessage(message) {
@@ -5306,53 +5146,6 @@ function showSuccessMessage(message) {
     });
 }
 
-// 缓存管理函数
-function getCacheKey(query) {
-    // 创建标准化缓存键，移除多余空格并转为小写
-    return query.trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
-function getCache(key) {
-    const cached = searchCache.get(key);
-    const expiry = cacheExpiry.get(key);
-    
-    if (cached && expiry && Date.now() < expiry) {
-        return cached;
-    }
-    
-    // 清理过期缓存
-    if (cached) {
-        searchCache.delete(key);
-        cacheExpiry.delete(key);
-    }
-    
-    return null;
-}
-
-function setCache(key, data) {
-    if (searchCache.size >= MAX_CACHE_SIZE) {
-        cleanOldestCache();
-    }
-    
-    searchCache.set(key, data);
-    cacheExpiry.set(key, Date.now() + CACHE_DURATION);
-}
-
-
-
-
-
-function cleanOldestCache() {
-    const sortedEntries = Array.from(cacheExpiry.entries())
-        .sort((a, b) => a[1] - b[1]);
-    const toRemove = sortedEntries.slice(0, 10); // 清理最旧的10个
-    toRemove.forEach(([key]) => {
-        searchCache.delete(key);
-        cacheExpiry.delete(key);
-    });
-}
-
-
 // ===== 主题三态逻辑（v1.4.10.2）：auto 跟随系统 / light / dark =====
 
 // 当前是否应启用深色模式（根据 themeMode + 系统偏好）
@@ -5402,8 +5195,8 @@ function setThemeMode(mode) {
 
 function saveThemeMode() {
     try {
-        window.lingguang.storage.setItem(THEME_MODE_KEY, { mode: themeMode });
-        window.lingguang.storage.setItem(DARK_MODE_KEY, { isDarkMode: isDarkMode }); // 兼容旧读取
+        AppStore.setItem(THEME_MODE_KEY, { mode: themeMode });
+        AppStore.setItem(DARK_MODE_KEY, { isDarkMode: isDarkMode }); // 兼容旧读取
     } catch (error) {
         console.error('保存主题模式失败:', error);
     }
@@ -5430,15 +5223,10 @@ function initSystemThemeListener() {
     }
 }
 
-
-
-
-
-
 // 区块标题保存函数
 async function saveStatsTitleToStorage(title) {
     try {
-        await window.lingguang.storage.setItem(STATS_TITLE_KEY, { title });
+        await AppStore.setItem(STATS_TITLE_KEY, { title });
     } catch (error) {
         console.error('保存统计概览标题失败:', error);
     }
@@ -5446,7 +5234,7 @@ async function saveStatsTitleToStorage(title) {
 
 async function saveRecordsTitleToStorage(title) {
     try {
-        await window.lingguang.storage.setItem(RECORDS_TITLE_KEY, { title });
+        await AppStore.setItem(RECORDS_TITLE_KEY, { title });
     } catch (error) {
         console.error('保存徒步记录标题失败:', error);
     }
@@ -5454,7 +5242,7 @@ async function saveRecordsTitleToStorage(title) {
 
 async function savePlannedTitleToStorage(title) {
     try {
-        await window.lingguang.storage.setItem(PLANNED_TITLE_KEY, { title });
+        await AppStore.setItem(PLANNED_TITLE_KEY, { title });
     } catch (error) {
         console.error('保存计划徒步行标题失败:', error);
     }
@@ -5462,26 +5250,22 @@ async function savePlannedTitleToStorage(title) {
 
 async function saveSettingsTitleToStorage(title) {
     try {
-        await window.lingguang.storage.setItem(SETTINGS_TITLE_KEY, { title });
+        await AppStore.setItem(SETTINGS_TITLE_KEY, { title });
     } catch (error) {
         console.error('保存设置页标题失败:', error);
     }
 }
 
-
-
 // 徒步足迹标题保存（v1.0.7.10）
 async function saveHeatmapTitleToStorage(title) {
     try {
-        await window.lingguang.storage.setItem(HEATMAP_TITLE_KEY, { title });
+        await AppStore.setItem(HEATMAP_TITLE_KEY, { title });
         showSuccessMessage('标题已更新');
     } catch (e) {
         console.error('保存热力图标题失败:', e);
         showErrorMessage('保存失败，请重试');
     }
 }
-
-
 
 // v1.0.7.11 下拉框宽度自适应文字（canvas 精确测量最长选项 + 箭头/padding 余量）
 function fitSelectWidth(sel) {
@@ -5510,13 +5294,6 @@ function fitEditSelects() {
         fitSelectWidth(sel);
     });
 }// 区块标题加载函数
-
-
-
-
-
-
-
 
 function getDifficultyColor(difficulty) {
     const colors = ['#10b981', '#84cc16', '#f59e0b', '#f97316', '#dc2626'];
@@ -5773,42 +5550,6 @@ function attachEventListeners() {
                 eventListeners.push({ element: cancelBtn, event: 'click', handler: cancelHandler });
             }
             
-            if (nameInput) {
-                const inputHandler = (e) => {
-                    const query = e.target.value.trim();
-                    if (query.length >= 2) {
-                        // 优化防抖时间，提高响应性
-                        if (searchTimers.has(record.id)) {
-                            clearTimeout(searchTimers.get(record.id));
-                        }
-                        
-                        searchTimers.set(record.id, setTimeout(() => {
-                            performSearch(query, record.id);
-                        }, 300)); // 减少防抖时间到300ms
-                    } else {
-                        hideSearchDropdown(record.id);
-                    }
-                };
-                
-                const focusHandler = (e) => {
-                    // 确保输入框能够正确获得焦点
-                    const input = e.target;
-                    input.focus();
-                    
-                    const query = nameInput.value.trim();
-                    if (query.length >= 2) {
-                        performSearch(query, record.id);
-                    }
-                };
-                
-                nameInput.addEventListener('input', inputHandler);
-                nameInput.addEventListener('focus', focusHandler);
-                
-                eventListeners.push(
-                    { element: nameInput, event: 'input', handler: inputHandler },
-                    { element: nameInput, event: 'focus', handler: focusHandler }
-                );
-            }
             // ★2026-08-20 照片区按钮（拍照/相册/删除缩略图）
             const photoCameraBtn = safeGetElementById(`photo-camera-btn-${record.id}`);
             const photoAlbumBtn = safeGetElementById(`photo-album-btn-${record.id}`);
@@ -5902,18 +5643,6 @@ function cancelEdit() {
     // ★2026-08-20 照片：取消编辑 → 新增未保存的照片回收为孤儿
     editingPhotoIds = [];
     photoCollectOrphans();
-    
-    searchTimers.forEach((timer) => {
-        clearTimeout(timer);
-    });
-    searchTimers.clear();
-    searchResults.clear();
-    
-    document.querySelectorAll('[id^="search-dropdown-"]').forEach(dropdown => {
-        if (dropdown && dropdown.style) {
-            dropdown.style.display = 'none';
-        }
-    });
     
     updateStatistics();
     saveToStorage();
@@ -6105,759 +5834,6 @@ function saveCurrentPhoto() {
     }).catch(function () { showErrorMessage('保存失败'); });
 }
 
-async function searchLocation(query, recordId) {
-    if (!query || query.length < 1) {
-        hideSearchDropdown(recordId);
-        return;
-    }
-    
-    showSearchLoading(recordId);
-    
-    // 检查缓存
-    const cacheKey = getCacheKey(query);
-    const cachedResult = getCache(cacheKey);
-    
-    if (cachedResult) {
-        searchResults.set(recordId, cachedResult);
-        showSearchResults(cachedResult, recordId);
-        return;
-    }
-    
-    try {
-        // 使用AI进行智能搜索
-        const aiSearchResult = await performAISearch(query);
-        
-        if (aiSearchResult && aiSearchResult.length > 0) {
-            // 缓存结果
-            setCache(cacheKey, aiSearchResult);
-            searchResults.set(recordId, aiSearchResult);
-            showSearchResults(aiSearchResult, recordId);
-        } else {
-            // 如果AI搜索失败，回退到传统搜索
-            await fallbackSearch(query, recordId, cacheKey);
-        }
-    } catch (error) {
-        console.error('AI搜索失败，尝试传统搜索:', error);
-        // 回退到传统搜索
-        await fallbackSearch(query, recordId, cacheKey);
-    }
-}
-
-async function performAISearch(query) {
-    const systemPrompt = `你是一个专业的山峰和景区信息专家。请根据用户查询的山峰或景区名称，提供准确、详细、全面的信息。
-
-支持搜索的类型：
-1. 自然山峰（如：南五台山、北五台山、太白山、华山、嵩山、衡山、泰山等）
-2. 国家森林公园（如：太平国家森林公园、楼观台国家森林公园、太白山国家森林公园等）
-3. 风景名胜区（如：骊山、王顺山、翠华山、终南山等）
-4. 自然保护区和地质公园
-5. 著名山脉和山峰
-
-请按照以下JSON格式返回结果：
-{
-  "locations": [
-    {
-      "name": "山峰或景区准确名称",
-      "elevation": 海拔高度(数字),
-      "difficulty": 登山或游览难度(1-5数字，1最易5最难),
-      "location": "具体地理位置",
-      "province": "省份",
-      "mountain_range": "山脉名称或区域",
-      "park_type": "景区类型（山峰/森林公园/风景区/自然保护区等）",
-      "description": "山峰或景区简介",
-      "features": "特色景观",
-      "best_season": "最佳游览季节",
-      "geological_info": "地质特征",
-      "climate_info": "气候特点",
-      "flora_fauna": "动植物资源",
-      "cultural_significance": "文化历史意义",
-      "tourism_facilities": "旅游设施情况",
-      "transportation": "交通方式",
-      "accommodation": "住宿条件",
-      "safety_tips": "安全注意事项",
-      "equipment_required": "所需装备",
-      "nearby_attractions": "周边景点",
-      "historical_records": "历史记录",
-      "myths_legends": "神话传说",
-      "conservation_status": "保护状况",
-      "peak_features": "山顶特征",
-      "water_sources": "水源情况",
-      "emergency_contacts": "紧急联系方式",
-      "accuracy_level": 准确度评分(1-10)
-    }
-  ]
-}
-
-注意：
-1. 难度分级：1级(休闲散步) - 2级(简单徒步) - 3级(中等挑战) - 4级(困难攀登) - 5级(专业探险)
-2. 如果查询不够具体，请提供多个可能的结果
-3. 优先返回最知名和最准确的结果
-4. 确保所有信息准确可靠，内容要面面俱到
-5. 每个字段都要尽量填写具体详细的信息
-6. 对于森林公园和风景区，难度应指游览难度而非登山难度`;
-
-    try {
-        // 优先使用DATAFETCH API进行联网搜索
-        console.log('开始搜索，检查DATAFETCH API可用性...');
-        
-        if (window.lingguang && window.lingguang.data && typeof window.lingguang.data.fetch === 'function') {
-            console.log('DATAFETCH API可用，开始搜索...');
-            const dataFetchQuery = `请详细搜索山峰或景区"${query}"的完整信息，当前日期2025-12-09。请特别关注以下类型的地点：
-1. 自然山峰（如：南五台山、北五台山、太白山、华山等）
-2. 国家森林公园（如：太平国家森林公园、楼观台国家森林公园等）
-3. 风景名胜区（如：骊山、王顺山、翠华山等）
-4. 自然保护区
-5. 地质公园
-
-对于查询的地点，请提供以下详细信息：
-- 准确的全称和常用别名
-- 海拔高度（米）
-- 登山或游览难度（1-5级，1最易5最难）
-- 具体地理位置（省市县）
-- 所属山脉或区域
-- 景区类型（山峰/森林公园/风景区等）
-- 特色景观和主要景点
-- 最佳游览季节
-- 交通方式
-- 基础设施情况
-
-请确保信息准确、全面、详细。`;
-            
-            const schema = {
-                type: "object",
-                properties: {
-                    locations: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                name: { type: "string" },
-                                elevation: { type: "number" },
-                                difficulty: { type: "number", minimum: 1, maximum: 5 },
-                                location: { type: "string" },
-                                province: { type: "string" },
-                                mountain_range: { type: "string" },
-                                description: { type: "string" },
-                                features: { type: "string" },
-                                park_type: { type: "string" },
-                                scenic_spots: {
-                                    type: "array",
-                                    items: { type: "string" },
-                                    maxItems: 8
-                                },
-                                tourism_rating: { type: "string" },
-                                opening_hours: { type: "string" },
-                                ticket_price: { type: "string" },
-                                best_season: { type: "string" },
-                                geological_info: { type: "string" },
-                                climate_info: { type: "string" },
-                                flora_fauna: { type: "string" },
-                                cultural_significance: { type: "string" },
-                                tourism_facilities: { type: "string" },
-                                transportation: { type: "string" },
-                                accommodation: { type: "string" },
-                                safety_tips: { type: "string" },
-                                equipment_required: { type: "string" },
-                                nearby_attractions: { type: "string" },
-                                historical_records: { type: "string" },
-                                myths_legends: { type: "string" },
-                                conservation_status: { type: "string" },
-                                peak_features: { type: "string" },
-                                water_sources: { type: "string" },
-                                emergency_contacts: { type: "string" },
-                                accuracy_level: { type: "number", minimum: 1, maximum: 10 }
-                            },
-                            required: ["name", "elevation", "difficulty", "location"],
-                            additionalProperties: false
-                        }
-                    }
-                },
-                required: ["locations"],
-                additionalProperties: false
-            };
-            
-            try {
-                const result = await dataFetchWithRetry(dataFetchQuery, schema, 3, 2000);
-                
-                if (result && result.locations && result.locations.length > 0) {
-                    const validLocations = result.locations.filter(loc => {
-                        return loc.name && 
-                               loc.elevation > 0 && 
-                               loc.difficulty >= 1 && 
-                               loc.difficulty <= 5 &&
-                               loc.location;
-                    }).map(loc => ({
-                        ...loc,
-                        elevation: Math.round(loc.elevation),
-                        difficulty: Math.min(5, Math.max(1, Math.round(loc.difficulty))),
-                        accuracy_level: loc.accuracy_level || 8
-                    }));
-                    
-                    if (validLocations.length > 0) {
-                        console.log('DATAFETCH搜索成功，找到', validLocations.length, '个结果');
-                        return validLocations;
-                    }
-                }
-            } catch (dataFetchError) {
-                console.warn('DATAFETCH搜索失败，尝试CALLLLM:', dataFetchError.message);
-            }
-        }
-        
-        // 回退到CALLLLM
-        if (typeof window.callLLM === 'function') {
-            const result = await Promise.race([
-                window.callLLM(
-                    `请详细搜索山峰或景区"${query}"的信息，包括名称、海拔、难度、位置、特色等。支持各类山峰、森林公园、风景名胜区的搜索。`,
-                    systemPrompt,
-                    20000
-                ),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('CALLLLM搜索超时')), 20000))
-            ]);
-            
-            if (result && result.content) {
-                const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    const parsedData = JSON.parse(jsonMatch[0]);
-                    if (parsedData.locations && Array.isArray(parsedData.locations)) {
-                        const validLocations = parsedData.locations.filter(loc => {
-                            return loc.name && 
-                                   loc.elevation > 0 && 
-                                   loc.difficulty >= 1 && 
-                                   loc.difficulty <= 5 &&
-                                   loc.location;
-                        }).map(loc => ({
-                            ...loc,
-                            elevation: Math.round(loc.elevation),
-                            difficulty: Math.min(5, Math.max(1, Math.round(loc.difficulty))),
-                            accuracy_level: loc.accuracy_level || 7
-                        }));
-                        
-                        if (validLocations.length > 0) {
-                            console.log('CALLLLM搜索成功，找到', validLocations.length, '个结果');
-                            return validLocations;
-                        }
-                    }
-                }
-            }
-        }
-        
-        console.warn('所有搜索方法都失败，返回空结果');
-        return [];
-    } catch (error) {
-        console.error('搜索过程中发生错误:', error);
-        return [];
-    }
-}
-
-async function fallbackSearch(query, recordId, cacheKey) {
-    try {
-        // 使用DATAFETCH API进行增强搜索
-        console.log('增强搜索，检查DATAFETCH API可用性...');
-        
-        if (window.lingguang && window.lingguang.data && typeof window.lingguang.data.fetch === 'function') {
-            console.log('增强搜索：DATAFETCH API可用');
-            const enhancedSearchQuery = `请详细搜索山峰或景区"${query}"的完整信息，当前日期2025-12-09。支持搜索：
-1. 自然山峰（如：南五台山、北五台山、太白山、华山、嵩山、衡山等）
-2. 国家森林公园（如：太平国家森林公园、楼观台国家森林公园、太白山国家森林公园等）
-3. 风景名胜区（如：骊山、王顺山、翠华山、终南山等）
-4. 自然保护区和地质公园
-
-请提供以下核心信息：
-- 准确全称和常用别名
-- 海拔高度（米）
-- 登山或游览难度（1-5级）
-- 具体地理位置（省市县）
-- 景区类型和特色
-- 交通方式和基础设施
-
-请确保信息准确详细，返回JSON格式。`;
-            
-            const enhancedSchema = {
-                type: "object",
-                properties: {
-                    locations: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                name: { type: "string" },
-                                elevation: { type: "number" },
-                                difficulty: { type: "number", minimum: 1, maximum: 5 },
-                                location: { type: "string" },
-                                province: { type: "string" },
-                                mountain_range: { type: "string" },
-                                park_type: { type: "string" },
-                                scenic_spots: {
-                                    type: "array",
-                                    items: { type: "string" },
-                                    maxItems: 6
-                                },
-                                tourism_rating: { type: "string" },
-                                opening_hours: { type: "string" },
-                                ticket_price: { type: "string" },
-                                description: { type: "string" },
-                                accuracy_level: { type: "number", minimum: 1, maximum: 10 }
-                            },
-                            required: ["name", "elevation", "difficulty", "location"],
-                            additionalProperties: false
-                        }
-                    }
-                },
-                required: ["locations"],
-                additionalProperties: false
-            };
-            
-            try {
-                const result = await dataFetchWithRetry(enhancedSearchQuery, enhancedSchema, 2, 1500);
-                
-                if (result && result.locations && result.locations.length > 0) {
-                    const validLocations = result.locations.filter(loc => {
-                        return loc.name && 
-                               loc.elevation > 0 && 
-                               loc.difficulty >= 1 && 
-                               loc.difficulty <= 5 &&
-                               loc.location;
-                    }).map(loc => ({
-                        ...loc,
-                        elevation: Math.round(loc.elevation),
-                                difficulty: Math.min(5, Math.max(1, Math.round(loc.difficulty))),
-                        accuracy_level: loc.accuracy_level || 6,
-                        description: loc.description || `${loc.name}位于${loc.location}${loc.province ? `，${loc.province}` : ''}`,
-                        features: loc.features || "山峰",
-                        best_season: loc.best_season || "全年"
-                    }));
-                    
-                    if (validLocations.length > 0) {
-                        console.log('增强搜索成功，找到', validLocations.length, '个结果');
-                        setCache(cacheKey, validLocations);
-                        searchResults.set(recordId, validLocations);
-                        showSearchResults(validLocations, recordId);
-                        return;
-                    }
-                }
-            } catch (enhancedError) {
-                console.warn('增强搜索失败，尝试基本搜索:', enhancedError.message);
-            }
-        }
-        
-        // 基本搜索回退
-        const searchQuery = `请搜索山峰或景区"${query}"的基本信息，当前日期2025-12-09：
-支持搜索各类山峰、森林公园、风景名胜区、自然保护区等。
-请提供：
-1. 准确的名称
-2. 海拔高度（米）
-3. 游览难度（1-5级）
-4. 地理位置（省市县）
-5. 景区类型
-
-请返回准确数据，JSON格式。`;
-        
-        const schema = {
-            type: "object",
-            properties: {
-                locations: {
-                    type: "array",
-                    items: {
-                        type: "object",
-                        properties: {
-                            name: { type: "string" },
-                            elevation: { type: "number" },
-                            difficulty: { type: "number", minimum: 1, maximum: 5 },
-                            location: { type: "string" },
-                            province: { type: "string" },
-                            mountain_range: { type: "string" }
-                        },
-                        required: ["name", "elevation", "difficulty", "location"],
-                        additionalProperties: false
-                    }
-                }
-            },
-            required: ["locations"],
-            additionalProperties: false
-        };
-        
-        console.log('基本搜索，检查DATAFETCH API可用性...');
-        
-        if (window.lingguang && window.lingguang.data && typeof window.lingguang.data.fetch === 'function') {
-            console.log('基本搜索：DATAFETCH API可用');
-        } else {
-            console.log('基本搜索：DATAFETCH API不可用');
-        }
-        
-        const result = await dataFetchWithRetry(searchQuery, schema, 2, 1000);
-        
-        if (result && result.locations && result.locations.length > 0) {
-            const validLocations = result.locations.filter(loc => {
-                return loc.name && 
-                       loc.elevation > 0 && 
-                       loc.difficulty >= 1 && 
-                       loc.difficulty <= 5 &&
-                       loc.location;
-            }).map(loc => ({
-                ...loc,
-                elevation: Math.round(loc.elevation),
-                difficulty: Math.min(5, Math.max(1, Math.round(loc.difficulty))),
-                accuracy_level: 5,
-                description: `${loc.name}位于${loc.location}${loc.province ? `，${loc.province}` : ''}`,
-                features: "山峰",
-                best_season: "全年"
-            }));
-            
-            if (validLocations.length > 0) {
-                console.log('基本搜索成功，找到', validLocations.length, '个结果');
-                setCache(cacheKey, validLocations);
-                searchResults.set(recordId, validLocations);
-                showSearchResults(validLocations, recordId);
-            } else {
-                setCache(cacheKey, []);
-                showNoResults(recordId);
-            }
-        } else {
-            setCache(cacheKey, []);
-            showNoResults(recordId);
-        }
-    } catch (error) {
-        console.error('所有搜索方法都失败:', error);
-        showSearchError(recordId);
-        setCache(cacheKey, []);
-        
-        if (error.message.includes('超时') || error.message.includes('network')) {
-            showErrorMessage('网络连接超时，请检查网络后重试');
-        } else if (error.message.includes('不可用')) {
-            showDefaultSearchResults(recordId, query);
-            setCache(cacheKey, []);
-        }
-    }
-}
-
-
-
-function showSearchLoading(recordId) {
-    const dropdown = safeGetElementById(`search-dropdown-${recordId}`);
-    if (dropdown) {
-        safeSetElementContent(`search-dropdown-${recordId}`, '<div class="search-loading"><span class="material-icons spin">search</span> 搜索中...</div>');
-        safeSetElementStyle(`search-dropdown-${recordId}`, 'display', 'block');
-        
-        // 触发动画
-        requestAnimationFrame(() => {
-            dropdown.classList.add('show');
-        });
-    }
-}
-
-function showSearchResults(locations, recordId) {
-    const dropdown = safeGetElementById(`search-dropdown-${recordId}`);
-    if (!dropdown) return;
-    
-    // 按准确性排序
-    const sortedLocations = locations.sort((a, b) => (b.accuracy_level || 0) - (a.accuracy_level || 0));
-    
-    const resultsHtml = sortedLocations.map((location, index) => {
-        const accuracyStars = location.accuracy_level ? 
-            '★'.repeat(Math.min(location.accuracy_level, 5)) + '☆'.repeat(Math.max(0, 5 - location.accuracy_level)) : 
-            '★★★☆☆';
-        
-        const isAISearch = location.accuracy_level > 6;
-        const searchBadge = isAISearch ? 
-            '<span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">AI智能</span>' : 
-            '<span class="text-xs bg-white/10 text-white/60 px-1 rounded">标准搜索</span>';
-            
-        return `
-            <div class="search-option" data-record-id="${recordId}" data-index="${index}" style="animation-delay: ${index * 0.08}s;">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="font-medium text-white text-base">${location.name}</div>
-                    <div class="flex items-center gap-1">
-                        ${searchBadge}
-                        <div class="text-xs text-amber-500">${accuracyStars}</div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <div class="bg-blue-50 rounded p-2">
-                        <div class="flex items-center gap-1 text-xs text-white/60 mb-1">
-                            <span class="material-icons" style="font-size: 12px;">height</span>
-                            海拔高度
-                        </div>
-                        <div class="font-bold text-blue-600">${location.elevation}米</div>
-                    </div>
-                    <div class="bg-orange-50 rounded p-2">
-                        <div class="flex items-center gap-1 text-xs text-white/60 mb-1">
-                            <span class="material-icons" style="font-size: 12px;">signal_cellular_alt</span>
-                            登山难度
-                        </div>
-                        <div class="font-bold" style="color: ${getDifficultyColor(location.difficulty)}">
-                            ${location.difficulty}级 ${getDifficultyText(location.difficulty)}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="text-xs text-white/60 mb-2 flex items-center gap-1">
-                    <span class="material-icons" style="font-size: 12px;">location_on</span>
-                    ${location.location}${location.province ? ` · ${location.province}` : ''}
-                </div>
-                
-                ${location.mountain_range ? `
-                    <div class="text-xs text-white/50 mb-2 flex items-center gap-1">
-                        <span class="material-icons" style="font-size: 12px;">terrain</span>
-                        ${location.mountain_range}
-                    </div>
-                ` : ''}
-                
-                ${location.description ? `
-                    <div class="text-xs text-gray-700 mb-2 p-2 bg-white/5 rounded">
-                        <span class="material-icons text-white/30" style="font-size: 12px; vertical-align: middle;">info</span>
-                        ${location.description}
-                    </div>
-                ` : ''}
-                
-                ${location.features ? `
-                    <div class="text-xs bg-green-50 text-green-700 rounded p-2 mb-2">
-                        <span class="material-icons text-green-500" style="font-size: 12px; vertical-align: middle;">stars</span>
-                        ${location.features}
-                    </div>
-                ` : ''}
-                
-                ${location.best_season ? `
-                    <div class="text-xs text-amber-700 bg-amber-50 rounded p-2 mb-2">
-                        <span class="material-icons text-amber-500" style="font-size: 12px; vertical-align: middle;">event</span>
-                        最佳季节: ${location.best_season}
-                    </div>
-                ` : ''}
-                
-                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
-                    <div class="text-xs text-white/30">
-                        点击选择此山峰
-                    </div>
-                    <div class="text-xs text-blue-600 font-medium">
-                        查看详情 →
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    dropdown.innerHTML = resultsHtml;
-    dropdown.style.display = 'block';
-    
-    // 触发动画
-    requestAnimationFrame(() => {
-        dropdown.classList.add('show');
-    });
-    
-    dropdown.querySelectorAll('.search-option').forEach(option => {
-        option.addEventListener('click', (e) => {
-            const recordId = e.currentTarget.dataset.recordId;
-            const index = parseInt(e.currentTarget.dataset.index);
-            selectLocation(recordId, index);
-        });
-    });
-}
-
-function showNoResults(recordId) {
-    const dropdown = document.getElementById(`search-dropdown-${recordId}`);
-    if (dropdown) {
-        dropdown.innerHTML = `
-            <div class="search-loading text-center py-3">
-                <span class="material-icons text-white/30 text-2xl">search_off</span>
-                <p class="text-white/60 mt-1 text-sm">未找到相关山峰</p>
-                <p class="text-white/50 text-xs mt-1">请尝试更具体的关键词</p>
-            </div>
-        `;
-        dropdown.style.display = 'block';
-    }
-}
-
-function showSearchError(recordId) {
-    const dropdown = document.getElementById(`search-dropdown-${recordId}`);
-    if (dropdown) {
-        dropdown.innerHTML = `
-            <div class="search-loading text-center py-3">
-                <span class="material-icons text-red-400 text-2xl">error</span>
-                <p class="text-red-600 mt-1 text-sm">搜索失败</p>
-                <p class="text-white/50 text-xs mt-1">请稍后重试</p>
-            </div>
-        `;
-        dropdown.style.display = 'block';
-    }
-}
-
-function showDefaultSearchResults(recordId, query) {
-    const dropdown = document.getElementById(`search-dropdown-${recordId}`);
-    if (!dropdown) return;
-    
-    // 提供一些基本的山峰数据作为默认结果
-    const defaultMountains = [
-        {
-            name: query,
-            elevation: 1500,
-            difficulty: 3,
-            location: '中国',
-            province: '未知',
-            mountain_range: '未知山脉',
-            description: `${query}山峰`,
-            features: '自然山峰',
-            best_season: '春秋季',
-            accuracy_level: 3
-        }
-    ];
-    
-    const resultsHtml = defaultMountains.map((location, index) => {
-        return `
-            <div class="search-option" data-record-id="${recordId}" data-index="${index}">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="font-medium text-white text-base">${location.name}</div>
-                    <div class="flex items-center gap-1">
-                        <span class="text-xs bg-white/10 text-white/60 px-1 rounded">默认数据</span>
-                        <div class="text-xs text-amber-500">★★★☆☆</div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <div class="bg-blue-50 rounded p-2">
-                        <div class="flex items-center gap-1 text-xs text-white/60 mb-1">
-                            <span class="material-icons" style="font-size: 12px;">height</span>
-                            海拔高度
-                        </div>
-                        <div class="font-bold text-blue-600">${location.elevation}米</div>
-                    </div>
-                    <div class="bg-orange-50 rounded p-2">
-                        <div class="flex items-center gap-1 text-xs text-white/60 mb-1">
-                            <span class="material-icons" style="font-size: 12px;">signal_cellular_alt</span>
-                            登山难度
-                        </div>
-                        <div class="font-bold" style="color: ${getDifficultyColor(location.difficulty)}">
-                            ${location.difficulty}级 ${getDifficultyText(location.difficulty)}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="text-xs text-white/60 mb-2 flex items-center gap-1">
-                    <span class="material-icons" style="font-size: 12px;">location_on</span>
-                    ${location.location}${location.province ? ` · ${location.province}` : ''}
-                </div>
-                
-                <div class="text-xs text-white/50 mb-2">
-                    <span class="material-icons text-white/30" style="font-size: 12px; vertical-align: middle;">info</span>
-                        由于网络问题，显示默认信息
-                </div>
-                
-                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
-                    <div class="text-xs text-white/30">
-                        点击选择此山峰
-                    </div>
-                    <div class="text-xs text-blue-600 font-medium">
-                        查看详情 →
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    dropdown.innerHTML = resultsHtml;
-    dropdown.style.display = 'block';
-    
-    dropdown.querySelectorAll('.search-option').forEach(option => {
-        option.addEventListener('click', (e) => {
-            const recordId = e.currentTarget.dataset.recordId;
-            const index = parseInt(e.currentTarget.dataset.index);
-            selectLocation(recordId, index);
-        });
-    });
-}
-
-function hideSearchDropdown(recordId) {
-    const dropdown = safeGetElementById(`search-dropdown-${recordId}`);
-    if (dropdown) {
-        dropdown.classList.remove('show');
-        setTimeout(() => {
-            safeSetElementStyle(`search-dropdown-${recordId}`, 'display', 'none');
-        }, 300);
-    }
-}
-
-function selectLocation(recordId, index) {
-    const locations = searchResults.get(recordId);
-    if (!locations || !locations[index]) {
-        console.error('Search result not found:', recordId, index);
-        return;
-    }
-    
-    const location = locations[index];
-    const record = records.find(r => r.id === recordId);
-    
-    if (!record) {
-        console.error('Record not found:', recordId);
-        return;
-    }
-    
-    // 更新记录数据 - 包含更全面的信息
-    record.name = location.name || '';
-    record.elevation = location.elevation || 0;
-    record.difficulty = location.difficulty || 3;
-    
-    // 保存额外的山峰信息用于信息功能 - 面面俱到的详细信息
-    record.mountainInfo = {
-        name: location.name || '',
-        peak_elevation: location.elevation || 0,
-        location: location.location || '',
-        province: location.province || '',
-        mountain_range: location.mountain_range || '',
-        park_type: location.park_type || '山峰',
-        description: location.description || `${location.name}位于${location.location}${location.province ? `，${location.province}` : ''}`,
-        features: location.features || '山峰',
-        best_season: location.best_season || '全年',
-        geological_info: location.geological_info || '待补充',
-        climate_info: location.climate_info || '待补充',
-        flora_fauna: location.flora_fauna || '待补充',
-        cultural_significance: location.cultural_significance || '待补充',
-        tourism_facilities: location.tourism_facilities || '待补充',
-        transportation: location.transportation || '待补充',
-        accommodation: location.accommodation || '待补充',
-        safety_tips: location.safety_tips || '待补充',
-        equipment_required: location.equipment_required || '待补充',
-        nearby_attractions: location.nearby_attractions || '待补充',
-        historical_records: location.historical_records || '待补充',
-        myths_legends: location.myths_legends || '待补充',
-        conservation_status: location.conservation_status || '待补充',
-        peak_features: location.peak_features || '待补充',
-        water_sources: location.water_sources || '待补充',
-        emergency_contacts: location.emergency_contacts || '待补充',
-        opening_hours: location.opening_hours || '待补充',
-        ticket_price: location.ticket_price || '待补充',
-        accuracy_level: location.accuracy_level || 5
-    };
-    
-    // 验证数据
-    if (record.difficulty < 1 || record.difficulty > 5) {
-        record.difficulty = 3;
-    }
-    
-    if (record.elevation < 0) {
-        record.elevation = 0;
-    }
-    
-    const nameInput = document.getElementById(`edit-name-${recordId}`);
-    const elevationInput = document.getElementById(`edit-elevation-${recordId}`);
-    const difficultyInput = document.getElementById(`edit-difficulty-${recordId}`);
-    
-    if (nameInput) {
-        nameInput.value = location.name || '';
-    }
-    
-    if (elevationInput) {
-        elevationInput.value = location.elevation || 0;
-    }
-    
-    if (difficultyInput && location.difficulty) {
-        difficultyInput.value = location.difficulty;
-    }
-    
-    hideSearchDropdown(recordId);
-    
-    // 显示选择成功的提示
-    showSuccessMessage(`已选择 ${location.name}，海拔 ${location.elevation}米，难度 ${location.difficulty}级`);
-}
-
 function saveRecord(id) {
     const record = records.find(r => r.id === id);
     if (!record) return;
@@ -6923,25 +5899,6 @@ function updateSortIcons() {
     });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // v1.4.12.9：顶栏标题恢复可编辑——点击标题/铅笔图标弹窗修改，保存到本地
 function showEditTitleModal() {
     const titleEl = document.getElementById('appTitle');
@@ -6985,7 +5942,7 @@ function showEditTitleModal() {
 
 async function saveAppTitle(title) {
     try {
-        await window.lingguang.storage.setItem(APP_TITLE_KEY, { title });
+        await AppStore.setItem(APP_TITLE_KEY, { title });
         const titleEl = document.getElementById('appTitle');
         if (titleEl) titleEl.textContent = title;
         showSuccessMessage('标题已更新');
@@ -7149,9 +6106,6 @@ function addNewRecord() {
 }
 
 // 更新山脉数据的函数
-
-
-
 
 function updateStatistics() {
     const totalCount = safeGetElementById('totalCount');
@@ -7431,7 +6385,6 @@ function showHeatmapDayDetail(year, month, day) {
     document.getElementById('hm-close').addEventListener('click', function () { document.body.removeChild(modal); });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
-
 
 // ==================== 计划徒步行功能 ====================
 
@@ -7896,7 +6849,7 @@ async function savePlannedTripsToStorage() {
                 plannedTrips = validTrips;
             }
             
-            await window.lingguang.storage.setItem(PLANNED_TRIPS_KEY, { trips: validTrips });
+            await AppStore.setItem(PLANNED_TRIPS_KEY, { trips: validTrips });
             // ★自动同步（v1.4.10.1）：计划数据变更后同样触发自动上传
             maybeAutoUploadAfterChange();
         } catch (error) {
@@ -7908,7 +6861,7 @@ async function savePlannedTripsToStorage() {
 
 async function loadPlannedTripsFromStorage() {
     try {
-        const data = await window.lingguang.storage.getItem(PLANNED_TRIPS_KEY);
+        const data = await AppStore.getItem(PLANNED_TRIPS_KEY);
         if (data && Array.isArray(data.trips)) {
             plannedTrips = data.trips.filter(trip => {
                 return trip && 
@@ -7959,7 +6912,7 @@ async function saveToStorage() {
                 records = validRecords;
             }
             
-            await window.lingguang.storage.setItem(STORAGE_KEY, { records: validRecords });
+            await AppStore.setItem(STORAGE_KEY, { records: validRecords });
             // ★自动同步（v1.4.10.1）：数据变更后若开启自动同步，延迟自动上传备份
             maybeAutoUploadAfterChange();
         } catch (error) {
@@ -7980,39 +6933,6 @@ function maybeAutoUploadAfterChange() {
         uploadSyncBackup(true);
     }, 2000); // 等保存完成 + 避免连续编辑频繁上传
 }
-
-async function performSearch(query, recordId) {
-    const cacheKey = getCacheKey(query);
-    
-    // 检查缓存
-    const cachedResult = getCache(cacheKey);
-    if (cachedResult) {
-        console.log('使用缓存结果:', query);
-        searchResults.set(recordId, cachedResult);
-        showSearchResults(cachedResult, recordId);
-        return;
-    }
-    
-    // 显示加载状态
-    showSearchLoading(recordId);
-    
-    try {
-        const results = await searchLocation(query, recordId);
-        if (results && results.length > 0) {
-            // 缓存结果
-            setCache(cacheKey, results);
-            searchResults.set(recordId, results);
-            showSearchResults(results, recordId);
-        } else {
-            showNoResults(recordId);
-        }
-    } catch (error) {
-        console.error('搜索失败:', error);
-        showSearchError(recordId);
-    }
-}
-
-// ==================== WebDAV 数据同步 ====================
 
 // 工具：字符串转 Base64（支持中文，UTF-8）
 function utf8ToBase64(str) {
@@ -8062,7 +6982,7 @@ function buildSyncFileUrl(filename) {
 // 本地备份文件索引（localStorage）：[{ name, time, label, records, plans }] 新→旧
 async function loadSyncFilesIndex() {
     try {
-        const data = await window.lingguang.storage.getItem(SYNC_FILES_KEY);
+        const data = await AppStore.getItem(SYNC_FILES_KEY);
         return (data && Array.isArray(data.files)) ? data.files : [];
     } catch (e) {
         console.error('loadSyncFilesIndex error:', e);
@@ -8071,7 +6991,7 @@ async function loadSyncFilesIndex() {
 }
 
 async function saveSyncFilesIndex(files) {
-    await window.lingguang.storage.setItem(SYNC_FILES_KEY, { files: files.slice(0, SYNC_MAX_FILES) });
+    await AppStore.setItem(SYNC_FILES_KEY, { files: files.slice(0, SYNC_MAX_FILES) });
 }
 
 async function getLatestSyncFileName() {
@@ -8150,9 +7070,9 @@ async function ensureSyncParentDirs(fileUrl) {
 async function loadSyncState() {
     try {
         const [cfgData, autoData, statusData] = await Promise.allSettled([
-            window.lingguang.storage.getItem(SYNC_CONFIG_KEY),
-            window.lingguang.storage.getItem(SYNC_AUTO_KEY),
-            window.lingguang.storage.getItem(SYNC_STATUS_KEY)
+            AppStore.getItem(SYNC_CONFIG_KEY),
+            AppStore.getItem(SYNC_AUTO_KEY),
+            AppStore.getItem(SYNC_STATUS_KEY)
         ]);
         if (cfgData.status === 'fulfilled' && cfgData.value) {
             syncConfig = {
@@ -8187,7 +7107,7 @@ async function loadSyncState() {
 //   只刷新动态状态行 + 重播逐块浮现动画；不覆盖输入框、不发网络请求（不卡顿）
 async function refreshSettingsUI() {
     try {
-        const statusData = await window.lingguang.storage.getItem(SYNC_STATUS_KEY);
+        const statusData = await AppStore.getItem(SYNC_STATUS_KEY);
         if (statusData && statusData.lastSyncAt) {
             syncUiState.lastSyncAt = statusData.lastSyncAt; // 2026-08-12 状态行删除 → 存全局
         }
@@ -8486,7 +7406,7 @@ async function saveSyncConfigFromForm() {
     syncConfig.server = (document.getElementById('syncServer') || {}).value || '';
     syncConfig.username = (document.getElementById('syncUsername') || {}).value || '';
     syncConfig.password = (document.getElementById('syncPassword') || {}).value || '';
-    await window.lingguang.storage.setItem(SYNC_CONFIG_KEY, syncConfig);
+    await AppStore.setItem(SYNC_CONFIG_KEY, syncConfig);
 }
 
 // 调用原生 WebDAV 桥；浏览器环境降级用 fetch（同源/支持CORS时可用）
@@ -8550,7 +7470,6 @@ async function webdavRequest(url, method, bodyBase64) {
     }
 }
 
-
 // 上传备份：全量数据打包 JSON → PUT 到云端
 async function uploadSyncBackup(silent) {
     await saveSyncConfigFromForm();
@@ -8579,7 +7498,7 @@ async function uploadSyncBackup(silent) {
         if (result.status >= 200 && result.status < 300) {
             const now = formatSyncTime(new Date());
             await recordSyncFile(fileName, buildFullBackupPayload()); // 记录到本地索引
-            await window.lingguang.storage.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'upload' });
+            await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'upload' });
             setSyncStatus('备份已上传：' + now, 'cloud_upload', 'success');
             if (!silent) showSuccessMessage('备份上传成功');
             else console.log('[Sync] 自动备份已上传:', fileName);
@@ -8751,7 +7670,7 @@ async function doRestoreFromCloud(fileName) {
                 renderTable();
                 renderPlannedTripsTable();
                 const now = formatSyncTime(new Date());
-                await window.lingguang.storage.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'download' });
+                await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'download' });
                 setSyncStatus('已恢复「' + formatSyncFileLabel(fileName) + '」：' + now, 'cloud_download', 'success');
                 showSuccessMessage('恢复成功');
             } else {
@@ -8850,7 +7769,7 @@ async function mergeSyncBackup(silent) {
                 renderTable();
                 renderPlannedTripsTable();
                 const now = formatSyncTime(new Date());
-                await window.lingguang.storage.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'merge' });
+                await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'merge' });
                 if (!silent) {
                     setSyncStatus('合并完成：' + now, 'sync', 'success');
                     showSuccessMessage('合并同步完成');
@@ -9042,7 +7961,7 @@ function updateSyncIconVisual() {
 async function showSyncStatusModal() {
     let lastSyncAt = '';
     try {
-        const d = await window.lingguang.storage.getItem(SYNC_STATUS_KEY);
+        const d = await AppStore.getItem(SYNC_STATUS_KEY);
         if (d && d.lastSyncAt) lastSyncAt = d.lastSyncAt;
     } catch (e) { /* 读取失败静默 */ }
 
@@ -9210,7 +8129,7 @@ function setupSyncEventListeners() {
     if (autoToggle) {
         const handler = async function (e) {
             syncAuto = e.target.checked;
-            await window.lingguang.storage.setItem(SYNC_AUTO_KEY, { enabled: syncAuto });
+            await AppStore.setItem(SYNC_AUTO_KEY, { enabled: syncAuto });
             // 开启自动同步时立即上传一次，确保云端有最新备份
             if (syncAuto && syncConfig.server && syncConfig.username) {
                 setTimeout(function () { uploadSyncBackup(); }, 500);
@@ -9332,7 +8251,6 @@ function bindAutoCheckOnSettingsTab() {
         });
     });
 }
-
 
 // ==================== 导出功能 ====================
 
@@ -9546,7 +8464,6 @@ async function importFullBackupPayload(payload) {
     }
 }
 
-
 function showLoadingMessage(message) {
     // 移除已存在的提示
     const existingHint = document.getElementById('loadingMessage');
@@ -9584,17 +8501,17 @@ async function init() {
         renderTable();
         
         const [storageData, darkModeData, themeModeData, titleData, statsTitleData, recordsTitleData, plannedTitleData, settingsTitleData, heatmapTitleData, fpsData, hapticData] = await Promise.allSettled([
-            window.lingguang.storage.getItem(STORAGE_KEY),
-            window.lingguang.storage.getItem(DARK_MODE_KEY),
-            window.lingguang.storage.getItem(THEME_MODE_KEY),
-            window.lingguang.storage.getItem(APP_TITLE_KEY),
-            window.lingguang.storage.getItem(STATS_TITLE_KEY),
-            window.lingguang.storage.getItem(RECORDS_TITLE_KEY),
-            window.lingguang.storage.getItem(PLANNED_TITLE_KEY),
-            window.lingguang.storage.getItem(SETTINGS_TITLE_KEY),
-            window.lingguang.storage.getItem(HEATMAP_TITLE_KEY),
-            window.lingguang.storage.getItem(SHOW_FPS_KEY),
-            window.lingguang.storage.getItem(HAPTIC_KEY)
+            AppStore.getItem(STORAGE_KEY),
+            AppStore.getItem(DARK_MODE_KEY),
+            AppStore.getItem(THEME_MODE_KEY),
+            AppStore.getItem(APP_TITLE_KEY),
+            AppStore.getItem(STATS_TITLE_KEY),
+            AppStore.getItem(RECORDS_TITLE_KEY),
+            AppStore.getItem(PLANNED_TITLE_KEY),
+            AppStore.getItem(SETTINGS_TITLE_KEY),
+            AppStore.getItem(HEATMAP_TITLE_KEY),
+            AppStore.getItem(SHOW_FPS_KEY),
+            AppStore.getItem(HAPTIC_KEY)
         ]);
         
         if (storageData.status === 'fulfilled' && storageData.value && Array.isArray(storageData.value.records)) {
@@ -9699,12 +8616,11 @@ async function init() {
         const hapticToggleEl = document.getElementById('hapticToggle');
         if (hapticToggleEl) hapticToggleEl.checked = hapticEnabled;
         
+        // ★2026-08-21 v1.1.1.5 启动优化：启动只渲染当前概览页，记录/计划表格延迟到切 tab 时渲染
         updateStatistics();
-        renderTable();
         
-        // 加载计划徒步行数据
+        // 加载计划徒步行数据（只读数据，渲染延迟到切到计划 tab）
         await loadPlannedTripsFromStorage();
-        renderPlannedTripsTable();
         
         setupEventListeners();
         updateSortIcons();
@@ -9748,6 +8664,8 @@ function triggerHaptic(ms) {
 }
 
 function setupEventListeners() {
+    // ★2026-08-21 照片占用统计（设置页）
+    refreshPhotoUsage();
     // ★2026-08-21 v1.1.1.1 震动反馈：全局点击委托——只对按钮/可点击控件短震，空白处不震
     const hapticClickHandler = function (e) {
         if (!hapticEnabled) return;
@@ -9891,7 +8809,7 @@ function setupEventListeners() {
         const handler = async () => {
             showFps = fpsToggle.checked;
             try {
-                await window.lingguang.storage.setItem(SHOW_FPS_KEY, { showFps });
+                await AppStore.setItem(SHOW_FPS_KEY, { showFps });
             } catch (e) {
                 console.error('保存帧率开关失败:', e);
             }
@@ -9907,7 +8825,7 @@ function setupEventListeners() {
         const handler = async () => {
             hapticEnabled = hapticToggle.checked;
             try {
-                await window.lingguang.storage.setItem(HAPTIC_KEY, { enabled: hapticEnabled });
+                await AppStore.setItem(HAPTIC_KEY, { enabled: hapticEnabled });
             } catch (e) {
                 console.error('保存震动开关失败:', e);
             }
@@ -10042,6 +8960,13 @@ function setupEventListeners() {
         // 切到概览时刷新统计数据
         if (tabId === 'overview' && typeof updateStatistics === 'function') {
             try { updateStatistics(); } catch (e) { console.error('updateStatistics failed:', e); }
+        }
+        // ★2026-08-21 v1.1.1.5 懒渲染：切到记录/计划页时渲染对应表格（启动不再全量渲染）
+        if (tabId === 'records' && typeof renderTable === 'function') {
+            try { renderTable(); } catch (e) { console.error('lazy render records failed:', e); }
+        }
+        if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
+            try { renderPlannedTripsTable(); } catch (e) { console.error('lazy render plans failed:', e); }
         }
         // 切到记录/计划时表格横向滚动归位
         if (tabId === 'records' || tabId === 'plans') {
