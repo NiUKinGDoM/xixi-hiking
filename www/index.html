@@ -436,6 +436,10 @@
         body.dark-mode .hm-meta-item {
             color: #e5e7eb;   /* 深色模式浅字 */
         }
+        /* ★v1.1.2.6 热力图弹窗关闭按钮：文字白色（与白边框一致），!important 压过深色 confirm-btn-cancel */
+        #hm-close {
+            color: #ffffff !important;
+        }
         
         /* 深色模式下的按钮样式优化 */
         /* 浅色模式操作按钮 - 液态玻璃风 */
@@ -1121,7 +1125,7 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px dashed rgba(100, 116, 139, 0.25);
-            color: #64748b;
+            color: inherit;   /* ★v1.1.2.6 跟随主题：原固定 #64748b 浅色偏淡/深色看不清 */
             font-size: 13px;
         }
         .sync-config-toggle-btn {
