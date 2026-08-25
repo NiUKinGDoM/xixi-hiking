@@ -4647,7 +4647,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.3</div>
+                        <div class="about-version">版本 1.1.3.4</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4937,7 +4937,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.3';
+var APP_VERSION = '1.1.3.4';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -7813,7 +7813,7 @@ function showUpdateModal(info) {
         (bodyText ? '<div style="white-space:pre-wrap;">' + escapeHtml(bodyText) + '</div>' : '') +   /* ★v1.1.2.9 更新内容跟随主题色（原固定灰蓝浅色偏淡/深色看不清） */
         '</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="updateLaterBtn">稍后</button>' +
-        '<button class="confirm-btn-delete ripple-effect" id="updateNowBtn" style="background:#185fa5;">立即更新</button></div></div>';
+        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="updateNowBtn">立即更新</button></div></div>';
     document.body.appendChild(modal);
     document.getElementById('updateLaterBtn').addEventListener('click', function () { document.body.removeChild(modal); });
     document.getElementById('updateNowBtn').addEventListener('click', function () {
