@@ -116,7 +116,8 @@
 
 ## 待办/新功能方案（2026-08-25 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
-- 待办：记录本地搜索（找去年去过的山）、备份 zip 二期（照片 base64 大）、设置页数据管理框空白约 1 秒（历史遗留，疑 settingsBlockIn fill-mode both 卡 opacity:0，处理时勿破坏块状动效）
+- 待办：记录本地搜索（找去年去过的山）、备份 zip 二期（照片 base64 大）
+- ✅ 设置页数据管理框空白约 1 秒 **已解决**（v1.1.3.1 缩短 settingsBlockIn 动画 0.3s+0.56s → 0.18s+0.28s，最后块 0.46s 出现，见 index.html 907 行注释）
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
 1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；凭据用 **Python ctypes CredReadW** 读 `git:https://github.com`（PowerShell Add-Type 环境块超限 496KB）；资产上传端点 **uploads.github.com**；token 临时文件用 Python os.remove 删；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
