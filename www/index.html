@@ -2376,10 +2376,12 @@
             /* ★2026-08-25 toast 加宽：按内容撑开一行显示（max-content），超长才受 max-width 限制折行 */
             width: max-content;
             max-width: min(92vw, 480px) !important;
-            /* ★2026-08-26 单行显示：超长省略号，不折行（导出文件名等长文案不再两行） */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        }
+        /* ★2026-08-26 长内容（导出文件名等）在 max-width 内折行不溢出：flex 内文本 span 允许收缩 + 任意断行 */
+        .toast-glass span {
+            min-width: 0;
+            word-break: break-all;
+            overflow-wrap: anywhere;
         }
         /* ★2026-08-23 v16 toast 严格统一：纯透明玻璃 + 彩色细边 + 主题字色 */
         .toast-glass.success {
@@ -4672,7 +4674,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.4.1</div>
+                        <div class="about-version">版本 1.1.4.2</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4962,7 +4964,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.4.1';
+var APP_VERSION = '1.1.4.2';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -7769,9 +7771,29 @@ function fetchLatestReleaseGuarded(timeoutMs) {
     });
     return Promise.race([fetchLatestRelease(ms), raceReject]);
 }
+// ★2026-08-26 按 tag 拉取 Release body（确认弹窗显示当前版本更新内容用；超时/不存在返回空）
+function fetchReleaseBodyGuarded(tag, timeoutMs) {
+    var ms = timeoutMs || 8000;
+    var ctrl = null, timer = null;
+    if (typeof AbortController !== 'undefined') {
+        ctrl = new AbortController();
+        timer = setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, ms);
+    }
+    return fetch('https://api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/tags/' + encodeURIComponent(tag), {
+        signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+        return res.ok ? res.json() : null;
+    }).then(function (d) {
+        if (timer) clearTimeout(timer);
+        return (d && d.body) ? d.body : '';
+    }, function () {
+        if (timer) clearTimeout(timer);
+        return '';
+    });
+}
 
 // ★2026-08-25 检查更新确认弹窗：样式与更新弹窗一致（confirm-modal 体系），「检查」/「关闭」
-// ★2026-08-25 内容显示本次版本更新内容（GitHub Release body，异步加载）；网页版也弹（示例预览用）
+// ★2026-08-26 确认弹窗：检测结果行（发现新版本/已最新）+ 内容显示【当前版本】更新内容回顾；点检查后才显示最新版本内容
 function showCheckUpdateConfirm() {
     if (updaterBusy) return;
     const modal = document.createElement('div');
@@ -7791,20 +7813,23 @@ function showCheckUpdateConfirm() {
         checkForUpdate();
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
-    // ★2026-08-26 确认弹窗内直接显示检测结果：有新版 →「发现新版本 vX」+ 新版本更新内容；已最新 → 提示
+    // 检测结果行：有新版 →「发现新版本 vX（当前 vY）」；已最新 → 绿色提示
     fetchLatestReleaseGuarded(8000).then(function (info) {
         const bodyEl = document.getElementById('checkUpdateBody');
         if (!bodyEl || !document.body.contains(modal)) return;
         const latest = parseTagVersion(info.tag);
-        let html = '';
+        let head = '';
         if (latest && versionGreater(latest, APP_VERSION)) {
-            html += '<div style="color:#b91c1c;font-weight:700;margin-bottom:4px;">发现新版本 v' + latest + '（当前 v' + APP_VERSION + '）</div>';
+            head = '<div style="color:#b91c1c;font-weight:700;margin-bottom:4px;">发现新版本 v' + latest + '（当前 v' + APP_VERSION + '）</div>';
         } else {
-            html += '<div style="color:#16a34a;font-weight:600;margin-bottom:4px;">当前已是最新版本 v' + APP_VERSION + '</div>';
+            head = '<div style="color:#16a34a;font-weight:600;margin-bottom:4px;">当前已是最新版本 v' + APP_VERSION + '</div>';
         }
-        const bodyText = (info.body || '').slice(0, 600);
-        html += bodyText ? escapeHtml(bodyText).replace(/\n/g, '<br>') : '';
-        bodyEl.innerHTML = html || '暂无更新内容';
+        // ★2026-08-26 内容 = 当前版本更新内容（回顾）；点「检查」后才显示最新版内容
+        fetchReleaseBodyGuarded('v' + APP_VERSION).then(function (curBody) {
+            if (!bodyEl || !document.body.contains(modal)) return;
+            const bodyText = (curBody || '').slice(0, 600);
+            bodyEl.innerHTML = head + (bodyText ? '<div style="margin-top:4px;">' + escapeHtml(bodyText).replace(/\n/g, '<br>') + '</div>' : '<div style="margin-top:4px;color:#8b93a1;">暂无当前版本更新内容</div>');
+        });
     }).catch(function () {
         const bodyEl = document.getElementById('checkUpdateBody');
         if (bodyEl && document.body.contains(modal)) bodyEl.textContent = '无法获取更新内容（网络异常）';
