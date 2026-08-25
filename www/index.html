@@ -758,18 +758,19 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
         
-        /* ★2026-08-25 检查更新弹窗「检查」按钮：浅红玻璃质感——背景更透更浅、边框红更明显（用户要求） */
+        /* ★2026-08-25 检查更新弹窗「检查」按钮：浅红玻璃质感——背景更透更浅、边框红更明显（用户要求）
+           ★2026-08-25 !important 防被后定义的 .confirm-btn-delete（实色红）覆盖 */
         .check-go-btn {
-            background: rgba(254, 226, 226, 0.08);
+            background: rgba(254, 226, 226, 0.08) !important;
             backdrop-filter: blur(2px) saturate(150%);
             -webkit-backdrop-filter: blur(2px) saturate(150%);
-            border: 1px solid rgba(220, 38, 38, 0.9);
-            color: #b91c1c;
+            border: 1px solid rgba(220, 38, 38, 0.9) !important;
+            color: #b91c1c !important;
         }
         body.dark-mode .check-go-btn {
-            background: rgba(70, 15, 20, 0.08);
-            border-color: rgba(248, 113, 113, 0.9);
-            color: #fecaca;
+            background: rgba(70, 15, 20, 0.08) !important;
+            border-color: rgba(248, 113, 113, 0.9) !important;
+            color: #fecaca !important;
         }
         /* 图标动画 */
         /* 添加按钮动画（★2026-08-25 记录页+计划页统一：#addPlannedTripBtn 同步 hover 旋转放大） */
@@ -946,9 +947,8 @@
             backdrop-filter: blur(2px) saturate(150%);   /* ★2026-08-23 v12 更透更轻：blur 4→2px，alpha 0.12→0.08 */
             -webkit-backdrop-filter: blur(2px) saturate(150%);   /* ★五项优化①：-webkit 与标准属性统一 2px */
             border: 1px solid rgba(255, 255, 255, 0.5);
+            /* ★2026-08-25 底栏底部阴影删除（用户要求）：去掉外投影，仅留底部内描边 */
             box-shadow:
-                0 14px 34px rgba(0, 0, 0, 0.12),
-                0 2px 8px rgba(0, 0, 0, 0.06),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.04);
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.2s ease, border-color 0.3s ease, box-shadow 0.3s ease; /* 切换提速 */
@@ -1041,9 +1041,8 @@
             /* ★v10 深色干净透明玻璃 */
             background: rgba(18, 28, 50, 0.30);
             border-color: rgba(180, 205, 255, 0.30);
+            /* ★2026-08-25 底栏底部阴影删除（与浅色一致） */
             box-shadow:
-                0 14px 34px rgba(0, 0, 0, 0.40),
-                0 2px 8px rgba(0, 0, 0, 0.18),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.25);
         }
         body.dark-mode .bottom-tabbar .tab-btn {
@@ -4194,7 +4193,7 @@
             
             <div id="tab-overview" class="tab-page">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
-                <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="stats-title">
+                <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors" data-testid="stats-title">
                     <span class="material-icons text-blue-300 text-xl">analytics</span>
                     <span class="title-text">统计概览</span>
                 </h2>
@@ -4239,7 +4238,7 @@
             </div>
             <!-- ★2026-08-25 难度分布独立成卡片：统一概览页格式（glass-panel + h2 图标标题，原嵌在统计概览内 h3 无图标） -->
             <div class="glass-panel p-6 mb-6">
-                <h2 class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors">
+                <h2 class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors">
                     <span class="material-icons text-amber-300 text-xl">bar_chart</span>
                     <span class="title-text">难度分布</span>
                 </h2>
@@ -4327,7 +4326,7 @@
 <!-- 徒步足迹热力图（v1.0.7.8：统一玻璃红 + 年月可选(仅去过的年月) + 日历式月视图） -->
                 <div class="glass-panel p-6 mb-6" id="heatmapPanel">
                     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-                        <h2 id="heatmapTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="heatmap-title">
+                        <h2 id="heatmapTitle" class="text-2xl font-semibold text-white flex items-center gap-2 px-3 py-1 rounded-lg transition-colors" data-testid="heatmap-title">
                             <span class="material-icons text-red-400 text-xl">local_fire_department</span>
                             <span class="title-text">徒步足迹</span>
                         </h2>
@@ -4350,7 +4349,7 @@
             <div id="tab-records" class="tab-page" style="display: none;">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="records-title">
+                    <h2 id="recordsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 px-3 py-1 rounded-lg transition-colors" data-testid="records-title">
                         <span class="material-icons text-blue-300 text-xl">terrain</span>
                         <span class="title-text">记录</span>
                     </h2>
@@ -4409,7 +4408,7 @@
             <div id="tab-plans" class="tab-page" style="display: none;">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors" data-testid="planned-title">
+                    <h2 id="plannedTitle" class="text-2xl font-semibold text-white flex items-center gap-2 px-3 py-1 rounded-lg transition-colors" data-testid="planned-title">
                         <span class="material-icons text-green-300 text-xl">event_note</span>
                         <span class="title-text">计划</span>
                     </h2>
@@ -4467,7 +4466,7 @@
             <!-- 设置模块 -->
             <div id="tab-settings" class="tab-page" style="display: none;">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
-                <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg cursor-pointer hover:bg-white/10 transition-colors" data-testid="settings-title">
+                <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors" data-testid="settings-title">
                     <span class="material-icons text-blue-300 text-xl">settings</span>
                     <span class="title-text">设置</span>
                 </h2>
@@ -4647,7 +4646,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.4</div>
+                        <div class="about-version">版本 1.1.3.5</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4937,7 +4936,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.4';
+var APP_VERSION = '1.1.3.5';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6434,7 +6433,7 @@ function showDeleteConfirmModal(recordId, recordName) {
                 <button class="confirm-btn-cancel ripple-effect" id="confirm-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete ripple-effect" id="confirm-delete">
+                <button class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-delete">
                     删除
                 </button>
             </div>
@@ -6818,7 +6817,7 @@ function showHeatmapDayDetail(year, month, day) {
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">local_fire_department</span>' + year + '年' + month + '月' + day + '日</div>' +
         '<div class="confirm-modal-message" style="text-align:left;">' + items + '</div>' +
-        '<div class="confirm-modal-buttons"><button class="ripple-effect hm-share-btn" id="hm-share" data-share="' + dayRecords[0].id + '">分享</button><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
+        '<div class="confirm-modal-buttons"><button class="ripple-effect hm-share-btn check-go-btn" id="hm-share" data-share="' + dayRecords[0].id + '">分享</button><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
     document.body.appendChild(modal);
     // 异步加载照片缩略图
     modal.querySelectorAll('.hm-day-photo').forEach(function (box) {
@@ -6880,6 +6879,13 @@ function getSortedPlannedTrips() {
                 return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
             }
         });
+    } else {
+        // ★2026-08-25 默认按计划时间由近到远（升序 createdAt：今天→明天→后天…）
+        sortedTrips.sort((a, b) => {
+            let aT = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            let bT = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return aT - bT;
+        });
     }
     
     return sortedTrips;
@@ -6906,14 +6912,14 @@ function checkPlannedTripReminders() {
             else if (diff === 3) thirdDayList.push(t.name);
         });
         // 今天有 → 只弹今天（过期忽略）；否则弹过期
-        if (todayList.length) showSuccessMessage('今天有徒步计划：' + todayList.join('、'), 3000);
-        else if (overdue.length) showErrorMessage('计划未完成：' + overdue.join('、'), 3000);
+        if (todayList.length) showSuccessMessage('今天有徒步计划：' + todayList.join('、'), 2000);
+        else if (overdue.length) showErrorMessage('计划未完成：' + overdue.join('、'), 2000);
         // 未来 3 天内按天分组（合并一条，避免多条 toast 互相覆盖）
         var parts = [];
         if (tomorrowList.length) parts.push('明天有徒步计划：' + tomorrowList.join('、'));
         if (dayAfterList.length) parts.push('后天有徒步计划：' + dayAfterList.join('、'));
         if (thirdDayList.length) parts.push('大后天有徒步计划：' + thirdDayList.join('、'));
-        if (parts.length) showSuccessMessage(parts.join(' · '), 3000);
+        if (parts.length) showSuccessMessage(parts.join(' · '), 2000);
     } catch (e) { /* 静默 */ }
 }
 
@@ -7181,7 +7187,7 @@ function showConfirmCompleteModal(tripId, tripName) {
                 <button class="confirm-btn-cancel ripple-effect" id="confirm-complete-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete ripple-effect" id="confirm-complete-ok">
+                <button class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-complete-ok">
                     确认完成
                 </button>
             </div>
@@ -7256,7 +7262,7 @@ function showDeletePlannedTripConfirmModal(tripId, tripName) {
                 <button class="confirm-btn-cancel ripple-effect" id="confirm-planned-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete ripple-effect" id="confirm-planned-delete">
+                <button class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-planned-delete">
                     删除
                 </button>
             </div>
@@ -9235,8 +9241,8 @@ async function init() {
         
         // 加载计划徒步行数据（只读数据，渲染延迟到切到计划 tab）
         await loadPlannedTripsFromStorage();
-        // ★2026-08-25 计划日期提醒（今天有/已过期未完成）：延迟 2s 显示、toast 停留 3s
-        setTimeout(checkPlannedTripReminders, 2000);
+        // ★2026-08-25 计划日期提醒（今天有/已过期未完成）：延迟 1s 显示、toast 停留 2s
+        setTimeout(checkPlannedTripReminders, 1000);
         
         setupEventListeners();
         updateSortIcons();
@@ -9383,41 +9389,7 @@ function setupEventListeners() {
     
     // 顶栏标题不可修改（已锁定，移除点击编辑）
     
-    // 区块标题点击事件
-    const statsTitle = document.getElementById('statsTitle');
-    if (statsTitle) {
-        const handler = function () { showSectionTitleModal('statsTitle', saveStatsTitleToStorage); };
-        statsTitle.addEventListener('click', handler);
-        cleanupFunctions.push(() => statsTitle.removeEventListener('click', handler));
-    }
-    
-    const recordsTitle = document.getElementById('recordsTitle');
-    if (recordsTitle) {
-        const handler = function () { showSectionTitleModal('recordsTitle', saveRecordsTitleToStorage); };
-        recordsTitle.addEventListener('click', handler);
-        cleanupFunctions.push(() => recordsTitle.removeEventListener('click', handler));
-    }
-    
-    const plannedTitle = document.getElementById('plannedTitle');
-    if (plannedTitle) {
-        const handler = function () { showSectionTitleModal('plannedTitle', savePlannedTitleToStorage); };
-        plannedTitle.addEventListener('click', handler);
-        cleanupFunctions.push(() => plannedTitle.removeEventListener('click', handler));
-    }
-    
-    const settingsTitle = document.getElementById('settingsTitle');
-    if (settingsTitle) {
-        const handler = function () { showSectionTitleModal('settingsTitle', saveSettingsTitleToStorage); };
-    
-    const heatmapTitle = document.getElementById('heatmapTitle');
-    if (heatmapTitle) {
-        const handler = function () { showSectionTitleModal('heatmapTitle', saveHeatmapTitleToStorage); };
-        heatmapTitle.addEventListener('click', handler);
-        cleanupFunctions.push(() => heatmapTitle.removeEventListener('click', handler));
-    }
-        settingsTitle.addEventListener('click', handler);
-        cleanupFunctions.push(() => settingsTitle.removeEventListener('click', handler));
-    }
+    // ★2026-08-25 区块标题改为不可编辑（用户要求）：统计概览/难度分布/徒步足迹/计划/记录/设置 全部移除点击编辑绑定
     
     // 帧率显示开关
     const fpsToggle = document.getElementById('fpsToggle');
