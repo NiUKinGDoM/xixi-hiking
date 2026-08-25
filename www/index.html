@@ -54,6 +54,9 @@
         .text-green-300 { color: #15803d !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
         .text-orange-300 { color: #c2410c !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
         .text-purple-300 { color: #7e22ce !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
+        /* ★2026-08-26 补 teal/rose（总里程/总用时，原缺定义 → 无颜色无光晕） */
+        .text-teal-300 { color: #0f766e !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
+        .text-rose-300 { color: #be123c !important; font-weight: 700; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
         /* 照片计数（1/9）深浅自适应：浅色深灰 / 深色浅白（原内联白字浅色模式下不可见） */
         /* ★2026-08-25 照片计数改层叠卡片角标（.photo-stack-count），旧 .photo-count 已删除 */
         /* v1.4.10.11 自检根治：彻底移除"切换期间禁用 backdrop-filter"逻辑！
@@ -82,6 +85,9 @@
         body.dark-mode .text-green-300 { color: #86efac !important; }
         body.dark-mode .text-orange-300 { color: #fdba74 !important; }
         body.dark-mode .text-purple-300 { color: #c4b5fd !important; }
+        /* ★2026-08-26 深色 teal/rose（与上面四色同体系） */
+        body.dark-mode .text-teal-300 { color: #5eead4 !important; }
+        body.dark-mode .text-rose-300 { color: #fda4af !important; }
         
         .dark-mode .container {
             background: transparent;
@@ -696,10 +702,6 @@
         /* 深色模式下图表文字优化 */
         .dark-mode #chartLabels .text-xs {
             color: #d1d5db !important;
-        }
-        
-        .dark-mode #chartLegend .text-white/60 {
-            color: #9ca3af !important;
         }
         
         /* 深色模式下图表悬停效果优化 */
@@ -4215,7 +4217,7 @@
                                 <p class="text-sm text-green-300 font-medium">平均海拔</p>
                                 <p class="text-2xl font-bold text-white number-scroll" id="avgElevation">2223m</p>
                             </div>
-                            <span class="material-icons text-green-300 text-3xl icon-pulse">landscape</span>
+                            <span class="material-icons text-green-300 text-3xl icon-pulse">height</span>
                         </div>
                     </div>
                     <div class="stat-card glass-stat-card orange-accent">
@@ -4230,10 +4232,10 @@
                     <div class="stat-card glass-stat-card purple-accent">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-purple-300 font-medium">平均难度</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="avgDifficulty">2.5级</p>
+                                <p class="text-sm text-purple-300 font-medium">总爬升</p>
+                                <p class="text-2xl font-bold text-white number-scroll" id="totalClimbCard">0m</p>
                             </div>
-                            <span class="material-icons text-purple-300 text-3xl icon-pulse">signal_cellular_alt</span>
+                            <span class="material-icons text-purple-300 text-3xl icon-pulse">trending_up</span>
                         </div>
                     </div>
                     <!-- ★2026-08-25 总里程/总用时（用户要求，与上面统一格式） -->
@@ -4341,7 +4343,7 @@
                     <div class="text-xs text-white/50">困难</div>
                 </div>
             </div>
-                        <div class="absolute top-2 right-2 text-xs text-white/50" id="chartLegend"><span class="text-white/60">总计: 10条记录</span></div>
+                        <div class="absolute top-2 right-2 text-xs text-white/50" id="chartAvgDiff"><span class="text-white/60">平均难度 - 级</span></div>
                     </div>
             </div>
 <!-- 徒步足迹热力图（v1.0.7.8：统一玻璃红 + 年月可选(仅去过的年月) + 日历式月视图） -->
@@ -4362,7 +4364,6 @@
                     <div id="hmCalendar" class="hm-calendar"></div>
                     <div class="flex items-center justify-between mt-3 flex-wrap gap-2">
                         <span class="text-xs text-white/50" id="hmSummary"></span>
-                        <span class="text-xs text-white/50" id="hmTotalClimb">累计爬升 0 米</span>
                     </div>
                 </div>
             </div>
@@ -4667,7 +4668,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.10</div>
+                        <div class="about-version">版本 1.1.4.0</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4957,7 +4958,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.10';
+var APP_VERSION = '1.1.4.0';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6308,6 +6309,9 @@ function saveRecord(id) {
     const durationInput = document.getElementById(`edit-duration-${id}`);
     if (distanceInput) record.distance = parseFloat(distanceInput.value) || 0;
     if (durationInput) record.duration = Math.round((parseFloat(durationInput.value) || 0) * 60);
+
+    // ★2026-08-26 最后修改时间：每次保存记录都更新（合并取新用，区分于徒步日期 createdAt）
+    record.updatedAt = new Date().toISOString();
     
     editingId = null;
     updateStatistics();
@@ -6455,7 +6459,7 @@ function showDataInfoModal() {
                 数据管理说明
             </div>
             <div class="confirm-modal-message" style="line-height: 1.4;">
-                导出/导入完整备份（压缩包 .zip，含徒步记录、计划与照片；另有不含照片的纯数据备份）。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。导入或恢复时，相同记录按时间戳取新，未填字段（含 0 海拔等空值）自动用另一份补全；本地独有的记录合并保留。
+                导出/导入完整备份（压缩包 .zip，含徒步记录、计划与照片；另有不含照片的纯数据备份）。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。导入或恢复时，相同记录按最后修改时间取新（改了的字段更新，未改的保持），空字段自动用另一份补全；本地独有的记录合并保留。
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-cancel ripple-effect" id="data-info-close">知道了</button>
@@ -6544,7 +6548,8 @@ function addNewRecord() {
         name: '',
         difficulty: 3,
         elevation: 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()   // ★2026-08-26 最后修改时间（合并取新用）
     };
     
     records.unshift(newRecord);
@@ -6559,10 +6564,11 @@ function updateStatistics() {
     const totalCount = safeGetElementById('totalCount');
     const avgElevation = safeGetElementById('avgElevation');
     const maxElevation = safeGetElementById('maxElevation');
-    const avgDifficulty = safeGetElementById('avgDifficulty');
+    // ★2026-08-26 平均难度卡片 → 总爬升卡片（平均难度移入直方图左上角 chartAvgDiff）
+    const totalClimbCard = safeGetElementById('totalClimbCard');
     const difficultyChart = safeGetElementById('difficultyChart');
     const chartLabels = safeGetElementById('chartLabels');
-    const chartLegend = safeGetElementById('chartLegend');
+    const chartAvgDiff = safeGetElementById('chartAvgDiff');
     
     // 辅助函数：更新数字并添加动画（用 WAAPI 取消旧动画，避免强制同步布局重排）
     // ★2026-08-25 卡片渐入由 .stat-card CSS 行级 stagger 负责，数字动画不再单独 delay
@@ -6590,12 +6596,12 @@ function updateStatistics() {
         if (totalCount) totalCount.textContent = '0';
         if (avgElevation) avgElevation.textContent = '0m';
         if (maxElevation) maxElevation.textContent = '0m';
-        if (avgDifficulty) avgDifficulty.textContent = '0级';
+        if (totalClimbCard) totalClimbCard.textContent = '0m';
         if (totalDistance) totalDistance.textContent = '0 km';
         if (totalDuration) totalDuration.textContent = '0h';
+        if (chartAvgDiff) safeSetElementContent('chartAvgDiff', '');
         if (difficultyChart) safeSetElementContent('difficultyChart', '<div class="text-white/50 text-center w-full">暂无数据</div>');
         if (chartLabels) safeSetElementContent('chartLabels', '');
-        if (chartLegend) safeSetElementContent('chartLegend', '');
         return;
     }
     
@@ -6613,10 +6619,13 @@ function updateStatistics() {
     updateWithAnimation(totalCount, total.toString());
     updateWithAnimation(avgElevation, `${averageElevation}m`);
     updateWithAnimation(maxElevation, `${highestElevation}m`);
-    updateWithAnimation(avgDifficulty, `${averageDifficulty}级`);
+    // ★2026-08-26 总爬升卡片（原平均难度卡位；平均难度挪到直方图左上角）
+    updateWithAnimation(totalClimbCard, Math.round(totalElevation) + 'm');
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
     updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(1) + ' km' : '0 km');
     updateWithAnimation(totalDuration, totalMin ? (formatDuration(totalMin) || '0h') : '0h');
+    // ★2026-08-26 直方图左上角平均难度（字体与右上角总计一致 text-xs）
+    if (chartAvgDiff) chartAvgDiff.innerHTML = '<span class="' + (isDarkMode ? 'text-white/70' : 'text-white/60') + '">平均难度 ' + averageDifficulty + ' 级</span>';
     
     const difficultyCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     records.forEach(record => {
@@ -6625,7 +6634,7 @@ function updateStatistics() {
     
     const maxCount = Math.max(...Object.values(difficultyCounts));
     
-    if (difficultyChart && chartLabels && chartLegend) {
+    if (difficultyChart && chartLabels) {
         const difficultyNames = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
         const difficultyColors = { 1: '#10b981', 2: '#84cc16', 3: '#f59e0b', 4: '#f97316', 5: '#dc2626' };
         const difficultyGradients = {
@@ -6649,7 +6658,6 @@ function updateStatistics() {
         
         let chartHtml = '';
         let labelsHtml = '';
-        let totalRecords = 0;
         
         Object.entries(difficultyCounts).forEach(([difficulty, count]) => {
             const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
@@ -6676,13 +6684,11 @@ function updateStatistics() {
                     <div class="text-xs font-medium ${isDarkMode ? 'text-gray-300' : ''}">${difficulty}级</div>
                 </div>
             `;
-            
-            totalRecords += count;
         });
         
         difficultyChart.innerHTML = chartHtml;
         chartLabels.innerHTML = labelsHtml;
-        chartLegend.innerHTML = `<span class="${isDarkMode ? 'text-white/70' : 'text-white/60'}">总计: ${totalRecords}条记录</span>`;
+        // ★2026-08-26 右上角「总计」已删除（避免与统计卡片重复）；平均难度在左上角 chartAvgDiff 显示
         
         difficultyChart.querySelectorAll('.bg-gradient-to-t').forEach((bar, index) => {
             bar.addEventListener('mouseenter', function() {
@@ -6816,15 +6822,7 @@ function renderHeatmap() {
     }
     cal.innerHTML = html;
     if (sumEl) sumEl.textContent = year + '年' + month + '月 · 徒步 ' + total + ' 次';
-    // ★v1.1.2.10 累计爬升（全部记录海拔总和，随渲染更新）
-    const climbEl = document.getElementById('hmTotalClimb');
-    if (climbEl) {
-        let totalClimb = 0;
-        records.forEach(function (r) {
-            if (r && r.elevation) totalClimb += parseFloat(r.elevation) || 0;
-        });
-        climbEl.textContent = '累计爬升 ' + Math.round(totalClimb) + ' 米';
-    }
+    // ★2026-08-26 累计爬升已移到概览统计卡片（总爬升），热力图底部不再重复显示
     cal.querySelectorAll('.hm-day:not(.empty)').forEach(function (el) {
         el.addEventListener('click', function () {
             showHeatmapDayDetail(year, month, parseInt(el.getAttribute('data-day'), 10));
@@ -6843,9 +6841,8 @@ function showHeatmapDayDetail(year, month, day) {
     modal.className = 'confirm-modal modal-backdrop-animate';
     // ★2026-08-23 热力图弹窗 v2：关闭/分享按钮玻璃配方 + meta 间距加宽 + 图片分享同行 + 去分割线
     let items = dayRecords.map(function (r) {
-        // ★2026-08-25 热力图弹窗四行分组：①名称·海拔 ②难度·里程·用时 ③心情·天气·同行 ④图片
-        // ★2026-08-25 首行标题化（17px/700）；下面两行标签(.hm-meta-label 浅灰)与内容(.hm-meta-value 深色加粗)区分，字号 16 ≤ 首行
-        // ★2026-08-25 心情/天气用文字（非表情），自定义值原样显示；间距 gap:20px 一行且不贴边
+        // ★2026-08-26 热力图弹窗分组：①名称·海拔 ②难度·里程 ③用时 ④心情·天气·同行 ⑤图片
+        // （难度里程拆开与用时分行，防一行过长换行错位/间距不均）
         const MOOD_TEXT = { '😄': '开心', '😌': '平静', '🤩': '兴奋', '😮‍💨': '疲惫' };
         const WEATHER_TEXT = { '☀️': '晴', '🌤️': '多云', '☁️': '阴', '🌧️': '雨', '❄️': '雪' };
         const moodTxt = r.mood ? '<span class="hm-meta-item"><span class="hm-meta-label">心情：</span><span class="hm-meta-value">' + (MOOD_TEXT[r.mood] || r.mood) + '</span></span>' : '';
@@ -6854,12 +6851,16 @@ function showHeatmapDayDetail(year, month, day) {
         const metaRow = (moodTxt || weatherTxt || companionTxt)
             ? '<div style="margin-top:3px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">' + moodTxt + weatherTxt + companionTxt + '</div>'
             : '';
-        // 难度/里程/用时 标签式一行（行2）
+        // 难度/里程 一行（行2）
         const diffTxt = r.difficulty ? '<span class="hm-meta-item"><span class="hm-meta-label">难度：</span><span class="hm-meta-value">' + r.difficulty + '级</span></span>' : '';
         const distTxt = r.distance ? '<span class="hm-meta-item"><span class="hm-meta-label">里程：</span><span class="hm-meta-value">' + r.distance + 'km</span></span>' : '';
+        const statRow = (diffTxt || distTxt)
+            ? '<div style="margin-top:3px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">' + diffTxt + distTxt + '</div>'
+            : '';
+        // 用时单独一行（行3）
         const durTxt = r.duration ? '<span class="hm-meta-item"><span class="hm-meta-label">用时：</span><span class="hm-meta-value">' + formatDuration(r.duration) + '</span></span>' : '';
-        const statRow = (diffTxt || distTxt || durTxt)
-            ? '<div style="margin-top:3px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">' + diffTxt + distTxt + durTxt + '</div>'
+        const durRow = durTxt
+            ? '<div style="margin-top:3px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">' + durTxt + '</div>'
             : '';
         // ★v5 图片缩略图：显示全部照片（有几张显示几张，按序横排换行）
         const photoIds = (r.photos && r.photos.length) ? r.photos : [];
@@ -6871,6 +6872,7 @@ function showHeatmapDayDetail(year, month, day) {
         return '<div style="padding:10px 0;font-size:14px;">' +
             '<div class="hm-meta-item" style="font-size:17px;font-weight:700;">🏔️ ' + r.name + (r.elevation ? ' · ' + r.elevation + 'm' : '') + '</div>' +
             statRow +
+            durRow +
             metaRow +
             picBox +
             '</div>';
@@ -7210,6 +7212,8 @@ function savePlannedTrip(id) {
         if (createdAtInput && createdAtInput.value) {
             plannedTrips[tripIndex].createdAt = new Date(createdAtInput.value).toISOString();
         }
+        // ★2026-08-26 最后修改时间
+        plannedTrips[tripIndex].updatedAt = new Date().toISOString();
     }
     
     plannedEditingId = null;
@@ -7223,7 +7227,8 @@ function addNewPlannedTrip() {
         name: '',
         difficulty: 3,
         elevation: 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()   // ★2026-08-26 最后修改时间
     };
     
     plannedTrips.unshift(newTrip);
@@ -7291,7 +7296,8 @@ function markPlannedComplete(tripId, tripName) {
         name: trip.name,
         elevation: trip.elevation,
         difficulty: trip.difficulty,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()   // ★2026-08-26 最后修改时间
     });
     
     // 保存两边的数据
@@ -7781,12 +7787,20 @@ function showCheckUpdateConfirm() {
         checkForUpdate();
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
-    // ★2026-08-25 异步加载本次版本更新内容（GitHub Release body）
+    // ★2026-08-26 确认弹窗内直接显示检测结果：有新版 →「发现新版本 vX」+ 新版本更新内容；已最新 → 提示
     fetchLatestReleaseGuarded(8000).then(function (info) {
         const bodyEl = document.getElementById('checkUpdateBody');
         if (!bodyEl || !document.body.contains(modal)) return;
+        const latest = parseTagVersion(info.tag);
+        let html = '';
+        if (latest && versionGreater(latest, APP_VERSION)) {
+            html += '<div style="color:#b91c1c;font-weight:700;margin-bottom:4px;">发现新版本 v' + latest + '（当前 v' + APP_VERSION + '）</div>';
+        } else {
+            html += '<div style="color:#16a34a;font-weight:600;margin-bottom:4px;">当前已是最新版本 v' + APP_VERSION + '</div>';
+        }
         const bodyText = (info.body || '').slice(0, 600);
-        bodyEl.innerHTML = bodyText ? escapeHtml(bodyText).replace(/\n/g, '<br>') : '暂无更新内容';
+        html += bodyText ? escapeHtml(bodyText).replace(/\n/g, '<br>') : '';
+        bodyEl.innerHTML = html || '暂无更新内容';
     }).catch(function () {
         const bodyEl = document.getElementById('checkUpdateBody');
         if (bodyEl && document.body.contains(modal)) bodyEl.textContent = '无法获取更新内容（网络异常）';
@@ -9202,7 +9216,8 @@ function mergeRecordsWith(imported, existing, isPlan) {
     localMap.forEach((r, id) => {
         const c = impMap.get(id);
         if (!c) { merged.set(id, r); return; }
-        const lv = r.createdAt || '', cv = c.createdAt || '';
+        // ★2026-08-26 按最后修改时间（updatedAt）取新，老数据无 updatedAt 回退 createdAt
+        const lv = r.updatedAt || r.createdAt || '', cv = c.updatedAt || c.createdAt || '';
         const fresh = cv > lv ? c : r;
         const stale = cv > lv ? r : c;
         const out = JSON.parse(JSON.stringify(fresh));
