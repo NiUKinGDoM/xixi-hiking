@@ -4,7 +4,7 @@
 > 最后更新：2026-08-25（v1.1.3.5 / vc159）
 
 ## 一句话
-纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 单页应用，`www/index.html` 单文件 ~646KB 全逻辑），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
+纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 单页应用，`www/index.html` 单文件 ~416KB 全逻辑 + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-08-25）
 - **正式版 v1.1.3.5**（versionCode 159，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -28,7 +28,7 @@
 - 📝 记录：增删改、行内编辑（**心情/天气下拉文字选择**/同行人/里程/用时/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）
 - 📷 照片：记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB）、**编辑行层叠卡片**（无照片时白框加号）、**灯箱：查看/保存/翻页 + 编辑模式添加/删除**、热力图弹窗多图显示
 - 📅 计划：计划徒步管理、难度选择、完成标记（确认弹窗）、**默认按计划时间由近到远排序**、**启动提醒 toast（今天/计划未完成/明天后天大后天）**
-- 🎴 **分享卡（v1.1.3.0 定版）**：canvas 720×960，内置背景图（分享卡背景.png）+ 白渐变遮罩 + 楷体艺术字 + 顶部软件标题 + 海拔/难度/心情/天气/同行（**标题加粗**）+ Made by XiXi；入口 = 热力图弹窗底部「分享」按钮
+- 🎴 **分享卡（v1.1.3.0 定版）**：canvas 720×960，**外置背景图 share-bg.jpg**（v1.1.3.1 从 base64 内置换为外置，发版必须同步此文件）+ 白渐变遮罩 + 楷体艺术字 + 顶部软件标题 + 海拔/难度/心情/天气/同行（**标题加粗**）+ Made by XiXi；入口 = 热力图弹窗底部「分享」按钮
 - ⚙️ 设置：
   - 外观（跟随系统/深浅）→ 杂项（FPS 开关、**检查更新确认弹窗**）→ WebDAV 数据同步 → 关于
   - **WebDAV（坚果云）**：上传（时间戳独立 .html 文件）、下载恢复、管理（**云端自动清理保留最近 2 份**）、自动同步（失败限频提醒）、**密码加密存储（xk1: 前缀，老明文兼容）**、**网页版弹窗示例按钮**
@@ -45,7 +45,7 @@
    - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-11）
-2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（49项自检）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
+2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（60项自检）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload
@@ -63,11 +63,11 @@
 ## ★应用内更新机制（v1.0.8.7 实现）
 - 原生桥 `checkUpdate()`（GET api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/latest 匿名）+ `downloadAndInstall(apkUrl, mirrorUrl)`（OkHttp → FileProvider → 系统安装器）
 - 前端：`APP_VERSION` + `UPDATE_MIRROR_PREFIX='https://ghfast.top/'`（index.html 顶部换源）
-- 网页版点检查更新提示「无需更新」= 正常（桥不存在）；更新源版本号必须 > 本地
+- ★2026-08-25 起网页版也可弹检查更新确认窗并真实检测（GitHub API 支持 CORS），但无法安装（点立即更新有兜底提示）；更新源版本号必须 > 本地
 
 ## 构建流程（PowerShell，牢记）
-1. 改 `www/index.html` → `node test.js`（49项自检）→ `node bump.js`（版本号四处同步）
-2. 复制 index.html → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**删 temp 的 app/build 旧产物**
+1. 改 `www/index.html` → `node test.js`（60项自检）→ `node bump.js`（版本号四处同步）
+2. 复制 index.html + **share-bg.jpg** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**删 temp 的 app/build 旧产物**
 3. 构建（PowerShell 后台）：
    ```
    Get-Process java* | Stop-Process -Force
@@ -93,7 +93,7 @@
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
 
-## 近期版本要点（v1.1.0.7 ~ v1.1.3.0）
+## 近期版本要点（v1.1.0.7 ~ v1.1.3.5）
 - v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
 - v1.1.1.6（vc138）：导出诊断 + 备份瘦身（完整/纯数据）+ 同步失败提醒 + 云端自动清理（留2份）+ 字段增强（心情/天气/同行人）+ 数据层单测 + 分享卡 v1 + 月度统计
@@ -120,7 +120,7 @@
 - ✅ 设置页数据管理框空白约 1 秒 **已解决**（v1.1.3.1 缩短 settingsBlockIn 动画 0.3s+0.56s → 0.18s+0.28s，最后块 0.46s 出现，见 index.html 907 行注释）
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
-1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；凭据用 **Python ctypes CredReadW** 读 `git:https://github.com`（PowerShell Add-Type 环境块超限 496KB）；资产上传端点 **uploads.github.com**；token 临时文件用 Python os.remove 删；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
+1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；凭据用 **Python ctypes CredReadW** 读 `git:https://github.com`（PowerShell Add-Type 环境块超限 496KB；**CredentialBlob 是 UTF-16LE、无 x-access-token: 前缀，直接用 token**）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；资产上传端点 **uploads.github.com**；token 临时文件用 Python os.remove 删；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
 2. **构建必须在 %TEMP%\hiking-build**（桌面路径文件锁）
 3. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
 4. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
