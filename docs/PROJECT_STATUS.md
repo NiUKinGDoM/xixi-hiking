@@ -127,7 +127,7 @@
 - ✅ 设置页数据管理框空白约 1 秒 **已解决**（v1.1.3.1 缩短 settingsBlockIn 动画 0.3s+0.56s → 0.18s+0.28s，最后块 0.46s 出现，见 index.html 907 行注释）
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
-1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；凭据用 **Python ctypes CredReadW** 读 `git:https://github.com`（PowerShell Add-Type 环境块超限 496KB；**CredentialBlob 是 UTF-16LE、无 x-access-token: 前缀，直接用 token**）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；资产上传端点 **uploads.github.com**；token 临时文件用 Python os.remove 删；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
+1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；凭据用 **Python ctypes CredReadW** 读 `git:https://github.com`（PowerShell Add-Type 环境块超限 496KB；**CredentialBlob 是 UTF-16LE、无 x-access-token: 前缀，直接用 token**）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；资产上传端点 **uploads.github.com**；token 临时文件用 Python os.remove 删；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
 2. **构建必须在 %TEMP%\hiking-build**（桌面路径文件锁）
 3. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
 4. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
