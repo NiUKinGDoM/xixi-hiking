@@ -4667,7 +4667,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.9</div>
+                        <div class="about-version">版本 1.1.3.10</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4957,7 +4957,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.9';
+var APP_VERSION = '1.1.3.10';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6455,7 +6455,7 @@ function showDataInfoModal() {
                 数据管理说明
             </div>
             <div class="confirm-modal-message" style="line-height: 1.4;">
-                导出/导入完整备份（压缩包 .zip，含徒步记录、计划与照片；另有不含照片的纯数据备份）。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。导入或恢复时，相同记录以备份中的为准（含 0 海拔等值），本地独有的记录合并保留。
+                导出/导入完整备份（压缩包 .zip，含徒步记录、计划与照片；另有不含照片的纯数据备份）。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。导入或恢复时，相同记录按时间戳取新，未填字段（含 0 海拔等空值）自动用另一份补全；本地独有的记录合并保留。
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-cancel ripple-effect" id="data-info-close">知道了</button>
@@ -8346,37 +8346,11 @@ async function mergeSyncBackup(silent) {
                     const added = await restorePhotosFromPayload(payload);
                     if (added > 0 && !silent) showSuccessMessage('已恢复 ' + added + ' 张照片');
                 }
-                // 合并记录：按 id 去重，时间戳（createdAt）取新
-                const localMap = new Map(records.map(r => [r.id, r]));
-                const cloudMap = new Map(payload.records.map(r => [r.id, r]));
-                const merged = new Map();
-                localMap.forEach((r, id) => {
-                    const c = cloudMap.get(id);
-                    if (!c) { merged.set(id, r); return; }
-                    const lv = r.createdAt || '';
-                    const cv = c.createdAt || '';
-                    merged.set(id, cv > lv ? c : r);
-                });
-                cloudMap.forEach((r, id) => {
-                    if (!merged.has(id)) merged.set(id, r);
-                });
-                records = Array.from(merged.values());
+                // ★2026-08-26 合并记录：时间戳取新 + 空字段补全（与导入/恢复规则统一）
+                records = mergeRecordsWith(payload.records || [], records, false);
 
-                // 合并计划：同样按 id 去重，时间戳取新
-                const localPMap = new Map(plannedTrips.map(t => [t.id, t]));
-                const cloudPMap = new Map(payload.plannedTrips.map(t => [t.id, t]));
-                const mergedP = new Map();
-                localPMap.forEach((t, id) => {
-                    const c = cloudPMap.get(id);
-                    if (!c) { mergedP.set(id, t); return; }
-                    const lv = t.createdAt || '';
-                    const cv = c.createdAt || '';
-                    mergedP.set(id, cv > lv ? c : t);
-                });
-                cloudPMap.forEach((t, id) => {
-                    if (!mergedP.has(id)) mergedP.set(id, t);
-                });
-                plannedTrips = Array.from(mergedP.values());
+                // ★2026-08-26 合并计划：同样时间戳取新 + 字段补全
+                plannedTrips = mergeRecordsWith(payload.plannedTrips || [], plannedTrips, true);
 
                 await saveToStorage();
                 await savePlannedTripsToStorage();
@@ -9215,6 +9189,32 @@ async function performBackupExport(includePhotos) {
 
 // ==================== 完整备份导入功能 ====================
 
+// ★2026-08-26 字段级合并工具：时间戳取新 + 空字段补全（undefined/null/''/0 都算空——海拔 0 即空数据）
+function isFieldEmpty(v) {
+    return v === undefined || v === null || v === '' || v === 0;
+}
+// 合并两个数组：同 id 取 createdAt 新的为基础，空字段用旧的补；独有的保留
+function mergeRecordsWith(imported, existing, isPlan) {
+    const fields = isPlan ? ['name', 'difficulty'] : ['name', 'elevation', 'difficulty', 'distance', 'duration', 'mood', 'weather', 'companions'];
+    const localMap = new Map(existing.map(x => [x.id, x]));
+    const impMap = new Map(imported.map(x => [x.id, x]));
+    const merged = new Map();
+    localMap.forEach((r, id) => {
+        const c = impMap.get(id);
+        if (!c) { merged.set(id, r); return; }
+        const lv = r.createdAt || '', cv = c.createdAt || '';
+        const fresh = cv > lv ? c : r;
+        const stale = cv > lv ? r : c;
+        const out = JSON.parse(JSON.stringify(fresh));
+        fields.forEach(k => {
+            if (isFieldEmpty(out[k]) && !isFieldEmpty(stale[k])) out[k] = stale[k];
+        });
+        merged.set(id, out);
+    });
+    impMap.forEach((r, id) => { if (!merged.has(id)) merged.set(id, r); });
+    return Array.from(merged.values());
+}
+
 function showImportModal() {
     const existing = document.getElementById('importMethodModal');
     if (existing) existing.remove();
@@ -9337,29 +9337,11 @@ async function importFullBackupPayload(payload) {
             const added = await restorePhotosFromPayload(payload);
             if (added > 0) showSuccessMessage('已恢复 ' + added + ' 张照片');
         }
-        // ★2026-08-25 导入/下载恢复：同 id 无条件用导入数据覆盖（含海拔 0 等有效值）；本地独有的保留合并
-        const localMap = new Map(records.map(r => [r.id, r]));
-        const cloudMap = new Map(payload.records.map(r => [r.id, r]));
-        const merged = new Map();
-        localMap.forEach((r, id) => {
-            const c = cloudMap.get(id);
-            if (!c) { merged.set(id, r); return; }
-            merged.set(id, c);
-        });
-        cloudMap.forEach((r, id) => { if (!merged.has(id)) merged.set(id, r); });
-        records = Array.from(merged.values());
+        // ★2026-08-26 导入/下载恢复：同 id 时间戳取新 + 空字段补全（含 0 海拔=空）；独有的保留
+        records = mergeRecordsWith(payload.records || [], records, false);
 
-        // ★2026-08-25 计划同 id 也用导入的覆盖（与记录一致）
-        const localPMap = new Map(plannedTrips.map(t => [t.id, t]));
-        const cloudPMap = new Map((payload.plannedTrips || []).map(t => [t.id, t]));
-        const mergedP = new Map();
-        localPMap.forEach((t, id) => {
-            const c = cloudPMap.get(id);
-            if (!c) { mergedP.set(id, t); return; }
-            mergedP.set(id, c);
-        });
-        cloudPMap.forEach((t, id) => { if (!mergedP.has(id)) mergedP.set(id, t); });
-        plannedTrips = Array.from(mergedP.values());
+        // ★2026-08-26 计划同理（name/difficulty 补全）
+        plannedTrips = mergeRecordsWith(payload.plannedTrips || [], plannedTrips, true);
 
         await saveToStorage();
         await savePlannedTripsToStorage();
