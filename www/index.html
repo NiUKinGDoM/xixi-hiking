@@ -4646,7 +4646,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.6</div>
+                        <div class="about-version">版本 1.1.3.7</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4936,7 +4936,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.6';
+var APP_VERSION = '1.1.3.7';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -5013,7 +5013,7 @@ async function generateShareCard(record) {
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext('2d');
     var FONT_ART = '"KaiTi","STKaiti","楷体","SimSun",serif';
-    // ★2026-08-24 v1.1.2.11 分段绘制：标题加粗（海拔/难度/心情/天气/同行），内容普通，整行居中
+    // ★2026-08-24 v1.1.2.11 分段绘制：标题加粗（海拔/心情/天气/同行等），内容普通，整行居中
     function drawShareRow(ctx, cx, y, size, pairs) {
         var prevAlign = ctx.textAlign;
         ctx.textAlign = 'left';   // ★修复：必须左对齐逐段推进（继承 center 会导致每段以 x 为中心绘制 → 重叠）
@@ -5086,7 +5086,7 @@ async function generateShareCard(record) {
     var yEnd = brandY - gap;                                  // 最后一行 baseline
     var row1Y, lineY, nameY, dateY;
     if (meta.length) {
-        row1Y = yEnd - 72;                                    // meta 行上方 = 海拔难度行
+        row1Y = yEnd - 72;                                    // meta 行上方 = 海拔/里程/用时行
         lineY = row1Y - 78;                                   // 分隔线
     } else {
         row1Y = yEnd;
@@ -5111,11 +5111,10 @@ async function generateShareCard(record) {
     ctx.beginPath(); ctx.moveTo(W / 2 + 36, lineY); ctx.lineTo(W / 2 + 200, lineY); ctx.stroke();
     ctx.fillStyle = 'rgba(84,104,186,0.9)';
     ctx.beginPath(); ctx.moveTo(W / 2, lineY - 9); ctx.lineTo(W / 2 + 9, lineY); ctx.lineTo(W / 2, lineY + 9); ctx.lineTo(W / 2 - 9, lineY); ctx.fill();
-    // 数据行1：海拔难度 + 里程用时（有值才加；项多时字号 42 防溢出）
+    // 数据行1：海拔 + 里程用时（★2026-08-25 去掉难度，用户要求分享卡不显示难度；有值才加；项多时字号 42 防溢出）
     ctx.fillStyle = 'rgba(40,48,82,1)';
     var row1Pairs = [
-        { label: '海拔 ', value: (record.elevation || 0) + ' m' },
-        { label: '难度 ', value: (record.difficulty || '-') + ' 级' }
+        { label: '海拔 ', value: (record.elevation || 0) + ' m' }
     ];
     if (record.distance) row1Pairs.push({ label: '里程 ', value: record.distance + ' km' });
     if (record.duration) row1Pairs.push({ label: '用时 ', value: formatDuration(record.duration) });
