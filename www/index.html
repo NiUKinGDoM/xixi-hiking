@@ -758,6 +758,19 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
         
+        /* ★2026-08-25 检查更新弹窗「检查」按钮：浅红玻璃质感——背景更透更浅、边框红更明显（用户要求） */
+        .check-go-btn {
+            background: rgba(254, 226, 226, 0.08);
+            backdrop-filter: blur(2px) saturate(150%);
+            -webkit-backdrop-filter: blur(2px) saturate(150%);
+            border: 1px solid rgba(220, 38, 38, 0.9);
+            color: #b91c1c;
+        }
+        body.dark-mode .check-go-btn {
+            background: rgba(70, 15, 20, 0.08);
+            border-color: rgba(248, 113, 113, 0.9);
+            color: #fecaca;
+        }
         /* 图标动画 */
         /* 添加按钮动画（★2026-08-25 记录页+计划页统一：#addPlannedTripBtn 同步 hover 旋转放大） */
         #addBtn, #addPlannedTripBtn {
@@ -2217,12 +2230,12 @@
         /* 图表容器（难度分布框）跟随全局玻璃透明度 */
         .chart-box {
             background: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.8));
-            /* 淡灰蓝半透明边框：玻璃感、有透明度（等级0 时仍隐约可见） */
-            border-color: rgba(148, 163, 184, 0.35);
+            /* ★2026-08-25 边框调浅：与总记录数框(.glass-stat-card)一致 rgba(0,0,0,0.04)（原灰蓝 0.35 太深） */
+            border-color: rgba(0, 0, 0, 0.04);
         }
         body.dark-mode .chart-box {
             background: rgba(15, 23, 42, calc(var(--glass-alpha) * 1.5));
-            border-color: rgba(148, 180, 230, 0.35);
+            border-color: rgba(255, 255, 255, 0.04);
         }
         
         @keyframes growUp {
@@ -4223,9 +4236,13 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-6">
-                    <h3 class="text-lg font-semibold text-white/70 mb-4 px-3 py-1">难度分布</h3>
+            </div>
+            <!-- ★2026-08-25 难度分布独立成卡片：统一概览页格式（glass-panel + h2 图标标题，原嵌在统计概览内 h3 无图标） -->
+            <div class="glass-panel p-6 mb-6">
+                <h2 class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-lg transition-colors">
+                    <span class="material-icons text-amber-300 text-xl">bar_chart</span>
+                    <span class="title-text">难度分布</span>
+                </h2>
                     <div class="relative h-60 chart-box backdrop-blur-md rounded-xl p-4 border">
                         <div class="absolute inset-0 flex items-end justify-around px-4 pb-8" id="difficultyChart">
                 <div class="flex flex-col items-center flex-1">
@@ -4306,7 +4323,6 @@
             </div>
                         <div class="absolute top-2 right-2 text-xs text-white/50" id="chartLegend"><span class="text-white/60">总计: 10条记录</span></div>
                     </div>
-                </div>
             </div>
 <!-- 徒步足迹热力图（v1.0.7.8：统一玻璃红 + 年月可选(仅去过的年月) + 日历式月视图） -->
                 <div class="glass-panel p-6 mb-6" id="heatmapPanel">
@@ -4489,6 +4505,10 @@
                             <span class="text-sm font-semibold">管理</span>
                         </button>
                     </div>
+                    <!-- ★2026-08-25 WebDAV 弹窗示例（网页版预览用，App 版自动隐藏） -->
+                    <button id="syncDemoBtn" style="display:none;margin-top:8px;width:100%;padding:8px 10px;border-radius:10px;font-size:12px;background:rgba(99,102,241,0.08);border:1px dashed rgba(99,102,241,0.35);color:#4f46e5;cursor:pointer;" data-testid="sync-demo-button">
+                        🧪 弹窗示例：管理云端备份（网页预览）
+                    </button>
                     <!-- 2026-08-21 v1.1.2.1 照片占用恢复独立一行（导出诊断已并入导出弹窗） -->
                     <div class="settings-item" style="border-radius: 12px; margin-top: 10px; cursor: default;">
                         <div class="settings-item-icon">
@@ -4627,7 +4647,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.1</div>
+                        <div class="about-version">版本 1.1.3.2</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4917,7 +4937,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.1';
+var APP_VERSION = '1.1.3.2';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -7663,6 +7683,29 @@ function fetchLatestReleaseGuarded(timeoutMs) {
     return Promise.race([fetchLatestRelease(ms), raceReject]);
 }
 
+// ★2026-08-25 检查更新确认弹窗：样式与更新弹窗一致（confirm-modal 体系），「检测更新」/「关闭」
+// ★2026-08-25 网页版也弹（示例预览用）：点检测更新真检查（GitHub API 支持 CORS），安装动作在网页版有兜底提示
+function showCheckUpdateConfirm() {
+    if (updaterBusy) return;
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>检查更新</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;">' +
+        '<div style="font-weight:600;margin-bottom:4px;">当前版本 v' + APP_VERSION + '</div>' +
+        '<div>将从 GitHub 检测最新版本（需联网）。有新版本会提示下载安装，无新版本则提示已是最新。</div>' +
+        '</div>' +
+        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="checkCancelBtn" style="color:#ffffff !important;">关闭</button>' +
+        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="checkGoBtn">检查</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('checkCancelBtn').addEventListener('click', function () { document.body.removeChild(modal); });
+    document.getElementById('checkGoBtn').addEventListener('click', function () {
+        document.body.removeChild(modal);
+        checkForUpdate();
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+}
+
 // 检查更新（设置页按钮）：异步 fetch，永不卡死
 function checkForUpdate() {
     if (updaterBusy) return;
@@ -8583,6 +8626,15 @@ function setupSyncEventListeners() {
         manageBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => manageBtn.removeEventListener('click', handler));
     }
+    // ★2026-08-25 WebDAV 弹窗示例（仅网页版显示：无原生桥时预览弹窗效果）
+    const syncDemoBtn = document.getElementById('syncDemoBtn');
+    if (syncDemoBtn) {
+        const isWeb = !window.XixiFileBridge || typeof window.XixiFileBridge.webdavRequest !== 'function';
+        if (isWeb) syncDemoBtn.style.display = 'block';
+        const handler = showSyncDemoModal;
+        syncDemoBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => syncDemoBtn.removeEventListener('click', handler));
+    }
     // ★配置折叠区（v1.4.10.1；v1.4.10.10 加回弹展开/平滑收起）
     const configToggle = document.getElementById('syncConfigToggleBtn');
     if (configToggle) {
@@ -8668,6 +8720,15 @@ async function manageCloudBackups() {
     showManageBackupsModal(files);
 }
 
+// ★2026-08-25 WebDAV 弹窗示例（网页版预览用）：假数据展示「管理云端备份」弹窗
+function showSyncDemoModal() {
+    const demoFiles = [
+        { name: 'xixi-hiking-backup-20260824_153012.html' },
+        { name: 'xixi-hiking-backup-20260825_090512.html' },
+        { name: 'xixi-hiking-backup-20260825_163045.html' }
+    ];
+    showManageBackupsModal(demoFiles);
+}
 // 云端备份管理弹窗：列出全部备份 + 每个可删除
 function showManageBackupsModal(files) {
     const modal = document.createElement('div');
@@ -9225,10 +9286,10 @@ function setupEventListeners() {
         cleanupFunctions.push(() => addBtn.removeEventListener('click', handler));
     }
 
-    // 检查更新（2026-08-11：GitHub Release + 国内镜像，应用内自更）
+    // 检查更新（2026-08-11：GitHub Release + 国内镜像，应用内自更；★2026-08-25 先弹确认窗再检测）
     const checkUpdateItem = document.getElementById('checkUpdateItem');
     if (checkUpdateItem) {
-        const handler = checkForUpdate;
+        const handler = showCheckUpdateConfirm;
         checkUpdateItem.addEventListener('click', handler);
         cleanupFunctions.push(() => checkUpdateItem.removeEventListener('click', handler));
     }
