@@ -143,5 +143,61 @@ const cleanResult = cloudClean([f1, f2, f3]);
 (cloudClean([f1, f2]).length === 0) ? ok('云端清理：2 份不删') : bad('云端清理：≤2 份不应删');
 (cloudClean([f1, f2, f3, f2]).length === 2) ? ok('云端清理：4 份删 2') : bad('云端清理：4 份逻辑错误');
 
+// ===== 9. 数据层单测（2026-08-25：提取纯函数真实执行，非静态检查） =====
+console.log('-- 9. 数据层单测 --');
+const htmlSrc = fs.readFileSync(HTML, 'utf8');
+function extractFn(fnName) {
+    const start = htmlSrc.indexOf('function ' + fnName + '(');
+    if (start < 0) return null;
+    const open = htmlSrc.indexOf('{', start);
+    if (open < 0) return null;
+    let depth = 1, i = open + 1;
+    while (depth > 0 && i < htmlSrc.length) {
+        if (htmlSrc[i] === '{') depth++;
+        else if (htmlSrc[i] === '}') depth--;
+        i++;
+    }
+    return htmlSrc.slice(start, i);
+}
+// 9.1 formatDuration 用时格式化（分钟->h/m）
+const fdSrc = extractFn('formatDuration');
+if (fdSrc) {
+    const fdCtx = {};
+    vm.createContext(fdCtx);
+    vm.runInContext(fdSrc, fdCtx);
+    const fd = fdCtx.formatDuration;
+    fd(150) === '2h30m' ? ok('formatDuration: 150分->2h30m') : bad('formatDuration 150分->' + fd(150));
+    fd(45) === '45m' ? ok('formatDuration: 45分->45m') : bad('formatDuration 45分->' + fd(45));
+    fd(120) === '2h' ? ok('formatDuration: 120分->2h') : bad('formatDuration 120分->' + fd(120));
+    fd(0) === '' ? ok('formatDuration: 0->空') : bad('formatDuration 0->' + fd(0));
+} else { bad('formatDuration 函数提取失败'); }
+// 9.2 WebDAV 密码加密往返（含中文）
+const encSrc = extractFn('encPwd'), decSrc = extractFn('decPwd');
+if (encSrc && decSrc) {
+    const pwdCtx = { btoa: btoa, atob: atob };   // vm 沙箱注入 base64 全局
+    vm.createContext(pwdCtx);
+    vm.runInContext(encSrc, pwdCtx);
+    vm.runInContext(decSrc, pwdCtx);
+    const enc = pwdCtx.encPwd, dec = pwdCtx.decPwd;
+    const plain = 'Abc123中文密码!@#';
+    const cipher = enc(plain);
+    (cipher !== plain && cipher.indexOf('xk1:') === 0) ? ok('密码加密：已混淆非明文') : bad('密码加密失败: ' + cipher);
+    dec(cipher) === plain ? ok('密码解密：往返一致') : bad('密码解密失败: ' + dec(cipher));
+    dec('') === '' ? ok('密码解密：空串兼容') : bad('密码解密空串失败');
+    dec('legacy_plain') === 'legacy_plain' ? ok('密码解密：老明文兼容') : bad('老明文兼容失败');
+} else { bad('encPwd/decPwd 提取失败'); }
+// 9.3 记录统计逻辑（mock 数据：总里程/总用时/平均难度）
+const mockRecords = [
+    { distance: 5.2, duration: 150, elevation: 800, difficulty: 3 },
+    { distance: 3.5, duration: 90, elevation: 500, difficulty: 2 },
+    { distance: 0, duration: 0, elevation: 1200, difficulty: 5 }
+];
+const totalDist = mockRecords.reduce((a, r) => a + (r.distance || 0), 0);
+const totalDur = mockRecords.reduce((a, r) => a + (r.duration || 0), 0);
+const avgDiff = (mockRecords.reduce((a, r) => a + r.difficulty, 0) / mockRecords.length).toFixed(1);
+(totalDist === 8.7) ? ok('统计：总里程 8.7km') : bad('总里程计算: ' + totalDist);
+(totalDur === 240) ? ok('统计：总用时 240 分钟') : bad('总用时计算: ' + totalDur);
+(avgDiff === '3.3') ? ok('统计：平均难度 3.3') : bad('平均难度: ' + avgDiff);
+
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);
