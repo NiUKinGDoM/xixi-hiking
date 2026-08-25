@@ -4646,7 +4646,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.3.7</div>
+                        <div class="about-version">版本 1.1.3.8</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4936,7 +4936,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.3.7';
+var APP_VERSION = '1.1.3.8';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -8068,7 +8068,8 @@ async function uploadSyncBackup(silent) {
             const now = formatSyncTime(new Date());
             await recordSyncFile(fileName, buildFullBackupPayload()); // 记录到本地索引
             await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'upload' });
-            setSyncStatus('备份已上传：' + now, 'cloud_upload', 'success');
+            // ★2026-08-25 上传成功 → 对号 + 弹窗「上传成功」（10 秒后 finally 恢复连接检测）
+            setSyncStatus('上传成功', 'check_circle', 'success');
             if (!silent) showSuccessMessage('备份上传成功');
             else console.log('[Sync] 自动备份已上传:', fileName);
             // ★2026-08-21 v1.1.1.6 云端自动清理：保留最近 2 份，更旧的自动删除（防备份堆积）
@@ -8105,6 +8106,8 @@ async function uploadSyncBackup(silent) {
     } finally {
         syncInProgress = false;
         setSyncBusy(false);
+        // ★2026-08-25 上传结束（成功/失败）→ 展示对号/错号 10 秒后自动恢复连接检测状态
+        scheduleSyncStatusRefresh(10000);
     }
 }
 
@@ -8258,7 +8261,8 @@ async function doRestoreFromCloud(fileName) {
                 renderPlannedTripsTable();
                 const now = formatSyncTime(new Date());
                 await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'download' });
-                setSyncStatus('已恢复「' + formatSyncFileLabel(fileName) + '」：' + now, 'cloud_download', 'success');
+                // ★2026-08-25 下载成功 → 对号 + 弹窗「下载成功」
+                setSyncStatus('下载成功', 'cloud_download', 'success');
                 showSuccessMessage('恢复成功');
             } else {
                 setSyncStatus('云端文件格式不正确', 'error', 'error');
@@ -8282,6 +8286,8 @@ async function doRestoreFromCloud(fileName) {
     } finally {
         syncInProgress = false;
         setSyncBusy(false);
+        // ★2026-08-25 下载结束（成功/失败）→ 展示对号/错号 10 秒后自动恢复连接检测状态
+        scheduleSyncStatusRefresh(10000);
     }
 }
 
@@ -8391,6 +8397,8 @@ async function mergeSyncBackup(silent) {
     } finally {
         syncInProgress = false;
         setSyncBusy(false);   /* ★v18 无条件关转圈：自动同步(silent)结束后也停（原 if(!silent) 导致自动同步转圈永转） */
+        // ★2026-08-25 合并/自动同步结束 → 结果展示后 10 秒自动恢复连接检测状态
+        scheduleSyncStatusRefresh(10000);
     }
 }
 
@@ -8430,7 +8438,8 @@ function buildBackupHTMLString(payload) {
         }).join('');
         return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin:12px 0;background:#ffffff;">' +
             '<h3 style="margin:0 0 6px;color:#1e293b;">' + esc(r.name || '未命名') + '</h3>' +
-            '<div style="color:#64748b;font-size:13px;">难度 ' + esc(r.difficulty !== undefined ? r.difficulty : '-') + ' 级 · 海拔 ' + esc(r.elevation || 0) + ' m · ' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</div>' +
+            '<!-- ★2026-08-25 回忆册补里程/用时（难度·海拔·里程·用时·时间） -->' +
+            '<div style="color:#64748b;font-size:13px;">难度 ' + esc(r.difficulty !== undefined ? r.difficulty : '-') + ' 级 · 海拔 ' + esc(r.elevation || 0) + ' m' + (r.distance ? ' · 里程 ' + esc(r.distance) + ' km' : '') + (r.duration ? ' · 用时 ' + esc(formatDuration(r.duration)) : '') + ' · ' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</div>' +
             '<!-- 2026-08-21 v1.1.2.0 备份回忆册：补心情/天气/同行人 -->' +
             ((r.mood || r.weather || r.companions) ? '<div style="color:#475569;font-size:13px;margin-top:4px;">' + (r.mood ? '心情 ' + esc(r.mood) + '　' : '') + (r.weather ? '天气 ' + esc(r.weather) + '　' : '') + (r.companions ? '同行 ' + esc(r.companions) : '') + '</div>' : '') +
             (imgs ? '<div style="margin-top:8px;">' + imgs + '</div>' : '') +
@@ -8576,9 +8585,11 @@ async function showSyncStatusModal() {
 
     let statusHtml = '';
     if (syncUiBusy) {
-        statusHtml = '<div class="sync-status-line"><span class="material-icons sync-spin" style="color:#4f46e5;">sync</span>同步中…</div>';
+        // ★2026-08-25 转圈时显示具体动作（上传中/下载中/合并中）
+        statusHtml = '<div class="sync-status-line"><span class="material-icons sync-spin" style="color:#4f46e5;">sync</span>' + (syncUiState.text || '同步中…') + '</div>';
     } else if (syncUiState.status === 'success') {
-        statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:#16a34a;">check_circle</span>连接成功</div>';
+        // ★2026-08-25 成功显示结果文案（上传成功/下载成功/连接成功）
+        statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:#16a34a;">check_circle</span>' + (syncUiState.text || '连接成功') + '</div>';
     } else if (syncUiState.status === 'error') {
         statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:#dc2626;">error</span>' + (syncUiState.text || '连接失败') + '</div>';
     } else {
@@ -8636,7 +8647,8 @@ async function autoCheckSyncConnection(showTip) {
         }
         // 目录存在：再试一次真实连通性（探测目录 GET 成功即代表认证+网络都通）
         syncUiBusy = false;
-        setSyncStatus('连接正常 ✓ 云端目录就绪', 'check_circle', 'success');
+        // ★2026-08-25 文案统一「连接成功」（恢复检测后的状态显示）
+        setSyncStatus('连接成功', 'check_circle', 'success');
         if (showTip) showSuccessMessage('连接成功，可以同步');
     } catch (e) {
         syncUiBusy = false;
@@ -8655,10 +8667,9 @@ function setupSyncEventListeners() {
     }
     const uploadBtn = document.getElementById('syncUploadBtn');
     if (uploadBtn) {
-        // ★2026-08-11 命令后 2 秒自动回正 WebDAV 状态（scheduleSyncStatusRefresh 内部防抖+判配置）
+        // ★2026-08-25 上传完成后由函数内部 10 秒恢复连接状态（原 2 秒回正会盖掉「上传成功」对号）
         const handler = function () {
             uploadSyncBackup();
-            scheduleSyncStatusRefresh(2000);
         };
         uploadBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => uploadBtn.removeEventListener('click', handler));
@@ -8667,7 +8678,6 @@ function setupSyncEventListeners() {
     if (downloadBtn) {
         const handler = function () {
             downloadSyncBackup();
-            scheduleSyncStatusRefresh(2000);
         };
         downloadBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => downloadBtn.removeEventListener('click', handler));
