@@ -464,17 +464,37 @@ public class MainActivity extends BridgeActivity {
                         response.close();
                         continue;
                     }
-                    byte[] bytes = response.body() != null ? response.body().bytes() : new byte[0];
-                    response.close();
-                    if (bytes.length < 1000) continue; // 太小基本是错误页
+                    // ★2026-08-26 流式下载 + 进度回调（notifyJs('progress', pct)，300ms 限频）
+                    long total = response.body() != null ? response.body().contentLength() : -1;
+                    java.io.InputStream is = response.body() != null ? response.body().byteStream() : null;
+                    if (is == null) {
+                        response.close();
+                        continue;
+                    }
                     File dir = new File(getCacheDir(), "downloads");
                     if (!dir.exists()) dir.mkdirs();
                     File apk = new File(dir, "xixi_update.apk");
                     FileOutputStream fos = new FileOutputStream(apk);
-                    fos.write(bytes);
+                    byte[] buf = new byte[8192];
+                    long done = 0;
+                    long lastNotify = 0;
+                    int n;
+                    while ((n = is.read(buf)) > 0) {
+                        fos.write(buf, 0, n);
+                        done += n;
+                        long now = System.currentTimeMillis();
+                        if (now - lastNotify > 300) {
+                            lastNotify = now;
+                            final int pct = total > 0 ? (int) (done * 100 / total) : -1;
+                            notifyJs("progress", String.valueOf(pct));
+                        }
+                    }
                     fos.flush();
                     fos.close();
-                    Log.i(TAG, "APK downloaded from " + u + " size=" + bytes.length);
+                    is.close();
+                    response.close();
+                    if (apk.length() < 1000) continue; // 太小基本是错误页
+                    Log.i(TAG, "APK downloaded from " + u + " size=" + apk.length());
                     return apk;
                 } catch (Exception e) {
                     Log.e(TAG, "download from " + u + " failed", e);

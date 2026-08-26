@@ -64,6 +64,14 @@
            blur 从有到无再从无到有 = 两次突变；而 blur 保持开启时，
            玻璃元素背景色有 background-color 0.4s 过渡，是平滑渐变的，不会白块。 */
         
+        /* ★2026-08-26 主题切换过渡：切主题瞬间全页面 0.3s 平滑渐变（背景/文字/边框色）
+           ⚠️ 只过渡颜色属性，绝不碰 backdrop-filter（历史教训：禁用 blur 会白块闪烁）；
+           ⚠️ !important 覆盖元素自身 transition 简写，400ms 内折叠动画等会暂时直切（概率极低，可接受） */
+        .theme-transitioning,
+        .theme-transitioning * {
+            transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease !important;
+        }
+        
         /* 深色模式样式 */
         body.dark-mode {
             background-color: #0a1220;
@@ -4429,6 +4437,12 @@
                         <p class="text-sm mt-2 text-white/50">记录你的每一次登山之旅</p>
                     </div>
                 </div>
+                <!-- ★2026-08-26 记录列表分页控件（列表框下方）：每页 10 条，左箭头第一页隐藏，右箭头最后一页隐藏，中间显示当前范围/总数 -->
+                <div id="recordsPager" class="flex items-center justify-center gap-4 mt-3 pb-1" style="display:none;">
+                    <button id="pagePrevBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="上一页"><span class="material-icons" style="font-size:18px;">chevron_left</span></button>
+                    <span id="pageInfo" class="text-xs text-white/60">1-10 / 共0条</span>
+                    <button id="pageNextBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="下一页"><span class="material-icons" style="font-size:18px;">chevron_right</span></button>
+                </div>
             </div>
             </div>
             
@@ -4487,6 +4501,12 @@
                         <p class="text-lg">暂无计划徒步行，点击上方按钮添加</p>
                         <p class="text-sm mt-2 text-white/50">规划你的下一次登山目标</p>
                     </div>
+                </div>
+                <!-- ★2026-08-26 计划列表分页控件（列表框下方）：每页 10 条，与记录页一致 -->
+                <div id="plannedPager" class="flex items-center justify-center gap-4 mt-3 pb-1" style="display:none;">
+                    <button id="plannedPagePrevBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="上一页"><span class="material-icons" style="font-size:18px;">chevron_left</span></button>
+                    <span id="plannedPageInfo" class="text-xs text-white/60">1-10 / 共0条</span>
+                    <button id="plannedPageNextBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="下一页"><span class="material-icons" style="font-size:18px;">chevron_right</span></button>
                 </div>
             </div>
             </div>
@@ -4674,7 +4694,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.4.4</div>
+                        <div class="about-version">版本 1.1.4.5</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4731,7 +4751,7 @@ function exportDiagnostics() {
         + '版本: ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?') + '\n'
         + '导出时间: ' + new Date().toLocaleString() + '\n'
         + '记录数: ' + (typeof records !== 'undefined' ? records.length : '?')
-        + ' | 计划数: ' + (typeof plannedTrips !== 'undefined' ? plannedTrips.length : '?') + '\n\n';
+        + ' | 计划数: ' + (typeof plannedTrips !== 'undefined' ? plannedTrips.length : '?') + '\n';
     function save(text) {
         var full = base + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---\n' + ((window.__diagLogs || []).join('\n') || '无');
         try {
@@ -4756,8 +4776,26 @@ function exportDiagnostics() {
             }
         } catch (e) { showErrorMessage('导出诊断失败'); }
     }
-    photoGetUsage().then(function (u) {
-        base += '照片数: ' + (u ? u.count : '?') + '（占用 ' + (u && u.bytes ? Math.ceil(u.bytes / 1024) + ' KB' : '0 KB') + '）\n\n';
+    // ★2026-08-26 诊断增强：WebDAV 配置状态（脱敏主机）+ 最近同步时间 + 照片数（并行收集）
+    var syncLine = 'WebDAV: 未配置';
+    var syncTimeLine = '';
+    try {
+        if (syncConfig && syncConfig.server) {
+            var srv = syncConfig.server;
+            if (!/^https?:\/\//i.test(srv)) srv = 'https://' + srv;
+            try { srv = new URL(srv).host; } catch (e) { /* 保留原样 */ }
+            syncLine = 'WebDAV: 已配置（' + srv + '）';
+        }
+    } catch (e) { /* 配置读取失败忽略 */ }
+    Promise.all([
+        AppStore.getItem(SYNC_STATUS_KEY).catch(function () { return null; }),
+        photoGetUsage().catch(function () { return null; })
+    ]).then(function (res) {
+        var st = res[0], u = res[1];
+        if (st && st.lastSyncAt) syncTimeLine = '最近同步: ' + st.lastSyncAt + (st.type ? '（' + st.type + '）' : '');
+        base += syncLine + '\n'
+            + (syncTimeLine ? syncTimeLine + '\n' : '')
+            + '照片数: ' + (u ? u.count : '?') + (u && u.bytes ? '（占用 ' + Math.ceil(u.bytes / 1024) + ' KB）' : '') + '\n\n';
         save(base);
     }).catch(function () { save(base); });
 }
@@ -4787,6 +4825,12 @@ let currentSort = { field: 'createdAt', direction: 'desc' };
 let isDarkMode = false;
 let isInitialized = false;
 let cleanupFunctions = [];
+// ★2026-08-26 记录列表分页（每页 10 条）
+let recordPage = 1;
+let plannedPage = 1; // 计划列表分页（同每页 10 条）
+const RECORD_PAGE_SIZE = 10;
+let currentPageRecords = [];
+let currentPagePlannedTrips = [];
 // ===== WebDAV 数据同步 =====
 const SYNC_CONFIG_KEY = 'hiking_sync_config';
 
@@ -4846,7 +4890,6 @@ function cleanupResources() {
         });
         cleanupFunctions = [];
         
-        console.log('Resources cleaned up');
     } catch (error) {
         console.error('Cleanup error:', error);
     }
@@ -4964,7 +5007,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.4.4';
+var APP_VERSION = '1.1.4.5';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -5753,12 +5796,38 @@ function renderTable() {
         if (sortedRecords.length === 0) {
             if (tbody) safeSetElementContent('recordsTable', '');
             if (emptyState) safeSetElementStyle('emptyState', 'display', 'block');
+            const emptyPager = safeGetElementById('recordsPager');
+            if (emptyPager) safeSetElementStyle('recordsPager', 'display', 'none');
+            currentPageRecords = [];
             return;
         }
         
         if (emptyState) safeSetElementStyle('emptyState', 'display', 'none');
+        
+        // ★2026-08-26 分页：每页 10 条，记录超出 1 页才显示翻页控件；删除后当前页越界自动回退
+        const totalPages = Math.max(1, Math.ceil(sortedRecords.length / RECORD_PAGE_SIZE));
+        if (recordPage > totalPages) recordPage = totalPages;
+        if (recordPage < 1) recordPage = 1;
+        const pageStart = (recordPage - 1) * RECORD_PAGE_SIZE;
+        const pageRecords = sortedRecords.slice(pageStart, pageStart + RECORD_PAGE_SIZE);
+        currentPageRecords = pageRecords;
+        
+        const pager = safeGetElementById('recordsPager');
+        if (pager) {
+            if (sortedRecords.length > RECORD_PAGE_SIZE) {
+                pager.style.display = 'flex';
+                const pageInfoEl = safeGetElementById('pageInfo');
+                if (pageInfoEl) pageInfoEl.textContent = (pageStart + 1) + '-' + Math.min(pageStart + RECORD_PAGE_SIZE, sortedRecords.length) + ' / 共' + sortedRecords.length + '条';
+                const prevBtn = safeGetElementById('pagePrevBtn');
+                const nextBtn = safeGetElementById('pageNextBtn');
+                if (prevBtn) prevBtn.style.display = recordPage <= 1 ? 'none' : 'inline-flex';
+                if (nextBtn) nextBtn.style.display = recordPage >= totalPages ? 'none' : 'inline-flex';
+            } else {
+                pager.style.display = 'none';
+            }
+        }
     
-    const tableContent = sortedRecords.map((record, idx) => {
+    const tableContent = pageRecords.map((record, idx) => {
         if (editingId === record.id) {
             return `
                 <tr class="border-b border-gray-200">
@@ -5908,8 +5977,24 @@ function attachEventListeners() {
     // 先清理所有已存在的事件监听器
     cleanupEventListeners();
     
-    const sortedRecords = getSortedRecords();
+    // ★2026-08-26 只绑定当前页记录（分页后非当前页的 DOM 不存在，遍历全部会白跑）
+    const sortedRecords = (currentPageRecords && currentPageRecords.length !== undefined) ? currentPageRecords : getSortedRecords();
     const eventListeners = []; // 存储事件监听器引用以便清理
+    
+    // ★2026-08-26 翻页控件（事件委托到容器，随 DOM 重建重新绑定）
+    const pagerEl = safeGetElementById('recordsPager');
+    if (pagerEl) {
+        const pagerHandler = (e) => {
+            const prev = e.target.closest('#pagePrevBtn');
+            const next = e.target.closest('#pageNextBtn');
+            if (!prev && !next) return;
+            if (editingId) cancelEdit(); // 编辑中翻页：先取消（与点击其他行切换行为一致）
+            if (prev && recordPage > 1) { recordPage--; renderTable(); }
+            else if (next) { recordPage++; renderTable(); }
+        };
+        pagerEl.addEventListener('click', pagerHandler);
+        eventListeners.push({ element: pagerEl, event: 'click', handler: pagerHandler });
+    }
     
     sortedRecords.forEach(record => {
         if (editingId === record.id) {
@@ -6332,6 +6417,7 @@ function handleSort(field) {
         currentSort.field = field;
         currentSort.direction = 'asc';
     }
+    recordPage = 1; // ★2026-08-26 排序变化回到第一页
     updateSortIcons();
     renderTable();
 }
@@ -6559,6 +6645,7 @@ function addNewRecord() {
     };
     
     records.unshift(newRecord);
+    recordPage = 1; // ★2026-08-26 新增记录回到第一页（新记录在最前）
     editingId = newRecord.id;
     updateStatistics();
     renderTable();
@@ -7008,12 +7095,38 @@ function renderPlannedTripsTable() {
         if (sortedTrips.length === 0) {
             if (tbody) safeSetElementContent('plannedTripsTable', '');
             if (emptyState) safeSetElementStyle('plannedEmptyState', 'display', 'block');
+            const emptyPager = safeGetElementById('plannedPager');
+            if (emptyPager) safeSetElementStyle('plannedPager', 'display', 'none');
+            currentPagePlannedTrips = [];
             return;
         }
         
         if (emptyState) safeSetElementStyle('plannedEmptyState', 'display', 'none');
         
-        const tableContent = sortedTrips.map((trip, idx) => {
+        // ★2026-08-26 计划分页：每页 10 条（与记录页一致）；删除越界自动回退
+        const totalPages = Math.max(1, Math.ceil(sortedTrips.length / RECORD_PAGE_SIZE));
+        if (plannedPage > totalPages) plannedPage = totalPages;
+        if (plannedPage < 1) plannedPage = 1;
+        const pageStart = (plannedPage - 1) * RECORD_PAGE_SIZE;
+        const pageTrips = sortedTrips.slice(pageStart, pageStart + RECORD_PAGE_SIZE);
+        currentPagePlannedTrips = pageTrips;
+        
+        const pager = safeGetElementById('plannedPager');
+        if (pager) {
+            if (sortedTrips.length > RECORD_PAGE_SIZE) {
+                pager.style.display = 'flex';
+                const pageInfoEl = safeGetElementById('plannedPageInfo');
+                if (pageInfoEl) pageInfoEl.textContent = (pageStart + 1) + '-' + Math.min(pageStart + RECORD_PAGE_SIZE, sortedTrips.length) + ' / 共' + sortedTrips.length + '条';
+                const prevBtn = safeGetElementById('plannedPagePrevBtn');
+                const nextBtn = safeGetElementById('plannedPageNextBtn');
+                if (prevBtn) prevBtn.style.display = plannedPage <= 1 ? 'none' : 'inline-flex';
+                if (nextBtn) nextBtn.style.display = plannedPage >= totalPages ? 'none' : 'inline-flex';
+            } else {
+                pager.style.display = 'none';
+            }
+        }
+        
+        const tableContent = pageTrips.map((trip, idx) => {
             if (plannedEditingId === trip.id) {
                 return `
                     <tr class="border-b border-gray-200">
@@ -7130,7 +7243,21 @@ function renderPlannedTripsTable() {
 }
 
 function attachPlannedTripsEventListeners() {
-    const sortedTrips = getSortedPlannedTrips();
+    // ★2026-08-26 只绑定当前页计划（分页后非当前页 DOM 不存在）
+    const sortedTrips = (currentPagePlannedTrips && currentPagePlannedTrips.length !== undefined) ? currentPagePlannedTrips : getSortedPlannedTrips();
+    
+    // ★2026-08-26 计划翻页控件（onclick 覆盖式绑定：容器是静态节点，addEventListener 会累积重复触发）
+    const pagerEl = safeGetElementById('plannedPager');
+    if (pagerEl) {
+        pagerEl.onclick = function (e) {
+            const prev = e.target.closest('#plannedPagePrevBtn');
+            const next = e.target.closest('#plannedPageNextBtn');
+            if (!prev && !next) return;
+            if (plannedEditingId) cancelPlannedEdit(); // 编辑中翻页：先取消（与点击其他行切换行为一致）
+            if (prev && plannedPage > 1) { plannedPage--; renderPlannedTripsTable(); }
+            else if (next) { plannedPage++; renderPlannedTripsTable(); }
+        };
+    }
     
     sortedTrips.forEach(trip => {
         if (plannedEditingId === trip.id) {
@@ -7238,6 +7365,7 @@ function addNewPlannedTrip() {
     };
     
     plannedTrips.unshift(newTrip);
+    plannedPage = 1; // ★2026-08-26 新增计划回到第一页
     plannedEditingId = newTrip.id;
     renderPlannedTripsTable();
 }
@@ -7377,6 +7505,7 @@ function handlePlannedTripSort(field) {
         plannedCurrentSort.field = field;
         plannedCurrentSort.direction = 'asc';
     }
+    plannedPage = 1; // ★2026-08-26 排序变化回到第一页
     
     updatePlannedSortIcons();
     renderPlannedTripsTable();
@@ -7450,7 +7579,6 @@ async function loadPlannedTripsFromStorage() {
                 // 为旧数据添加 createdAt 字段
                 createdAt: trip.createdAt || new Date().toISOString()
             }));
-            console.log(`Loaded ${plannedTrips.length} planned trips from storage`);
         } else {
             plannedTrips = [];
         }
@@ -7953,7 +8081,12 @@ function startUpdate() {
 window.XixiUpdaterCallback = function (state, message) {
     const desc = document.getElementById('checkUpdateDesc');
     try {
-        if (state === 'need_permission') {
+        if (state === 'progress') {
+            // ★2026-08-26 下载进度（原生流式下载 300ms 回调一次；pct=-1 时无总大小只显示下载中）
+            const pct = parseInt(message, 10);
+            updateLoadingToast(pct >= 0 ? '正在下载更新… ' + pct + '%' : '正在下载更新…');
+            if (desc) desc.textContent = pct >= 0 ? '正在下载新版本… ' + pct + '%' : '正在下载新版本…';
+        } else if (state === 'need_permission') {
             hideLoadingToast();
             showErrorMessage('首次更新需在系统设置中允许安装未知应用，开启后重新点击更新');
             if (desc) desc.textContent = '请允许安装未知应用后重试';
@@ -7984,6 +8117,15 @@ function showLoadingToast(message) {
 function hideLoadingToast() {
     if (loadingToastEl && loadingToastEl.parentNode) loadingToastEl.parentNode.removeChild(loadingToastEl);
     loadingToastEl = null;
+}
+// ★2026-08-26 更新下载进度文案（不重建 DOM，避免进度条闪烁）
+function updateLoadingToast(message) {
+    if (loadingToastEl) {
+        const span = loadingToastEl.querySelector('span[style*="font-size"]');
+        if (span) span.textContent = message;
+    } else {
+        showLoadingToast(message);
+    }
 }
 
 // ★备份提醒弹窗（v1.4.10.1）：提示用户去上传备份
@@ -8128,11 +8270,14 @@ async function uploadSyncBackup(silent) {
     }
     if (syncInProgress) return;
     syncInProgress = true;
-    setSyncBusy(true, '上传中…');
+    setSyncBusy(true, '正在打包备份…'); // ★2026-08-26 阶段1：打包（zip 含照片耗时）
     try {
         // ★2026-08-25 完整备份改 zip 压缩包上传（照片二进制省 33%，下载时兼容 zip + 老 HTML）
         const zip = await buildFullBackupZip(true);
         const bodyBase64 = uint8ToBase64(zip);
+        // ★2026-08-26 阶段2：打包完成 → 上传中（带大小提示；原生桥无字节进度回调，阶段式提示）
+        const sizeMB = (bodyBase64.length * 3 / 4 / 1024 / 1024).toFixed(1);
+        setSyncBusy(true, '上传中（' + sizeMB + ' MB）…');
         // 坚果云要求目录先存在：上传前无条件先逐级创建目录（幂等，已存在返回 405/409 视为 OK）
         const dirsResult = await ensureSyncParentDirs(url);
         if (!dirsResult.ok) {
@@ -8149,7 +8294,6 @@ async function uploadSyncBackup(silent) {
             // ★2026-08-25 上传成功 → 对号 + 弹窗「上传成功」（10 秒后 finally 恢复连接检测）
             setSyncStatus('上传成功', 'check_circle', 'success');
             if (!silent) showSuccessMessage('备份上传成功');
-            else console.log('[Sync] 自动备份已上传:', fileName);
             // ★2026-08-21 v1.1.1.6 云端自动清理：保留最近 2 份，更旧的自动删除（防备份堆积）
             try {
                 const cloudFiles = await listSyncFilesFromCloud();
@@ -8163,7 +8307,6 @@ async function uploadSyncBackup(silent) {
                             if (delUrl) await webdavRequest(delUrl, 'DELETE');
                         } catch (e) { /* 单个删除失败不影响后续 */ }
                     }
-                    console.log('[Sync] 云端自动清理旧备份', toDelete.length, '个（保留最近 2 份）');
                 }
             } catch (e) {
                 console.warn('[Sync] 云端自动清理失败:', e && e.message);
@@ -8317,10 +8460,12 @@ async function doRestoreFromCloud(fileName) {
     const url = buildSyncFileUrl(fileName);
     if (!url || syncInProgress) return;
     syncInProgress = true;
-    setSyncBusy(true, '下载中…');
+    setSyncBusy(true, '下载中…'); // ★2026-08-26 阶段1：下载
     try {
         const result = await webdavRequest(url, 'GET', '');
         if (result.status >= 200 && result.status < 300 && result.body) {
+            // ★2026-08-26 阶段2：下载完成 → 恢复合并中（解压 zip + 照片补 + 合并保存）
+            setSyncBusy(true, '恢复合并中…');
             // ★2026-08-25 统一解析：zip 压缩包（照片二进制）/ 老 HTML / 老 JSON
             const payload = await parseSyncFileBody(result.body);
             if (payload && Array.isArray(payload.records) && Array.isArray(payload.plannedTrips)) {
@@ -9403,7 +9548,6 @@ async function importFullBackupPayload(payload) {
 
 async function init() {
     if (isInitialized) {
-        console.log('Already initialized, skipping');
         return;
     }
 
@@ -9443,7 +9587,6 @@ async function init() {
                 difficulty: Math.min(5, Math.max(1, Math.round(record.difficulty))),
                 elevation: Math.max(0, Math.round(record.elevation))
             }));
-            console.log(`Loaded ${records.length} records in ${(performance.now() - startTime).toFixed(2)}ms`);
         }
         
         // 主题模式加载（v1.4.10.2 三态：优先读新 themeMode，兼容旧 isDarkMode 布尔）
@@ -9547,7 +9690,6 @@ async function init() {
             bindAutoCheckOnSettingsTab();
             initSystemThemeListener(); // ★跟随系统深色模式监听（v1.4.10.2）
             if (syncAuto && syncConfig.server && syncConfig.username) {
-                console.log('[Sync] Auto sync enabled, merging...');
                 // ★2026-08-19 v1.1.0.1 根治启动卡死：0.8s→3s（等首屏稳定后再同步；原生同步桥超时已缩，双保险）
                 setTimeout(function () { mergeSyncBackup(true); }, 3000);
             }
@@ -9555,7 +9697,6 @@ async function init() {
             console.error('Sync init error:', e);
         }
         
-        console.log(`App initialized in ${(performance.now() - startTime).toFixed(2)}ms`);
     } catch (error) {
         console.error('Initialization error:', error);
         records = [];
