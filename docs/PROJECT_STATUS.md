@@ -67,7 +67,7 @@
 
 ## 构建流程（PowerShell，牢记）
 1. 改 `www/index.html` → `node test.js`（60项自检）→ `node bump.js`（版本号四处同步）
-2. 复制 index.html + **share-bg.jpg** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**删 temp 的 app/build 旧产物**
+2. 复制 index.html + **share-bg.jpg** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**改过原生代码时还要 cp MainActivity.java → temp 对应路径**；**删 temp 的 app/build 旧产物**
 3. 构建（PowerShell 后台）：
    ```
    Get-Process java* | Stop-Process -Force
@@ -75,6 +75,7 @@
    $env:JAVA_HOME="C:\Users\NIU-XC\Desktop\buddy\2026-08-07-13-58-04\jdk-21.0.12"; $env:PATH="$env:JAVA_HOME\bin;$env:PATH"
    cd %TEMP%\hiking-build\android; gradle.bat assembleRelease --no-daemon --project-cache-dir "$env:TEMP\gradle-project-cache"
    ```
+4. ★构建报 `Could not load compiled classes for settings file ... from cache`（settings 编译类缓存损坏）：删 `%TEMP%\gradle-home-niuxc\caches\8.2.1\scripts` + `executionHistory` 后重试（别清整个 caches，会重新下依赖；2026-08-26 遇过）
    （Release+R8，签名不变 = 覆盖安装数据不丢；proguard 铁律：MainActivity+JsFileBridge 保留、okhttp3 保留）
 4. aapt 验证包名/版本 + apksigner 验证签名 SHA-256 `9396fee4...`
 5. 归档：`XiXiの徒步小记-vX.Y.Z.apk` → 项目根 + `backups/apk-history/`（不主动展示）
