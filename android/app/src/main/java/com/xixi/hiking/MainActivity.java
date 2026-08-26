@@ -464,7 +464,8 @@ public class MainActivity extends BridgeActivity {
                         response.close();
                         continue;
                     }
-                    // ★2026-08-26 流式下载 + 进度回调（notifyJs('progress', pct)，300ms 限频）
+                    // ★2026-08-26 流式下载 + 进度回调（notifyJs('progress', done/total)，300ms 限频）
+                    // total 可能 -1（镜像 chunked 无 Content-Length）→ 前端显示已下载大小兜底
                     long total = response.body() != null ? response.body().contentLength() : -1;
                     java.io.InputStream is = response.body() != null ? response.body().byteStream() : null;
                     if (is == null) {
@@ -485,8 +486,7 @@ public class MainActivity extends BridgeActivity {
                         long now = System.currentTimeMillis();
                         if (now - lastNotify > 300) {
                             lastNotify = now;
-                            final int pct = total > 0 ? (int) (done * 100 / total) : -1;
-                            notifyJs("progress", String.valueOf(pct));
+                            notifyJs("progress", done + "/" + total);
                         }
                     }
                     fos.flush();
