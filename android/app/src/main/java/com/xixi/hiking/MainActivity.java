@@ -105,6 +105,30 @@ public class MainActivity extends BridgeActivity {
                 // 兜底：App 默认浅色模式，页面加载完成时先设置深色状态栏图标（白底时间可见），
                 // JS applyThemeMode 会在初始化时按实际主题再校正一次
                 setStatusBarStyleInternal(false);
+                // ★2026-08-27 关于页 GitHub 图标：http/https 导航拦截 → 系统外部浏览器打开（返回键逻辑不受影响）
+                try {
+                    final com.getcapacitor.Bridge br = getBridge();
+                    if (br != null) {
+                        br.setWebViewClient(new com.getcapacitor.BridgeWebViewClient(br) {
+                            @Override
+                            public boolean shouldOverrideUrlLoading(android.webkit.WebView view, String url) {
+                                if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                                    try {
+                                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        startActivity(intent);
+                                        return true;
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "open external url failed", e);
+                                    }
+                                }
+                                return super.shouldOverrideUrlLoading(view, url);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "setup external url handler failed", e);
+                }
             }
         });
 
@@ -685,11 +709,12 @@ public class MainActivity extends BridgeActivity {
                     android.webkit.WebView wv = getBridge().getWebView();
                     if (wv != null) {
                         wv.evaluateJavascript(
-                                "try{window.__handleSystemBack?__handleSystemBack()?'1':'0':'0'}catch(e){'0'}",
+                                "try{window.__handleSystemBack?window.__handleSystemBack():0}catch(e){0}",
                                 new android.webkit.ValueCallback<String>() {
                                     @Override
                                     public void onReceiveValue(String value) {
-                                        boolean handled = value != null && value.indexOf('1') >= 0;
+                                        // ★2026-08-27 兼容判断：evaluateJavascript 返回值可能是 1 / "1" / "true"
+                                        boolean handled = value != null && (value.contains("1") || value.contains("true"));
                                         if (!handled) doDoubleBackToExit();
                                     }
                                 });
@@ -710,6 +735,16 @@ public class MainActivity extends BridgeActivity {
             return;
         }
         lastBackPressTime = now;
+        // ★2026-08-27 提示改走 JS 玻璃 toast（与下载更新同款 toast-glass 体系），不再用原生系统 Toast
+        try {
+            android.webkit.WebView wv = getBridge().getWebView();
+            if (wv != null) {
+                wv.evaluateJavascript("try{window.__showBackHint&&__showBackHint()}catch(e){}", null);
+                return;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "back hint js failed", e);
+        }
         try {
             android.widget.Toast.makeText(this, "再按一次退出徒步小记", android.widget.Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
