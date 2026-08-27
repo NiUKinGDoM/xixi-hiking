@@ -1,16 +1,16 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-08-27（v1.1.5.7 / vc183）
+> 最后更新：2026-08-28（v1.1.6.4 / vc191）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 单页应用，`www/index.html` 单文件 ~416KB 全逻辑 + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
-## 当前版本状态（2026-08-27）
-- **正式版 v1.1.5.7**（versionCode 183，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+## 当前版本状态（2026-08-28）
+- **正式版 v1.1.6.4**（versionCode 191，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - 测试版 `hiking-app3-test/`（v1.4.test-11）——**已暂停勿主动碰**
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
-- **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
+- **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
 - **★★★未确认同步前只改 www/index.html + 部署网页，绝不 bump/构建/归档/push**；确认「同步」才 bump→test→构建→push→Release
 - **★版本号铁律（2026-08-24 强化）**：发版口头汇报版本号必须用 **bump.js 实际输出**，禁止十进制直觉（v1.1.2.10 → 必须说 1.1.3.0，不许说 1.1.2.11，被用户叫停纠正过）
 - **★五项优化约定（2026-08-23 起）**：①设计统一性 ②底层代码清理 ③流畅度帧率 ④文档更新（README/CHANGELOG/本文件随版本同步）⑤查 bug——每次更新必做，完成后汇报
@@ -45,7 +45,7 @@
    - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-11）
-2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（60项自检）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
+2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（20项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload
@@ -66,7 +66,7 @@
 - ★2026-08-25 起网页版也可弹检查更新确认窗并真实检测（GitHub API 支持 CORS），但无法安装（点立即更新有兜底提示）；更新源版本号必须 > 本地
 
 ## 构建流程（PowerShell，牢记）
-1. 改 `www/index.html` → `node test.js`（60项自检）→ `node bump.js`（版本号四处同步）
+1. 改 `www/index.html` → `node test.js`（60项）+ `node test-ui.js`（20项 jsdom UI，2026-08-28 起）→ `node bump.js`（版本号四处同步）
 2. 复制 index.html + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；**删 temp 的 app/build 旧产物**
 3. 构建（PowerShell 后台）：
    ```
@@ -94,7 +94,7 @@
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
 
-## 近期版本要点（v1.1.0.7 ~ v1.1.5.7）
+## 近期版本要点（v1.1.0.7 ~ v1.1.6.4）
 - v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
 - v1.1.1.6（vc138）：导出诊断 + 备份瘦身（完整/纯数据）+ 同步失败提醒 + 云端自动清理（留2份）+ 字段增强（心情/天气/同行人）+ 数据层单测 + 分享卡 v1 + 月度统计
@@ -138,21 +138,33 @@
 - v1.1.5.5（vc181）：**搜索功能修复（currentTabId 全局化）+ 搜索框交互定稿（任意方向轻滑显示/1秒消失/底部让位分页/键盘跟随+回位）+ 玻璃透明度统一**（详见 Release）
 - v1.1.5.6（vc182）：**搜索框移除底部避让逻辑（滑到列表底部不再自动隐藏）**（详见 Release）
 - v1.1.5.7（vc183）：**紧急修复 v1.1.5.6 更新日志换行转义错误导致页面无法操作**（详见 Release）
+- v1.1.5.8（vc184）：**输入法覆盖式弹出（adjustNothing，软件不再被整体抬高）+ 搜索框原生 IME 桥精确跟随键盘（原生监听 insets 高度 → window.__onImeHeight；网页版 visualViewport 照旧）**（详见 Release）
+- v1.1.5.9（vc185）：**修复输入法弹出时搜索框被顶出屏幕（原生 insets 物理像素 ÷DPR 换算 + 60vh 上限保护 + focus 45vh 兜底）**（详见 Release）
+- v1.1.5.10（vc186）：**修复中文输入法搜索失效（拼音中间态不再误搜 + 上屏强制同步）+ 搜索结果列表避让输入法（键盘弹出列表可滚动查看）**（详见 Release）
+- v1.1.6.0（vc187）：**五项优化：修复编辑输入框被键盘盖住（adjustNothing 回归）+ placeholder 统一 + 删 roundRect 死代码 + 键盘让位平滑过渡**（详见 Release）
+- v1.1.6.1（vc188）：**编辑输入框浅色模式加浅色边（与底栏同款）+ 修复点搜索框跳变/页面被抬高（去掉 45vh 兜底 + 滚动排除搜索框）**（详见 Release）
+- v1.1.6.2（vc189）：**计划页搜索优化：placeholder 按页切换（搜索记录/搜索计划）+ 切页自动呼出搜索框（计划少无法滚动也能找到）+ 搜索时徽标显示"匹配 N / 共 M 条"**（详见 Release）
+- v1.1.6.3（vc190）：**修复打开软件后第一次搜索不实时出结果（输入事件重构：不再依赖易丢失的 compositionend，拼音阶段实时过滤 + 3s 超时防卡死）**（详见 Release）
+- v1.1.6.4（vc191）：**彻底修复搜索不实时（轮询检测输入内容 250ms，不依赖输入法事件——某些输入法拼音期间不派发 input 且丢 compositionend）**（详见 Release）
 
-## 待办/新功能方案（2026-08-25 更新）
+## 待办/新功能方案（2026-08-28 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
-- 待办：记录本地搜索（找去年去过的山）
+- ✅ **记录/计划本地搜索**（v1.1.5.4~v1.1.6.4 完成：名称包含匹配 + 输入法协作 + 轮询根治 + 计划页优化）
+- ✅ **UI 层自动化测试**（v1.1.6.5 待发：test-ui.js 20 项 jsdom 渲染测试，发布双保险）
 - ✅ 备份 zip 二期 **已完成**（v1.1.3.9：完整备份改 zip 压缩包，照片二进制省 33%）
 - ✅ 设置页数据管理框空白约 1 秒 **已解决**（v1.1.3.1 缩短 settingsBlockIn 动画 0.3s+0.56s → 0.18s+0.28s，最后块 0.46s 出现，见 index.html 907 行注释）
+- ⏸️ 单文件拆分（用户 2026-08-28 决定暂缓：现靠 test.js+test-ui.js 双测试兜回归；方案 A 外部 JS 文件已备好待选）
+- 💡 备份提醒（距上次同步超 7 天启动轻提示）——用户未采纳，仍建议
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
-1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；凭据用 **Python ctypes CredReadW** 读 `git:https://github.com`（PowerShell Add-Type 环境块超限 496KB；**CredentialBlob 是 UTF-16LE、无 x-access-token: 前缀，直接用 token**）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；资产上传端点 **uploads.github.com**；token 临时文件用 Python os.remove 删；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
+1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；★★2026-08-27 凭据读取**必须用 Python ctypes CredEnumerate 枚举过滤 `git:https://github.com` 读 blob**（**CredReadW 读该 target 返回空 blob size=0，CredEnumerate 正常**；CredentialBlob 是 UTF-16LE、40 字符裸 token、无 x-access-token 前缀）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；**★★2026-08-27 Release asset 上传必须裸二进制（Content-Type: application/octet-stream，body=APK 原始字节），严禁 multipart（会被原样存成坏文件，手机"解析包出问题"）；上传后必须下载验证 md5 + PK 头；asset 名用 ASCII（中文被替换成 .）**；资产上传端点 **uploads.github.com**；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
 2. **构建必须在 %TEMP%\hiking-build**（桌面路径文件锁）
 3. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
-4. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
-5. **换电脑**：绝对路径只对当前电脑有效；local.properties sdk.dir 必须改；见 `backups/新电脑部署指南.md`
-6. **沟通风格**：用户称呼「爹」，助手自称「小小牛 🛠️」；直接给结论不废话
-7. **★换模型/新会话流程（铁律）**：重读本文件 + `.workbuddy/memory/MEMORY.md` + 最新日期日志 → 复述确认（当前版本号/主工程路径/最近发版/发布流程顺序）→ 再开工
+4. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；**test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require
+5. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
+6. **换电脑**：绝对路径只对当前电脑有效；local.properties sdk.dir 必须改；见 `backups/新电脑部署指南.md`
+7. **沟通风格**：用户称呼「爹」，助手自称「小小牛 🛠️」；直接给结论不废话
+8. **★换模型/新会话流程（铁律）**：重读本文件 + `.workbuddy/memory/MEMORY.md` + 最新日期日志 → 复述确认（当前版本号/主工程路径/最近发版/发布流程顺序）→ 再开工
 
 ## 用户信息
 - 用户称呼：爹；助手自称：小小牛（🛠️）；直接、不废话风格
