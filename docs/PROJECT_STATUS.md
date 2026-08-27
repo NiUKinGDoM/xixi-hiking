@@ -67,7 +67,7 @@
 
 ## 构建流程（PowerShell，牢记）
 1. 改 `www/index.html` → `node test.js`（60项自检）→ `node bump.js`（版本号四处同步）
-2. 复制 index.html + **share-bg.jpg** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**改过原生代码时还要 cp MainActivity.java → temp 对应路径**；**删 temp 的 app/build 旧产物**
+2. 复制 index.html + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；**删 temp 的 app/build 旧产物**
 3. 构建（PowerShell 后台）：
    ```
    Get-Process java* | Stop-Process -Force
