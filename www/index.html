@@ -4712,7 +4712,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.2</div>
+                        <div class="about-version">版本 1.1.5.3</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4721,7 +4721,7 @@
                                     style="display:inline-flex;align-items:center;justify-content:center;background:none;border:none;padding:2px;cursor:pointer;color:inherit;">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
                             </button>
-                            Made by XiXi 💛
+                            Made by XiXi
                         </div>
                     </div>
                 </div>
@@ -4759,6 +4759,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.5.3': '## v1.1.5.3 更新内容\n\n**修复**\n- 导出诊断数据功能修复（此前点击报错）\n\n**体验**\n- 错误提示全部中文化：网络/同步/代码错误都显示具体原因（不再英文报错）\n- 离线优化：断网启动跳过自动同步、断网点检查更新直接提示\n- 关于页去掉 Made by XiXi 后的爱心\n\nMade by XiXi',
     'v1.1.5.2': '## v1.1.5.2 更新内容\n\n**优化**\n- 弹窗关闭取消淡出动画，全部直接关闭（与确认弹窗一致，更干脆）\n\nMade by XiXi 💛',
     'v1.1.5.1': '## v1.1.5.1 更新内容\n\n**修复**\n- 导入/导出弹窗按返回键可直接关闭（此前只有确认弹窗/灯箱支持）\n\nMade by XiXi 💛',
     'v1.1.5.0': '## v1.1.5.0 更新内容\n\n**修复**\n- 返回键关弹窗修复（实时检测，弹窗打开时按返回直接关闭）\n- 防误退提示改用 App 玻璃样式（与下载更新提示一致）\n\n**体验**\n- 批量模式切换到其他页面自动退出\n- 关于页新增 GitHub 图标（点击外部浏览器打开源码仓库）\n\nMade by XiXi 💛',
@@ -4862,7 +4863,8 @@ function exportDiagnostics() {
         }
     } catch (e) { /* 配置读取失败忽略 */ }
     Promise.all([
-        AppStore.getItem(SYNC_STATUS_KEY).catch(function () { return null; }),
+        // ★2026-08-27 修复：AppStore.getItem 是同步方法（返回 null 非 Promise），不能直接 .catch —— 包 Promise.resolve
+        Promise.resolve().then(function () { try { return AppStore.getItem(SYNC_STATUS_KEY); } catch (e) { return null; } }),
         photoGetUsage().catch(function () { return null; })
     ]).then(function (res) {
         var st = res[0], u = res[1];
@@ -5006,19 +5008,72 @@ function notifyGlobalError(msg) {
     } catch (e) { /* 提示失败静默 */ }
 }
 
+// ★2026-08-27 提取简短可读的错误原因（用户要求：别只弹「应用发生错误」，要让用户知道发生了什么）
+// ★2026-08-27 JS 运行时错误中文化：常见模式映射中文，避免用户看到英文报错
+function jsErrorToChinese(msg) {
+    var s = String(msg || '');
+    var m;
+    m = s.match(/cannot read propert\w* of (null|undefined)\s*\(reading '([^']+)'\)/i);
+    if (m) return '读取' + (m[1] === 'null' ? '空数据' : '未定义数据') + '（' + m[2] + '）出错，请刷新重试';
+    m = s.match(/cannot read propert\w* '([^']+)' of (null|undefined)/i);
+    if (m) return '读取' + (m[2] === 'null' ? '空数据' : '未定义数据') + '（' + m[1] + '）出错，请刷新重试';
+    m = s.match(/cannot set propert\w* of (null|undefined)/i);
+    if (m) return '写入' + (m[1] === 'null' ? '空数据' : '未定义数据') + '出错，请刷新重试';
+    m = s.match(/(\w+) is not a function/i);
+    if (m) return m[1] + ' 调用方式有误（不是可用方法），请刷新重试';
+    if (/cannot destructure/i.test(s)) return '数据解构失败，请刷新重试';
+    m = s.match(/(\w+) is not defined/i);
+    if (m) return m[1] + ' 未定义，请刷新重试';
+    m = s.match(/(\w+) is undefined/i);
+    if (m) return m[1] + ' 未定义，请刷新重试';
+    m = s.match(/(null|undefined) is not an object/i);
+    if (m) return (m[1] === 'null' ? '数据为空' : '数据未定义') + '导致错误，请刷新重试';
+    if (/invalid date/i.test(s)) return '日期格式无效，请检查输入';
+    if (/unexpected token/i.test(s)) return '脚本语法错误，请刷新重试';
+    if (/maximum call stack/i.test(s)) return '程序运行过深，请刷新重试';
+    if (/out of memory/i.test(s)) return '内存不足，请关闭其他应用后重试';
+    if (/is not iterable/i.test(s)) return '数据类型错误（不可遍历），请刷新重试';
+    if (/not a valid/i.test(s)) return '数据格式无效，请检查输入';
+    return '';
+}
+
+function extractErrMsg(err) {
+    try {
+        if (!err) return '未知错误';
+        var msg = (err && err.message) ? err.message : String(err);
+        msg = String(msg).replace(/\s+/g, ' ').trim();
+        if (!msg) return '未知错误';
+        var low = msg.toLowerCase();
+        // 网络类错误（fetch/网络/超时/域名/连接/SSL）走友好中文化翻译
+        if (low.indexOf('failed to fetch') >= 0 || low.indexOf('network') >= 0
+            || low.indexOf('timeout') >= 0 || low.indexOf('timed out') >= 0
+            || low.indexOf('host') >= 0 || low.indexOf('connect') >= 0
+            || low.indexOf('ssl') >= 0 || low.indexOf('net::') >= 0
+            || low.indexOf('enotfound') >= 0 || low.indexOf('econnrefused') >= 0
+            || low.indexOf('unreachable') >= 0) {
+            return friendlySyncError(msg);
+        }
+        // 其他 JS 运行时错误：优先翻译成中文，翻译不了再截断直显
+        var zh = jsErrorToChinese(msg);
+        if (zh) return zh;
+        if (msg.length > 46) msg = msg.slice(0, 46) + '…';
+        return msg;
+    } catch (e) { return '未知错误'; }
+}
+
 // 全局错误处理
 window.addEventListener('error', function(event) {
     console.error('Global error caught:', event.error);
-    // 显示用户友好的错误信息
-    notifyGlobalError('应用发生错误，请刷新页面重试');
+    // 显示具体错误原因（用户要求：简短写出来让人知道发生了什么）
+    notifyGlobalError('出错了：' + extractErrMsg(event.error));
     return false;
 });
 
 // 未处理的Promise错误处理
 window.addEventListener('unhandledrejection', function(event) {
     console.error('Unhandled promise rejection:', event.reason);
-    // 显示用户友好的错误信息
-    notifyGlobalError('网络请求失败，请检查连接后重试');
+    // 显示具体错误原因（网络类会被翻译成中文）
+    notifyGlobalError('出错了：' + extractErrMsg(event.reason));
     event.preventDefault();
 });
 
@@ -5090,7 +5145,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.2';
+var APP_VERSION = '1.1.5.3';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -8247,6 +8302,11 @@ function fetchReleaseBodyGuarded(tag, timeoutMs) {
 // 检查更新（设置页按钮）：异步 fetch，永不卡死
 function checkForUpdate() {
     if (updaterBusy) return;
+    // ★2026-08-27 离线优化：断网时直接提示，不再发起注定失败的请求
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        showErrorMessage('当前处于离线状态，无法检查更新，请联网后重试');
+        return;
+    }
     // App 判定：有下载桥（无桥 = 网页版）
     if (!window.XixiFileBridge || typeof window.XixiFileBridge.downloadAndInstall !== 'function') {
         showErrorMessage('网页版无需更新（请使用安装版）');
@@ -8485,6 +8545,45 @@ async function saveSyncConfigFromForm() {
 // 调用原生 WebDAV 桥；浏览器环境降级用 fetch（同源/支持CORS时可用）
 // ★2026-08-19 v1.1.0.2：新增异步桥回调序号
 var webdavCbSeq = 0;
+// ★2026-08-27 同步/网络错误中文化：把原生桥或 fetch 的英文错误翻译成直观中文
+// （用户反馈：Unable to resolve host "dav.jianguoyun.com" 这种看不懂 → 统一翻译）
+function friendlySyncError(text) {
+    var s = String(text || '').toLowerCase();
+    // 保留状态码信息（如 500/502）——数字展示无碍
+    var m = s.match(/status\s*code\s*(\d{3})/) || s.match(/(\d{3})\s*(?:error|failed)/);
+    var code = m ? m[1] : '';
+    if (s.indexOf('unable to resolve host') >= 0 || s.indexOf('unknownhost') >= 0
+        || s.indexOf('no address associated') >= 0 || s.indexOf('enotfound') >= 0
+        || s.indexOf('nodename nor servname') >= 0) {
+        return '找不到服务器地址，请检查网络连接和服务器地址是否正确';
+    }
+    if (s.indexOf('timeout') >= 0 || s.indexOf('timed out') >= 0
+        || s.indexOf('sockettimeout') >= 0 || s.indexOf('timeoutexception') >= 0) {
+        return '连接超时：服务器响应太慢，请检查网络后重试';
+    }
+    if (s.indexOf('refused') >= 0 || s.indexOf('econnrefused') >= 0
+        || s.indexOf('connection refused') >= 0 || s.indexOf('failed to connect') >= 0
+        || s.indexOf('connectexception') >= 0 || s.indexOf('unreachable') >= 0
+        || s.indexOf('connect failed') >= 0) {
+        return '无法连接服务器：请检查网络连接或服务器是否可用';
+    }
+    if (s.indexOf('ssl') >= 0 || s.indexOf('certificate') >= 0 || s.indexOf('sslhandshake') >= 0) {
+        return '安全连接失败：网络环境可能被拦截，请更换网络后重试';
+    }
+    if (s.indexOf('failed to fetch') >= 0 || s.indexOf('networkerror') >= 0
+        || s.indexOf('fetch failed') >= 0 || s.indexOf('net::') >= 0
+        || s.indexOf('network is unreachable') >= 0 || s.indexOf('no internet') >= 0) {
+        return '网络请求失败，请检查网络连接';
+    }
+    if (s.indexOf('404') >= 0 || s.indexOf('not found') >= 0) {
+        return '云端文件不存在，可能已被删除';
+    }
+    if (code) return '服务器错误（状态码 ' + code + '），请稍后重试';
+    if (s && s.length < 30) return text; // 已是短中文（如桥返回异常）或简短信息，原样
+    // 兜底：不展示看不懂的英文长错误
+    return '网络异常，请检查网络连接后重试';
+}
+
 async function webdavRequest(url, method, bodyBase64) {
     // ★2026-08-19 v1.1.0.2 优先异步桥：调用立即返回，原生后台请求后回调——UI 零阻塞，根治弱网卡死
     if (window.XixiFileBridge && typeof window.XixiFileBridge.webdavRequestAsync === 'function') {
@@ -8604,15 +8703,15 @@ async function uploadSyncBackup(silent) {
             setSyncStatus('认证失败，请检查账号和应用密码', 'error', 'error');
             showErrorMessage('认证失败，请检查账号和应用密码');
         } else {
-            const detail = result.error ? result.error : ('HTTP ' + result.status);
+            const detail = friendlySyncError(result.error ? result.error : ('HTTP ' + result.status));
             const bodyPreview = result.body ? base64ToUtf8(result.body).slice(0, 200) : '';
             setSyncStatus('上传失败：' + detail, 'error', 'error');
             showErrorMessage('上传失败：' + detail + (bodyPreview ? '（' + bodyPreview + '）' : ''));
             console.error('[Sync] 上传失败', url, result.status, bodyPreview);
         }
     } catch (e) {
-        setSyncStatus('上传失败：' + (e.message || e), 'error', 'error');
-        showErrorMessage('上传失败：' + (e.message || e));
+        setSyncStatus('上传失败：' + friendlySyncError(e.message || e), 'error', 'error');
+        showErrorMessage('上传失败：' + friendlySyncError(e.message || e));
     } finally {
         syncInProgress = false;
         setSyncBusy(false);
@@ -8776,13 +8875,13 @@ async function doRestoreFromCloud(fileName) {
             setSyncStatus('认证失败，请检查账号和应用密码', 'error', 'error');
             showErrorMessage('认证失败，请检查账号和应用密码');
         } else {
-            const msg = result.error ? result.error : ('状态码 ' + result.status);
+            const msg = friendlySyncError(result.error ? result.error : ('状态码 ' + result.status));
             setSyncStatus('下载失败：' + msg, 'error', 'error');
             showErrorMessage('下载失败：' + msg);
         }
     } catch (e) {
-        setSyncStatus('下载失败：' + (e.message || e), 'error', 'error');
-        showErrorMessage('下载失败：' + (e.message || e));
+        setSyncStatus('下载失败：' + friendlySyncError(e.message || e), 'error', 'error');
+        showErrorMessage('下载失败：' + friendlySyncError(e.message || e));
     } finally {
         syncInProgress = false;
         setSyncBusy(false);
@@ -8854,18 +8953,18 @@ async function mergeSyncBackup(silent) {
                 notifySyncFailure('自动同步失败：认证错误，请检查账号和应用密码');
             }
         } else if (!silent) {
-            const msg = result.error ? result.error : ('状态码 ' + result.status);
+            const msg = friendlySyncError(result.error ? result.error : ('状态码 ' + result.status));
             setSyncStatus('合并失败：' + msg, 'error', 'error');
             showErrorMessage('合并失败：' + msg);
         } else {
-            notifySyncFailure('自动同步失败：' + (result.error ? result.error : ('状态码 ' + result.status)));
+            notifySyncFailure('自动同步失败：' + friendlySyncError(result.error ? result.error : ('状态码 ' + result.status)));
         }
     } catch (e) {
         if (!silent) {
-            setSyncStatus('合并失败：' + (e.message || e), 'error', 'error');
-            showErrorMessage('合并失败：' + (e.message || e));
+            setSyncStatus('合并失败：' + friendlySyncError(e.message || e), 'error', 'error');
+            showErrorMessage('合并失败：' + friendlySyncError(e.message || e));
         } else {
-            notifySyncFailure('自动同步失败：' + (e.message || e));
+            notifySyncFailure('自动同步失败：' + friendlySyncError(e.message || e));
         }
     } finally {
         syncInProgress = false;
@@ -9287,8 +9386,8 @@ async function autoCheckSyncConnection(showTip) {
         const dirsResult = await ensureSyncParentDirs(url);
         if (!dirsResult.ok) {
             syncUiBusy = false;
-            setSyncStatus(dirsResult.detail, 'error', 'error');
-            if (showTip) showErrorMessage('连接失败：' + dirsResult.detail);
+            setSyncStatus(friendlySyncError(dirsResult.detail), 'error', 'error');
+            if (showTip) showErrorMessage('连接失败：' + friendlySyncError(dirsResult.detail));
             return;
         }
         // 目录存在：再试一次真实连通性（探测目录 GET 成功即代表认证+网络都通）
@@ -9298,8 +9397,8 @@ async function autoCheckSyncConnection(showTip) {
         if (showTip) showSuccessMessage('连接成功，可以同步');
     } catch (e) {
         syncUiBusy = false;
-        setSyncStatus('连接失败：' + (e.message || e), 'error', 'error');
-        if (showTip) showErrorMessage('连接失败：' + (e.message || e));
+        setSyncStatus('连接失败：' + friendlySyncError(e.message || e), 'error', 'error');
+        if (showTip) showErrorMessage('连接失败：' + friendlySyncError(e.message || e));
     }
 }
 
@@ -9973,7 +10072,12 @@ async function init() {
             initSystemThemeListener(); // ★跟随系统深色模式监听（v1.4.10.2）
             if (syncAuto && syncConfig.server && syncConfig.username) {
                 // ★2026-08-19 v1.1.0.1 根治启动卡死：0.8s→3s（等首屏稳定后再同步；原生同步桥超时已缩，双保险）
-                setTimeout(function () { mergeSyncBackup(true); }, 3000);
+                // ★2026-08-27 离线优化：断网启动直接跳过自动同步（避免必失败的请求 + 白弹错误提示），联网后下次数据变更再同步
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    /* 离线：跳过自动同步，静默等待恢复网络 */
+                } else {
+                    setTimeout(function () { mergeSyncBackup(true); }, 3000);
+                }
             }
         } catch (e) {
             console.error('Sync init error:', e);
