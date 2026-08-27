@@ -13,6 +13,8 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/AppTheme">
 
+        <!-- ★2026-08-27 输入法覆盖式弹出：adjustNothing 让键盘直接盖在软件内容上，软件不抬高不压缩不平移。
+             之前未声明，继承 Capacitor 主题的 adjustPan（stateUnspecified|adjustPan），键盘弹出时整个窗口被平移上推。 -->
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:name=".MainActivity"
@@ -20,7 +22,8 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:hardwareAccelerated="true"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustNothing">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
