@@ -4800,7 +4800,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.9</div>
+                        <div class="about-version">版本 1.1.5.10</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4847,6 +4847,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.5.10': '## v1.1.5.10 更新内容\n\n**搜索修复**\n- 修复中文输入法搜索失效（拼音中间态不再误搜，中文上屏即出结果）\n- 搜索结果列表避让输入法，结果直接可见\n\nMade by XiXi',
     'v1.1.5.9': '## v1.1.5.9 更新内容\n\n**修复**\n- 修复输入法弹出时搜索框被顶出屏幕的问题（物理像素换算）\n\nMade by XiXi',
     'v1.1.5.8': '## v1.1.5.8 更新内容\n\n**输入法优化**\n- 输入法改为覆盖式弹出，软件不再被整体抬高\n- 搜索框跟随键盘精确上移（原生监听键盘高度）\n\nMade by XiXi',
     'v1.1.5.7': '## v1.1.5.7 更新内容\n\n**修复**\n- 修复上个版本导致页面无法操作的严重问题（更新日志换行转义错误）\n\nMade by XiXi',
@@ -5244,7 +5245,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.9';
+var APP_VERSION = '1.1.5.10';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6052,7 +6053,19 @@ function initGlobalSearch() {
         requestAnimationFrame(function () { scrollTicking = false; pokeSearchBar(); });
     }, { passive: true });
 
+    input.addEventListener('compositionstart', function () { inputComposing = true; });
+    input.addEventListener('compositionend', function () {
+        // ★v1.1.5.10 中文上屏完成：强制同步搜索词并刷新（防部分输入法上屏不触发 input 导致列表错乱）
+        inputComposing = false;
+        searchQuery = input.value || '';
+        if (clear) clear.style.display = searchQuery ? 'inline-flex' : 'none';
+        clearTimeout(searchHideTimer);
+        setBarVisible(true);
+        if (currentTabId === 'records') { recordPage = 1; renderTable(); }
+        else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
+    });
     input.addEventListener('input', function () {
+        if (inputComposing) return; // ★v1.1.5.10 拼音中间态跳过（value=拼音字母，刷新列表会变"搜不到"）
         searchQuery = input.value || '';
         if (clear) clear.style.display = searchQuery ? 'inline-flex' : 'none';
         clearTimeout(searchHideTimer); // ★2026-08-27 打字时取消自动消失计时器（防输入中框消失）
@@ -6066,6 +6079,18 @@ function initGlobalSearch() {
     //   网页版：visualViewport 动态计算。两者互斥，原生优先。
     var hasNativeIme = !!(window.Capacitor && window.Capacitor.isNativePlatform
         && window.Capacitor.isNativePlatform());
+    // ★v1.1.5.10 输入法协作：拼音中间态标记 + 键盘弹出时搜索框上移 + 结果列表底部避让
+    //   （列表容器加 padding-bottom 让内容可滚动到键盘上方，搜索结果不被键盘挡住）
+    let inputComposing = false;
+    const containerEl = document.querySelector('.container');
+    function applySearchOffset(hCss) { // hCss: 如 '45vh' 或 '500px'
+        bar.style.bottom = 'calc(' + hCss + ' + env(safe-area-inset-bottom, 0px))';
+        if (containerEl) containerEl.style.paddingBottom = 'calc(' + hCss + ' + 110px)';
+    }
+    function clearSearchOffset() {
+        bar.style.bottom = '';
+        if (containerEl) containerEl.style.paddingBottom = '';
+    }
     window.__onImeHeight = function (px) {
         hasNativeIme = true;
         if (px > 50) { // 键盘弹出：紧贴键盘上方 + 12px
@@ -6074,9 +6099,9 @@ function initGlobalSearch() {
             var h = Math.round(px / (window.devicePixelRatio || 1));
             var maxH = Math.round((window.innerHeight || 800) * 0.6); // 保险：不超屏幕 60%（防个别 ROM 报值异常）
             if (h > maxH) h = maxH;
-            bar.style.bottom = 'calc(' + (h + 12) + 'px + env(safe-area-inset-bottom, 0px))';
+            applySearchOffset(h + 'px');
         } else { // 键盘收起（含按返回键关键盘）：平滑滑回默认位置（CSS 120px）
-            bar.style.bottom = '';
+            clearSearchOffset();
         }
     };
     function applyKeyboardOffset() {
@@ -6084,12 +6109,12 @@ function initGlobalSearch() {
         if (window.visualViewport) {
             const kbH = (window.innerHeight || 0) - (window.visualViewport.height || 0);
             if (kbH > 50) { // 键盘弹出（网页版）：紧贴键盘上方 + 12px
-                bar.style.bottom = 'calc(' + (kbH + 12) + 'px + env(safe-area-inset-bottom, 0px))';
+                applySearchOffset(kbH + 'px');
                 return;
             }
         }
         // 键盘收起/未检测到：清内联 bottom → 平滑滑回默认位置（CSS 120px）
-        bar.style.bottom = '';
+        clearSearchOffset();
     }
     if (window.visualViewport) {
         // ★2026-08-27 resize/scroll 都直接处理（不要求聚焦）：键盘弹起跟随、收起回位——按返回键关键盘也能恢复
@@ -6100,12 +6125,12 @@ function initGlobalSearch() {
         clearTimeout(searchHideTimer); // ★2026-08-27 聚焦时取消自动消失计时器（防输入中框消失）
         setBarVisible(true);
         // ★2026-08-27 v1.1.5.9 兜底：先上移到 45vh（任何键盘都在其上方），等原生桥精确值覆盖（防桥回调前被键盘盖住）
-        bar.style.bottom = 'calc(45vh + 16px)';
+        applySearchOffset('45vh');
         setTimeout(applyKeyboardOffset, 300); // 等键盘稳定后再精确跟随（网页版；App 内由原生桥接管）
     });
     input.addEventListener('blur', function () {
         setTimeout(function () {
-            bar.style.bottom = '';
+            clearSearchOffset();
         }, 200);
     });
     if (clear) clear.addEventListener('click', function () {
