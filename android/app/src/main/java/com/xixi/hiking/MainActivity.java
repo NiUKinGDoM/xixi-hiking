@@ -41,6 +41,9 @@ public class MainActivity extends BridgeActivity {
     private static final String TAG = "XiXiHiking";
     private static final String CRASH_LOG_NAME = "xixi_crash.log";
 
+    // ★2026-08-27 键盘高度桥：记录上次通知 JS 的 IME 高度，避免键盘无变化时重复刷 JS
+    private int lastImeHeight = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // 安装并立即关闭系统 SplashScreen（Android 12+ 强制 splash，不安装就关不掉）
@@ -136,6 +139,9 @@ public class MainActivity extends BridgeActivity {
 
         // ★2026-08-27 返回键防误退 + 关弹窗（OnBackPressedCallback 官方通道）
         setupBackHandler();
+
+        // ★2026-08-27 键盘覆盖式弹出（adjustNothing）+ 搜索框精确跟随：原生监听 IME insets 实时通知 JS
+        setupImeListener();
 
         // 立即尝试设置下载监听和 JS 桥（WebView 可能已可用）
         if (bridge != null && bridge.getWebView() != null) {
@@ -700,6 +706,50 @@ public class MainActivity extends BridgeActivity {
     // ★2026-08-27 加固：override onBackPressed 可能被 OnBackPressedDispatcher 抢占，
     // 改用官方 getOnBackPressedDispatcher().addCallback（AppCompatActivity 标准通道，100% 生效）
     private long lastBackPressTime = 0;
+
+    // ★2026-08-27 键盘覆盖式弹出（adjustNothing）+ 搜索框精确跟随：
+    //   adjustNothing 下 WebView 视觉视口不更新，JS 测不到键盘高度 → 原生监听 IME insets，
+    //   键盘弹出/收起时把真实高度桥给页面（window.__onImeHeight(px)），px=0 表示收起
+    private void setupImeListener() {
+        try {
+            // 确保窗口不消费系统栏 inset（WebView 全屏 + CSS safe-area 避让的现状），仅监听 IME
+            androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+            final View decor = getWindow().getDecorView();
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(decor,
+                    new androidx.core.view.OnApplyWindowInsetsListener() {
+                        @Override
+                        public androidx.core.view.WindowInsetsCompat onApplyWindowInsets(View v,
+                                androidx.core.view.WindowInsetsCompat insets) {
+                            int imeBottom = insets.getInsets(
+                                    androidx.core.view.WindowInsetsCompat.Type.ime()).bottom;
+                            if (imeBottom != lastImeHeight) {
+                                lastImeHeight = imeBottom;
+                                notifyJsImeHeight(imeBottom);
+                            }
+                            return insets; // 不消费，仅监听
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "ime listener setup failed", e);
+        }
+    }
+
+    private void notifyJsImeHeight(final int height) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    android.webkit.WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+                    if (wv == null) return;
+                    wv.evaluateJavascript(
+                            "try{window.__onImeHeight&&window.__onImeHeight(" + height + ");}catch(e){}",
+                            null);
+                } catch (Exception e) {
+                    Log.e(TAG, "notifyJsImeHeight failed", e);
+                }
+            }
+        });
+    }
 
     private void setupBackHandler() {
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
