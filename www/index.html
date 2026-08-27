@@ -1684,6 +1684,74 @@
             background: transparent;
         }
         
+        /* ★2026-08-27 记录/计划搜索（方案A：顶部隐藏，往下滚动滑出，滚回顶部收起；有搜索词时常显）
+           玻璃配方：半透明底 + blur + 细白边 + 双层浮动阴影；禁止光泽带/折射/角部光斑 */
+        .global-search-bar {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            z-index: 45;
+            padding: 6px 16px;
+            transform: translateY(-140%);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.28s ease;
+        }
+        .global-search-bar.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .global-search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(8px) saturate(150%);
+            -webkit-backdrop-filter: blur(8px) saturate(150%);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 12px;
+            padding: 9px 12px;
+            color: #1f2937;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.08);
+        }
+        .global-search-box input {
+            flex: 1;
+            min-width: 0;
+            background: none;
+            border: none;
+            outline: none;
+            color: inherit;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .global-search-box input::placeholder {
+            color: rgba(31, 41, 55, 0.45);
+        }
+        .global-search-clear {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            opacity: 0.75;
+            flex-shrink: 0;
+        }
+        .global-search-clear:hover { opacity: 1; }
+        body.dark-mode .global-search-box {
+            background: rgba(30, 41, 59, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #e2e8f0;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        body.dark-mode .global-search-box input::placeholder {
+            color: rgba(226, 232, 240, 0.45);
+        }
+        
         @media (max-width: 640px) {
             .container {
                 padding: 6px;
@@ -4207,6 +4275,17 @@
                 </div>
             </div>
             
+            <!-- ★2026-08-27 记录/计划搜索框（方案A：默认隐藏，往下滚动滑出；有搜索词时常显） -->
+            <div id="globalSearchBar" class="global-search-bar" data-testid="global-search-bar">
+                <div class="global-search-box">
+                    <span class="material-icons" style="font-size:20px;flex-shrink:0;opacity:0.7;">search</span>
+                    <input id="globalSearchInput" type="text" placeholder="搜索记录…" autocomplete="off" enterkeyhint="search" data-testid="global-search-input" />
+                    <button id="globalSearchClear" class="global-search-clear" title="清除搜索" style="display:none;">
+                        <span class="material-icons" style="font-size:18px;">close</span>
+                    </button>
+                </div>
+            </div>
+            
             <div id="tab-overview" class="tab-page">
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors" data-testid="stats-title">
@@ -4218,7 +4297,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-blue-300 font-medium">总记录数</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="totalCount">10</p>
+                                <p class="text-2xl font-bold text-white" id="totalCount">10</p>
                             </div>
                             <span class="material-icons text-blue-300 text-3xl icon-pulse">hiking</span>
                         </div>
@@ -4227,7 +4306,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-green-300 font-medium">平均海拔</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="avgElevation">2223m</p>
+                                <p class="text-2xl font-bold text-white" id="avgElevation">2223m</p>
                             </div>
                             <span class="material-icons text-green-300 text-3xl icon-pulse">height</span>
                         </div>
@@ -4236,7 +4315,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-orange-300 font-medium">最高海拔</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="maxElevation">4506m</p>
+                                <p class="text-2xl font-bold text-white" id="maxElevation">4506m</p>
                             </div>
                             <span class="material-icons text-orange-300 text-3xl icon-pulse">terrain</span>
                         </div>
@@ -4245,7 +4324,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-purple-300 font-medium">总爬升</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="totalClimbCard">0m</p>
+                                <p class="text-2xl font-bold text-white" id="totalClimbCard">0m</p>
                             </div>
                             <span class="material-icons text-purple-300 text-3xl icon-pulse">trending_up</span>
                         </div>
@@ -4255,7 +4334,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-teal-300 font-medium">总里程</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="totalDistance">0 km</p>
+                                <p class="text-2xl font-bold text-white" id="totalDistance">0 km</p>
                             </div>
                             <span class="material-icons text-teal-300 text-3xl icon-pulse">route</span>
                         </div>
@@ -4264,7 +4343,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-rose-300 font-medium">总用时</p>
-                                <p class="text-2xl font-bold text-white number-scroll" id="totalDuration">0h</p>
+                                <p class="text-2xl font-bold text-white" id="totalDuration">0h</p>
                             </div>
                             <span class="material-icons text-rose-300 text-3xl icon-pulse">schedule</span>
                         </div>
@@ -4712,7 +4791,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.3</div>
+                        <div class="about-version">版本 1.1.5.4</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4759,6 +4838,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.5.4': '## v1.1.5.4 更新内容\n\n**新功能**\n- 记录/计划搜索：列表往下滚动时顶部滑出搜索框，按名称实时过滤（找到去年去过的那座山）\n\n**性能**\n- 列表照片缩略图缓存：编辑/翻页秒显不闪烁\n- 统计数字滚动动画防抖：数值没变不再重复播放\n\nMade by XiXi',
     'v1.1.5.3': '## v1.1.5.3 更新内容\n\n**修复**\n- 导出诊断数据功能修复（此前点击报错）\n\n**体验**\n- 错误提示全部中文化：网络/同步/代码错误都显示具体原因（不再英文报错）\n- 离线优化：断网启动跳过自动同步、断网点检查更新直接提示\n- 关于页去掉 Made by XiXi 后的爱心\n\nMade by XiXi',
     'v1.1.5.2': '## v1.1.5.2 更新内容\n\n**优化**\n- 弹窗关闭取消淡出动画，全部直接关闭（与确认弹窗一致，更干脆）\n\nMade by XiXi 💛',
     'v1.1.5.1': '## v1.1.5.1 更新内容\n\n**修复**\n- 导入/导出弹窗按返回键可直接关闭（此前只有确认弹窗/灯箱支持）\n\nMade by XiXi 💛',
@@ -4907,6 +4987,8 @@ let plannedPage = 1; // 计划列表分页（同每页 10 条）
 const RECORD_PAGE_SIZE = 10;
 let currentPageRecords = [];
 let currentPagePlannedTrips = [];
+// ★2026-08-27 记录/计划搜索（方案A：滚动显示搜索框，按名称实时过滤）
+let searchQuery = '';
 // ★2026-08-27 列表行入场动画只播首次（刷新/编辑/翻页不再整页重播动画，消灭闪烁感）
 let recordsRowsAnimated = false;
 let plannedRowsAnimated = false;
@@ -5145,7 +5227,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.3';
+var APP_VERSION = '1.1.5.4';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -5884,11 +5966,19 @@ function formatDateTimeLocal(isoString) {
 }
 
 function getSortedRecords() {
+    // ★2026-08-27 搜索过滤：记录页有搜索词时按名称匹配（方案A，找"去年去过的那座山"）
+    var src = records;
+    if (typeof searchQuery === 'string' && searchQuery.trim() && currentTabId === 'records') {
+        var q = searchQuery.trim().toLowerCase();
+        src = records.filter(function (r) {
+            return (r.name || '').toLowerCase().indexOf(q) >= 0;
+        });
+    }
     if (!currentSort.field) {
-        return records;
+        return src;
     }
     
-    const sortedRecords = [...records].sort((a, b) => {
+    const sortedRecords = [...src].sort((a, b) => {
         let aValue = a[currentSort.field];
         let bValue = b[currentSort.field];
         
@@ -5915,6 +6005,58 @@ function getSortedRecords() {
 
 let renderTableRAF = null;
 
+// ★2026-08-27 记录/计划搜索（方案A：默认隐藏，往下滚动滑出/滚回顶部收起；有搜索词时常显；输入实时按名称过滤）
+function initGlobalSearch() {
+    const bar = safeGetElementById('globalSearchBar');
+    const input = safeGetElementById('globalSearchInput');
+    const clear = safeGetElementById('globalSearchClear');
+    if (!bar || !input) return;
+
+    function setBarVisible(show) {
+        if (show) bar.classList.add('show');
+        else bar.classList.remove('show');
+    }
+    // 显示规则：仅记录/计划页有效；有搜索词常显；无词时滚动 >120 显示、<40 隐藏
+    function refreshBar() {
+        if (currentTabId !== 'records' && currentTabId !== 'plans') { setBarVisible(false); return; }
+        if (searchQuery && searchQuery.trim()) { setBarVisible(true); return; }
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        if (y > 120) setBarVisible(true);
+        else if (y < 40) setBarVisible(false);
+    }
+    // 滚动监听（rAF 节流，passive 不阻塞滚动）
+    let scrollTicking = false;
+    window.addEventListener('scroll', function () {
+        if (scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(function () { scrollTicking = false; refreshBar(); });
+    }, { passive: true });
+
+    input.addEventListener('input', function () {
+        searchQuery = input.value || '';
+        if (clear) clear.style.display = searchQuery ? 'inline-flex' : 'none';
+        setBarVisible(true); // 输入时常显
+        if (currentTabId === 'records') { recordPage = 1; renderTable(); }
+        else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
+    });
+    if (clear) clear.addEventListener('click', function () {
+        searchQuery = '';
+        input.value = '';
+        clear.style.display = 'none';
+        refreshBar();
+        if (currentTabId === 'records') { recordPage = 1; renderTable(); }
+        else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
+    });
+    // 搜索框内回车/失焦不收起（保持简单）；供 switchTab 切页时清空
+    window.__clearGlobalSearch = function () {
+        searchQuery = '';
+        if (input) input.value = '';
+        if (clear) clear.style.display = 'none';
+        setBarVisible(false);
+    };
+    setBarVisible(false);
+}
+
 function renderTable() {
     if (renderTableRAF) {
         cancelAnimationFrame(renderTableRAF);
@@ -5933,7 +6075,12 @@ function renderTable() {
         
         if (sortedRecords.length === 0) {
             if (tbody) safeSetElementContent('recordsTable', '');
-            if (emptyState) safeSetElementStyle('emptyState', 'display', 'block');
+            if (emptyState) {
+                safeSetElementStyle('emptyState', 'display', 'block');
+                // ★2026-08-27 搜索无结果时区分提示（vs 本来就没记录）
+                const t = emptyState.querySelector('p');
+                if (t) t.textContent = (searchQuery && searchQuery.trim()) ? '没有找到匹配的记录，换个词试试' : '暂无徒步记录，点击上方按钮添加';
+            }
             const emptyPager = safeGetElementById('recordsPager');
             if (emptyPager) safeSetElementStyle('recordsPager', 'display', 'none');
             currentPageRecords = [];
@@ -6300,6 +6447,7 @@ function deleteBatchSelected() {
         batchMode = false;
         updateStatistics();
         saveToStorage();
+        thumbCacheClear(); // ★2026-08-27 批量删记录照片：缩略图缓存全清
         renderTable();
         updateBatchBar();
         showSuccessMessage('已删除 ' + ids.length + ' 条记录');
@@ -6419,6 +6567,30 @@ function photoThumbsHTML(ids, recordId) {
     return html;
 }
 // 异步填充缩略图（从 IndexedDB 取 blob → objectURL）
+// ★2026-08-27 列表照片缩略图内存缓存（pid → blob URL）：编辑保存/翻页不再重复读 IndexedDB，秒显不闪烁
+// LRU 上限 300 条防内存膨胀；照片变更（保存/删除/导入恢复）时全清
+var thumbCache = {};
+var thumbCacheOrder = [];
+var THUMB_CACHE_MAX = 300;
+function thumbCachePut(pid, url) {
+    if (thumbCache[pid]) return;
+    thumbCache[pid] = url;
+    thumbCacheOrder.push(pid);
+    if (thumbCacheOrder.length > THUMB_CACHE_MAX) {
+        var oldPid = thumbCacheOrder.shift();
+        if (oldPid && thumbCache[oldPid]) {
+            try { URL.revokeObjectURL(thumbCache[oldPid]); } catch (e) { /* 忽略 */ }
+            delete thumbCache[oldPid];
+        }
+    }
+}
+function thumbCacheClear() {
+    Object.keys(thumbCache).forEach(function (pid) {
+        try { URL.revokeObjectURL(thumbCache[pid]); } catch (e) { /* 忽略 */ }
+    });
+    thumbCache = {};
+    thumbCacheOrder = [];
+}
 function loadPhotoThumbs(recordId) {
     var imgs = document.querySelectorAll('img[data-record="' + recordId + '"]');
     if (!imgs.length) return;
@@ -6426,10 +6598,12 @@ function loadPhotoThumbs(recordId) {
         var pid = img.getAttribute('data-pid');
         if (!pid || img._photoLoaded) return;
         img._photoLoaded = true;
+        // 命中缓存：直接用（blob URL 由 LRU 统一回收，不复用不 revoke）
+        if (thumbCache[pid]) { img.src = thumbCache[pid]; return; }
         photoGet(pid).then(function (p) {
             if (p && p.blob) {
                 var url = URL.createObjectURL(p.blob);
-                img.onload = function () { URL.revokeObjectURL(url); };
+                thumbCachePut(pid, url);
                 img.src = url;
             }
         }).catch(function () {});
@@ -6744,6 +6918,7 @@ function saveRecord(id) {
     editingId = null;
     updateStatistics();
     saveToStorage();
+    thumbCacheClear(); // ★2026-08-27 照片可能增删：缩略图缓存全清，下次渲染重新读
     renderTable();
     triggerHaptic(15); // ★2026-08-27 渐进增强：保存成功轻震动反馈
 }
@@ -6955,6 +7130,7 @@ function deleteRecord(id) {
     if (recToDelete && recToDelete.photos && recToDelete.photos.length) {
         photoDeleteMany(recToDelete.photos).catch(function () {});
     }
+    thumbCacheClear(); // ★2026-08-27 照片删除：缩略图缓存全清
     const row = document.getElementById('row-' + id);
     if (row) {
         row.classList.add('row-exit');
@@ -7370,7 +7546,15 @@ function showHeatmapDayDetail(year, month, day) {
 // ==================== 计划徒步行功能 ====================
 
 function getSortedPlannedTrips() {
-    const sortedTrips = [...plannedTrips];
+    // ★2026-08-27 搜索过滤：计划页有搜索词时按名称匹配（与记录页方案A一致）
+    var src = plannedTrips;
+    if (typeof searchQuery === 'string' && searchQuery.trim() && currentTabId === 'plans') {
+        var q = searchQuery.trim().toLowerCase();
+        src = plannedTrips.filter(function (t) {
+            return (t.name || '').toLowerCase().indexOf(q) >= 0;
+        });
+    }
+    const sortedTrips = [...src];
     
     if (plannedCurrentSort.field) {
         sortedTrips.sort((a, b) => {
@@ -7458,7 +7642,12 @@ function renderPlannedTripsTable() {
         
         if (sortedTrips.length === 0) {
             if (tbody) safeSetElementContent('plannedTripsTable', '');
-            if (emptyState) safeSetElementStyle('plannedEmptyState', 'display', 'block');
+            if (emptyState) {
+                safeSetElementStyle('plannedEmptyState', 'display', 'block');
+                // ★2026-08-27 搜索无结果时区分提示
+                const t = emptyState.querySelector('p');
+                if (t) t.textContent = (searchQuery && searchQuery.trim()) ? '没有找到匹配的计划，换个词试试' : '暂无计划徒步行，点击上方按钮添加';
+            }
             const emptyPager = safeGetElementById('plannedPager');
             if (emptyPager) safeSetElementStyle('plannedPager', 'display', 'none');
             currentPagePlannedTrips = [];
@@ -9913,6 +10102,7 @@ async function importFullBackupPayload(payload) {
 
         await saveToStorage();
         await savePlannedTripsToStorage();
+        thumbCacheClear(); // ★2026-08-27 导入恢复：照片全变，缩略图缓存全清
         updateStatistics();
         renderTable();
         renderPlannedTripsTable();
@@ -10064,6 +10254,7 @@ async function init() {
         
         setupEventListeners();
         updateSortIcons();
+        initGlobalSearch(); // ★2026-08-27 记录/计划搜索（方案A 滚动显示）
         
         // WebDAV 同步：配置已由 loadSyncState 并行加载，这里绑定事件 + 若开启自动同步则静默合并
         try {
@@ -10357,6 +10548,8 @@ function setupEventListeners() {
         // ★2026-08-27 批量模式切页自动退出（防忘了退出带着批量状态误点）
         if (batchMode) exitBatchMode();
         if (plannedBatchMode) exitPlannedBatchMode();
+        // ★2026-08-27 切页时清空搜索（搜索框收起，下次进页重新滚动呼出）
+        if (window.__clearGlobalSearch) window.__clearGlobalSearch();
         document.querySelectorAll('.tab-page').forEach(function (p) {
             p.style.display = 'none';
         });
