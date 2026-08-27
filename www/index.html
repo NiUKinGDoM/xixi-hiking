@@ -4800,7 +4800,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.8</div>
+                        <div class="about-version">版本 1.1.5.9</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4847,6 +4847,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.5.9': '## v1.1.5.9 更新内容\n\n**修复**\n- 修复输入法弹出时搜索框被顶出屏幕的问题（物理像素换算）\n\nMade by XiXi',
     'v1.1.5.8': '## v1.1.5.8 更新内容\n\n**输入法优化**\n- 输入法改为覆盖式弹出，软件不再被整体抬高\n- 搜索框跟随键盘精确上移（原生监听键盘高度）\n\nMade by XiXi',
     'v1.1.5.7': '## v1.1.5.7 更新内容\n\n**修复**\n- 修复上个版本导致页面无法操作的严重问题（更新日志换行转义错误）\n\nMade by XiXi',
 
@@ -5243,7 +5244,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.8';
+var APP_VERSION = '1.1.5.9';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6067,8 +6068,13 @@ function initGlobalSearch() {
         && window.Capacitor.isNativePlatform());
     window.__onImeHeight = function (px) {
         hasNativeIme = true;
-        if (px > 50) { // 键盘弹出：紧贴键盘上方 + 12px（原生桥真实高度）
-            bar.style.bottom = 'calc(' + (px + 12) + 'px + env(safe-area-inset-bottom, 0px))';
+        if (px > 50) { // 键盘弹出：紧贴键盘上方 + 12px
+            // ★2026-08-27 v1.1.5.9 修复：原生 insets 是物理像素，CSS bottom 是逻辑像素，
+            //   DPR>1 必须 ÷devicePixelRatio，否则搜索框被顶出屏幕（DPR3 时 3 倍偏差直接飞不见）
+            var h = Math.round(px / (window.devicePixelRatio || 1));
+            var maxH = Math.round((window.innerHeight || 800) * 0.6); // 保险：不超屏幕 60%（防个别 ROM 报值异常）
+            if (h > maxH) h = maxH;
+            bar.style.bottom = 'calc(' + (h + 12) + 'px + env(safe-area-inset-bottom, 0px))';
         } else { // 键盘收起（含按返回键关键盘）：平滑滑回默认位置（CSS 120px）
             bar.style.bottom = '';
         }
@@ -6093,6 +6099,8 @@ function initGlobalSearch() {
     input.addEventListener('focus', function () {
         clearTimeout(searchHideTimer); // ★2026-08-27 聚焦时取消自动消失计时器（防输入中框消失）
         setBarVisible(true);
+        // ★2026-08-27 v1.1.5.9 兜底：先上移到 45vh（任何键盘都在其上方），等原生桥精确值覆盖（防桥回调前被键盘盖住）
+        bar.style.bottom = 'calc(45vh + 16px)';
         setTimeout(applyKeyboardOffset, 300); // 等键盘稳定后再精确跟随（网页版；App 内由原生桥接管）
     });
     input.addEventListener('blur', function () {
