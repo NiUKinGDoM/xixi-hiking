@@ -2928,6 +2928,14 @@
         .btn-click-effect, .edit-input, .sort-header, .sort-header-planned {
             font-weight: 600;
         }
+        /* ★2026-08-28 五项优化③：系统开启"减少动态效果"时瞬间完成动画/过渡（可及性+省电；默认用户完全无感，动效全保留） */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
 
         /* ========== 添加按钮 ========== */
         /* ★2026-08-25 添加按钮统一新版玻璃配方：删除旧灰调渐变覆盖层，回落 .glass-btn（与导入/导出/上传下载一致） */
@@ -4794,7 +4802,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.6.4</div>
+                        <div class="about-version">版本 1.1.6.5</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4841,6 +4849,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.6.5': '## v1.1.6.5 更新内容\n\n**五项优化**\n- 启动瘦身：删除启动时多余的重复渲染\n- 安全加固：记录/计划名等注入面全部转义\n- 系统开启减少动态效果时动画自动降级\n\nMade by XiXi',
     'v1.1.6.4': '## v1.1.6.4 更新内容\n\n**搜索修复**\n- 彻底修复搜索不实时出结果（轮询检测输入内容）\n\nMade by XiXi',
     'v1.1.6.3': '## v1.1.6.3 更新内容\n\n**搜索修复**\n- 修复打开软件后第一次搜索不实时出结果的问题\n\nMade by XiXi',
     'v1.1.6.2': '## v1.1.6.2 更新内容\n\n**计划页搜索优化**\n- 搜索框提示文字按页切换（搜索记录/搜索计划）\n- 切到记录/计划页自动显示搜索框\n- 搜索时显示匹配数量\n\nMade by XiXi',
@@ -5244,7 +5253,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.6.4';
+var APP_VERSION = '1.1.6.5';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6272,7 +6281,7 @@ function renderTable() {
                         <div class="input-with-search">
                             <input type="text" 
                                    id="edit-name-${record.id}" 
-                                   value="${record.name}" 
+                                   value="${escapeHtml(record.name)}" 
                                    data-testid="edit-name-${record.id}"
                                    class="edit-input input-glow"
                                    placeholder="输入名称"
@@ -6371,7 +6380,7 @@ function renderTable() {
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
                         <span class="inline-flex items-center gap-1.5">
                             ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
-                            ${record.name}
+                            ${escapeHtml(record.name)}
                             ${record.weather ? '<span class="text-base" title="天气">' + record.weather + '</span>' : ''}
                             <!-- ★2026-08-25 名称后照片按钮：新版玻璃配方图标按钮（.icon-glass-btn）；查看模式只读（保存+左右翻页） -->
                             ${record.photos && record.photos.length ? '<button id="photos-btn-' + record.id + '" data-testid="photos-button-' + record.id + '" class="ripple-effect btn-click-effect icon-glass-btn" style="width:30px;height:30px;padding:0;border-radius:8px;flex-shrink:0;" title="查看照片"><span class="material-icons" style="font-size:16px;line-height:1;">photo_library</span></button>' : ''}
@@ -7655,7 +7664,7 @@ function showHeatmapDayDetail(year, month, day) {
               }).join('') + '</div>'
             : '';
         return '<div style="padding:10px 0;font-size:14px;">' +
-            '<div class="hm-meta-item" style="font-size:17px;font-weight:700;">🏔️ ' + r.name + (r.elevation ? ' · ' + r.elevation + 'm' : '') + '</div>' +
+            '<div class="hm-meta-item" style="font-size:17px;font-weight:700;">🏔️ ' + escapeHtml(r.name) + (r.elevation ? ' · ' + r.elevation + 'm' : '') + '</div>' +
             statRow +
             durRow +
             metaRow +
@@ -7847,7 +7856,7 @@ function renderPlannedTripsTable() {
                             <div class="input-with-search">
                                 <input type="text" 
                                        id="edit-planned-name-${trip.id}" 
-                                       value="${trip.name}" 
+                                       value="${escapeHtml(trip.name)}" 
                                        data-testid="edit-planned-name-${trip.id}"
                                        class="edit-input input-glow"
                                        placeholder="输入名称"
@@ -7913,7 +7922,7 @@ function renderPlannedTripsTable() {
                     <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle}">
                         <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
                             ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
-                            ${trip.name}
+                            ${escapeHtml(trip.name)}
                         </td>
                         <td class="p-2 text-white/80 text-base font-medium" data-label="海拔">
                             ${trip.elevation}
@@ -8577,7 +8586,8 @@ function parseTagVersion(tag) {
     return String(tag || '').replace(/^v/i, '').trim();
 }
 function escapeHtml(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // ★2026-08-28 安全加固：补引号转义（防记录名/计划名/云端文件名含 " ' 时属性注入）
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 let updaterBusy = false;
@@ -9147,7 +9157,7 @@ function showRestoreFileModal(files) {
     modal.className = 'confirm-modal modal-backdrop-animate';
     // 最多显示 6 条，更多滚动
     const listHtml = files.map((f, i) => `
-        <button class="restore-file-item" data-name="${f.name}" style="border-radius: 12px;">
+        <button class="restore-file-item" data-name="${escapeHtml(f.name)}" style="border-radius: 12px;">
             <span class="material-icons" style="color: #4f46e5;">description</span>
             <span class="restore-file-info">
                 <span class="restore-file-label">${formatSyncFileLabel(f.name)}</span>
@@ -9900,7 +9910,7 @@ function showManageBackupsModal(files) {
                 <span class="restore-file-label">${formatSyncFileLabel(f.name)}</span>
                 <span class="restore-file-desc">云端备份 · 第 ${i + 1} 个</span>
             </span>
-            <button class="manage-delete-btn" data-name="${f.name}" title="删除此备份" style="border: none; background: none; cursor: pointer; padding: 6px;">
+            <button class="manage-delete-btn" data-name="${escapeHtml(f.name)}" title="删除此备份" style="border: none; background: none; cursor: pointer; padding: 6px;">
                 <span class="material-icons" style="color: #ef4444; font-size: 20px;">delete</span>
             </button>
         </div>
@@ -10284,7 +10294,9 @@ async function init() {
     const startTime = performance.now();
 
     try {
-        renderTable();
+        // ★2026-08-28 底层优化：启动不再预渲染记录表——此时数据未加载（records=空），
+        //   渲染空表 + 空数据统计纯属浪费（且与数据加载后的 updateStatistics 重复执行两次）；
+        //   启动默认在概览页，记录/计划表由 switchTab 懒渲染兜底（v1.1.1.5 机制）
         
         const [storageData, darkModeData, themeModeData, titleData, statsTitleData, recordsTitleData, plannedTitleData, settingsTitleData, heatmapTitleData, fpsData, hapticData] = await Promise.allSettled([
             AppStore.getItem(STORAGE_KEY),
@@ -10409,6 +10421,12 @@ async function init() {
             loadPlannedTripsFromStorage(),
             loadSyncState().catch(function () { /* 同步初始化失败不阻塞启动 */ })
         ]);
+        // ★2026-08-28 底层优化：数据全部就绪后，仅当用户已在记录/计划页（数据未加载完就切页的边界）才补渲染；
+        //   正常启动停在概览页，表格继续由 switchTab 懒渲染兜底，零额外开销
+        try {
+            if (currentTabId === 'records' && typeof renderTable === 'function') renderTable();
+            else if (currentTabId === 'plans' && typeof renderPlannedTripsTable === 'function') renderPlannedTripsTable();
+        } catch (e) { /* 补渲染失败不影响启动 */ }
         // ★2026-08-25 计划日期提醒（今天有/已过期未完成）：延迟 1s 显示、toast 停留 2s
         setTimeout(checkPlannedTripReminders, 1000);
         
