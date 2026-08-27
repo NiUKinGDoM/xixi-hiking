@@ -47,7 +47,8 @@ hiking-app3/
 │       ├── proguard-rules.pro    # R8 规则（★JS 桥类名禁 allowobfuscation）
 │       └── build.gradle          # 版本号（用 bump.js 改，勿手改）
 ├── bump.js                  # 版本号递增脚本（一条命令四处同步）
-└── test.js                  # 自动测试（改完必跑：语法/关键函数/死代码/结构/版本）
+├── test.js                  # 自动测试①（改完必跑：语法/关键函数/死代码/结构/版本/数据层 60 项）
+└── test-ui.js               # 自动测试②（jsdom UI 渲染测试 20 项：记录/计划渲染搜索分页徽标空态/键盘跟随/批量/转义）
 ```
 
 ## 开发流程
@@ -56,6 +57,8 @@ hiking-app3/
 # 1. 改 www/index.html
 # 2. 自动测试（语法 + 关键函数 + 死代码残留 + HTML 结构 + 版本同步 + 数据层逻辑）
 node test.js
+# 2b. UI 层测试（jsdom 渲染真实 DOM，发布前必跑；依赖隔离 workspace 的 jsdom，绝对路径 require）
+node test-ui.js
 # 3. 版本号递增（vc+1 + 版本名自动进位 + 四处同步 + 校验）
 node bump.js
 # 4. 同步到 assets
