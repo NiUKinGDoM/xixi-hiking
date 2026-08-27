@@ -1,13 +1,13 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-08-27（v1.1.5.3 / vc179）
+> 最后更新：2026-08-27（v1.1.5.4 / vc180）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 单页应用，`www/index.html` 单文件 ~416KB 全逻辑 + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-08-27）
-- **正式版 v1.1.5.3**（versionCode 179，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.5.4**（versionCode 180，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - 测试版 `hiking-app3-test/`（v1.4.test-11）——**已暂停勿主动碰**
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
@@ -94,7 +94,7 @@
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
 
-## 近期版本要点（v1.1.0.7 ~ v1.1.5.3）
+## 近期版本要点（v1.1.0.7 ~ v1.1.5.4）
 - v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
 - v1.1.1.6（vc138）：导出诊断 + 备份瘦身（完整/纯数据）+ 同步失败提醒 + 云端自动清理（留2份）+ 字段增强（心情/天气/同行人）+ 数据层单测 + 分享卡 v1 + 月度统计
@@ -134,6 +134,7 @@
 - v1.1.5.1（vc177）：**导入/导出弹窗按返回键可直接关闭（选择器扩到 modal-backdrop-animate，取消按钮优先走淡出清理）**（详见 Release）
 - v1.1.5.2（vc178）：**弹窗关闭取消淡出动画，全部直接关闭（含返回键统一 remove，删 modal-closing 死代码）**（详见 Release）
 - v1.1.5.3（vc179）：**导出诊断修复（AppStore.getItem 同步误用）+ 错误提示全中文化（网络/同步/JS 代码）+ 离线优化（断网跳自动同步/检查更新直提示）+ 去掉 Made by XiXi 爱心**（详见 Release）
+- v1.1.5.4（vc180）：**记录/计划搜索（滚动滑出+按名称过滤）+ 照片缩略图缓存（LRU）+ 统计数字滚动防抖（值变才播）**（详见 Release）
 
 ## 待办/新功能方案（2026-08-25 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
