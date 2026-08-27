@@ -4794,7 +4794,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.6.1</div>
+                        <div class="about-version">版本 1.1.6.2</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4841,6 +4841,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.6.2': '## v1.1.6.2 更新内容\n\n**计划页搜索优化**\n- 搜索框提示文字按页切换（搜索记录/搜索计划）\n- 切到记录/计划页自动显示搜索框\n- 搜索时显示匹配数量\n\nMade by XiXi',
     'v1.1.6.1': '## v1.1.6.1 更新内容\n\n**优化**\n- 编辑输入框浅色模式加浅色边（与底栏同款）\n- 修复点搜索框时的跳变和页面被抬高\n\nMade by XiXi',
     'v1.1.6.0': '## v1.1.6.0 更新内容\n\n**优化与修复**\n- 修复编辑记录时输入框被键盘盖住（自动滚动到键盘上方）\n- 输入框 placeholder 统一、清理死代码、性能微优化\n\nMade by XiXi',
     'v1.1.5.10': '## v1.1.5.10 更新内容\n\n**搜索修复**\n- 修复中文输入法搜索失效（拼音中间态不再误搜，中文上屏即出结果）\n- 搜索结果列表避让输入法，结果直接可见\n\nMade by XiXi',
@@ -5241,7 +5242,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.6.1';
+var APP_VERSION = '1.1.6.2';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6155,6 +6156,9 @@ function initGlobalSearch() {
         if (clear) clear.style.display = 'none';
         setBarVisible(false);
     };
+    // ★2026-08-27 计划页搜索修复：暴露呼出函数，供 switchTab 切到记录/计划页时自动显示搜索框
+    //   （计划少、页面不足一屏时无法滚动呼出，切页自动出现一次让用户知道搜索框位置）
+    window.__pokeSearchBar = function () { pokeSearchBar(); };
     setBarVisible(false);
 }
 
@@ -6171,8 +6175,14 @@ function renderTable() {
         updateStatistics();
         
         // ★2026-08-12 记录页"总计"徽标（样式同柱状图右上角，颜色深浅色自适应）
+        // ★2026-08-27 计划页搜索修复：有搜索词时显示匹配数（搜 1 条不再显示"总计 8 条"）
         const totalBadge = safeGetElementById('recordsTotalBadge');
-        if (totalBadge) totalBadge.textContent = '总计: ' + records.length + '条记录';
+        if (totalBadge) {
+            const searchOn = (searchQuery || '').trim();
+            totalBadge.textContent = searchOn
+                ? ('匹配 ' + sortedRecords.length + ' / 共 ' + records.length + ' 条')
+                : ('总计: ' + records.length + '条记录');
+        }
         
         if (sortedRecords.length === 0) {
             if (tbody) safeSetElementContent('recordsTable', '');
@@ -7738,8 +7748,14 @@ function renderPlannedTripsTable() {
         const sortedTrips = getSortedPlannedTrips();
         
         // ★2026-08-12 计划页"总计"徽标（样式同柱状图右上角，颜色深浅色自适应）
+        // ★2026-08-27 计划页搜索修复：有搜索词时显示匹配数（搜 1 条不再显示"总计 8 条"）
         const totalBadge = safeGetElementById('plannedTotalBadge');
-        if (totalBadge) totalBadge.textContent = '总计: ' + plannedTrips.length + '条计划';
+        if (totalBadge) {
+            const searchOn = (searchQuery || '').trim();
+            totalBadge.textContent = searchOn
+                ? ('匹配 ' + sortedTrips.length + ' / 共 ' + plannedTrips.length + ' 条')
+                : ('总计: ' + plannedTrips.length + '条计划');
+        }
         
         if (sortedTrips.length === 0) {
             if (tbody) safeSetElementContent('plannedTripsTable', '');
@@ -10688,6 +10704,13 @@ function setupEventListeners() {
         }
         if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
             try { renderPlannedTripsTable(); } catch (e) { console.error('lazy render plans failed:', e); }
+        }
+        // ★2026-08-27 计划页搜索修复：placeholder 按页切换（计划页不再显示"搜索记录…"）+ 切页自动呼出搜索框一次
+        //   （计划少、页面不足一屏时轻滑无法滚动呼出，切页自动出现让用户知道搜索框位置，1 秒不碰自动消失）
+        if (tabId === 'records' || tabId === 'plans') {
+            var gsi = safeGetElementById('globalSearchInput');
+            if (gsi) gsi.placeholder = tabId === 'records' ? '搜索记录…' : '搜索计划…';
+            if (window.__pokeSearchBar) { try { window.__pokeSearchBar(); } catch (e) { /* 忽略 */ } }
         }
         // 切到记录/计划时表格横向滚动归位
         if (tabId === 'records' || tabId === 'plans') {
