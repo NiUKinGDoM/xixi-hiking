@@ -1684,19 +1684,27 @@
             background: transparent;
         }
         
-        /* ★2026-08-27 记录/计划搜索（方案A：顶部隐藏，往下滚动滑出，滚回顶部收起；有搜索词时常显）
-           玻璃配方：半透明底 + blur + 细白边 + 双层浮动阴影；禁止光泽带/折射/角部光斑 */
+        /* ★2026-08-27 记录/计划搜索（方案A：底部悬浮——底栏上方；滚回顶部显示、往下滚隐藏；有搜索词常显）
+           玻璃配方：半透明底 + blur + 细白边 + 轻阴影；禁止光泽带/折射/角部光斑 */
         .global-search-bar {
             position: fixed;
-            top: 64px;
+            /* ★2026-08-27 底栏上方（底栏 bottom 14px + 高 ~66px）+ 40px 间距（用户要求再高一点） */
+            bottom: calc(120px + env(safe-area-inset-bottom, 0px));
             left: 0;
             right: 0;
             z-index: 45;
-            padding: 6px 16px;
-            transform: translateY(-140%);
+            padding: 0 16px;
+            display: flex;
+            justify-content: center;
+            transform: translateY(18px);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.28s ease;
+            /* ★2026-08-27 bottom 也过渡：键盘收起后平滑滑回默认位置（而非跳变） */
+            transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.28s ease, bottom 0.25s ease;
+        }
+        /* ★2026-08-27 输入法弹出时搜索框上移（键盘约占屏 40-55%，45vh 保证在键盘上方；页面/底栏不动） */
+        .global-search-bar.keyboard-up {
+            bottom: calc(45vh + 16px);
         }
         .global-search-bar.show {
             transform: translateY(0);
@@ -1707,14 +1715,18 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(255, 255, 255, 0.72);
-            backdrop-filter: blur(8px) saturate(150%);
-            -webkit-backdrop-filter: blur(8px) saturate(150%);
-            border: 1px solid rgba(148, 163, 184, 0.35);
+            /* ★2026-08-27 更窄：320 → 260px */
+            width: 100%;
+            max-width: 260px;
+            /* ★2026-08-27 透明度与全 App 玻璃框统一（--glass-alpha 0.10 + blur 2px + 细白边 + 轻阴影） */
+            background: rgba(255, 255, 255, var(--glass-alpha));
+            backdrop-filter: blur(2px) saturate(150%);
+            -webkit-backdrop-filter: blur(2px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, calc(var(--glass-alpha) * 1.1));
             border-radius: 12px;
-            padding: 9px 12px;
+            padding: 8px 12px;
             color: #1f2937;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
         }
         .global-search-box input {
             flex: 1;
@@ -1727,7 +1739,7 @@
             font-family: inherit;
         }
         .global-search-box input::placeholder {
-            color: rgba(31, 41, 55, 0.45);
+            color: rgba(31, 41, 55, 0.4);
         }
         .global-search-clear {
             background: none;
@@ -1742,14 +1754,15 @@
             flex-shrink: 0;
         }
         .global-search-clear:hover { opacity: 1; }
+        /* 深色模式：与 dark-mode glass-panel 同款（深蓝玻璃） */
         body.dark-mode .global-search-box {
-            background: rgba(30, 41, 59, 0.72);
-            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(15, 23, 42, calc(var(--glass-alpha) * 0.6));
+            border-color: rgba(255, 255, 255, 0.04);
             color: #e2e8f0;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
         body.dark-mode .global-search-box input::placeholder {
-            color: rgba(226, 232, 240, 0.45);
+            color: rgba(226, 232, 240, 0.4);
         }
         
         @media (max-width: 640px) {
@@ -4791,7 +4804,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.4</div>
+                        <div class="about-version">版本 1.1.5.5</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4838,6 +4851,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.5.5': '## v1.1.5.5 更新内容\n\n**搜索优化**\n- 修复搜索功能报错（变量作用域问题）\n- 搜索框任意方向轻滑即显示，1 秒不碰自动消失\n- 滑到列表底部自动让位（不挡切换页码）\n- 输入法弹出时搜索框跟随键盘上方，关闭自动回位\n\nMade by XiXi',
     'v1.1.5.4': '## v1.1.5.4 更新内容\n\n**新功能**\n- 记录/计划搜索：列表往下滚动时顶部滑出搜索框，按名称实时过滤（找到去年去过的那座山）\n\n**性能**\n- 列表照片缩略图缓存：编辑/翻页秒显不闪烁\n- 统计数字滚动动画防抖：数值没变不再重复播放\n\nMade by XiXi',
     'v1.1.5.3': '## v1.1.5.3 更新内容\n\n**修复**\n- 导出诊断数据功能修复（此前点击报错）\n\n**体验**\n- 错误提示全部中文化：网络/同步/代码错误都显示具体原因（不再英文报错）\n- 离线优化：断网启动跳过自动同步、断网点检查更新直接提示\n- 关于页去掉 Made by XiXi 后的爱心\n\nMade by XiXi',
     'v1.1.5.2': '## v1.1.5.2 更新内容\n\n**优化**\n- 弹窗关闭取消淡出动画，全部直接关闭（与确认弹窗一致，更干脆）\n\nMade by XiXi 💛',
@@ -4989,6 +5003,8 @@ let currentPageRecords = [];
 let currentPagePlannedTrips = [];
 // ★2026-08-27 记录/计划搜索（方案A：滚动显示搜索框，按名称实时过滤）
 let searchQuery = '';
+// ★2026-08-27 当前激活 tab（全局提升：搜索过滤/搜索框显示需要；原声明在 init 内部导致 ReferenceError）
+var currentTabId = 'overview';
 // ★2026-08-27 列表行入场动画只播首次（刷新/编辑/翻页不再整页重播动画，消灭闪烁感）
 let recordsRowsAnimated = false;
 let plannedRowsAnimated = false;
@@ -5227,7 +5243,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.4';
+var APP_VERSION = '1.1.5.5';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6016,34 +6032,73 @@ function initGlobalSearch() {
         if (show) bar.classList.add('show');
         else bar.classList.remove('show');
     }
-    // 显示规则：仅记录/计划页有效；有搜索词常显；无词时滚动 >120 显示、<40 隐藏
-    function refreshBar() {
+    // ★2026-08-27 显示规则（用户最终方案）：任意方向轻滑（滚动发生）即显示；1 秒不碰自动消失；
+    //   有搜索词或输入框聚焦时常显；★滑到列表最底部自动隐藏（不挡分页控件）；仅记录/计划页生效
+    let searchHideTimer = null;
+    function pokeSearchBar() {
         if (currentTabId !== 'records' && currentTabId !== 'plans') { setBarVisible(false); return; }
+        if (document.activeElement === input) { setBarVisible(true); return; } // 输入中常显（键盘遮挡底部，无分页问题）
+        // ★2026-08-27 滑到最底部（距底 150px 内）：隐藏搜索框，不挡「上一页/下一页/页码」控件
+        const sc = document.scrollingElement || document.documentElement;
+        const nearBottom = (window.innerHeight + (window.scrollY || sc.scrollTop || 0)) >= (sc.scrollHeight - 150);
+        if (nearBottom) { setBarVisible(false); return; }
         if (searchQuery && searchQuery.trim()) { setBarVisible(true); return; }
-        const y = window.scrollY || document.documentElement.scrollTop || 0;
-        if (y > 120) setBarVisible(true);
-        else if (y < 40) setBarVisible(false);
+        setBarVisible(true);
+        clearTimeout(searchHideTimer);
+        searchHideTimer = setTimeout(function () { setBarVisible(false); }, 1000);
     }
-    // 滚动监听（rAF 节流，passive 不阻塞滚动）
+    // 滚动监听（rAF 节流，passive 不阻塞滚动）：任意方向滚动都触发显示
     let scrollTicking = false;
     window.addEventListener('scroll', function () {
         if (scrollTicking) return;
         scrollTicking = true;
-        requestAnimationFrame(function () { scrollTicking = false; refreshBar(); });
+        requestAnimationFrame(function () { scrollTicking = false; pokeSearchBar(); });
     }, { passive: true });
 
     input.addEventListener('input', function () {
         searchQuery = input.value || '';
         if (clear) clear.style.display = searchQuery ? 'inline-flex' : 'none';
+        clearTimeout(searchHideTimer); // ★2026-08-27 打字时取消自动消失计时器（防输入中框消失）
         setBarVisible(true); // 输入时常显
         if (currentTabId === 'records') { recordPage = 1; renderTable(); }
         else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
+    });
+    // ★2026-08-27 输入法弹出：搜索框跟随键盘高度（visualViewport 动态计算，紧贴键盘上方）；
+    //   不可用时 fallback .keyboard-up（45vh）；页面/底栏不挪动；★键盘收起（含按返回键关键盘，不触发 blur）强制回默认位置
+    function applyKeyboardOffset() {
+        if (window.visualViewport) {
+            const kbH = (window.innerHeight || 0) - (window.visualViewport.height || 0);
+            if (kbH > 50) { // 键盘弹出：紧贴键盘上方 + 12px
+                bar.style.bottom = 'calc(' + (kbH + 12) + 'px + env(safe-area-inset-bottom, 0px))';
+                return;
+            }
+        }
+        // 键盘收起/未检测到：移除兜底类 + 清内联 bottom → 平滑滑回默认位置（CSS 120px）
+        bar.classList.remove('keyboard-up');
+        bar.style.bottom = '';
+    }
+    if (window.visualViewport) {
+        // ★2026-08-27 resize/scroll 都直接处理（不要求聚焦）：键盘弹起跟随、收起回位——按返回键关键盘也能恢复
+        window.visualViewport.addEventListener('resize', function () { applyKeyboardOffset(); });
+        window.visualViewport.addEventListener('scroll', function () { applyKeyboardOffset(); });
+    }
+    input.addEventListener('focus', function () {
+        bar.classList.add('keyboard-up'); // 兜底位置（visualViewport 可能晚触发/不可用）
+        clearTimeout(searchHideTimer); // ★2026-08-27 聚焦时取消自动消失计时器（防输入中框消失）
+        setBarVisible(true);
+        setTimeout(applyKeyboardOffset, 300); // 等键盘稳定后再精确跟随
+    });
+    input.addEventListener('blur', function () {
+        setTimeout(function () {
+            bar.classList.remove('keyboard-up');
+            bar.style.bottom = '';
+        }, 200);
     });
     if (clear) clear.addEventListener('click', function () {
         searchQuery = '';
         input.value = '';
         clear.style.display = 'none';
-        refreshBar();
+        pokeSearchBar(); // 清空后回到「滚动显示 + 1 秒自动消失」规则
         if (currentTabId === 'records') { recordPage = 1; renderTable(); }
         else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
     });
@@ -10473,7 +10528,7 @@ function setupEventListeners() {
     // ===== 底部悬浮导航栏：概览/计划/记录 切换 =====
     var tabButtons = document.querySelectorAll('#bottomTabBar .tab-btn');
     // 当前激活的 tab（2026-08-11：点击当前 tab = 手动刷新该页数据）
-    var currentTabId = 'overview';
+    // ★2026-08-27 currentTabId 已提升为全局变量（搜索功能在全局函数中引用），这里不再重复声明
     function switchTab(tabId) {
         var pages = { overview: 'tab-overview', plans: 'tab-plans', records: 'tab-records', settings: 'tab-settings' };
         var pageId = pages[tabId];
