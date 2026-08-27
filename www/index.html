@@ -4794,7 +4794,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.6.3</div>
+                        <div class="about-version">版本 1.1.6.4</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4841,6 +4841,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.6.4': '## v1.1.6.4 更新内容\n\n**搜索修复**\n- 彻底修复搜索不实时出结果（轮询检测输入内容）\n\nMade by XiXi',
     'v1.1.6.3': '## v1.1.6.3 更新内容\n\n**搜索修复**\n- 修复打开软件后第一次搜索不实时出结果的问题\n\nMade by XiXi',
     'v1.1.6.2': '## v1.1.6.2 更新内容\n\n**计划页搜索优化**\n- 搜索框提示文字按页切换（搜索记录/搜索计划）\n- 切到记录/计划页自动显示搜索框\n- 搜索时显示匹配数量\n\nMade by XiXi',
     'v1.1.6.1': '## v1.1.6.1 更新内容\n\n**优化**\n- 编辑输入框浅色模式加浅色边（与底栏同款）\n- 修复点搜索框时的跳变和页面被抬高\n\nMade by XiXi',
@@ -5243,7 +5244,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.6.3';
+var APP_VERSION = '1.1.6.4';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6065,6 +6066,9 @@ function initGlobalSearch() {
         inputComposingTimer = setTimeout(function () { // 超时兜底：输入法丢失 compositionend 时自动复位
             inputComposing = false;
             window.__isComposing = false;
+            // ★v1.1.6.4 超时必须同时刷新：若上屏后 input/compositionend 全丢失，
+            //   列表会卡在拼音态（删字才恢复）——超时后用当前 value 强制刷新即可恢复
+            syncSearchAndRefresh();
         }, 3000);
     });
     input.addEventListener('compositionend', function () {
@@ -6077,6 +6081,27 @@ function initGlobalSearch() {
         // 拼音阶段也实时过滤（value=拼音→列表空+"正在输入…"），上屏后 value=中文→结果——不依赖 compositionend
         syncSearchAndRefresh();
     });
+    // ★v1.1.6.4 根治：value 轮询检测——某些输入法在拼音合成期间不派发 input 事件、还会丢 compositionend，
+    //   事件全断时列表纹丝不动（删字才恢复）。轮询不依赖任何事件：聚焦时每 250ms 比对 input.value，
+    //   变了就刷新（最多 250ms 延迟出结果）；事件正常时事件立即刷新、轮询不重复（值没变不刷）。
+    let lastSearchValue = '';
+    let searchPollTimer = null;
+    function stopSearchPoll() {
+        if (searchPollTimer) { clearInterval(searchPollTimer); searchPollTimer = null; }
+    }
+    function startSearchPoll() {
+        stopSearchPoll();
+        lastSearchValue = input.value || '';
+        searchPollTimer = setInterval(function () {
+            var v = input.value || '';
+            if (v !== lastSearchValue) {
+                lastSearchValue = v;
+                syncSearchAndRefresh();
+            }
+        }, 250);
+    }
+    input.addEventListener('focus', startSearchPoll);
+    input.addEventListener('blur', stopSearchPoll);
     // ★2026-08-27 输入法弹出：搜索框精确跟随键盘。
     //   App 内（Capacitor 原生）：原生桥 window.__onImeHeight 提供真实键盘高度
     //     （adjustNothing 下 WebView 视觉视口不更新，JS 自测不到；原生监听 IME insets 可靠，含按返回键关键盘）
