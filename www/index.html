@@ -470,8 +470,7 @@
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(2px) saturate(150%);
-            -webkit-backdrop-filter: blur(2px) saturate(150%);
+            /* ★2026-08-27 性能优化：去掉 backdrop-filter（图标按钮小而多，blur 无视觉意义） */
             border: 1px solid rgba(255, 255, 255, 0.5);
             color: #374151;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -743,15 +742,14 @@
             color: #fca5a5 !important;
         }
         
-        /* 难度徽章（★2026-08-25 玻璃质感：半透明背景 + blur + 细边框，内联覆盖 background/border-color） */
+        /* 难度徽章（★2026-08-25 玻璃质感：半透明背景 + 细边框，内联覆盖 background/border-color） */
         .difficulty-badge {
             display: inline-block;
             padding: 3px 10px;
             border-radius: 6px;
             color: #374151 !important;   /* ★2026-08-25 浅色模式中灰字（#1f2937 太深 → #374151 浅一档仍清晰）；深色模式白字在下方覆盖 */
             font-weight: 700 !important;
-            backdrop-filter: blur(2px) saturate(150%);
-            -webkit-backdrop-filter: blur(2px) saturate(150%);
+            /* ★2026-08-27 性能优化：去掉 backdrop-filter（徽章小而密，blur 无视觉意义，一屏省 10 个合成层） */
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
@@ -4393,6 +4391,10 @@
                     </h2>
                     <div class="flex gap-2 items-center">
                         <span id="recordsTotalBadge" class="total-badge text-xs mr-1" data-testid="records-total"></span>
+                        <!-- ★2026-08-27 批量管理：进批量模式勾选多条一键删除 -->
+                        <button id="batchModeBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" title="批量管理" data-testid="batch-mode-button" style="margin-right:2px;">
+                            <span class="material-icons" id="batchModeIcon">done_all</span>
+                        </button>
                         <button id="addBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" data-testid="add-button" title="添加徒步记录">
                             <span class="material-icons">add</span>
                         </button>
@@ -4445,6 +4447,12 @@
                     <span id="pageInfo" class="text-xs text-white/60">1-10 / 共0条</span>
                     <button id="pageNextBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="下一页"><span class="material-icons" style="font-size:18px;">chevron_right</span></button>
                 </div>
+                <!-- ★2026-08-27 批量删除工具栏（批量模式下显示） -->
+                <div id="batchBar" class="flex items-center justify-center gap-3 mt-3 pb-1" style="display:none;">
+                    <span id="batchCount" class="text-xs text-white/70">已选 0 条</span>
+                    <button id="batchDeleteBtn" class="check-go-btn ripple-effect" style="padding:7px 18px;border-radius:10px;font-size:13px;">删除选中</button>
+                    <button id="batchCancelBtn" class="confirm-btn-cancel ripple-effect" style="padding:7px 18px;border-radius:10px;font-size:13px;">取消</button>
+                </div>
             </div>
             </div>
             
@@ -4458,6 +4466,10 @@
                     </h2>
                     <div class="flex gap-2 items-center">
                         <span id="plannedTotalBadge" class="total-badge text-xs mr-1" data-testid="planned-total"></span>
+                        <!-- ★2026-08-27 计划批量管理（与记录页一致） -->
+                        <button id="plannedBatchModeBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" title="批量管理" style="margin-right:2px;">
+                            <span class="material-icons" id="plannedBatchModeIcon">done_all</span>
+                        </button>
                         <button id="addPlannedTripBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" data-testid="add-planned-trip-button">
                             <span class="material-icons">add</span>
                         </button>
@@ -4509,6 +4521,12 @@
                     <button id="plannedPagePrevBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="上一页"><span class="material-icons" style="font-size:18px;">chevron_left</span></button>
                     <span id="plannedPageInfo" class="text-xs text-white/60">1-10 / 共0条</span>
                     <button id="plannedPageNextBtn" class="ripple-effect icon-glass-btn" style="width:34px;height:34px;padding:0;border-radius:10px;" title="下一页"><span class="material-icons" style="font-size:18px;">chevron_right</span></button>
+                </div>
+                <!-- ★2026-08-27 计划批量删除工具栏（批量模式下显示） -->
+                <div id="plannedBatchBar" class="flex items-center justify-center gap-3 mt-3 pb-1" style="display:none;">
+                    <span id="plannedBatchCount" class="text-xs text-white/70">已选 0 条</span>
+                    <button id="plannedBatchDeleteBtn" class="check-go-btn ripple-effect" style="padding:7px 18px;border-radius:10px;font-size:13px;">删除选中</button>
+                    <button id="plannedBatchCancelBtn" class="confirm-btn-cancel ripple-effect" style="padding:7px 18px;border-radius:10px;font-size:13px;">取消</button>
                 </div>
             </div>
             </div>
@@ -4696,7 +4714,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.4.7</div>
+                        <div class="about-version">版本 1.1.4.8</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
@@ -4723,6 +4741,13 @@ window.addEventListener('unhandledrejection', function(e) {
     e.preventDefault();
     return true;
 });
+
+// ★2026-08-27 网页版离线可用：注册 Service Worker（network-first，断网也能打开 App；App 内 WebView 跳过）
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.XixiFileBridge) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function () { /* 注册失败静默（如 file:// 环境） */ });
+    });
+}
 
 // ★2026-08-21 v1.1.1.6 错误日志收集（最近 100 条，内存缓存，设置页可导出诊断）
 window.__diagLogs = [];
@@ -4833,6 +4858,15 @@ let plannedPage = 1; // 计划列表分页（同每页 10 条）
 const RECORD_PAGE_SIZE = 10;
 let currentPageRecords = [];
 let currentPagePlannedTrips = [];
+// ★2026-08-27 列表行入场动画只播首次（刷新/编辑/翻页不再整页重播动画，消灭闪烁感）
+let recordsRowsAnimated = false;
+let plannedRowsAnimated = false;
+// ★2026-08-27 记录批量删除状态
+let batchMode = false;
+const batchSelected = new Set();
+// ★2026-08-27 计划批量删除状态（与记录页一致）
+let plannedBatchMode = false;
+const plannedBatchSelected = new Set();
 // ===== WebDAV 数据同步 =====
 const SYNC_CONFIG_KEY = 'hiking_sync_config';
 
@@ -5009,7 +5043,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.4.7';
+var APP_VERSION = '1.1.4.8';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -5928,10 +5962,14 @@ function renderTable() {
                 </tr>
             `;
         } else {
+            // ★2026-08-27 入场动画只首次播（后续刷新/编辑/翻页不重播，省布局抖动）
+            const rowAnimCls = recordsRowsAnimated ? '' : 'table-row-animate ';
+            const rowDelayStyle = recordsRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
             return `
-                <tr class="table-row-advanced table-row-animate border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="animation-delay: ${idx * 0.05}s;">
+                <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="${rowDelayStyle}">
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
                         <span class="inline-flex items-center gap-1.5">
+                            ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
                             ${record.name}
                             ${record.weather ? '<span class="text-base" title="天气">' + record.weather + '</span>' : ''}
                             <!-- ★2026-08-25 名称后照片按钮：新版玻璃配方图标按钮（.icon-glass-btn）；查看模式只读（保存+左右翻页） -->
@@ -5951,11 +5989,7 @@ function renderTable() {
                         ${formatDateTime(record.createdAt)}
                     </td>
                     <td class="p-2 text-center" data-label="操作">
-                        <button id="delete-btn-${record.id}" 
-                                data-testid="delete-button-${record.id}"
-                                class="ripple-effect btn-click-effect bg-red-600 text-white p-1 rounded hover:bg-red-700 transition-colors inline-flex items-center justify-center">
-                            <span class="material-icons">delete</span>
-                        </button>
+                        ${batchMode ? '' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="ripple-effect btn-click-effect bg-red-600 text-white p-1 rounded hover:bg-red-700 transition-colors inline-flex items-center justify-center"><span class="material-icons">delete</span></button>'}
                     </td>
                 </tr>
             `;
@@ -5963,6 +5997,7 @@ function renderTable() {
     }).join('');
     
     if (tbody) safeSetElementContent('recordsTable', tableContent);
+    recordsRowsAnimated = true; // ★2026-08-27 首次有行渲染后置位（后续不播入场动画）
     
     // 表格横向滚动归位（刷新/重渲染后回到最左）
     if (tbody && tbody.parentElement && tbody.parentElement.parentElement) {
@@ -5997,6 +6032,32 @@ function attachEventListeners() {
         pagerEl.addEventListener('click', pagerHandler);
         eventListeners.push({ element: pagerEl, event: 'click', handler: pagerHandler });
     }
+    
+    // ★2026-08-27 批量模式：勾选框 + 工具栏按钮事件（cleanup 统一管理）
+    document.querySelectorAll('.batch-check').forEach(cb => {
+        const handler = (e) => toggleBatchSelect(cb.getAttribute('data-id'), e);
+        cb.addEventListener('change', handler);
+        eventListeners.push({ element: cb, event: 'change', handler: handler });
+    });
+    const batchModeBtn = safeGetElementById('batchModeBtn');
+    if (batchModeBtn) {
+        const handler = () => toggleBatchMode();
+        batchModeBtn.addEventListener('click', handler);
+        eventListeners.push({ element: batchModeBtn, event: 'click', handler: handler });
+    }
+    const batchDeleteBtn = safeGetElementById('batchDeleteBtn');
+    if (batchDeleteBtn) {
+        const handler = () => deleteBatchSelected();
+        batchDeleteBtn.addEventListener('click', handler);
+        eventListeners.push({ element: batchDeleteBtn, event: 'click', handler: handler });
+    }
+    const batchCancelBtn = safeGetElementById('batchCancelBtn');
+    if (batchCancelBtn) {
+        const handler = () => exitBatchMode();
+        batchCancelBtn.addEventListener('click', handler);
+        eventListeners.push({ element: batchCancelBtn, event: 'click', handler: handler });
+    }
+    updateBatchBar(); // 渲染后同步批量工具栏状态（跨页勾选保留）
     
     sortedRecords.forEach(record => {
         if (editingId === record.id) {
@@ -6041,8 +6102,13 @@ function attachEventListeners() {
             
             if (row) {
                 const rowHandler = (e) => {
-                    // 如果点击的是按钮，不触发编辑
-                    if (e.target.closest('button')) {
+                    // 如果点击的是按钮或批量勾选框，不触发编辑
+                    if (e.target.closest('button') || e.target.classList.contains('batch-check')) {
+                        return;
+                    }
+                    // ★2026-08-27 批量模式：点击行切换勾选
+                    if (batchMode) {
+                        toggleBatchSelect(record.id, null);
                         return;
                     }
                     startEdit(record.id);
@@ -6072,6 +6138,126 @@ function attachEventListeners() {
     });
     
     window.currentEventListeners = eventListeners;
+}
+
+// ★2026-08-27 批量删除：进入/退出批量模式
+function toggleBatchMode() {
+    batchMode = !batchMode;
+    if (!batchMode) batchSelected.clear();
+    renderTable();
+    updateBatchBar();
+}
+// ★2026-08-27 切换单条勾选（e 为 checkbox change 事件；行点击时 e=null 手动同步勾选态）
+function toggleBatchSelect(id, e) {
+    if (batchSelected.has(id)) batchSelected.delete(id);
+    else batchSelected.add(id);
+    const cb = e ? e.target : document.querySelector('.batch-check[data-id="' + id + '"]');
+    if (cb) cb.checked = batchSelected.has(id);
+    updateBatchBar();
+}
+// ★2026-08-27 批量工具栏状态同步（跨页勾选保留）
+function updateBatchBar() {
+    const bar = safeGetElementById('batchBar');
+    const countEl = safeGetElementById('batchCount');
+    const icon = safeGetElementById('batchModeIcon');
+    const btn = safeGetElementById('batchModeBtn');
+    if (bar) bar.style.display = batchMode ? 'flex' : 'none';
+    if (countEl) countEl.textContent = '已选 ' + batchSelected.size + ' 条';
+    if (icon) icon.textContent = batchMode ? 'close' : 'done_all';
+    if (btn) btn.title = batchMode ? '退出批量' : '批量管理';
+}
+function exitBatchMode() {
+    batchMode = false;
+    batchSelected.clear();
+    renderTable();
+    updateBatchBar();
+}
+// ★2026-08-27 一键删除勾选的记录（confirm 确认 + 照片一并清理）
+function deleteBatchSelected() {
+    const ids = Array.from(batchSelected);
+    if (!ids.length) { showErrorMessage('请先勾选要删除的记录'); return; }
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>批量删除</div>' +
+        '<div class="confirm-modal-message">确定删除选中的 ' + ids.length + ' 条记录？照片将一并删除，此操作无法撤销。</div>' +
+        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="batch-confirm-cancel">取消</button>' +
+        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="batch-confirm-delete">删除</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('batch-confirm-cancel').addEventListener('click', function () { document.body.removeChild(modal); });
+    document.getElementById('batch-confirm-delete').addEventListener('click', function () {
+        document.body.removeChild(modal);
+        const photoIds = [];
+        ids.forEach(function (id) {
+            const rec = records.find(function (r) { return r.id === id; });
+            if (rec && rec.photos && rec.photos.length) photoIds.push.apply(photoIds, rec.photos);
+        });
+        records = records.filter(function (r) { return !batchSelected.has(r.id); });
+        if (photoIds.length) photoDeleteMany(photoIds).catch(function () {});
+        batchSelected.clear();
+        batchMode = false;
+        updateStatistics();
+        saveToStorage();
+        renderTable();
+        updateBatchBar();
+        showSuccessMessage('已删除 ' + ids.length + ' 条记录');
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+}
+
+// ★2026-08-27 计划批量删除（与记录页一致；计划无照片，直接过滤保存）
+function togglePlannedBatchMode() {
+    plannedBatchMode = !plannedBatchMode;
+    if (!plannedBatchMode) plannedBatchSelected.clear();
+    renderPlannedTripsTable();
+    updatePlannedBatchBar();
+}
+function togglePlannedBatchSelect(id, e) {
+    if (plannedBatchSelected.has(id)) plannedBatchSelected.delete(id);
+    else plannedBatchSelected.add(id);
+    const cb = e ? e.target : document.querySelector('.planned-batch-check[data-id="' + id + '"]');
+    if (cb) cb.checked = plannedBatchSelected.has(id);
+    updatePlannedBatchBar();
+}
+function updatePlannedBatchBar() {
+    const bar = safeGetElementById('plannedBatchBar');
+    const countEl = safeGetElementById('plannedBatchCount');
+    const icon = safeGetElementById('plannedBatchModeIcon');
+    const btn = safeGetElementById('plannedBatchModeBtn');
+    if (bar) bar.style.display = plannedBatchMode ? 'flex' : 'none';
+    if (countEl) countEl.textContent = '已选 ' + plannedBatchSelected.size + ' 条';
+    if (icon) icon.textContent = plannedBatchMode ? 'close' : 'done_all';
+    if (btn) btn.title = plannedBatchMode ? '退出批量' : '批量管理';
+}
+function exitPlannedBatchMode() {
+    plannedBatchMode = false;
+    plannedBatchSelected.clear();
+    renderPlannedTripsTable();
+    updatePlannedBatchBar();
+}
+function deletePlannedBatchSelected() {
+    const ids = Array.from(plannedBatchSelected);
+    if (!ids.length) { showErrorMessage('请先勾选要删除的计划'); return; }
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>批量删除</div>' +
+        '<div class="confirm-modal-message">确定删除选中的 ' + ids.length + ' 条计划？此操作无法撤销。</div>' +
+        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="pbatch-confirm-cancel">取消</button>' +
+        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="pbatch-confirm-delete">删除</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('pbatch-confirm-cancel').addEventListener('click', function () { document.body.removeChild(modal); });
+    document.getElementById('pbatch-confirm-delete').addEventListener('click', function () {
+        document.body.removeChild(modal);
+        plannedTrips = plannedTrips.filter(function (t) { return !plannedBatchSelected.has(t.id); });
+        plannedBatchSelected.clear();
+        plannedBatchMode = false;
+        savePlannedTripsToStorage();
+        updatePlannedBatchBar();
+        renderPlannedTripsTable();
+        showSuccessMessage('已删除 ' + ids.length + ' 条计划');
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
 
 function startEdit(id) {
@@ -6254,6 +6440,20 @@ function lbStep(delta) {
     lb._idx = (lb._idx + delta + lb._ids.length) % lb._ids.length;
     lbLoadImg();
 }
+// ★2026-08-27 灯箱照片内存缓存（pid → blob URL，打开期间复用，关闭时释放）
+let lightboxImgCache = {};
+// ★2026-08-27 预加载当前±1 张（翻页秒开）
+function preloadLbNeighbors(lb) {
+    if (!lb || !lb._ids || !lb._ids.length) return;
+    [lb._idx - 1, lb._idx + 1].forEach(function (ni) {
+        if (ni < 0 || ni >= lb._ids.length) return;
+        var nid = lb._ids[ni];
+        if (!nid || lightboxImgCache[nid]) return;
+        photoGet(nid).then(function (p) {
+            if (p && p.blob) lightboxImgCache[nid] = URL.createObjectURL(p.blob);
+        }).catch(function () {});
+    });
+}
 function lbLoadImg() {
     var lb = photoLightboxEl;
     if (!lb) return;
@@ -6263,18 +6463,25 @@ function lbLoadImg() {
     var rec = records.find(r => r.id === lb._recordId);
     title.textContent = rec ? rec.name : '';
     idxEl.textContent = (lb._idx + 1) + ' / ' + lb._ids.length;
-    img.style.opacity = '0.3';
     var pid = lb._ids[lb._idx];
     lb._currentPid = pid;
-    photoGet(pid).then(function (p) {
-        if (lb._currentPid !== pid) return;
-        if (p && p.blob) {
-            var url = URL.createObjectURL(p.blob);
-            img.onload = function () { URL.revokeObjectURL(url); };
-            img.src = url;
-            img.style.opacity = '1';
-        }
-    }).catch(function () {});
+    // ★2026-08-27 缓存命中直接显示（翻页/后退零等待）
+    if (lightboxImgCache[pid]) {
+        img.src = lightboxImgCache[pid];
+        img.style.opacity = '1';
+    } else {
+        img.style.opacity = '0.3';
+        photoGet(pid).then(function (p) {
+            if (lb._currentPid !== pid) return;
+            if (p && p.blob) {
+                var url = URL.createObjectURL(p.blob);
+                lightboxImgCache[pid] = url; // 进缓存，翻回不再重读
+                img.src = url;
+                img.style.opacity = '1';
+            }
+        }).catch(function () {});
+    }
+    preloadLbNeighbors(lb);
 }
 function closePhotoLightbox() {
     var lb = photoLightboxEl;
@@ -6282,6 +6489,11 @@ function closePhotoLightbox() {
     lb.style.display = 'none';
     document.body.style.overflow = '';
     lb.querySelector('#lb-img').src = '';
+    // ★2026-08-27 关闭时释放缓存（blob URL 全 revoke，避免内存堆积）
+    Object.keys(lightboxImgCache).forEach(function (pid) {
+        try { URL.revokeObjectURL(lightboxImgCache[pid]); } catch (e) { /* 忽略 */ }
+    });
+    lightboxImgCache = {};
 }
 // ★2026-08-25 灯箱主按钮统一入口：编辑模式=添加照片，查看模式=保存图片
 function lbPrimaryAction() {
@@ -6655,7 +6867,18 @@ function addNewRecord() {
 
 // 更新山脉数据的函数
 
+// ★2026-08-27 统计防抖：记录数据指纹（长度+最后修改时间），没变就不重算/不重建图表（14 处调用防抖）
+let statsFingerprint = '';
 function updateStatistics() {
+    const fp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
+        const t = r.updatedAt || r.createdAt || '';
+        return t > m ? t : m;
+    }, '');
+    if (fp === statsFingerprint && safeGetElementById('totalCount')) {
+        return; // 数据没变：跳过重算与图表重建（消灭编辑保存时的统计卡顿）
+    }
+    statsFingerprint = fp;
+    
     const totalCount = safeGetElementById('totalCount');
     const avgElevation = safeGetElementById('avgElevation');
     const maxElevation = safeGetElementById('maxElevation');
@@ -6887,35 +7110,50 @@ function fillHmMonths(year, preferred) {
     hmMonth = parseInt(mSel.value, 10);
     fitSelectWidth(mSel);
 }
+// ★2026-08-27 热力图渲染缓存：key = 年月+数据指纹（记录变才重建，重复进入秒开）
+let heatmapCache = {};
 function renderHeatmap() {
     const cal = document.getElementById('hmCalendar');
     const sumEl = document.getElementById('hmSummary');
     if (!cal) return;
     if (!hmYear || !hmMonth) { initHeatmap(); return; }
     const year = hmYear, month = hmMonth;
-    const dayCount = {};
-    records.forEach(function (r) {
-        if (!r.createdAt) return;
-        const d = new Date(r.createdAt);
-        if (isNaN(d.getTime())) return;
-        if (d.getFullYear() === year && d.getMonth() + 1 === month) {
-            const day = d.getDate();
-            dayCount[day] = (dayCount[day] || 0) + 1;
+    const dataFp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
+        const t = r.updatedAt || r.createdAt || '';
+        return t > m ? t : m;
+    }, '');
+    const cacheKey = year + '_' + month + '_' + dataFp;
+    let html = heatmapCache[cacheKey];
+    if (html === undefined) {
+        const dayCount = {};
+        records.forEach(function (r) {
+            if (!r.createdAt) return;
+            const d = new Date(r.createdAt);
+            if (isNaN(d.getTime())) return;
+            if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+                const day = d.getDate();
+                dayCount[day] = (dayCount[day] || 0) + 1;
+            }
+        });
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstWeekday = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+        html = '';
+        for (let i = 0; i < firstWeekday; i++) html += '<div class="hm-day empty"></div>';
+        let maxDay = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+            const c = dayCount[day] || 0;
+            if (c > maxDay) maxDay = c;
+            const lv = c > 0 ? 'hm-red' : '';
+            html += '<div class="hm-day ' + lv + '" data-day="' + day + '" data-count="' + c + '">' + day + '</div>';
         }
-    });
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const firstWeekday = (new Date(year, month - 1, 1).getDay() + 6) % 7;
-    let html = '';
-    for (let i = 0; i < firstWeekday; i++) html += '<div class="hm-day empty"></div>';
-    let total = 0, maxDay = 0;
-    for (let day = 1; day <= daysInMonth; day++) {
-        const c = dayCount[day] || 0;
-        total += c;
-        if (c > maxDay) maxDay = c;
-        const lv = c > 0 ? 'hm-red' : '';
-        html += '<div class="hm-day ' + lv + '" data-day="' + day + '" data-count="' + c + '">' + day + '</div>';
+        heatmapCache[cacheKey] = html;
+        // 缓存防膨胀：超过 30 条清掉（数据指纹变化后旧 key 自然失效）
+        if (Object.keys(heatmapCache).length > 30) heatmapCache = {};
     }
     cal.innerHTML = html;
+    const total = Array.prototype.reduce.call(cal.querySelectorAll('.hm-day:not(.empty)'), function (s, el) {
+        return s + (parseInt(el.getAttribute('data-count'), 10) || 0);
+    }, 0);
     if (sumEl) sumEl.textContent = year + '年' + month + '月 · 徒步 ' + total + ' 次';
     // ★2026-08-26 累计爬升已移到概览统计卡片（总爬升），热力图底部不再重复显示
     cal.querySelectorAll('.hm-day:not(.empty)').forEach(function (el) {
@@ -7195,9 +7433,13 @@ function renderPlannedTripsTable() {
                     </tr>
                 `;
             } else {
+                // ★2026-08-27 入场动画只首次播（后续刷新/编辑/翻页不重播）
+                const rowAnimCls = plannedRowsAnimated ? '' : 'table-row-animate ';
+                const rowDelayStyle = plannedRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
                 return `
-                    <tr class="table-row-advanced table-row-animate border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="animation-delay: ${idx * 0.05}s;">
+                    <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle}">
                         <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
+                            ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
                             ${trip.name}
                         </td>
                         <td class="p-2 text-white/80 text-base font-medium" data-label="海拔">
@@ -7213,18 +7455,7 @@ function renderPlannedTripsTable() {
                             ${formatDateTime(trip.createdAt)}
                         </td>
                         <td class="p-2 text-center" data-label="操作">
-                            <button id="complete-planned-btn-${trip.id}" 
-                                    data-testid="complete-planned-button-${trip.id}"
-                                    class="ripple-effect btn-click-effect bg-green-600 text-white p-1 rounded hover:bg-green-700 transition-colors inline-flex items-center justify-center mr-1"
-                                    title="标记为已完成">
-                                <span class="material-icons">check</span>
-                            </button>
-                            <button id="delete-planned-btn-${trip.id}" 
-                                    data-testid="delete-planned-button-${trip.id}"
-                                    class="ripple-effect btn-click-effect bg-red-600 text-white p-1 rounded hover:bg-red-700 transition-colors inline-flex items-center justify-center"
-                                    title="删除">
-                                <span class="material-icons">delete</span>
-                            </button>
+                            ${plannedBatchMode ? '' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="ripple-effect btn-click-effect bg-green-600 text-white p-1 rounded hover:bg-green-700 transition-colors inline-flex items-center justify-center mr-1" title="标记为已完成"><span class="material-icons">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="ripple-effect btn-click-effect bg-red-600 text-white p-1 rounded hover:bg-red-700 transition-colors inline-flex items-center justify-center" title="删除"><span class="material-icons">delete</span></button>'}
                         </td>
                     </tr>
                 `;
@@ -7232,6 +7463,7 @@ function renderPlannedTripsTable() {
         }).join('');
         
         if (tbody) safeSetElementContent('plannedTripsTable', tableContent);
+        plannedRowsAnimated = true; // ★2026-08-27 首次有行渲染后置位（后续不播入场动画）
         
         // 表格横向滚动归位（刷新/重渲染后回到最左）
         if (tbody && tbody.parentElement && tbody.parentElement.parentElement) {
@@ -7261,6 +7493,18 @@ function attachPlannedTripsEventListeners() {
         };
     }
     
+    // ★2026-08-27 计划批量：勾选框 + 工具栏按钮（onclick 覆盖式绑定，防静态节点监听器累积）
+    document.querySelectorAll('.planned-batch-check').forEach(function (cb) {
+        cb.onchange = function (e) { togglePlannedBatchSelect(cb.getAttribute('data-id'), e); };
+    });
+    const pBatchBtn = safeGetElementById('plannedBatchModeBtn');
+    if (pBatchBtn) pBatchBtn.onclick = togglePlannedBatchMode;
+    const pBatchDelBtn = safeGetElementById('plannedBatchDeleteBtn');
+    if (pBatchDelBtn) pBatchDelBtn.onclick = deletePlannedBatchSelected;
+    const pBatchCancelBtn = safeGetElementById('plannedBatchCancelBtn');
+    if (pBatchCancelBtn) pBatchCancelBtn.onclick = exitPlannedBatchMode;
+    updatePlannedBatchBar(); // 渲染后同步工具栏状态（跨页勾选保留）
+    
     sortedTrips.forEach(trip => {
         if (plannedEditingId === trip.id) {
             const saveBtn = safeGetElementById(`save-planned-btn-${trip.id}`);
@@ -7279,7 +7523,12 @@ function attachPlannedTripsEventListeners() {
             
             if (row) {
                 row.addEventListener('click', (e) => {
-                    if (e.target.closest('button')) {
+                    if (e.target.closest('button') || e.target.classList.contains('planned-batch-check')) {
+                        return;
+                    }
+                    // ★2026-08-27 批量模式：点击行切换勾选
+                    if (plannedBatchMode) {
+                        togglePlannedBatchSelect(trip.id, null);
                         return;
                     }
                     startPlannedEdit(trip.id);
@@ -9682,17 +9931,19 @@ async function init() {
         // ★2026-08-21 v1.1.1.5 启动优化：启动只渲染当前概览页，记录/计划表格延迟到切 tab 时渲染
         updateStatistics();
         
-        // 加载计划徒步行数据（只读数据，渲染延迟到切到计划 tab）
-        await loadPlannedTripsFromStorage();
+        // ★2026-08-27 启动并行：计划 + 同步配置/状态并行加载（原串行 await，省一次 IndexedDB 往返，启动更快）
+        await Promise.all([
+            loadPlannedTripsFromStorage(),
+            loadSyncState().catch(function () { /* 同步初始化失败不阻塞启动 */ })
+        ]);
         // ★2026-08-25 计划日期提醒（今天有/已过期未完成）：延迟 1s 显示、toast 停留 2s
         setTimeout(checkPlannedTripReminders, 1000);
         
         setupEventListeners();
         updateSortIcons();
         
-        // WebDAV 同步：加载配置/状态，若开启自动同步则静默合并
+        // WebDAV 同步：配置已由 loadSyncState 并行加载，这里绑定事件 + 若开启自动同步则静默合并
         try {
-            await loadSyncState();
             setupSyncEventListeners();
             bindAutoCheckOnSettingsTab();
             initSystemThemeListener(); // ★跟随系统深色模式监听（v1.4.10.2）
