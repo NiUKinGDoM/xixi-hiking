@@ -19,6 +19,9 @@
             padding: 0;
             min-height: 100vh;
             min-height: 100dvh; /* 2026-08-14 iPhone 适配：dvh=动态视口（Safari 地址栏收起/展开不跳动），低版本回退 100vh */
+            /* ★2026-08-27 滚动丝滑：touch 惯性滚动 + 防下拉弹性露白底 */
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
             font-size: 16px;
             font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
             font-weight: 900;
@@ -4714,8 +4717,9 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.4.8</div>
+                        <div class="about-version">版本 1.1.4.9</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
+                        <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag">Made by XiXi 💛</div>
                     </div>
                 </div>
@@ -4747,6 +4751,43 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
     window.addEventListener('load', function () {
         navigator.serviceWorker.register('./sw.js').catch(function () { /* 注册失败静默（如 file:// 环境） */ });
     });
+}
+
+// ★2026-08-27 关于页：查看更新日志（拉当前版本 GitHub Release，失败提示）
+// ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
+// 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
+var BUILTIN_CHANGELOG = {
+    'v1.1.4.9': '## v1.1.4.9 更新内容\n\n**批量删除**\n- 记录页 / 计划页新增「批量管理」：勾选多条一键删除（确认弹窗，照片一并清理）\n\n**性能优化**\n- 统计图表防抖：数据没变不再重复重建图表\n- 启动加载并行：启动更快\n- 列表行入场动画只播首次，编辑/刷新不再整页闪\n- 灯箱照片预加载+缓存：翻页秒开\n- 热力图渲染缓存：切 tab 秒进\n- backdrop-filter 瘦身：滚动更流畅\n\n**体验（原生）**\n- 返回键防误退 + 有弹窗先关弹窗\n- 深色模式防闪白（启动屏 + WebView 双层）\n- 导航栏跟随主题、轻震动反馈、滚动丝滑\n\n**应用图标**\n- 自适应图标：圆角/圆形/方形系统自动适配（原 logo 不变）\n\n**其他**\n- 关于页：查看更新日志（内置离线可看）\n- 检查更新简化：直接检查\n- 更新下载进度简洁百分比\n- 网页版离线缓存\n\nMade by XiXi 💛',
+    'v1.1.4.8': '## v1.1.4.8 更新内容\n\n**批量删除**\n- 记录页 / 计划页新增「批量管理」：勾选多条一键删除（确认弹窗，照片一并清理）\n\n**性能优化**\n- 统计图表防抖：数据没变不再重复重建图表\n- 启动加载并行：启动更快\n- 列表行入场动画只播首次，编辑/刷新不再整页闪\n- 灯箱照片预加载+缓存：翻页秒开\n- 热力图渲染缓存：切 tab 秒进\n- backdrop-filter 瘦身：滚动更流畅\n\n**网页版**\n- 新增离线缓存（Service Worker）：断网也能打开 App\n\nMade by XiXi 💛',
+    'v1.1.4.7': '## v1.1.4.7 更新内容\n\n**更新下载进度修复**\n- 修复下载百分比不显示的问题（镜像不返回文件大小时，显示已下载大小兜底）\n\n**WebDAV 弹窗**\n- 同步状态/进度文字字号调小一档\n\nMade by XiXi 💛',
+    'v1.1.4.6': '## v1.1.4.6 更新内容\n\n**底栏**\n- 记录/计划页非第一页时，点击底栏当前 tab 刷新自动回到第一页\n- 浅色模式下底栏可见性微调\n\nMade by XiXi 💛',
+    'v1.1.4.5': '## v1.1.4.5 更新内容\n\n**列表分页**\n- 记录/计划列表每页 10 条 + 底部翻页控件\n\n**同步进度**\n- WebDAV 上传/下载阶段进度提示\n\n**更新下载**\n- 更新 APK 下载实时百分比\n\n**其他**\n- 诊断报告增加 WebDAV 状态、最近同步时间\n- 清理调试日志\n- 深浅色切换 0.3s 平滑过渡\n\nMade by XiXi 💛'
+};
+function showChangelogModal() {
+    var modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:340px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color:#667eea;">history_edu</span>更新日志 · v' + APP_VERSION + '</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap;" id="changelogBody">正在加载…</div>' +
+        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="changelogClose">关闭</button></div></div>';
+    document.body.appendChild(modal);
+    document.getElementById('changelogClose').addEventListener('click', function () { document.body.removeChild(modal); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    var el = document.getElementById('changelogBody');
+    // 优先本地内置（离线可看）
+    var localBody = BUILTIN_CHANGELOG['v' + APP_VERSION];
+    if (localBody) {
+        if (el) el.textContent = localBody;
+    } else {
+        // 当前版本未内置：联网拉取兜底
+        fetchReleaseBodyGuarded('v' + APP_VERSION).then(function (body) {
+            var el2 = document.getElementById('changelogBody');
+            if (el2) el2.textContent = body || '该版本暂无更新内容说明';
+        }).catch(function () {
+            var el3 = document.getElementById('changelogBody');
+            if (el3) el3.textContent = '该版本更新内容未内置，且网络不可用（联网后重试）';
+        });
+    }
 }
 
 // ★2026-08-21 v1.1.1.6 错误日志收集（最近 100 条，内存缓存，设置页可导出诊断）
@@ -5043,7 +5084,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.4.8';
+var APP_VERSION = '1.1.4.9';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6201,6 +6242,7 @@ function deleteBatchSelected() {
         renderTable();
         updateBatchBar();
         showSuccessMessage('已删除 ' + ids.length + ' 条记录');
+        triggerHaptic(20); // ★2026-08-27 渐进增强：批量删除成功震动反馈
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
@@ -6256,6 +6298,7 @@ function deletePlannedBatchSelected() {
         updatePlannedBatchBar();
         renderPlannedTripsTable();
         showSuccessMessage('已删除 ' + ids.length + ' 条计划');
+        triggerHaptic(20); // ★2026-08-27 渐进增强：批量删除成功震动反馈
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
@@ -6495,6 +6538,27 @@ function closePhotoLightbox() {
     });
     lightboxImgCache = {};
 }
+
+// ★2026-08-27 渐进增强：返回键先关弹窗（原生 onBackPressed 回调 __handleSystemBack）
+// 弹窗状态追踪：MutationObserver 监听增删（confirm/glass 弹窗），灯箱单独查 display
+window.__modalOpen = false;
+try {
+    new MutationObserver(function () {
+        var lb = document.getElementById('photoLightbox');
+        window.__modalOpen = !!(document.querySelector('.confirm-modal, .glass-modal')
+            || (lb && lb.style && lb.style.display !== 'none'));
+    }).observe(document.body, { childList: true, subtree: true });
+} catch (e) { /* 低版本不支持 MutationObserver，忽略（返回键走防误退） */ }
+window.__handleSystemBack = function () {
+    try {
+        if (!window.__modalOpen) return false;
+        var modals = document.querySelectorAll('.confirm-modal, .glass-modal');
+        if (modals.length) { modals[modals.length - 1].remove(); return true; }
+        var lb = document.getElementById('photoLightbox');
+        if (lb && lb.style.display !== 'none') { closePhotoLightbox(); return true; }
+    } catch (e) { /* 忽略 */ }
+    return false;
+};
 // ★2026-08-25 灯箱主按钮统一入口：编辑模式=添加照片，查看模式=保存图片
 function lbPrimaryAction() {
     var lb = photoLightboxEl;
@@ -6622,6 +6686,7 @@ function saveRecord(id) {
     updateStatistics();
     saveToStorage();
     renderTable();
+    triggerHaptic(15); // ★2026-08-27 渐进增强：保存成功轻震动反馈
 }
 
 function handleSort(field) {
@@ -8171,49 +8236,9 @@ function fetchReleaseBodyGuarded(tag, timeoutMs) {
     });
 }
 
-// ★2026-08-25 检查更新确认弹窗：样式与更新弹窗一致（confirm-modal 体系），「检查」/「关闭」
-// ★2026-08-26 确认弹窗：检测结果行（发现新版本/已最新）+ 内容显示【当前版本】更新内容回顾；点检查后才显示最新版本内容
-function showCheckUpdateConfirm() {
-    if (updaterBusy) return;
-    const modal = document.createElement('div');
-    modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
-        '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>检查更新</div>' +
-        '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:240px;overflow-y:auto;">' +
-        '<div style="font-weight:600;margin-bottom:6px;">当前版本 v' + APP_VERSION + '</div>' +
-        '<div id="checkUpdateBody" style="white-space:pre-wrap;">正在加载版本更新内容…</div>' +
-        '</div>' +
-        '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="checkCancelBtn" style="color:#ffffff !important;">关闭</button>' +
-        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="checkGoBtn">检查</button></div></div>';
-    document.body.appendChild(modal);
-    document.getElementById('checkCancelBtn').addEventListener('click', function () { document.body.removeChild(modal); });
-    document.getElementById('checkGoBtn').addEventListener('click', function () {
-        document.body.removeChild(modal);
-        checkForUpdate();
-    });
-    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
-    // 检测结果行：有新版 →「发现新版本 vX（当前 vY）」；已最新 → 绿色提示
-    fetchLatestReleaseGuarded(8000).then(function (info) {
-        const bodyEl = document.getElementById('checkUpdateBody');
-        if (!bodyEl || !document.body.contains(modal)) return;
-        const latest = parseTagVersion(info.tag);
-        let head = '';
-        if (latest && versionGreater(latest, APP_VERSION)) {
-            head = '<div style="color:#b91c1c;font-weight:700;margin-bottom:4px;">发现新版本 v' + latest + '（当前 v' + APP_VERSION + '）</div>';
-        } else {
-            head = '<div style="color:#16a34a;font-weight:600;margin-bottom:4px;">当前已是最新版本 v' + APP_VERSION + '</div>';
-        }
-        // ★2026-08-26 内容 = 当前版本更新内容（回顾）；点「检查」后才显示最新版内容
-        fetchReleaseBodyGuarded('v' + APP_VERSION).then(function (curBody) {
-            if (!bodyEl || !document.body.contains(modal)) return;
-            const bodyText = (curBody || '').slice(0, 600);
-            bodyEl.innerHTML = head + (bodyText ? '<div style="margin-top:4px;">' + escapeHtml(bodyText).replace(/\n/g, '<br>') + '</div>' : '<div style="margin-top:4px;color:#8b93a1;">暂无当前版本更新内容</div>');
-        });
-    }).catch(function () {
-        const bodyEl = document.getElementById('checkUpdateBody');
-        if (bodyEl && document.body.contains(modal)) bodyEl.textContent = '无法获取更新内容（网络异常）';
-    });
-}
+// ★2026-08-27 检查更新确认弹窗已删（功能与「关于页 → 查看更新日志」重复）：
+// 点击「检查更新」直接检查，发现新版本弹大窗，无新版 toast「已是最新」
+// 更新内容回顾请看设置页底部「关于应用 → 查看更新日志」
 
 // 检查更新（设置页按钮）：异步 fetch，永不卡死
 function checkForUpdate() {
@@ -8333,13 +8358,17 @@ window.XixiUpdaterCallback = function (state, message) {
     const desc = document.getElementById('checkUpdateDesc');
     try {
         if (state === 'progress') {
-            // ★2026-08-26 下载进度（原生流式 300ms 回调；格式 done/total 字节，total=-1 时镜像无总大小，显示已下载大小兜底）
+            // ★2026-08-27 下载进度（原生流式 300ms 回调；格式 done/total 字节）——toast 简洁百分比
+            // 「正在下载更新… 56%」；镜像无总大小时兜底显示已下载大小
             const parts = String(message || '').split('/');
             const doneBytes = parseInt(parts[0], 10) || 0;
             const totalBytes = parseInt(parts[1], 10) || 0;
-            const fmtMB = function (b) { return (b / 1024 / 1024).toFixed(1) + ' MB'; };
-            let progTxt = '正在下载更新… 已下载 ' + fmtMB(doneBytes);
-            if (totalBytes > 0) progTxt += ' / ' + fmtMB(totalBytes) + '（' + Math.round(doneBytes * 100 / totalBytes) + '%）';
+            let progTxt;
+            if (totalBytes > 0) {
+                progTxt = '正在下载更新… ' + Math.round(doneBytes * 100 / totalBytes) + '%';
+            } else {
+                progTxt = '正在下载更新… 已下载 ' + (doneBytes / 1024 / 1024).toFixed(1) + ' MB';
+            }
             updateLoadingToast(progTxt);
             if (desc) desc.textContent = totalBytes > 0 ? '正在下载新版本… ' + Math.round(doneBytes * 100 / totalBytes) + '%' : '正在下载新版本…';
         } else if (state === 'need_permission') {
@@ -10006,10 +10035,10 @@ function setupEventListeners() {
         cleanupFunctions.push(() => addBtn.removeEventListener('click', handler));
     }
 
-    // 检查更新（2026-08-11：GitHub Release + 国内镜像，应用内自更；★2026-08-25 先弹确认窗再检测）
+    // 检查更新（★2026-08-27 直接检查：确认弹窗已删，更新内容看关于页「查看更新日志」）
     const checkUpdateItem = document.getElementById('checkUpdateItem');
     if (checkUpdateItem) {
-        const handler = showCheckUpdateConfirm;
+        const handler = checkForUpdate;
         checkUpdateItem.addEventListener('click', handler);
         cleanupFunctions.push(() => checkUpdateItem.removeEventListener('click', handler));
     }
@@ -10022,6 +10051,12 @@ function setupEventListeners() {
         cleanupFunctions.push(() => dataInfoIcon.removeEventListener('click', handler));
     }
     
+    // ★2026-08-27 关于页：查看更新日志按钮
+    const changelogBtn = document.getElementById('changelogBtn');
+    if (changelogBtn) {
+        changelogBtn.addEventListener('click', showChangelogModal);
+    }
+    
     // 导入按钮
     const importBtn = document.getElementById('importBtn');
     if (importBtn) {
@@ -10029,8 +10064,7 @@ function setupEventListeners() {
         const handler = function () {
             showImportModal();
             scheduleSyncStatusRefresh(2000);
-        };
-        importBtn.addEventListener('click', handler);
+        };        importBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => importBtn.removeEventListener('click', handler));
     }
     

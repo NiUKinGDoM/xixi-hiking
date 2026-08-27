@@ -81,6 +81,16 @@ public class MainActivity extends BridgeActivity {
             }
 
             @Override
+            public void onPageStarted(WebView webView) {
+                // ★2026-08-27 深色防闪白：页面开始加载即设 WebView 背景跟随系统深色
+                // （splash 关闭后、HTML 渲染前的瞬间，WebView 白底不再闪；JS 加载后 body 背景覆盖）
+                int nightMode = getResources().getConfiguration().uiMode
+                        & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+                webView.setBackgroundColor(nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+                        ? 0xFF0A1220 : 0xFFFFFFFF);
+            }
+
+            @Override
             public void onPageLoaded(WebView webView) {
                 setupDownloadListener(webView);
                 setupJsBridge(webView);
@@ -656,6 +666,45 @@ public class MainActivity extends BridgeActivity {
             Log.e(TAG, "Crash log saved to: " + logFile.getAbsolutePath());
         } catch (Exception e) {
             Log.e(TAG, "Failed to write crash log", e);
+        }
+    }
+
+    // ★2026-08-27 渐进增强：返回键先问 JS 是否有关弹窗（有则关，无则防误退）
+    private long lastBackPressTime = 0;
+
+    @Override
+    public void onBackPressed() {
+        try {
+            android.webkit.WebView wv = getBridge().getWebView();
+            if (wv != null) {
+                wv.evaluateJavascript(
+                        "try{window.__handleSystemBack?__handleSystemBack()?'1':'0':'0'}catch(e){'0'}",
+                        new android.webkit.ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String value) {
+                                boolean handled = value != null && value.indexOf('1') >= 0;
+                                if (!handled) doDoubleBackToExit();
+                            }
+                        });
+                return;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "back js bridge failed", e);
+        }
+        doDoubleBackToExit();
+    }
+
+    private void doDoubleBackToExit() {
+        long now = System.currentTimeMillis();
+        if (now - lastBackPressTime < 2000) {
+            finish();
+            return;
+        }
+        lastBackPressTime = now;
+        try {
+            android.widget.Toast.makeText(this, "再按一次退出徒步小记", android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "back press toast failed", e);
         }
     }
 }
