@@ -4804,7 +4804,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.6</div>
+                        <div class="about-version">版本 1.1.5.7</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4851,12 +4851,9 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
-    'v1.1.5.6': '## v1.1.5.6 更新内容
+    'v1.1.5.7': '## v1.1.5.7 更新内容\n\n**修复**\n- 修复上个版本导致页面无法操作的严重问题（更新日志换行转义错误）\n\nMade by XiXi',
 
-**优化**
-- 搜索框滑到列表底部不再自动隐藏（移除底部避让逻辑）
-
-Made by XiXi',
+    'v1.1.5.6': '## v1.1.5.6 更新内容\n\n**优化**\n- 搜索框滑到列表底部不再自动隐藏（移除底部避让逻辑）\n\nMade by XiXi',
     'v1.1.5.5': '## v1.1.5.5 更新内容\n\n**搜索优化**\n- 修复搜索功能报错（变量作用域问题）\n- 搜索框任意方向轻滑即显示，1 秒不碰自动消失\n- 滑到列表底部自动让位（不挡切换页码）\n- 输入法弹出时搜索框跟随键盘上方，关闭自动回位\n\nMade by XiXi',
     'v1.1.5.4': '## v1.1.5.4 更新内容\n\n**新功能**\n- 记录/计划搜索：列表往下滚动时顶部滑出搜索框，按名称实时过滤（找到去年去过的那座山）\n\n**性能**\n- 列表照片缩略图缓存：编辑/翻页秒显不闪烁\n- 统计数字滚动动画防抖：数值没变不再重复播放\n\nMade by XiXi',
     'v1.1.5.3': '## v1.1.5.3 更新内容\n\n**修复**\n- 导出诊断数据功能修复（此前点击报错）\n\n**体验**\n- 错误提示全部中文化：网络/同步/代码错误都显示具体原因（不再英文报错）\n- 离线优化：断网启动跳过自动同步、断网点检查更新直接提示\n- 关于页去掉 Made by XiXi 后的爱心\n\nMade by XiXi',
@@ -5249,7 +5246,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.6';
+var APP_VERSION = '1.1.5.7';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
