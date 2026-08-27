@@ -2361,12 +2361,7 @@
             place-content: center;
         }
         
-        /* 弹窗关闭时不再有 backdrop-filter 重计算，避免淡出卡顿 */
-        body.modal-closing .glass-modal {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            transition: opacity 0.25s ease, transform 0.25s ease !important;
-        }
+        /* ★2026-08-27 弹窗淡出关闭已取消（用户要求直接关），modal-closing CSS 一并删除 */
         
         /* 提示类弹窗（保存路径/成功/失败）淡入淡出动画 */
         .toast-pop {
@@ -4717,7 +4712,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.5.1</div>
+                        <div class="about-version">版本 1.1.5.2</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4764,6 +4759,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.5.2': '## v1.1.5.2 更新内容\n\n**优化**\n- 弹窗关闭取消淡出动画，全部直接关闭（与确认弹窗一致，更干脆）\n\nMade by XiXi 💛',
     'v1.1.5.1': '## v1.1.5.1 更新内容\n\n**修复**\n- 导入/导出弹窗按返回键可直接关闭（此前只有确认弹窗/灯箱支持）\n\nMade by XiXi 💛',
     'v1.1.5.0': '## v1.1.5.0 更新内容\n\n**修复**\n- 返回键关弹窗修复（实时检测，弹窗打开时按返回直接关闭）\n- 防误退提示改用 App 玻璃样式（与下载更新提示一致）\n\n**体验**\n- 批量模式切换到其他页面自动退出\n- 关于页新增 GitHub 图标（点击外部浏览器打开源码仓库）\n\nMade by XiXi 💛',
     'v1.1.4.10': '## v1.1.4.10 更新内容\n\n**修复**\n- 返回键防误退改用系统标准通道（OnBackPressedCallback），确保生效\n- 应用图标恢复原图（修复 walk 字样丢失）\n\n**确认生效（v1.1.4.9 起）**\n- 批量删除、性能优化、深色防闪白、导航栏跟随主题、轻震动、滚动丝滑\n- 关于页更新日志（内置）、检查更新简化、下载进度百分比\n\nMade by XiXi 💛',
@@ -5094,7 +5090,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.5.1';
+var APP_VERSION = '1.1.5.2';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -6552,22 +6548,12 @@ function closePhotoLightbox() {
 // ★2026-08-27 渐进增强：返回键先关弹窗（原生回调 __handleSystemBack，返回 1=已处理 / 0=无弹窗）
 // ★2026-08-27 修复：去掉 MutationObserver 异步缓存（弹窗刚开瞬间可能没更新）→ 每次实时查 DOM
 // ★2026-08-27 修复2：查询范围扩到 .modal-backdrop-animate（所有弹窗外层都带，含导出 exportModal/导入 importMethodModal 这类裸 id 弹窗）
-//   非 confirm-modal 弹窗优先点其「取消」按钮（走各自淡出+状态清理闭包），避免直接 remove 跳过清理
+// ★2026-08-27 修复3：弹窗关闭统一直接 remove（用户要求取消淡出清理，与确认弹窗一致）
 // 返回 1/0 数字（原生 evaluateJavascript 回调可靠判断）
 window.__handleSystemBack = function () {
     try {
         var modals = document.querySelectorAll('.confirm-modal, .modal-backdrop-animate');
-        if (modals.length) {
-            var m = modals[modals.length - 1]; // 最上层弹窗
-            if (m.classList && m.classList.contains('confirm-modal')) {
-                m.remove(); // 确认弹窗体系：同步 remove 即完整关闭
-            } else {
-                // 导入/导出等：点取消按钮走淡出 + 清理闭包（导出弹窗还会管理 body.modal-closing）
-                var cb = m.querySelector('.modal-cancel-btn');
-                if (cb) { cb.click(); } else { m.remove(); }
-            }
-            return 1;
-        }
+        if (modals.length) { modals[modals.length - 1].remove(); return 1; }
         var lb = document.getElementById('photoLightbox');
         if (lb && lb.style && lb.style.display !== 'none') { closePhotoLightbox(); return 1; }
     } catch (e) { /* 忽略 */ }
@@ -9599,14 +9585,8 @@ function showExportModal() {
     const exportDiagBtn = document.getElementById('exportDiagBtn');
 
     const closeModal = () => {
-        // 淡出后移除：淡出期间加 body.modal-closing 禁用 backdrop-filter（避免重模糊卡顿），完成后清理
-        document.body.classList.add('modal-closing');
-        modal.style.transition = 'opacity 0.25s ease';
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            if (modal.parentNode) modal.remove();
-            document.body.classList.remove('modal-closing');
-        }, 250);
+        // ★2026-08-27 淡出关闭取消（用户要求）：与确认弹窗一致，直接移除
+        if (modal.parentNode) modal.remove();
     };
 
     closeBtn.addEventListener('click', closeModal);
@@ -9733,11 +9713,8 @@ function showImportModal() {
 
     // 淡出关闭
     const fadeOutModal = () => {
-        modal.style.transition = 'opacity 0.25s ease';
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            if (modal.parentNode) modal.remove();
-        }, 250);
+        // ★2026-08-27 淡出关闭取消（用户要求）：与确认弹窗一致，直接移除
+        if (modal.parentNode) modal.remove();
     };
 
     document.getElementById('selectFileBtn').addEventListener('click', () => {
