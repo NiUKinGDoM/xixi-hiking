@@ -110,6 +110,9 @@ public class MainActivity extends BridgeActivity {
 
         super.onCreate(savedInstanceState);
 
+        // ★2026-08-27 返回键防误退 + 关弹窗（OnBackPressedCallback 官方通道）
+        setupBackHandler();
+
         // 立即尝试设置下载监听和 JS 桥（WebView 可能已可用）
         if (bridge != null && bridge.getWebView() != null) {
             setupDownloadListener(bridge.getWebView());
@@ -670,28 +673,34 @@ public class MainActivity extends BridgeActivity {
     }
 
     // ★2026-08-27 渐进增强：返回键先问 JS 是否有关弹窗（有则关，无则防误退）
+    // ★2026-08-27 加固：override onBackPressed 可能被 OnBackPressedDispatcher 抢占，
+    // 改用官方 getOnBackPressedDispatcher().addCallback（AppCompatActivity 标准通道，100% 生效）
     private long lastBackPressTime = 0;
 
-    @Override
-    public void onBackPressed() {
-        try {
-            android.webkit.WebView wv = getBridge().getWebView();
-            if (wv != null) {
-                wv.evaluateJavascript(
-                        "try{window.__handleSystemBack?__handleSystemBack()?'1':'0':'0'}catch(e){'0'}",
-                        new android.webkit.ValueCallback<String>() {
-                            @Override
-                            public void onReceiveValue(String value) {
-                                boolean handled = value != null && value.indexOf('1') >= 0;
-                                if (!handled) doDoubleBackToExit();
-                            }
-                        });
-                return;
+    private void setupBackHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                try {
+                    android.webkit.WebView wv = getBridge().getWebView();
+                    if (wv != null) {
+                        wv.evaluateJavascript(
+                                "try{window.__handleSystemBack?__handleSystemBack()?'1':'0':'0'}catch(e){'0'}",
+                                new android.webkit.ValueCallback<String>() {
+                                    @Override
+                                    public void onReceiveValue(String value) {
+                                        boolean handled = value != null && value.indexOf('1') >= 0;
+                                        if (!handled) doDoubleBackToExit();
+                                    }
+                                });
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "back js bridge failed", e);
+                }
+                doDoubleBackToExit();
             }
-        } catch (Exception e) {
-            Log.e(TAG, "back js bridge failed", e);
-        }
-        doDoubleBackToExit();
+        });
     }
 
     private void doDoubleBackToExit() {
