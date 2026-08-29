@@ -151,6 +151,28 @@ function visible(id) { const el = document.getElementById(id); return el && getC
     await delay(50);
     const cb = document.querySelector('.batch-check');
     assert('批量模式出现勾选框', !!cb, 'cb=' + !!cb);
+    window.toggleBatchMode();
+    await delay(50);
+
+    console.log('\n== 6. 弹窗防重入（2026-08-29 叠加修复回归）==');
+    // 导出弹窗连开两次 → 只应存在 1 个
+    window.showExportModal();
+    window.showExportModal();
+    await delay(30);
+    assert('导出弹窗连开两次仅 1 个', document.querySelectorAll('#exportModal').length === 1, 'count=' + document.querySelectorAll('#exportModal').length);
+    document.getElementById('closeExportModal').click();
+    await delay(10);
+    assert('导出弹窗关闭按钮可正常关闭', !document.getElementById('exportModal'));
+
+    // 管理弹窗连开两次 → 只应存在 1 个 .confirm-modal
+    const demoFiles = [{ name: 'xixi-hiking-backup-20260828_120000.html' }, { name: 'xixi-hiking-backup-20260828_130000.html' }];
+    window.showManageBackupsModal(demoFiles);
+    window.showManageBackupsModal(demoFiles);
+    await delay(30);
+    assert('管理弹窗连开两次仅 1 个', document.querySelectorAll('.confirm-modal').length === 1, 'count=' + document.querySelectorAll('.confirm-modal').length);
+    document.getElementById('manageCloseBtn').click();
+    await delay(10);
+    assert('管理弹窗关闭按钮可正常关闭', document.querySelectorAll('.confirm-modal').length === 0);
 
     console.log('\n===== 结果: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
     process.exit(fail ? 1 : 0);
