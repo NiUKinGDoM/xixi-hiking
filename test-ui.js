@@ -174,6 +174,15 @@ function visible(id) { const el = document.getElementById(id); return el && getC
     await delay(10);
     assert('管理弹窗关闭按钮可正常关闭', document.querySelectorAll('.confirm-modal').length === 0);
 
+    // 下载选择弹窗连开两次 → 只应存在 1 个（2026-08-29 下载按钮同款修复回归）
+    window.showRestoreFileModal(demoFiles);
+    window.showRestoreFileModal(demoFiles);
+    await delay(30);
+    assert('下载弹窗连开两次仅 1 个', document.querySelectorAll('.confirm-modal').length === 1, 'count=' + document.querySelectorAll('.confirm-modal').length);
+    document.getElementById('restoreCancelBtn').click();
+    await delay(10);
+    assert('下载弹窗关闭按钮可正常关闭', document.querySelectorAll('.confirm-modal').length === 0);
+
     console.log('\n===== 结果: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
     process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL:', e); process.exit(1); });

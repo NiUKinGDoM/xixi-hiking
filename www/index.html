@@ -938,8 +938,9 @@
             .grid[class*="grid-cols-4"][class*="gap-3"] > * { margin: 6px; }
         }
         /* ★2026-08-25 iPad/大屏适配（仅 ≥1024px 生效，手机布局零影响）：内容限宽居中 + 底栏不拉伸 */
+        /* ★2026-08-29 .container.container 双类提特异性：压过 Tailwind 产物同名 .container（3233 行 64rem=1024px 会覆盖 900px） */
         @media (min-width: 1024px) {
-            .container { max-width: 900px; margin-left: auto; margin-right: auto; }
+            .container.container { max-width: 900px; margin-left: auto; margin-right: auto; }
             .bottom-tabbar { max-width: 460px; }
         }
         .bottom-tabbar {
@@ -2024,9 +2025,6 @@
         .sort-icon {
             font-size: 16px;
             opacity: 0.6;
-        }
-        /* 排序图标动画 */
-        .sort-icon {
             transition: transform 0.1s ease, color 0.3s ease, opacity 0.3s ease;
         }
         
@@ -4802,7 +4800,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.6.6</div>
+                        <div class="about-version">版本 1.1.6.7</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -4849,6 +4847,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.6.7': '## v1.1.6.7 更新内容\n\n**弹窗与安全优化**\n- 修复下载按钮弹窗连点叠加、关闭失灵\n- 全部弹窗加防重入，不再出现多个弹窗叠加\n- 删除照片增加确认提示，防误删\n- 编辑海拔输入负数自动归零\n- 分享卡里程显示统一为一位小数\n\nMade by XiXi',
     'v1.1.6.6': '## v1.1.6.6 更新内容\n\n**弹窗修复**\n- 修复导出/管理弹窗连点叠加、关闭按钮失灵的问题\n- 管理云端备份时按钮显示读取状态，防止重复点击\n\nMade by XiXi',
     'v1.1.6.5': '## v1.1.6.5 更新内容\n\n**五项优化**\n- 启动瘦身：删除启动时多余的重复渲染\n- 安全加固：记录/计划名等注入面全部转义\n- 系统开启减少动态效果时动画自动降级\n\nMade by XiXi',
     'v1.1.6.4': '## v1.1.6.4 更新内容\n\n**搜索修复**\n- 彻底修复搜索不实时出结果（轮询检测输入内容）\n\nMade by XiXi',
@@ -4876,6 +4875,7 @@ var BUILTIN_CHANGELOG = {
     'v1.1.4.5': '## v1.1.4.5 更新内容\n\n**列表分页**\n- 记录/计划列表每页 10 条 + 底部翻页控件\n\n**同步进度**\n- WebDAV 上传/下载阶段进度提示\n\n**更新下载**\n- 更新 APK 下载实时百分比\n\n**其他**\n- 诊断报告增加 WebDAV 状态、最近同步时间\n- 清理调试日志\n- 深浅色切换 0.3s 平滑过渡\n\nMade by XiXi 💛'
 };
 function showChangelogModal() {
+    closeOpenModals(); // ★2026-08-29 防重入
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:340px;">' +
@@ -5254,7 +5254,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.6.6';
+var APP_VERSION = '1.1.6.7';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -5434,7 +5434,7 @@ async function generateShareCard(record) {
     var row1Pairs = [
         { label: '海拔 ', value: (record.elevation || 0) + ' m' }
     ];
-    if (record.distance) row1Pairs.push({ label: '里程 ', value: record.distance + ' km' });
+    if (record.distance) row1Pairs.push({ label: '里程 ', value: (Number(record.distance) || 0).toFixed(1) + ' km' }); // ★2026-08-29 与统计页统一 toFixed(1)，防长小数
     if (record.duration) row1Pairs.push({ label: '用时 ', value: formatDuration(record.duration) });
     // ★2026-08-25 自适应：仅海拔一条 64px，2 条 50px，3+ 条 42px
     var row1Size = row1Pairs.length >= 4 ? 42 : (row1Pairs.length === 1 ? 64 : 50);
@@ -6587,6 +6587,7 @@ function exitBatchMode() {
 function deleteBatchSelected() {
     const ids = Array.from(batchSelected);
     if (!ids.length) { showErrorMessage('请先勾选要删除的记录'); return; }
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
@@ -6651,6 +6652,7 @@ function exitPlannedBatchMode() {
 function deletePlannedBatchSelected() {
     const ids = Array.from(plannedBatchSelected);
     if (!ids.length) { showErrorMessage('请先勾选要删除的计划'); return; }
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
@@ -6991,18 +6993,50 @@ function lbAddPhoto() {
     });
 }
 // ★2026-08-25 灯箱删除当前照片（仅编辑模式）：从 editingPhotoIds 移除 + IndexedDB 删 + 刷新编辑行照片区
+// ★2026-08-29 加删除确认（与删除记录同款 confirm-modal 设计语言，防误删不可恢复）
 function lbDeleteCurrent() {
     var lb = photoLightboxEl;
     if (!lb || !lb._currentPid || !lb._editing) return;
-    var pid = lb._currentPid;
-    var ei = editingPhotoIds.indexOf(pid);
-    if (ei >= 0) editingPhotoIds.splice(ei, 1);
-    photoDelete(pid).catch(function () {});
-    lb._ids = lb._ids.filter(function (x) { return x !== pid; });
-    refreshPhotoStrip(lb._recordId);
-    if (!lb._ids.length) { closePhotoLightbox(); return; }
-    if (lb._idx >= lb._ids.length) lb._idx = lb._ids.length - 1;
-    lbLoadImg();
+    closeOpenModals(); // ★2026-08-29 防重入
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #dc2626;">warning</span>
+                删除照片
+            </div>
+            <div class="confirm-modal-message">
+                确定要删除这张照片吗？删除后无法恢复。
+            </div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-cancel ripple-effect" id="lb-confirm-cancel">
+                    取消
+                </button>
+                <button class="confirm-btn-delete check-go-btn ripple-effect" id="lb-confirm-delete">
+                    删除
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const closeModal = () => {
+        if (modal.parentNode) modal.parentNode.removeChild(modal);
+    };
+    document.getElementById('lb-confirm-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.getElementById('lb-confirm-delete').addEventListener('click', () => {
+        closeModal();
+        var pid = lb._currentPid;
+        var ei = editingPhotoIds.indexOf(pid);
+        if (ei >= 0) editingPhotoIds.splice(ei, 1);
+        photoDelete(pid).catch(function () {});
+        lb._ids = lb._ids.filter(function (x) { return x !== pid; });
+        refreshPhotoStrip(lb._recordId);
+        if (!lb._ids.length) { closePhotoLightbox(); return; }
+        if (lb._idx >= lb._ids.length) lb._idx = lb._ids.length - 1;
+        lbLoadImg();
+    });
 }
 // 保存当前照片：App 版走原生桥存相册（M6），网页版浏览器下载
 function saveCurrentPhoto() {
@@ -7049,7 +7083,7 @@ function saveRecord(id) {
     
     record.name = nameInput.value.trim();
     record.difficulty = parseInt(difficultyInput.value);
-    record.elevation = parseInt(elevationInput.value) || 0;
+    record.elevation = Math.max(0, parseInt(elevationInput.value) || 0); // ★2026-08-29 与新增记录一致：负数防护
     
     // 保存记录时间
     if (createdAtInput && createdAtInput.value) {
@@ -7120,6 +7154,7 @@ function updateSortIcons() {
 
 // v1.4.12.9：顶栏标题恢复可编辑——点击标题/铅笔图标弹窗修改，保存到本地
 function showEditTitleModal() {
+    closeOpenModals(); // ★2026-08-29 防重入
     const titleEl = document.getElementById('appTitle');
     const currentTitle = titleEl ? titleEl.textContent : 'XXの徒步小记';
     const modal = document.createElement('div');
@@ -7173,6 +7208,7 @@ async function saveAppTitle(title) {
 
 // v1.4.12.10：区块标题统一弹窗编辑（统计/记录/计划/设置），与顶栏标题同一套交互
 function showSectionTitleModal(titleElementId, saveFn) {
+    closeOpenModals(); // ★2026-08-29 防重入
     const titleEl = document.getElementById(titleElementId);
     if (!titleEl) return;
     const titleTextEl = titleEl.querySelector('.title-text');
@@ -7217,6 +7253,7 @@ function showSectionTitleModal(titleElementId, saveFn) {
 
 /* 2026-08-11 数据管理说明弹窗（i 标识点击显示） */
 function showDataInfoModal() {
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
@@ -7241,6 +7278,7 @@ function showDataInfoModal() {
 }
 
 function showDeleteConfirmModal(recordId, recordName) {
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
@@ -7632,6 +7670,7 @@ function showHeatmapDayDetail(year, month, day) {
         return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() + 1 === month && d.getDate() === day;
     });
     if (dayRecords.length === 0) return;
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     // ★2026-08-23 热力图弹窗 v2：关闭/分享按钮玻璃配方 + meta 间距加宽 + 图片分享同行 + 去分割线
@@ -8105,6 +8144,7 @@ function addNewPlannedTrip() {
 }
 
 function showConfirmCompleteModal(tripId, tripName) {
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
@@ -8181,6 +8221,7 @@ function markPlannedComplete(tripId, tripName) {
 }
 
 function showDeletePlannedTripConfirmModal(tripId, tripName) {
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
@@ -8740,6 +8781,7 @@ function autoCheckUpdateOnLaunch() {
 
 // 新版本弹窗：版本号 + 更新内容 + 立即更新
 function showUpdateModal(info) {
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     const bodyText = (info.body || '').slice(0, 400);
@@ -8839,6 +8881,7 @@ function updateLoadingToast(message) {
 
 // ★备份提醒弹窗（v1.4.10.1）：提示用户去上传备份
 function showBackupReminder(days) {
+    closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
@@ -9082,27 +9125,44 @@ async function uploadSyncBackup(silent) {
 
 // 下载恢复：GET 云端文件 → 覆盖本地
 async function downloadSyncBackup() {
-    await saveSyncConfigFromForm();
-    const url = buildSyncFileUrl();
-    if (!url) {
-        showErrorMessage('请先填写服务器地址');
-        return;
+    if (window.__downloadBusy) return; // ★2026-08-29 防连点：读取云端列表期间重复点击直接忽略
+    window.__downloadBusy = true;
+    const dlBtn = document.getElementById('syncDownloadBtn');
+    if (dlBtn) {
+        dlBtn.disabled = true;
+        const txt = dlBtn.querySelector('.text-sm');
+        if (txt) txt.textContent = '读取中…';
     }
-    setSyncStatus('正在读取云端备份…', 'info', '');
-    // ★优先从网盘实时读取备份文件列表（PROPFIND），失败再回退本地索引
-    const cloudFiles = await listSyncFilesFromCloud();
-    if (cloudFiles && cloudFiles.length > 0) {
-        showRestoreFileModal(cloudFiles);
-        return;
+    try {
+        await saveSyncConfigFromForm();
+        const url = buildSyncFileUrl();
+        if (!url) {
+            showErrorMessage('请先填写服务器地址');
+            return;
+        }
+        setSyncStatus('正在读取云端备份…', 'info', '');
+        // ★优先从网盘实时读取备份文件列表（PROPFIND），失败再回退本地索引
+        const cloudFiles = await listSyncFilesFromCloud();
+        if (cloudFiles && cloudFiles.length > 0) {
+            showRestoreFileModal(cloudFiles);
+            return;
+        }
+        // 网盘读取失败或无文件：回退本地索引
+        const files = await loadSyncFilesIndex();
+        if (files.length === 0) {
+            setSyncStatus('云端没有备份文件，请先上传备份', 'error', 'error');
+            showErrorMessage('云端没有备份文件，请先上传备份');
+            return;
+        }
+        showRestoreFileModal(files);
+    } finally {
+        window.__downloadBusy = false;
+        if (dlBtn) {
+            dlBtn.disabled = false;
+            const txt = dlBtn.querySelector('.text-sm');
+            if (txt) txt.textContent = '下载';
+        }
     }
-    // 网盘读取失败或无文件：回退本地索引
-    const files = await loadSyncFilesIndex();
-    if (files.length === 0) {
-        setSyncStatus('云端没有备份文件，请先上传备份', 'error', 'error');
-        showErrorMessage('云端没有备份文件，请先上传备份');
-        return;
-    }
-    showRestoreFileModal(files);
 }
 
 // ★从网盘实时列出备份文件（PROPFIND 列目录，解析 XML 提取文件名）
@@ -9154,6 +9214,7 @@ async function listSyncFilesFromCloud() {
 
 // 下载恢复：列出之前备份过的文件，让用户选择恢复哪一个
 function showRestoreFileModal(files) {
+    closeOpenModals(); // ★2026-08-29 防重入：连点下载按钮不再叠加弹窗
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     // 最多显示 6 条，更多滚动
@@ -9719,6 +9780,7 @@ async function showSyncStatusModal() {
             </div>
         </div>
     `;
+    closeOpenModals(); // ★2026-08-29 防重入：async 函数 await 后创建前再清一次（防等待期间连点叠加）
     document.body.appendChild(modal);
     const closeBtn = document.getElementById('sync-status-close');
     const closeModal = () => document.body.removeChild(modal);
