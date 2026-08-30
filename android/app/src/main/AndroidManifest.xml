@@ -41,6 +41,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- ★2026-08-30 计划提醒闹钟：不打开 App 也能收到计划提醒（系统到点拉起） -->
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->
@@ -54,4 +59,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 2026-08-30 系统通知（计划提醒等）：Android 13+ 必须运行时申请 POST_NOTIFICATIONS -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- ★2026-08-30 计划提醒精确闹钟：Android 12+ 需此权限（USE_EXACT_ALARM 为 install 级，侧载自动授予；低版本忽略） -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 </manifest>

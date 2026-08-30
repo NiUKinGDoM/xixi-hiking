@@ -1814,24 +1814,22 @@ function getSortedPlannedTrips() {
 let renderPlannedTripsTableRAF = null;
 
 // ★2026-08-25 计划日期提醒：启动时检查未完成计划；★规则：今天有→弹今天（过期忽略）；无今天有过期→弹「计划未完成」；未来 3 天内按 明天/后天/大后天 分组提示
-// ★2026-08-30 收集计划 id 随通知透传（extra.planIds）：点通知「✓ 完成」→ 原生回传 → 标记对应计划完成
 function checkPlannedTripReminders() {
     try {
         var now = new Date();
         var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         var overdue = [], todayList = [], tomorrowList = [], dayAfterList = [], thirdDayList = [];
-        var upcomingIds = [], overdueIds = [];
         (plannedTrips || []).forEach(function (t) {
             if (!t.createdAt || !t.name) return;
             var d = new Date(t.createdAt);
             if (isNaN(d.getTime())) return;
             var day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
             var diff = Math.round((day - today) / 86400000);
-            if (diff < 0) { overdue.push(t.name); overdueIds.push(t.id); }
-            else if (diff === 0) { todayList.push(t.name); upcomingIds.push(t.id); }
-            else if (diff === 1) { tomorrowList.push(t.name); upcomingIds.push(t.id); }
-            else if (diff === 2) { dayAfterList.push(t.name); upcomingIds.push(t.id); }
-            else if (diff === 3) { thirdDayList.push(t.name); upcomingIds.push(t.id); }
+            if (diff < 0) overdue.push(t.name);
+            else if (diff === 0) todayList.push(t.name);
+            else if (diff === 1) tomorrowList.push(t.name);
+            else if (diff === 2) dayAfterList.push(t.name);
+            else if (diff === 3) thirdDayList.push(t.name);
         });
         // ★2026-08-25 今天 + 未来 3 天合并成一条（不重叠）；仅无任何计划时弹过期
         var parts = [];
@@ -1839,9 +1837,30 @@ function checkPlannedTripReminders() {
         if (tomorrowList.length) parts.push('明天有徒步计划：' + tomorrowList.join('、'));
         if (dayAfterList.length) parts.push('后天有徒步计划：' + dayAfterList.join('、'));
         if (thirdDayList.length) parts.push('大后天有徒步计划：' + thirdDayList.join('、'));
-        if (parts.length) showSystemNotification('徒步计划提醒', parts.join(' · '), { planIds: upcomingIds }); // ★2026-08-30 系统通知（网页版降级 toast）
-        else if (overdue.length) showSystemNotification('徒步计划未完成', '计划未完成：' + overdue.join('、'), { planIds: overdueIds });
+        if (parts.length) showSystemNotification('徒步计划提醒', parts.join(' · ')); // ★2026-08-30 系统通知（网页版降级 toast）
+        else if (overdue.length) showSystemNotification('徒步计划未完成', '计划未完成：' + overdue.join('、'));
     } catch (e) { /* 静默 */ }
+}
+
+// ★2026-08-30 不打开 App 也能提醒：把「今天及以后」的计划同步成系统闹钟（每天 08:00 原生触发通知）
+// 计划每次保存（增删改/完成）都全量重设；网页版无桥自动跳过
+function syncPlanAlarmsBridge() {
+    try {
+        if (!window.XixiFileBridge || typeof window.XixiFileBridge.syncPlanAlarms !== 'function') return;
+        var todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        var list = [];
+        (plannedTrips || []).forEach(function (t) {
+            if (!t.createdAt || !t.name || !t.id) return;
+            var d = new Date(t.createdAt);
+            if (isNaN(d.getTime())) return;
+            if (d.getTime() < todayStart.getTime()) return; // 过期不设（今天及以后才提醒）
+            var m = ('0' + (d.getMonth() + 1)).slice(-2);
+            var dd = ('0' + d.getDate()).slice(-2);
+            list.push({ id: t.id, name: t.name, date: d.getFullYear() + '-' + m + '-' + dd });
+        });
+        window.XixiFileBridge.syncPlanAlarms(JSON.stringify(list));
+    } catch (e) { /* 闹钟同步失败不影响使用 */ }
 }
 
 function renderPlannedTripsTable() {
@@ -2341,6 +2360,8 @@ async function savePlannedTripsToStorage() {
             }
             
             await AppStore.setItem(PLANNED_TRIPS_KEY, { trips: validTrips });
+            // ★2026-08-30 计划变更（增删改/完成）后同步系统闹钟：不打开 App 也能提醒
+            syncPlanAlarmsBridge();
             // ★自动同步（v1.4.10.1）：计划数据变更后同样触发自动上传
             maybeAutoUploadAfterChange();
         } catch (error) {
