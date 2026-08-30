@@ -25,6 +25,8 @@ console.log('-- 1. JS 语法 --');
 try {
     const html = fs.readFileSync(HTML, 'utf8');
     const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+    // ★2026-08-30 方案A：主 JS 拆外部文件，脚本块 = 内联 + 4 个外部文件（按加载顺序）
+    ['www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, f), 'utf8')));
     let allOk = true;
     scripts.forEach((s, i) => { try { new vm.Script(s); } catch (e) { allOk = false; bad(`script块${i}: ${e.message}`); } });
     allOk ? ok(`全部 ${scripts.length} 个 script 块语法通过`) : bad('存在语法错误');
@@ -33,6 +35,9 @@ try {
 // 2. 关键函数存在性
 console.log('-- 2. 关键功能完整性 --');
 const html = fs.readFileSync(HTML, 'utf8');
+// ★2026-08-30 方案A：allJs = 内联 script 内容 + 4 个外部 JS（关键函数/死代码/版本/单测均针对 JS 内容）
+const allJs = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n') + '\n;\n' +
+    ['www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'].map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n;\n');
 const critical = [
     ['AppStore（存储层）', 'var AppStore'],
     ['photoDBOpen（照片库）', 'function photoDBOpen'],
@@ -49,7 +54,7 @@ const critical = [
     ['showSuccessMessage（成功提示）', 'function showSuccessMessage'],
     ['showErrorMessage（错误提示）', 'function showErrorMessage'],
 ];
-critical.forEach(([name, sig]) => html.includes(sig) ? ok(name) : bad(name + ' 缺失!'));
+critical.forEach(([name, sig]) => allJs.includes(sig) ? ok(name) : bad(name + ' 缺失!'));
 
 // 3. 死标识符残留（历史清理清单，出现即报）
 console.log('-- 3. 死代码残留扫描 --');
@@ -60,11 +65,11 @@ const deadTokens = [
     'CACHE_DURATION', 'MAX_CACHE_SIZE', 'getCacheKey', 'setCache', 'formatSettingsBrackets'
 ];
 deadTokens.forEach(t => {
-    const c = html.split(t).length - 1;
+    const c = allJs.split(t).length - 1;
     c === 0 ? ok(`无残留: ${t}`) : bad(`残留 ${t}: ${c} 处`);
 });
 // lingguang（允许 AppStore 注释里的说明文字出现，但不得出现在运行代码中）
-const lingCount = (html.split('lingguang').length - 1) - (html.split('去灵光化').length - 1) - 2;
+const lingCount = (allJs.split('lingguang').length - 1) - (allJs.split('去灵光化').length - 1) - 2;
 lingCount > 0 ? bad(`lingguang 运行残留: ${lingCount}`) : ok('无 lingguang 运行残留');
 
 // 4. HTML 结构配对
@@ -82,7 +87,7 @@ try {
     const g = fs.readFileSync(GRADLE, 'utf8');
     const vc = (g.match(/versionCode\s+(\d+)/) || [])[1];
     const vn = (g.match(/versionName\s+"([^"]+)"/) || [])[1];
-    const h1 = html.includes(`var APP_VERSION = '${vn}';`);
+    const h1 = allJs.includes(`var APP_VERSION = '${vn}';`);
     const h2 = html.includes(`>版本 ${vn}<`);
     // 校验版本名四段 0~10 合法（公式对齐因历史错位不校验，见 bump.js 注释）
     const parts = vn.split('.').map(Number);
@@ -145,7 +150,7 @@ const cleanResult = cloudClean([f1, f2, f3]);
 
 // ===== 9. 数据层单测（2026-08-25：提取纯函数真实执行，非静态检查） =====
 console.log('-- 9. 数据层单测 --');
-const htmlSrc = fs.readFileSync(HTML, 'utf8');
+const htmlSrc = allJs; // ★2026-08-30 方案A：函数在外部 JS 文件中
 function extractFn(fnName) {
     const start = htmlSrc.indexOf('function ' + fnName + '(');
     if (start < 0) return null;

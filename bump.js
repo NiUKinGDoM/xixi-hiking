@@ -39,23 +39,27 @@ gradle = gradle.replace(`versionCode ${oldVc}`, `versionCode ${newVc}`);
 gradle = gradle.replace(`versionName "${oldName}"`, `versionName "${newName}"`);
 fs.writeFileSync(GRADLE, gradle, 'utf8');
 
-// 同步 index.html（APP_VERSION + 版本显示）
+// 同步 index.html + app-core.js（★2026-08-30 方案A：APP_VERSION 移入 app-core.js，版本显示仍在 index.html）
+const CORE_JS = path.join(ROOT, 'www/app-core.js');
 let html = fs.readFileSync(HTML, 'utf8');
-if (!html.includes(`var APP_VERSION = '${oldName}';`) || !html.includes(`>版本 ${oldName}<`)) {
-    console.error(`❌ index.html 未找到旧版本 ${oldName}，已回滚 build.gradle`);
+let coreJs = fs.readFileSync(CORE_JS, 'utf8');
+if (!coreJs.includes(`var APP_VERSION = '${oldName}';`) || !html.includes(`>版本 ${oldName}<`)) {
+    console.error(`❌ 未找到旧版本 ${oldName}（app-core.js APP_VERSION / index.html 版本显示），已回滚 build.gradle`);
     fs.writeFileSync(GRADLE, gradle.replace(`versionCode ${newVc}`, `versionCode ${oldVc}`).replace(`versionName "${newName}"`, `versionName "${oldName}"`), 'utf8');
     process.exit(1);
 }
-html = html.replace(`var APP_VERSION = '${oldName}';`, `var APP_VERSION = '${newName}';`);
+coreJs = coreJs.replace(`var APP_VERSION = '${oldName}';`, `var APP_VERSION = '${newName}';`);
+fs.writeFileSync(CORE_JS, coreJs, 'utf8');
 html = html.replace(`>版本 ${oldName}<`, `>版本 ${newName}<`);
 fs.writeFileSync(HTML, html, 'utf8');
 
 // 最终验证
 gradle = fs.readFileSync(GRADLE, 'utf8');
 html = fs.readFileSync(HTML, 'utf8');
+coreJs = fs.readFileSync(CORE_JS, 'utf8');
 const okG = gradle.includes(`versionCode ${newVc}`) && gradle.includes(`versionName "${newName}"`);
-const okH = html.includes(`var APP_VERSION = '${newName}';`) && html.includes(`>版本 ${newName}<`);
+const okH = coreJs.includes(`var APP_VERSION = '${newName}';`) && html.includes(`>版本 ${newName}<`);
 if (!okG || !okH) { console.error('❌ 同步验证失败'); process.exit(1); }
 
 console.log(`✅ bump 完成：v${oldName}（vc${oldVc}）→ v${newName}（vc${newVc}）`);
-console.log(`   build.gradle ✓  APP_VERSION ✓  版本显示 ✓`);
+console.log(`   build.gradle ✓  app-core.js APP_VERSION ✓  版本显示 ✓`);
