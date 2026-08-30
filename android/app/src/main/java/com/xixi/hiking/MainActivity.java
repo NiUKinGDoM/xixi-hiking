@@ -44,7 +44,7 @@ public class MainActivity extends BridgeActivity {
     // ★2026-08-27 键盘高度桥：记录上次通知 JS 的 IME 高度，避免键盘无变化时重复刷 JS
     private int lastImeHeight = -1;
 
-    // ★2026-08-30 通知动作透传：通知「✓ 完成」按钮/点通知本体 → 原生存 JSON → JS consumeNotifyAction 取
+    // ★2026-08-30 通知动作透传：点通知本体（跳计划页）→ 原生存 JSON → JS consumeNotifyAction 取
     //（数据在 JS 侧，原生只负责中转；App 被杀冷启动也能拿到，onCreate/onNewIntent 都处理）
     private String pendingNotifyAction = null;
     private static final int NOTIFY_ID = 1001;
@@ -171,28 +171,14 @@ public class MainActivity extends BridgeActivity {
     }
 
     // ★2026-08-30 通知点击处理：singleTask 下 App 在后台 → onNewIntent；App 被杀 → onCreate(getIntent)
-    // 1) 「✓ 完成」按钮：cancelNotif=1 → 原生立即取消通知（即使 JS 出问题通知也消失）
-    // 2) 把跳转/完成 payload 存起来，JS 启动后经 consumeNotifyAction 取走执行（数据在 JS 侧）
+    // 点通知本体（navigate=plans）→ 存动作 JSON，JS 启动后经 consumeNotifyAction 取走跳计划页
     private void handleNotifyIntent(Intent intent) {
         if (intent == null) return;
         try {
-            if (intent.getIntExtra("cancelNotif", 0) == 1) {
-                android.app.NotificationManager nm =
-                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                if (nm != null) nm.cancel(NOTIFY_ID);
-            }
             String nav = intent.getStringExtra("navigate");
-            String payload = intent.getStringExtra("notifyPayload");
-            if (nav != null || payload != null) {
+            if (nav != null) {
                 org.json.JSONObject obj = new org.json.JSONObject();
-                if (nav != null) obj.put("navigate", nav);
-                if (payload != null && !payload.isEmpty()) {
-                    try {
-                        obj.put("payload", new org.json.JSONObject(payload));
-                    } catch (org.json.JSONException e) {
-                        obj.put("payload", payload);
-                    }
-                }
+                obj.put("navigate", nav);
                 pendingNotifyAction = obj.toString();
             }
         } catch (Exception e) {
@@ -351,21 +337,18 @@ public class MainActivity extends BridgeActivity {
         }
 
         // ★2026-08-30 系统通知（计划提醒等，适配小米灵动岛/通知栏）
-        // JS 调用：window.XixiFileBridge.showNotification(title, body, extraJson) → boolean
-        // extraJson（可空）：{planIds:[...]} 计划 id 列表，透传给「完成」按钮点击后的 JS
+        // JS 调用：window.XixiFileBridge.showNotification(title, body) → boolean
         // 小米 HyperOS 对标准通知自动适配灵动岛胶囊形态；通知渠道固定创建，重复调用幂等
-        // ★2026-08-30 通知交互：
-        //   · 点通知本体 → 回 App 跳计划页（navigate=plans，JS switchTab('plans')）
-        //   · 点「✓ 完成」按钮 → 通知立即消失 + extraJson 透传 JS 标记对应计划完成
+        // ★2026-08-30 通知交互（v1.1.6.10 简化）：点通知本体 → 回 App 跳计划页（navigate=plans）
+        // ★2026-08-30 修复：权限被拒时 notify() 不抛异常、静默丢弃，
+        //   若不检查会误报成功 → JS 收到 true 不降级 toast → 提醒彻底消失
         @JavascriptInterface
-        public boolean showNotification(String title, String body, String extraJson) {
+        public boolean showNotification(String title, String body) {
             try {
                 android.app.NotificationManager nm =
                         (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 if (nm == null) return false;
                 String channelId = "xixi_hiking_reminders";
-                // ★2026-08-30 修复：权限被拒时 notify() 不抛异常、静默丢弃，
-                // 若不检查会误报成功 → JS 收到 true 不降级 toast → 提醒彻底消失
                 if (android.os.Build.VERSION.SDK_INT >= 26) {
                     android.app.NotificationChannel ch = new android.app.NotificationChannel(
                             channelId, "徒步计划提醒", android.app.NotificationManager.IMPORTANCE_DEFAULT);
@@ -396,32 +379,23 @@ public class MainActivity extends BridgeActivity {
                 } else {
                     builder = new android.app.Notification.Builder(MainActivity.this);
                 }
-                // 通知点击 PendingIntent（两个 requestCode 0/1 区分，extra 不会互相覆盖）
+                // 点通知本体 → 回 App 跳计划页
                 int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
                 if (android.os.Build.VERSION.SDK_INT >= 23) {
                     piFlags |= android.app.PendingIntent.FLAG_IMMUTABLE;
                 }
-                // 点通知本体 → 回 App 跳计划页
                 android.content.Intent contentIntent = new android.content.Intent(MainActivity.this, MainActivity.class)
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
                         .putExtra("navigate", "plans");
                 android.app.PendingIntent contentPi = android.app.PendingIntent.getActivity(
                         MainActivity.this, 0, contentIntent, piFlags);
-                // 「✓ 完成」按钮 → 回 App：通知消失 + 透传计划 id 给 JS 标记完成
-                android.content.Intent doneIntent = new android.content.Intent(MainActivity.this, MainActivity.class)
-                        .addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        .putExtra("cancelNotif", 1)
-                        .putExtra("notifyPayload", extraJson == null ? "" : extraJson);
-                android.app.PendingIntent donePi = android.app.PendingIntent.getActivity(
-                        MainActivity.this, 1, doneIntent, piFlags);
                 builder.setSmallIcon(android.R.drawable.ic_dialog_info)
                         .setContentTitle(title == null ? "XiXiの徒步小记" : title)
                         .setContentText(body == null ? "" : body)
                         .setAutoCancel(true)
                         .setPriority(android.app.Notification.PRIORITY_DEFAULT)
-                        .setContentIntent(contentPi)
-                        .addAction(R.drawable.ic_check, "✓ 完成", donePi);
-                // ★固定通知 id：可精确 cancel（「完成」按钮点击后通知消失）
+                        .setContentIntent(contentPi);
+                // ★固定通知 id：启动提醒/闹钟提醒共用，重复提醒直接覆盖
                 nm.notify(NOTIFY_ID, builder.build());
                 return true;
             } catch (Exception e) {
@@ -430,14 +404,103 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
-        // 兼容旧调用（网页版/旧 JS 无 extraJson 时）
+        // ★2026-08-30 不打开 App 也能提醒：JS 把「今天及以后的计划」同步成系统闹钟
+        // JS 调用：window.XixiFileBridge.syncPlanAlarms('[{"id":"..","name":"..","date":"YYYY-MM-DD"}]')
+        // 按 date 分组，每天 08:00 触发一次 AlarmReceiver → 发通知（点通知跳计划页）
+        // 旧闹钟先全 cancel（SharedPreferences 记上次日期集合），App 每次打开/计划变更都全量重设
         @JavascriptInterface
-        public boolean showNotification(String title, String body) {
-            return showNotification(title, body, null);
+        public void syncPlanAlarms(String plansJson) {
+            try {
+                org.json.JSONArray arr = (plansJson == null || plansJson.isEmpty())
+                        ? new org.json.JSONArray() : new org.json.JSONArray(plansJson);
+                // 按日期分组（LinkedHashMap 保持插入序）
+                java.util.Map<String, java.util.List<org.json.JSONObject>> byDate =
+                        new java.util.LinkedHashMap<>();
+                for (int i = 0; i < arr.length(); i++) {
+                    org.json.JSONObject o = arr.optJSONObject(i);
+                    if (o == null) continue;
+                    String date = o.optString("date", "");
+                    if (date.length() != 10) continue;
+                    if (!byDate.containsKey(date)) byDate.put(date, new java.util.ArrayList<org.json.JSONObject>());
+                    byDate.get(date).add(o);
+                }
+                android.app.AlarmManager am =
+                        (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+                if (am == null) return;
+                android.content.SharedPreferences sp =
+                        getSharedPreferences("xixi_alarms", MODE_PRIVATE);
+                // 取消旧闹钟
+                org.json.JSONArray oldDates = new org.json.JSONArray(sp.getString("dates", "[]"));
+                for (int i = 0; i < oldDates.length(); i++) {
+                    String d = oldDates.optString(i);
+                    if (d.length() != 10) continue;
+                    am.cancel(buildPlanAlarmPendingIntent(d, ""));
+                }
+                // 设置新闹钟（今天及以后的日期，每天 08:00 触发一次）
+                org.json.JSONArray newDates = new org.json.JSONArray();
+                long now = System.currentTimeMillis();
+                for (java.util.Map.Entry<String, java.util.List<org.json.JSONObject>> e : byDate.entrySet()) {
+                    String date = e.getKey();
+                    java.lang.StringBuilder names = new java.lang.StringBuilder();
+                    for (org.json.JSONObject p : e.getValue()) {
+                        if (names.length() > 0) names.append("、");
+                        names.append(p.optString("name", "未命名计划"));
+                    }
+                    long trigger = parsePlanDateMillis(date) + 8 * 60 * 60 * 1000L; // 当天 08:00
+                    if (trigger <= now) continue; // 已过 08:00 今天不再补设
+                    android.app.PendingIntent pi = buildPlanAlarmPendingIntent(date, names.toString());
+                    if (android.os.Build.VERSION.SDK_INT >= 31) {
+                        if (am.canScheduleExactAlarms()) {
+                            am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                        } else {
+                            am.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                        }
+                    } else if (android.os.Build.VERSION.SDK_INT >= 23) {
+                        am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                    } else {
+                        am.set(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                    }
+                    newDates.put(date);
+                }
+                sp.edit().putString("dates", newDates.toString()).apply();
+            } catch (Exception ex) {
+                Log.e(TAG, "syncPlanAlarms failed", ex);
+            }
         }
 
-        // ★2026-08-30 通知动作消费：返回 JSON（取走即清空），如 {"navigate":"plans","payload":{"planIds":[...]}}
-        // JS 启动时调用：点通知本体 → navigate=plans 跳计划页；点「完成」→ payload.planIds 标记完成
+        // 计划日期（YYYY-MM-DD）→ 当天 0 点毫秒（本地时区）
+        private long parsePlanDateMillis(String date) {
+            try {
+                java.text.SimpleDateFormat sdf =
+                        new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+                sdf.setTimeZone(java.util.TimeZone.getDefault());
+                java.util.Date d = sdf.parse(date);
+                return d == null ? 0L : d.getTime();
+            } catch (Exception e) {
+                return 0L;
+            }
+        }
+
+        // 按日期构造唯一 PendingIntent（requestCode = YYYYMMDD 数字，稳定可 cancel）
+        private android.app.PendingIntent buildPlanAlarmPendingIntent(String date, String names) {
+            try {
+                int rc = Integer.parseInt(date.replace("-", ""));
+                android.content.Intent i = new android.content.Intent(MainActivity.this, AlarmReceiver.class)
+                        .putExtra("alarmDate", date)
+                        .putExtra("alarmNames", names);
+                int flags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+                if (android.os.Build.VERSION.SDK_INT >= 23) {
+                    flags |= android.app.PendingIntent.FLAG_IMMUTABLE;
+                }
+                return android.app.PendingIntent.getBroadcast(MainActivity.this, rc, i, flags);
+            } catch (Exception e) {
+                Log.e(TAG, "buildPlanAlarmPendingIntent failed", e);
+                return null;
+            }
+        }
+
+        // ★2026-08-30 通知动作消费：返回 JSON（取走即清空），如 {"navigate":"plans"}
+        // JS 启动时调用：点通知本体 → navigate=plans 跳计划页
         @JavascriptInterface
         public String consumeNotifyAction() {
             String a = MainActivity.this.pendingNotifyAction;

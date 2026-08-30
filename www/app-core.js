@@ -25,6 +25,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.7.0': '## v1.1.7.0 更新内容\n\n**计划提醒升级**\n- 不打开 App 也能收到计划提醒（计划当天早上 8 点自动提醒，点击直达计划页）\n- 通知简化：去掉「完成」按钮，点击通知直接进计划页\n\nMade by XiXi',
     'v1.1.6.10': '## v1.1.6.10 更新内容\n\n**通知交互升级**\n- 修复关闭通知权限后提醒彻底消失（权限被拒自动降级 App 内提示）\n- 计划提醒通知可一键「✓ 完成」（通知消失 + 计划自动标记完成）\n- 点击通知直达计划页\n\nMade by XiXi',
     'v1.1.6.9': '## v1.1.6.9 更新内容\n\n**架构与体验升级**\n- 代码结构优化：主逻辑拆分为 4 个独立模块，加载更快\n- 计划提醒接入系统通知栏（不再只弹窗提示）\n- 全局禁止长按复制文字和长按图片菜单\n- 修复通知权限被拒时提醒静默丢失的问题\n\nMade by XiXi',
     'v1.1.6.8': '## v1.1.6.8 更新内容\n\n**灯箱优化**\n- 修复灯箱删除照片时确认弹窗被挡住的问题\n- 灯箱删除键样式统一为浅红玻璃设计\n\nMade by XiXi',
@@ -435,7 +436,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.6.10';
+var APP_VERSION = '1.1.7.0';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -956,13 +957,13 @@ function showSuccessMessage(message, duration) {
 }
 
 // ★2026-08-30 系统通知（计划提醒等）：App 原生环境走通知栏（小米灵动岛由系统自动适配），网页版降级 toast
-// JS 桥：window.XixiFileBridge.showNotification(title, body, extraJson) → boolean
+// JS 桥：window.XixiFileBridge.showNotification(title, body) → boolean
 // ★2026-08-30 五项优化：桥发送失败（如通知权限被拒）→ 降级 App 内 toast，提醒不丢失
-// ★2026-08-30 extra（可空）：{planIds:[...]} 计划 id 列表，随通知透传，点「✓ 完成」按钮由原生回传 JS 标记完成
-function showSystemNotification(title, body, extra) {
+// ★2026-08-30 通知交互：点通知本体 → 回 App 跳计划页（原生 navigate=plans → JS consumeNotifyAction）
+function showSystemNotification(title, body) {
     try {
         if (window.XixiFileBridge && typeof window.XixiFileBridge.showNotification === 'function') {
-            var sent = window.XixiFileBridge.showNotification(title, body, extra ? JSON.stringify(extra) : '');
+            var sent = window.XixiFileBridge.showNotification(title, body);
             if (sent) return true;
         }
     } catch (e) { /* 桥异常降级 */ }
