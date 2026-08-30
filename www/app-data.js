@@ -1814,22 +1814,24 @@ function getSortedPlannedTrips() {
 let renderPlannedTripsTableRAF = null;
 
 // ★2026-08-25 计划日期提醒：启动时检查未完成计划；★规则：今天有→弹今天（过期忽略）；无今天有过期→弹「计划未完成」；未来 3 天内按 明天/后天/大后天 分组提示
+// ★2026-08-30 收集计划 id 随通知透传（extra.planIds）：点通知「✓ 完成」→ 原生回传 → 标记对应计划完成
 function checkPlannedTripReminders() {
     try {
         var now = new Date();
         var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         var overdue = [], todayList = [], tomorrowList = [], dayAfterList = [], thirdDayList = [];
+        var upcomingIds = [], overdueIds = [];
         (plannedTrips || []).forEach(function (t) {
             if (!t.createdAt || !t.name) return;
             var d = new Date(t.createdAt);
             if (isNaN(d.getTime())) return;
             var day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
             var diff = Math.round((day - today) / 86400000);
-            if (diff < 0) overdue.push(t.name);
-            else if (diff === 0) todayList.push(t.name);
-            else if (diff === 1) tomorrowList.push(t.name);
-            else if (diff === 2) dayAfterList.push(t.name);
-            else if (diff === 3) thirdDayList.push(t.name);
+            if (diff < 0) { overdue.push(t.name); overdueIds.push(t.id); }
+            else if (diff === 0) { todayList.push(t.name); upcomingIds.push(t.id); }
+            else if (diff === 1) { tomorrowList.push(t.name); upcomingIds.push(t.id); }
+            else if (diff === 2) { dayAfterList.push(t.name); upcomingIds.push(t.id); }
+            else if (diff === 3) { thirdDayList.push(t.name); upcomingIds.push(t.id); }
         });
         // ★2026-08-25 今天 + 未来 3 天合并成一条（不重叠）；仅无任何计划时弹过期
         var parts = [];
@@ -1837,8 +1839,8 @@ function checkPlannedTripReminders() {
         if (tomorrowList.length) parts.push('明天有徒步计划：' + tomorrowList.join('、'));
         if (dayAfterList.length) parts.push('后天有徒步计划：' + dayAfterList.join('、'));
         if (thirdDayList.length) parts.push('大后天有徒步计划：' + thirdDayList.join('、'));
-        if (parts.length) showSystemNotification('徒步计划提醒', parts.join(' · ')); // ★2026-08-30 系统通知（网页版降级 toast）
-        else if (overdue.length) showSystemNotification('徒步计划未完成', '计划未完成：' + overdue.join('、'));
+        if (parts.length) showSystemNotification('徒步计划提醒', parts.join(' · '), { planIds: upcomingIds }); // ★2026-08-30 系统通知（网页版降级 toast）
+        else if (overdue.length) showSystemNotification('徒步计划未完成', '计划未完成：' + overdue.join('、'), { planIds: overdueIds });
     } catch (e) { /* 静默 */ }
 }
 

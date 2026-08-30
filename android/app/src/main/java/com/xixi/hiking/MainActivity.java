@@ -44,6 +44,11 @@ public class MainActivity extends BridgeActivity {
     // ★2026-08-27 键盘高度桥：记录上次通知 JS 的 IME 高度，避免键盘无变化时重复刷 JS
     private int lastImeHeight = -1;
 
+    // ★2026-08-30 通知动作透传：通知「✓ 完成」按钮/点通知本体 → 原生存 JSON → JS consumeNotifyAction 取
+    //（数据在 JS 侧，原生只负责中转；App 被杀冷启动也能拿到，onCreate/onNewIntent 都处理）
+    private String pendingNotifyAction = null;
+    private static final int NOTIFY_ID = 1001;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // 安装并立即关闭系统 SplashScreen（Android 12+ 强制 splash，不安装就关不掉）
@@ -137,6 +142,9 @@ public class MainActivity extends BridgeActivity {
 
         super.onCreate(savedInstanceState);
 
+        // ★2026-08-30 冷启动场景：通知点击（跳计划页/「完成」按钮）拉起 App 时处理
+        handleNotifyIntent(getIntent());
+
         // ★2026-08-30 系统通知权限（Android 13+ 运行时申请，计划提醒/备份提醒用；低版本无需）
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             try {
@@ -160,6 +168,43 @@ public class MainActivity extends BridgeActivity {
             setupDownloadListener(bridge.getWebView());
             setupJsBridge(bridge.getWebView());
         }
+    }
+
+    // ★2026-08-30 通知点击处理：singleTask 下 App 在后台 → onNewIntent；App 被杀 → onCreate(getIntent)
+    // 1) 「✓ 完成」按钮：cancelNotif=1 → 原生立即取消通知（即使 JS 出问题通知也消失）
+    // 2) 把跳转/完成 payload 存起来，JS 启动后经 consumeNotifyAction 取走执行（数据在 JS 侧）
+    private void handleNotifyIntent(Intent intent) {
+        if (intent == null) return;
+        try {
+            if (intent.getIntExtra("cancelNotif", 0) == 1) {
+                android.app.NotificationManager nm =
+                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (nm != null) nm.cancel(NOTIFY_ID);
+            }
+            String nav = intent.getStringExtra("navigate");
+            String payload = intent.getStringExtra("notifyPayload");
+            if (nav != null || payload != null) {
+                org.json.JSONObject obj = new org.json.JSONObject();
+                if (nav != null) obj.put("navigate", nav);
+                if (payload != null && !payload.isEmpty()) {
+                    try {
+                        obj.put("payload", new org.json.JSONObject(payload));
+                    } catch (org.json.JSONException e) {
+                        obj.put("payload", payload);
+                    }
+                }
+                pendingNotifyAction = obj.toString();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "handleNotifyIntent failed", e);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent); // 与 onCreate 冷启动统一，后续 getIntent() 也能拿到最新 extra
+        handleNotifyIntent(intent);
     }
 
     // ===== 导出文件下载：JS 层把 base64 交给原生保存 =====
@@ -306,38 +351,98 @@ public class MainActivity extends BridgeActivity {
         }
 
         // ★2026-08-30 系统通知（计划提醒等，适配小米灵动岛/通知栏）
-        // JS 调用：window.XixiFileBridge.showNotification(title, body) → boolean
+        // JS 调用：window.XixiFileBridge.showNotification(title, body, extraJson) → boolean
+        // extraJson（可空）：{planIds:[...]} 计划 id 列表，透传给「完成」按钮点击后的 JS
         // 小米 HyperOS 对标准通知自动适配灵动岛胶囊形态；通知渠道固定创建，重复调用幂等
+        // ★2026-08-30 通知交互：
+        //   · 点通知本体 → 回 App 跳计划页（navigate=plans，JS switchTab('plans')）
+        //   · 点「✓ 完成」按钮 → 通知立即消失 + extraJson 透传 JS 标记对应计划完成
         @JavascriptInterface
-        public boolean showNotification(String title, String body) {
+        public boolean showNotification(String title, String body, String extraJson) {
             try {
                 android.app.NotificationManager nm =
                         (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 if (nm == null) return false;
                 String channelId = "xixi_hiking_reminders";
+                // ★2026-08-30 修复：权限被拒时 notify() 不抛异常、静默丢弃，
+                // 若不检查会误报成功 → JS 收到 true 不降级 toast → 提醒彻底消失
                 if (android.os.Build.VERSION.SDK_INT >= 26) {
                     android.app.NotificationChannel ch = new android.app.NotificationChannel(
                             channelId, "徒步计划提醒", android.app.NotificationManager.IMPORTANCE_DEFAULT);
                     ch.setDescription("计划徒步、备份提醒等");
                     nm.createNotificationChannel(ch);
+                    // 渠道被单独关闭（Android 8+ 设置里关某渠道）→ 视为不可用
+                    android.app.NotificationChannel real = nm.getNotificationChannel(channelId);
+                    if (real != null && real.getImportance()
+                            == android.app.NotificationManager.IMPORTANCE_NONE) {
+                        return false;
+                    }
                 }
+                // 应用级权限：Android 13+ 查运行时权限；Android 7~12 查通知总开关；
+                // Android 6.0 以下无需通知权限直接放行（areNotificationsEnabled 为 API 24+）
+                boolean canNotify;
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    canNotify = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                            == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                } else if (android.os.Build.VERSION.SDK_INT >= 24) {
+                    canNotify = nm.areNotificationsEnabled();
+                } else {
+                    canNotify = true;
+                }
+                if (!canNotify) return false;
                 android.app.Notification.Builder builder;
                 if (android.os.Build.VERSION.SDK_INT >= 26) {
                     builder = new android.app.Notification.Builder(MainActivity.this, channelId);
                 } else {
                     builder = new android.app.Notification.Builder(MainActivity.this);
                 }
+                // 通知点击 PendingIntent（两个 requestCode 0/1 区分，extra 不会互相覆盖）
+                int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+                if (android.os.Build.VERSION.SDK_INT >= 23) {
+                    piFlags |= android.app.PendingIntent.FLAG_IMMUTABLE;
+                }
+                // 点通知本体 → 回 App 跳计划页
+                android.content.Intent contentIntent = new android.content.Intent(MainActivity.this, MainActivity.class)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        .putExtra("navigate", "plans");
+                android.app.PendingIntent contentPi = android.app.PendingIntent.getActivity(
+                        MainActivity.this, 0, contentIntent, piFlags);
+                // 「✓ 完成」按钮 → 回 App：通知消失 + 透传计划 id 给 JS 标记完成
+                android.content.Intent doneIntent = new android.content.Intent(MainActivity.this, MainActivity.class)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        .putExtra("cancelNotif", 1)
+                        .putExtra("notifyPayload", extraJson == null ? "" : extraJson);
+                android.app.PendingIntent donePi = android.app.PendingIntent.getActivity(
+                        MainActivity.this, 1, doneIntent, piFlags);
                 builder.setSmallIcon(android.R.drawable.ic_dialog_info)
                         .setContentTitle(title == null ? "XiXiの徒步小记" : title)
                         .setContentText(body == null ? "" : body)
                         .setAutoCancel(true)
-                        .setPriority(android.app.Notification.PRIORITY_DEFAULT);
-                nm.notify((int) (System.currentTimeMillis() & 0x7fffffff), builder.build());
+                        .setPriority(android.app.Notification.PRIORITY_DEFAULT)
+                        .setContentIntent(contentPi)
+                        .addAction(R.drawable.ic_check, "✓ 完成", donePi);
+                // ★固定通知 id：可精确 cancel（「完成」按钮点击后通知消失）
+                nm.notify(NOTIFY_ID, builder.build());
                 return true;
             } catch (Exception e) {
                 Log.e(TAG, "showNotification failed", e);
                 return false;
             }
+        }
+
+        // 兼容旧调用（网页版/旧 JS 无 extraJson 时）
+        @JavascriptInterface
+        public boolean showNotification(String title, String body) {
+            return showNotification(title, body, null);
+        }
+
+        // ★2026-08-30 通知动作消费：返回 JSON（取走即清空），如 {"navigate":"plans","payload":{"planIds":[...]}}
+        // JS 启动时调用：点通知本体 → navigate=plans 跳计划页；点「完成」→ payload.planIds 标记完成
+        @JavascriptInterface
+        public String consumeNotifyAction() {
+            String a = MainActivity.this.pendingNotifyAction;
+            MainActivity.this.pendingNotifyAction = null;
+            return a == null ? "" : a;
         }
 
         // ===== WebDAV 桥：绕开 WebView 跨域限制，原生发起 HTTP 请求 =====

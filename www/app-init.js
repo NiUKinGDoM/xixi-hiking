@@ -140,6 +140,36 @@ async function init() {
             if (currentTabId === 'records' && typeof renderTable === 'function') renderTable();
             else if (currentTabId === 'plans' && typeof renderPlannedTripsTable === 'function') renderPlannedTripsTable();
         } catch (e) { /* 补渲染失败不影响启动 */ }
+        // ★2026-08-30 通知点击动作消费（冷启动路径）：点通知本体→跳计划页；点「✓ 完成」→标记对应计划完成
+        //（原生已负责通知消失；consumeNotifyAction 取走即清空，重复调用幂等）
+        function consumeNotifyActionOnce() {
+            try {
+                if (!window.XixiFileBridge || typeof window.XixiFileBridge.consumeNotifyAction !== 'function') return;
+                var notifyAction = window.XixiFileBridge.consumeNotifyAction();
+                if (!notifyAction) return;
+                var notifyObj = JSON.parse(notifyAction);
+                if (notifyObj && notifyObj.payload && Array.isArray(notifyObj.payload.planIds) && notifyObj.payload.planIds.length) {
+                    var doneCount = 0;
+                    notifyObj.payload.planIds.forEach(function (pid) {
+                        var trip = (plannedTrips || []).find(function (t) { return t.id === pid; });
+                        if (trip) {
+                            try { markPlannedComplete(trip.id, trip.name); doneCount++; } catch (e) { /* 单条失败跳过 */ }
+                        }
+                    });
+                    if (doneCount > 0) showSuccessMessage('已将 ' + doneCount + ' 个计划标记为完成', 2000);
+                }
+                if (notifyObj && notifyObj.navigate === 'plans') {
+                    try { switchTab('plans'); } catch (e) { /* 跳转失败不影响 */ }
+                }
+            } catch (e) { /* 消费失败不影响启动 */ }
+        }
+        consumeNotifyActionOnce();
+        // ★2026-08-30 热启动路径：App 存活时点通知回前台 → visibilitychange visible 触发消费（幂等，不会重复执行）
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') {
+                try { consumeNotifyActionOnce(); } catch (e) { /* 忽略 */ }
+            }
+        });
         // ★2026-08-25 计划日期提醒（今天有/已过期未完成）：延迟 1s 显示、toast 停留 2s
         setTimeout(checkPlannedTripReminders, 1000);
         

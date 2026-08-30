@@ -25,6 +25,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.6.10': '## v1.1.6.10 更新内容\n\n**通知交互升级**\n- 修复关闭通知权限后提醒彻底消失（权限被拒自动降级 App 内提示）\n- 计划提醒通知可一键「✓ 完成」（通知消失 + 计划自动标记完成）\n- 点击通知直达计划页\n\nMade by XiXi',
     'v1.1.6.9': '## v1.1.6.9 更新内容\n\n**架构与体验升级**\n- 代码结构优化：主逻辑拆分为 4 个独立模块，加载更快\n- 计划提醒接入系统通知栏（不再只弹窗提示）\n- 全局禁止长按复制文字和长按图片菜单\n- 修复通知权限被拒时提醒静默丢失的问题\n\nMade by XiXi',
     'v1.1.6.8': '## v1.1.6.8 更新内容\n\n**灯箱优化**\n- 修复灯箱删除照片时确认弹窗被挡住的问题\n- 灯箱删除键样式统一为浅红玻璃设计\n\nMade by XiXi',
     'v1.1.6.7': '## v1.1.6.7 更新内容\n\n**弹窗与安全优化**\n- 修复下载按钮弹窗连点叠加、关闭失灵\n- 全部弹窗加防重入，不再出现多个弹窗叠加\n- 删除照片增加确认提示，防误删\n- 编辑海拔输入负数自动归零\n- 分享卡里程显示统一为一位小数\n\nMade by XiXi',
@@ -434,7 +435,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.6.9';
+var APP_VERSION = '1.1.6.10';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -955,12 +956,13 @@ function showSuccessMessage(message, duration) {
 }
 
 // ★2026-08-30 系统通知（计划提醒等）：App 原生环境走通知栏（小米灵动岛由系统自动适配），网页版降级 toast
-// JS 桥：window.XixiFileBridge.showNotification(title, body) → boolean
+// JS 桥：window.XixiFileBridge.showNotification(title, body, extraJson) → boolean
 // ★2026-08-30 五项优化：桥发送失败（如通知权限被拒）→ 降级 App 内 toast，提醒不丢失
-function showSystemNotification(title, body) {
+// ★2026-08-30 extra（可空）：{planIds:[...]} 计划 id 列表，随通知透传，点「✓ 完成」按钮由原生回传 JS 标记完成
+function showSystemNotification(title, body, extra) {
     try {
         if (window.XixiFileBridge && typeof window.XixiFileBridge.showNotification === 'function') {
-            var sent = window.XixiFileBridge.showNotification(title, body);
+            var sent = window.XixiFileBridge.showNotification(title, body, extra ? JSON.stringify(extra) : '');
             if (sent) return true;
         }
     } catch (e) { /* 桥异常降级 */ }
