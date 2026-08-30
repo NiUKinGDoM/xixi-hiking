@@ -137,6 +137,18 @@ public class MainActivity extends BridgeActivity {
 
         super.onCreate(savedInstanceState);
 
+        // ★2026-08-30 系统通知权限（Android 13+ 运行时申请，计划提醒/备份提醒用；低版本无需）
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            try {
+                if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                        != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 9001);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "notification permission request failed", e);
+            }
+        }
+
         // ★2026-08-27 返回键防误退 + 关弹窗（OnBackPressedCallback 官方通道）
         setupBackHandler();
 
@@ -289,6 +301,41 @@ public class MainActivity extends BridgeActivity {
                 return true;
             } catch (Exception e) {
                 Log.e(TAG, "vibrate failed", e);
+                return false;
+            }
+        }
+
+        // ★2026-08-30 系统通知（计划提醒等，适配小米灵动岛/通知栏）
+        // JS 调用：window.XixiFileBridge.showNotification(title, body) → boolean
+        // 小米 HyperOS 对标准通知自动适配灵动岛胶囊形态；通知渠道固定创建，重复调用幂等
+        @JavascriptInterface
+        public boolean showNotification(String title, String body) {
+            try {
+                android.app.NotificationManager nm =
+                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (nm == null) return false;
+                String channelId = "xixi_hiking_reminders";
+                if (android.os.Build.VERSION.SDK_INT >= 26) {
+                    android.app.NotificationChannel ch = new android.app.NotificationChannel(
+                            channelId, "徒步计划提醒", android.app.NotificationManager.IMPORTANCE_DEFAULT);
+                    ch.setDescription("计划徒步、备份提醒等");
+                    nm.createNotificationChannel(ch);
+                }
+                android.app.Notification.Builder builder;
+                if (android.os.Build.VERSION.SDK_INT >= 26) {
+                    builder = new android.app.Notification.Builder(MainActivity.this, channelId);
+                } else {
+                    builder = new android.app.Notification.Builder(MainActivity.this);
+                }
+                builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+                        .setContentTitle(title == null ? "XiXiの徒步小记" : title)
+                        .setContentText(body == null ? "" : body)
+                        .setAutoCancel(true)
+                        .setPriority(android.app.Notification.PRIORITY_DEFAULT);
+                nm.notify((int) (System.currentTimeMillis() & 0x7fffffff), builder.build());
+                return true;
+            } catch (Exception e) {
+                Log.e(TAG, "showNotification failed", e);
                 return false;
             }
         }

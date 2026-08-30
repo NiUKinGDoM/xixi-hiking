@@ -27,8 +27,8 @@
 ## 技术栈
 
 - **Capacitor 6.2.1** + Android WebView
-- 纯 HTML/JS 单文件应用（`www/index.html`，约 9700 行，无前端框架）
-- **原生桥**：OkHttp 3.14.9（WebDAV，PROPFIND/MKCOL 等任意方法）+ 文件保存 + 震动（跟随系统强度）
+- HTML/CSS（`www/index.html`）+ 主 JS 拆 4 外部文件（★2026-08-30 方案A：`www/app-core.js` 工具/数据声明 / `app-data.js` 记录计划渲染 / `app-sync.js` WebDAV 备份 / `app-init.js` 启动）
+- **原生桥**：OkHttp 3.14.9（WebDAV，PROPFIND/MKCOL 等任意方法）+ 文件保存 + 震动（跟随系统强度）+ **系统通知**（showNotification，计划提醒走通知栏）
 - 最低支持 Android 7（minSdk 22），target/compileSdk 36（Android 16）
 - 数据存储：localStorage（记录/计划/设置）+ IndexedDB（照片）
 
@@ -36,33 +36,39 @@
 
 ```
 hiking-app3/
-├── www/                    # 前端源码（单文件应用）
-│   ├── index.html          # 全部逻辑（约 9700 行）
+├── www/                    # 前端源码（HTML/CSS + 4 个外部 JS）
+│   ├── index.html          # HTML+CSS+引脚本（约 4900 行）
+│   ├── app-core.js         # 工具/常量/主题/存储/toast/通知
+│   ├── app-data.js         # 记录/计划/搜索/照片/灯箱/统计/热力图
+│   ├── app-sync.js         # 同步/WebDAV/备份/导入导出/更新检查
+│   ├── app-init.js         # init/事件绑定/启动
+│   ├── sw.js               # 网页版离线缓存（CACHE v3 含 4 个 JS）
 │   └── share-bg.jpg        # 分享卡背景图（外置，发版要同步）
 ├── android/                # Android 工程
 │   └── app/
-│       ├── src/main/java/com/xixi/hiking/MainActivity.java  # 原生桥（WebDAV/文件/震动）
-│       ├── src/main/AndroidManifest.xml    # 权限（INTERNET/VIBRATE 等）
-│       ├── src/main/assets/public/index.html  # 打包进 APK（改完要同步）
+│       ├── src/main/java/com/xixi/hiking/MainActivity.java  # 原生桥（WebDAV/文件/震动/通知）
+│       ├── src/main/AndroidManifest.xml    # 权限（INTERNET/VIBRATE/POST_NOTIFICATIONS 等）
+│       ├── src/main/assets/public/  # 打包进 APK（index.html + 4 个 app-*.js + share-bg.jpg + sw.js，改完要全同步，漏 JS 会白屏）
 │       ├── proguard-rules.pro    # R8 规则（★JS 桥类名禁 allowobfuscation）
 │       └── build.gradle          # 版本号（用 bump.js 改，勿手改）
-├── bump.js                  # 版本号递增脚本（一条命令四处同步）
+├── bump.js                  # 版本号递增脚本（build.gradle + app-core.js APP_VERSION + index.html 版本显示）
 ├── test.js                  # 自动测试①（改完必跑：语法/关键函数/死代码/结构/版本/数据层 60 项）
-└── test-ui.js               # 自动测试②（jsdom UI 渲染测试 20 项：记录/计划渲染搜索分页徽标空态/键盘跟随/批量/转义）
+└── test-ui.js               # 自动测试②（jsdom UI 渲染测试 26 项：记录/计划渲染搜索分页徽标空态/键盘跟随/批量/弹窗防重入/转义）
 ```
 
 ## 开发流程
 
 ```bash
-# 1. 改 www/index.html
+# 1. 改 www/（index.html + app-core/app-data/app-sync/app-init.js，★2026-08-30 方案A 拆分）
 # 2. 自动测试（语法 + 关键函数 + 死代码残留 + HTML 结构 + 版本同步 + 数据层逻辑）
 node test.js
 # 2b. UI 层测试（jsdom 渲染真实 DOM，发布前必跑；依赖隔离 workspace 的 jsdom，绝对路径 require）
 node test-ui.js
-# 3. 版本号递增（vc+1 + 版本名自动进位 + 四处同步 + 校验）
+# 3. 版本号递增（vc+1 + 版本名自动进位；build.gradle + app-core.js APP_VERSION + index.html 版本显示）
 node bump.js
-# 4. 同步到 assets
-cp www/index.html android/app/src/main/assets/public/index.html
+# 4. 同步到 assets（★5 个文件必须全同步，漏 JS 白屏）
+cp www/index.html www/app-core.js www/app-data.js www/app-sync.js www/app-init.js android/app/src/main/assets/public/
+cp www/share-bg.jpg www/sw.js android/app/src/main/assets/public/
 # 5. 构建 Release（R8 混淆 + 资源压缩 + 签名）
 cd android && ./gradlew assembleRelease
 ```

@@ -1,13 +1,13 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-08-28（v1.1.6.4 / vc191）
+> 最后更新：2026-08-30（v1.1.6.9 / vc196）
 
 ## 一句话
-纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 单页应用，`www/index.html` 单文件 ~416KB 全逻辑 + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
+纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-08-28）
-- **正式版 v1.1.6.4**（versionCode 191，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.6.9**（versionCode 196，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - 测试版 `hiking-app3-test/`（v1.4.test-11）——**已暂停勿主动碰**
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
@@ -45,7 +45,7 @@
    - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-11）
-2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（20项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
+2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload
@@ -66,8 +66,8 @@
 - ★2026-08-25 起网页版也可弹检查更新确认窗并真实检测（GitHub API 支持 CORS），但无法安装（点立即更新有兜底提示）；更新源版本号必须 > 本地
 
 ## 构建流程（PowerShell，牢记）
-1. 改 `www/index.html` → `node test.js`（60项）+ `node test-ui.js`（20项 jsdom UI，2026-08-28 起）→ `node bump.js`（版本号四处同步）
-2. 复制 index.html + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`；build.gradle → temp；**原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；**删 temp 的 app/build 旧产物**
+1. 改 `www/`（★2026-08-30 方案A 落地：主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js，index.html 只留 HTML+CSS+引脚本）→ `node test.js`（60项）+ `node test-ui.js`（26项 jsdom UI，2026-08-28 起）→ `node bump.js`（版本号：build.gradle + app-core.js APP_VERSION + index.html 版本显示）
+2. 复制 **index.html + app-core.js + app-data.js + app-sync.js + app-init.js** + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`（★漏同步 JS 会白屏！）；build.gradle → temp；**原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；**删 temp 的 app/build 旧产物**
 3. 构建（PowerShell 后台）：
    ```
    Get-Process java* | Stop-Process -Force
@@ -94,7 +94,7 @@
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
 
-## 近期版本要点（v1.1.0.7 ~ v1.1.6.4）
+## 近期版本要点（v1.1.0.7 ~ v1.1.6.9）
 - v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
 - v1.1.1.6（vc138）：导出诊断 + 备份瘦身（完整/纯数据）+ 同步失败提醒 + 云端自动清理（留2份）+ 字段增强（心情/天气/同行人）+ 数据层单测 + 分享卡 v1 + 月度统计
@@ -146,14 +146,19 @@
 - v1.1.6.2（vc189）：**计划页搜索优化：placeholder 按页切换（搜索记录/搜索计划）+ 切页自动呼出搜索框（计划少无法滚动也能找到）+ 搜索时徽标显示"匹配 N / 共 M 条"**（详见 Release）
 - v1.1.6.3（vc190）：**修复打开软件后第一次搜索不实时出结果（输入事件重构：不再依赖易丢失的 compositionend，拼音阶段实时过滤 + 3s 超时防卡死）**（详见 Release）
 - v1.1.6.4（vc191）：**彻底修复搜索不实时（轮询检测输入内容 250ms，不依赖输入法事件——某些输入法拼音期间不派发 input 且丢 compositionend）**（详见 Release）
+- v1.1.6.5（vc192）：**五项优化：启动瘦身（删数据加载前空表渲染）+ XSS 安全加固（escapeHtml 补引号转义，7 处用户输入/云端文件名插值全转义）+ prefers-reduced-motion 适配（系统减少动态效果时动画降级）**（详见 Release）
+- v1.1.6.6（vc193）：**修复导出/管理弹窗连点叠加、关闭按钮失灵（closeOpenModals 全局防重入 + manageCloudBackups 防连点 + 按钮"读取中…"反馈）**（详见 Release）
+- v1.1.6.7（vc194）：**下载键弹窗同款修复 + 全弹窗防重入 + 照片删除确认（同款 confirm 设计）+ 编辑海拔负数归零 + 分享卡里程 toFixed(1) + Tailwind .container 覆盖修复（双类提特异性）+ 五项优化 v4**（详见 Release）
+- v1.1.6.8（vc195）：**灯箱修复：照片删除确认弹窗被灯箱遮挡（z-index 提级 300）+ 灯箱删除键样式统一为浅红玻璃（check-go-btn 深色配方）**（详见 Release）
+- v1.1.6.9（vc196）：**★方案A 单文件拆分落地（主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js，bump/test/sw 全适配）+ 系统通知（计划提醒走通知栏，MainActivity showNotification 桥 + Android13 权限）+ 全局禁长按选择/图片菜单（输入框放行）+ 通知失败降级 toast + 五项优化 v5**（详见 Release）
 
 ## 待办/新功能方案（2026-08-28 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
 - ✅ **记录/计划本地搜索**（v1.1.5.4~v1.1.6.4 完成：名称包含匹配 + 输入法协作 + 轮询根治 + 计划页优化）
-- ✅ **UI 层自动化测试**（v1.1.6.5 待发：test-ui.js 20 项 jsdom 渲染测试，发布双保险）
+- ✅ **UI 层自动化测试**（test-ui.js 26 项 jsdom 渲染测试，发布双保险）
 - ✅ 备份 zip 二期 **已完成**（v1.1.3.9：完整备份改 zip 压缩包，照片二进制省 33%）
 - ✅ 设置页数据管理框空白约 1 秒 **已解决**（v1.1.3.1 缩短 settingsBlockIn 动画 0.3s+0.56s → 0.18s+0.28s，最后块 0.46s 出现，见 index.html 907 行注释）
-- ⏸️ 单文件拆分（用户 2026-08-28 决定暂缓：现靠 test.js+test-ui.js 双测试兜回归；方案 A 外部 JS 文件已备好待选）
+- ✅ **方案 A 单文件拆分 已落地**（2026-08-30：主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js；bump.js/test.js/test-ui.js/sw.js 全部适配；同步清单+回退点已更新，漏同步 JS 会白屏）
 - 💡 备份提醒（距上次同步超 7 天启动轻提示）——用户未采纳，仍建议
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
