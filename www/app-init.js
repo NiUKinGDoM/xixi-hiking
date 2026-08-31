@@ -420,6 +420,14 @@ function setupEventListeners() {
             } else if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
                 // ★2026-08-26 二次点击刷新回到第一页
                 plannedPage = 1;
+                // ★2026-08-31 日历视图二次点击：自动回到当天（月/选中/搜索定位全部复位）
+                if (typeof plansViewMode !== 'undefined' && plansViewMode === 'calendar') {
+                    var nowCal = new Date();
+                    calendarViewYear = nowCal.getFullYear();
+                    calendarViewMonth = nowCal.getMonth();
+                    calendarSelKey = null;
+                    calendarSearchMatches = null;
+                }
                 // ★2026-08-11 二次点击刷新：先退出计划编辑态再渲染
                 if (typeof plannedEditingId !== 'undefined' && plannedEditingId !== null) {
                     plannedEditingId = null;

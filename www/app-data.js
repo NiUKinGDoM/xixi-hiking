@@ -1970,9 +1970,13 @@ function renderPlannedCalendar() {
         var has = plans.length > 0;
         var sel = calendarSelKey === key;
         var isToday = key === todayKey;
+        // ★2026-08-31 选中日期用 2px 强调框（明细区显示哪天一目了然）；仅今天用 1px；选中优先
+        var cellBorder = sel
+            ? '2px solid ' + accent
+            : (isToday ? '1px solid ' + accent : '1px solid transparent');
         cells += '<div data-key="' + key + '" style="position:relative;min-height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:' + (has ? 'pointer' : 'default') + ';' +
             'background:' + (sel ? (dark ? 'rgba(129,140,248,0.25)' : 'rgba(102,126,234,0.2)') : '') + ';' +
-            'border:' + (isToday ? '1px solid ' + accent : '1px solid transparent') + ';">' +
+            'border:' + cellBorder + ';">' +
             '<span style="font-size:13px;font-weight:' + (isToday || sel ? '600' : '400') + ';">' + day + '</span>' +
             (has ? '<span style="width:6px;height:6px;border-radius:50%;background:' + accent + ';margin-top:2px;"></span>' : '') +
             '</div>';
@@ -2003,18 +2007,73 @@ function renderPlannedCalendar() {
             renderPlannedCalendar();
         });
     });
-    // 默认选中：今天有计划则选中今天，否则选当月第一个有计划的日期
-    if (!calendarSelKey) {
-        if (byDate[todayKey]) { calendarSelKey = todayKey; }
-        else {
-            var keys = Object.keys(byDate).sort();
-            var monthPrefix = calendarViewYear + '-' + ('0' + (calendarViewMonth + 1)).slice(-2) + '-';
-            for (var k = 0; k < keys.length; k++) {
-                if (keys[k].indexOf(monthPrefix) === 0) { calendarSelKey = keys[k]; break; }
-            }
-        }
+    // ★2026-08-31 方式B：未点任何日期 → 明细区显示整月全部计划（每条带日期标记）；点了日期才聚焦该日
+    if (calendarSelKey) {
+        renderCalDayDetail(calendarSelKey);
+    } else {
+        renderCalMonthDetail();
     }
-    if (calendarSelKey) renderCalDayDetail(calendarSelKey);
+}
+
+// ★2026-08-31 整月明细：列出当月全部计划，按日期分组，每组前醒目标日期（用户选 B）
+function renderCalMonthDetail() {
+    var box = safeGetElementById('calDayDetail');
+    if (!box) return;
+    var dark = document.body.classList.contains('dark-mode');
+    var accent = dark ? '#818cf8' : '#667eea';
+    var prefix = calendarViewYear + '-' + ('0' + (calendarViewMonth + 1)).slice(-2) + '-';
+    var monthPlans = (plannedTrips || []).filter(function (t) {
+        return fmtPlanDateKey(t.createdAt).indexOf(prefix) === 0;
+    });
+    if (!monthPlans.length) { box.innerHTML = ''; return; }
+    // 按日期分组并排序
+    var byDate = {};
+    monthPlans.forEach(function (t) {
+        var k = fmtPlanDateKey(t.createdAt);
+        if (!byDate[k]) byDate[k] = [];
+        byDate[k].push(t);
+    });
+    var keys = Object.keys(byDate).sort();
+    var weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    var html = '<div style="font-size:13px;font-weight:600;margin-bottom:6px;color:' + (dark ? 'rgba(255,255,255,0.6)' : 'rgba(100,116,139,0.9)') + ';">本月计划 ' + monthPlans.length + ' 条</div>';
+    keys.forEach(function (k) {
+        var d = new Date(k);
+        var dateTitle = (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + weekdays[d.getDay()];
+        // 日期分组标记（醒目 + 分隔线）
+        html += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;">' +
+            '<span class="material-icons" style="font-size:14px;color:' + accent + ';">event</span>' +
+            '<span style="font-size:13px;font-weight:700;color:' + accent + ';">' + dateTitle + '</span>' +
+            '<span style="flex:1;height:1px;background:' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(100,116,139,0.2)') + ';"></span></div>';
+        byDate[k].forEach(function (t) {
+            // ★08-31 浅色模式删除按钮更可见（同 renderCalDayDetail）
+            var delStyle = dark
+                ? 'padding:6px 12px;border-radius:10px;font-size:12px;'
+                : 'padding:6px 12px;border-radius:10px;font-size:12px;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:6px;' +
+                'background:' + (dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.5)') + ';border:0.5px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)') + ';">' +
+                '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(t.name) + '</div>' +
+                '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
+                '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+                '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>' +
+                '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+                '</div></div>';
+        });
+    });
+    box.innerHTML = html;
+    box.querySelectorAll('[data-complete]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = b.getAttribute('data-complete');
+            var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
+            showConfirmCompleteModal(id, t2 ? t2.name : '');
+        });
+    });
+    box.querySelectorAll('[data-del]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = b.getAttribute('data-del');
+            var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
+            showDeletePlannedTripConfirmModal(id, t2 ? t2.name : '');
+        });
+    });
 }
 
 function renderCalDayDetail(key) {
@@ -2024,7 +2083,18 @@ function renderCalDayDetail(key) {
     if (!plans.length) { box.innerHTML = ''; return; }
     var dark = document.body.classList.contains('dark-mode');
     var accent = dark ? '#818cf8' : '#667eea';
-    var html = '<div style="font-size:13px;font-weight:600;margin-bottom:6px;">' + key + ' 计划</div>';
+    // ★2026-08-31 明细日期醒目标记：中文日期 + 星期几；★深色统一玻璃配方（白底 + 白边，与计划条/卡片一致），强调色只用于图标和日期文字
+    var d = new Date(key);
+    var weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    var dateTitle = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + weekdays[d.getDay()];
+    var html = '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;margin-bottom:8px;' +
+        'background:' + (dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.55)') + ';' +
+        'border:0.5px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)') + ';">' +
+        '<span class="material-icons" style="font-size:16px;color:' + accent + ';">event</span>' +
+        '<span style="font-size:14px;font-weight:700;color:' + accent + ';">' + dateTitle + '</span>' +
+        '<span style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';">计划 ' + plans.length + ' 条</span>' +
+        '<button id="calShowMonthBtn" class="ripple-effect glass-btn corner-glow" style="margin-left:auto;padding:4px 10px;border-radius:8px;font-size:12px;">整月</button>' +
+        '</div>';
     plans.forEach(function (t) {
         // ★2026-08-31 搜索匹配标记：计划名含搜索词 → 左侧强调点 + 描边高亮
         var isMatch = calendarSearchMatches && t.name && t.name.indexOf(calendarSearchMatches) >= 0;
@@ -2049,6 +2119,14 @@ function renderCalDayDetail(key) {
             '</div></div>';
     });
     box.innerHTML = html;
+    // ★2026-08-31 聚焦某日后可点「整月」返回整月明细
+    var showMonthBtn = box.querySelector('#calShowMonthBtn');
+    if (showMonthBtn) {
+        showMonthBtn.addEventListener('click', function () {
+            calendarSelKey = null;
+            renderPlannedCalendar();
+        });
+    }
     box.querySelectorAll('[data-complete]').forEach(function (b) {
         b.addEventListener('click', function () {
             var id = b.getAttribute('data-complete');
