@@ -2873,8 +2873,18 @@
             }
             100% {
                 transform: translate(-50%, -50%) scale(2);
-                opacity: 0;
-            }
+                opacity: 0;            }
+        }
+
+        /* ★2026-08-31 计划完成庆祝：彩屑下落（轻量，播放完自动移除）；卡片复用 confirm-modal-content（热力图弹窗同款玻璃参数） */
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+        }
+        /* ★2026-08-31 庆祝卡片：复用 confirm-modal-content（热力图弹窗同款玻璃参数），仅覆盖宽度与居中 */
+        .celebration-card {
+            width: min(78vw, 320px) !important;
+            text-align: center;
         }
         
         /* 统计卡片彩色左边框恢复（在统一边框之上） */
@@ -4825,7 +4835,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.7.2</div>
+                        <div class="about-version">版本 1.1.7.3</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
