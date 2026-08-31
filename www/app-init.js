@@ -370,20 +370,15 @@ function setupEventListeners() {
         cleanupFunctions.push(() => hapticToggle.removeEventListener('change', handler));
     }
     
+    // ★2026-09-01 记录/计划表头排序统一绑定（.sort-header 共用，按 data-sort 前缀区分）
     document.querySelectorAll('.sort-header').forEach(header => {
         const handler = () => {
             const sortField = header.dataset.sort;
-            handleSort(sortField);
-        };
-        header.addEventListener('click', handler);
-        cleanupFunctions.push(() => header.removeEventListener('click', handler));
-    });
-    
-    // 计划徒步行排序事件
-    document.querySelectorAll('.sort-header-planned').forEach(header => {
-        const handler = () => {
-            const sortField = header.dataset.sort;
-            handlePlannedTripSort(sortField);
+            if (sortField && sortField.indexOf('planned-') === 0) {
+                handlePlannedTripSort(sortField);
+            } else {
+                handleSort(sortField);
+            }
         };
         header.addEventListener('click', handler);
         cleanupFunctions.push(() => header.removeEventListener('click', handler));

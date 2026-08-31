@@ -46,7 +46,7 @@ function assert(name, cond, extra) {
     if (cond) { pass++; console.log('  ✅ ' + name); }
     else { fail++; console.log('  ❌ ' + name + (extra !== undefined ? '  -> ' + extra : '')); }
 }
-function rowCount(id) { const t = document.getElementById(id); return t ? t.querySelectorAll('tr').length : -1; }
+function rowCount(id) { const t = document.getElementById(id); return t ? t.querySelectorAll('tr:not(.year-group-row)').length : -1; } // ★2026-09-01 年份分组标题行不计入记录行
 function text(id) { const el = document.getElementById(id); return el ? el.textContent : ''; }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 function visible(id) { const el = document.getElementById(id); return el && getComputedStyle ? true : (el ? true : false); }
@@ -116,6 +116,8 @@ function visible(id) { const el = document.getElementById(id); return el && getC
     assert('分页控件显示', pager && pager.style.display !== 'none', pager ? pager.style.display : 'null');
 
     console.log('\n== 3. 计划页渲染/搜索 ==');
+    // ★2026-08-31 App 默认日历视图；列表渲染测试需先切回列表
+    window.plansViewMode = 'list';
     document.querySelector('.tab-btn[data-tab=\"plans\"]').click();
     await delay(30);
     window.__testSetPlanned([

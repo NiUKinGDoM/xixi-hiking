@@ -320,6 +320,12 @@ function renderTable() {
         if (y && y !== lastYearKey) { lastYearKey = y; groupedRecords.push({ __year: y, __count: yearTotals[y] || 0 }); }
         groupedRecords.push(r);
     });
+    // ★2026-09-01 行内删除按钮统一：confirm-btn-cancel 灰蓝玻璃（与计划页/日历明细/弹窗同款；浅色下用可见灰蓝底防白边不可见）
+    const recordDark = document.body.classList.contains('dark-mode');
+    const recordDelStyle = recordDark
+        ? 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;'
+        : 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+
     const tableContent = groupedRecords.map((record, idx) => {
         // ★2026-09-01 年份标题行（图标 + 年份 + 全年次数；★09-01 用户去掉延伸分隔线）
         if (record && record.__year) {
@@ -382,12 +388,14 @@ function renderTable() {
                         <div class="edit-action-btns">
                             <button id="save-btn-${record.id}" 
                                     data-testid="save-button-${record.id}"
-                                    class="ripple-effect btn-click-effect bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors text-xs">
+                                    class="ripple-effect btn-click-effect check-go-btn"
+                                    style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
                                 保存
                             </button>
                             <button id="cancel-btn-${record.id}" 
                                     data-testid="cancel-button-${record.id}"
-                                    class="ripple-effect btn-click-effect bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors text-xs">
+                                    class="ripple-effect btn-click-effect confirm-btn-cancel"
+                                    style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
                                 取消
                             </button>
                         </div>
@@ -454,7 +462,7 @@ function renderTable() {
                         ${formatDateTime(record.createdAt)}
                     </td>
                     <td class="p-2 text-center" data-label="操作">
-                        ${batchMode ? '' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="ripple-effect btn-click-effect bg-red-600 text-white p-1 rounded hover:bg-red-700 transition-colors inline-flex items-center justify-center"><span class="material-icons">delete</span></button>'}
+                        ${batchMode ? '' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                     </td>
                 </tr>
             `;
@@ -2376,7 +2384,38 @@ function renderPlannedTripsTable() {
             }
         }
         
-        const tableContent = pageTrips.map((trip, idx) => {
+        // ★2026-09-01 计划列表按年份分组（与记录页同款：预处理插入年份标记项，组内保持排序；条数全年统计跨页准确）
+        const plannedYearTotals = {};
+        (plannedTrips || []).forEach(function (pp) {
+            const py = pp.createdAt ? String(new Date(pp.createdAt).getFullYear()) : '';
+            if (py) plannedYearTotals[py] = (plannedYearTotals[py] || 0) + 1;
+        });
+        const groupedTrips = [];
+        let lastPlannedYearKey = null;
+        pageTrips.forEach(function (t) {
+            const y = t.createdAt ? String(new Date(t.createdAt).getFullYear()) : '';
+            if (y && y !== lastPlannedYearKey) {
+                lastPlannedYearKey = y;
+                groupedTrips.push({ __year: y, __count: plannedYearTotals[y] || 0 });
+            }
+            groupedTrips.push(t);
+        });
+
+        // ★2026-09-01 行内操作按钮统一：完成=check-go-btn 浅红玻璃、删除=confirm-btn-cancel 灰蓝（与日历明细/弹窗同款；浅色下删除按钮用可见灰蓝底防白边不可见）
+        const plannedDark = document.body.classList.contains('dark-mode');
+        const plannedDelStyle = plannedDark
+            ? 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;'
+            : 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+
+        const tableContent = groupedTrips.map((trip, idx) => {
+            // ★2026-09-01 年份标题行（与记录页同款样式）
+            if (trip && trip.__year) {
+                return '<tr class="year-group-row"><td colspan="99"><div class="year-group-head">' +
+                    '<span class="material-icons year-group-icon">landscape</span>' +
+                    '<span class="year-group-text">' + trip.__year + '年</span>' +
+                    (trip.__count ? '<span class="year-group-count">' + trip.__count + ' 次</span>' : '') +
+                    '</div></td></tr>';
+            }
             if (plannedEditingId === trip.id) {
                 return `
                     <tr class="border-b border-gray-200">
@@ -2430,12 +2469,14 @@ function renderPlannedTripsTable() {
                             <div class="edit-action-btns">
                                 <button id="save-planned-btn-${trip.id}" 
                                         data-testid="save-planned-button-${trip.id}"
-                                        class="ripple-effect btn-click-effect bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors text-xs">
+                                        class="ripple-effect btn-click-effect check-go-btn"
+                                        style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
                                     保存
                                 </button>
                                 <button id="cancel-planned-btn-${trip.id}" 
                                         data-testid="cancel-planned-button-${trip.id}"
-                                        class="ripple-effect btn-click-effect bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors text-xs">
+                                        class="ripple-effect btn-click-effect confirm-btn-cancel"
+                                        style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
                                     取消
                                 </button>
                             </div>
@@ -2465,7 +2506,7 @@ function renderPlannedTripsTable() {
                             ${formatDateTime(trip.createdAt)}
                         </td>
                         <td class="p-2 text-center" data-label="操作">
-                            ${plannedBatchMode ? '' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="ripple-effect btn-click-effect bg-green-600 text-white p-1 rounded hover:bg-green-700 transition-colors inline-flex items-center justify-center mr-1" title="标记为已完成"><span class="material-icons">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="ripple-effect btn-click-effect bg-red-600 text-white p-1 rounded hover:bg-red-700 transition-colors inline-flex items-center justify-center" title="删除"><span class="material-icons">delete</span></button>'}
+                            ${plannedBatchMode ? '' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:6px;" title="标记为已完成"><span class="material-icons" style="font-size:18px;">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                         </td>
                     </tr>
                 `;
