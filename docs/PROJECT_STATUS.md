@@ -1,14 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-08-30（v1.1.7.0 / vc198）
+> 最后更新：2026-08-31（v1.1.7.1 / vc199）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-08-30）
-- **正式版 v1.1.7.0**（versionCode 198，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- 测试版 `hiking-app3-test/`（v1.4.test-11）——**已暂停勿主动碰**
+- **正式版 v1.1.7.1**（versionCode 199，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
 - **★★★未确认同步前只改 www/index.html + 部署网页，绝不 bump/构建/归档/push**；确认「同步」才 bump→test→构建→push→Release
@@ -27,7 +27,7 @@
 - 📊 概览：统计卡片（总记录数/平均海拔/最高海拔/平均难度/**总里程/总用时**）、**难度分布柱状图（独立卡片，图标标题）**、**年度足迹热力图**（GitHub 风格，点格看当天详情：心情/天气/同行/全部照片/分享，底部「累计爬升 X 米」）
 - 📝 记录：增删改、行内编辑（**心情/天气下拉文字选择**/同行人/里程/用时/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）
 - 📷 照片：记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB）、**编辑行层叠卡片**（无照片时白框加号）、**灯箱：查看/保存/翻页 + 编辑模式添加/删除**、热力图弹窗多图显示
-- 📅 计划：计划徒步管理、难度选择、完成标记（确认弹窗）、**默认按计划时间由近到远排序**、**启动提醒（系统通知，点通知跳计划页，权限被拒自动降级 App 内 toast）+ 不打开 App 也能提醒（原生 AlarmManager 闹钟，计划当天 08:00 触发，v1.1.7.0）**
+- 📅 计划：计划徒步管理、难度选择、完成标记（确认弹窗）、**默认按计划时间由近到远排序**、**启动提醒（系统通知，点通知跳计划页，权限被拒自动降级 App 内 toast）+ 不打开 App 也能提醒（原生 AlarmManager 闹钟，计划当天 08:00 触发，v1.1.7.0）**、**★列表/日历双视图切换（默认日历，v1.1.7.1）+ 计划完成直接进记录编辑补全（名字/难度/海拔预填，v1.1.7.1）**
 - 🎴 **分享卡（v1.1.3.0 定版）**：canvas 720×960，**外置背景图 share-bg.jpg**（v1.1.3.1 从 base64 内置换为外置，发版必须同步此文件）+ 白渐变遮罩 + 楷体艺术字 + 顶部软件标题 + 海拔/难度/心情/天气/同行（**标题加粗**）+ Made by XiXi；入口 = 热力图弹窗底部「分享」按钮
 - ⚙️ 设置：
   - 外观（跟随系统/深浅）→ 杂项（FPS 开关、**检查更新确认弹窗**）→ WebDAV 数据同步 → 关于
@@ -44,7 +44,7 @@
    - **bump 用 `node bump.js` 一键**（vc+1 + 版本名满10进位 + build.gradle/APP_VERSION/版本显示四处同步 + 校验），**汇报版本号以 bump.js 输出为准**（2026-08-24 教训：1.1.2.10 → 1.1.3.0，不许说 1.1.2.11）
    - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
-   - 测试版 `1.X.test-X`（当前 1.4.test-11）
+   - 测试版 `1.X.test-X`（当前 1.4.test-12）
 2. **★发布流程**：①部署 www → 网页确认 → ②bump.js + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
@@ -153,6 +153,7 @@
 - v1.1.6.9（vc196）：**★方案A 单文件拆分落地（主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js，bump/test/sw 全适配）+ 系统通知（计划提醒走通知栏，MainActivity showNotification 桥 + Android13 权限）+ 全局禁长按选择/图片菜单（输入框放行）+ 通知失败降级 toast + 五项优化 v5**（详见 Release）
 - v1.1.6.10（vc197）：**★通知交互升级：修复关通知权限后提醒彻底消失（原生桥 notify() 静默丢弃误报成功 → 加权限/渠道三层检查，失败返回 false → JS 降级 toast）+ 通知「✓ 完成」按钮（点后通知消失 + 对应计划标记完成转记录）+ 点击通知直达计划页（固定 NOTIFY_ID + PendingIntent 双动作 + consumeNotifyAction 桥 + 冷启动/热启动双路径消费）**（详见 Release）
 - v1.1.7.0（vc198）：**★计划提醒升级：不打开 App 也能收到提醒（原生 AlarmManager 闹钟：syncPlanAlarms 桥把「今天及以后」计划按天注册系统闹钟，每天 08:00 触发 AlarmReceiver 发通知，App 进程不在也能收到；Manifest 加 USE_EXACT_ALARM/SCHEDULE_EXACT_ALARM；JS 启动+计划保存全量重设，增删改/完成自动取消）+ 通知「✓ 完成」按钮按用户要求删除（只保留点击跳计划页，清死代码/死图标）**（详见 Release）
+- v1.1.7.1（vc199）：**计划列表/日历双视图切换（默认日历，日历下隐藏添加/批量，切换按钮固定最右，日历模式搜索定位+标记）+ 计划完成直接进记录编辑补全（预填名字/难度/海拔）+ 深色模式关于卡片边框统一玻璃配方**（详见 Release）
 
 ## 待办/新功能方案（2026-08-28 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
