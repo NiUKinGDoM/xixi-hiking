@@ -493,6 +493,8 @@ function setupEventListeners() {
         // ★设置页逐块动画（2026-08-10 机制修复）：切到设置页时临时加 .block-anim 触发逐块浮现，
         //   播完(0.9s)自动移除——平时元素无动画，主题切换不会被重触发，数据管理框不再空白
         if (tabId === 'settings') {
+            // ★2026-09-01 切到设置页刷新徒步年资（避免未进记录页时年资不显示）
+            if (typeof fillAboutSince === 'function') { try { fillAboutSince(); } catch (e) { /* 忽略 */ } }
             try {
                 var settingsChildren = document.querySelectorAll('#tab-settings .glass-panel > *');
                 settingsChildren.forEach(function (child) {

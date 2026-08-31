@@ -254,6 +254,7 @@ function renderTable() {
         const sortedRecords = getSortedRecords();
         
         updateStatistics();
+        try { fillAboutSince(); } catch (e) { /* 年资失败不影响 */ }
         
         // ★2026-08-12 记录页"总计"徽标（样式同柱状图右上角，颜色深浅色自适应）
         // ★2026-08-27 计划页搜索修复：有搜索词时显示匹配数（搜 1 条不再显示"总计 8 条"）
@@ -306,7 +307,28 @@ function renderTable() {
             }
         }
     
-    const tableContent = pageRecords.map((record, idx) => {
+    // ★2026-09-01 记录列表按年份分组：预处理插入年份标记项（组内保持原排序）；条数用全年统计（跨页准确）
+    const groupedRecords = [];
+    let lastYearKey = null;
+    const yearTotals = {};
+    records.forEach(function (rr) {
+        const yy = rr.createdAt ? String(new Date(rr.createdAt).getFullYear()) : '';
+        if (yy) yearTotals[yy] = (yearTotals[yy] || 0) + 1;
+    });
+    pageRecords.forEach(function (r) {
+        const y = r.createdAt ? String(new Date(r.createdAt).getFullYear()) : '';
+        if (y && y !== lastYearKey) { lastYearKey = y; groupedRecords.push({ __year: y, __count: yearTotals[y] || 0 }); }
+        groupedRecords.push(r);
+    });
+    const tableContent = groupedRecords.map((record, idx) => {
+        // ★2026-09-01 年份标题行（图标 + 年份 + 全年次数；★09-01 用户去掉延伸分隔线）
+        if (record && record.__year) {
+            return '<tr class="year-group-row"><td colspan="99"><div class="year-group-head">' +
+                '<span class="material-icons year-group-icon">landscape</span>' +
+                '<span class="year-group-text">' + record.__year + '年</span>' +
+                (record.__count ? '<span class="year-group-count">' + record.__count + ' 次</span>' : '') +
+                '</div></td></tr>';
+        }
         if (editingId === record.id) {
             return `
                 <tr class="border-b border-gray-200">
@@ -848,15 +870,17 @@ function ensureLightbox() {
     div.innerHTML =
         '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 16px;box-sizing:border-box;">' +
         // 标题栏（图片上方，跟随图片不贴屏幕顶；含页码）
-        '<div style="width:100%;max-width:560px;display:flex;justify-content:space-between;align-items:center;color:#fff;flex-shrink:0;">' +
+        '<div style="position:relative;z-index:6;width:100%;max-width:560px;display:flex;justify-content:space-between;align-items:center;color:#fff;flex-shrink:0;">' +
         '<span id="lb-title" style="font-size:15px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.5);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>' +
         '<span id="lb-index" style="color:rgba(255,255,255,0.55);font-size:12px;flex-shrink:0;"></span>' +
         '<button id="lb-close" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>' +
         '</div>' +
         // 图片（垂直空间留给上下控件）
-        '<img id="lb-img" style="max-width:94%;max-height:56%;object-fit:contain;flex-shrink:1;min-height:0;">' +
+        '<img id="lb-img" style="position:relative;z-index:1;max-width:94%;max-height:56%;object-fit:contain;flex-shrink:1;min-height:0;transform-origin:center;will-change:transform;touch-action:pan-y;">' +
+        // ★2026-09-01 缩放指示（放大时显示 ×N，还原隐藏）
+        '<div id="lb-zoom-ind" style="position:absolute;top:64px;right:16px;background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;display:none;z-index:5;"></div>' +
         // 底部操作栏（图片下方）
-        '<div style="display:flex;gap:16px;align-items:center;flex-shrink:0;">' +
+        '<div style="position:relative;z-index:6;display:flex;gap:16px;align-items:center;flex-shrink:0;">' +
         // ★2026-08-25 左右箭头改 material-icons + flex 居中（‹ › 字符不在圆正中）；保存/删除统一 padding 10px 28px
         '<button id="lb-prev" style="display:flex;align-items:center;justify-content:center;padding:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;line-height:1;"><span class="material-icons" style="font-size:26px;">chevron_left</span></button>' +
         '<button id="lb-save" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:10px 28px;border-radius:22px;font-size:14px;cursor:pointer;font-weight:600;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);">保存</button>' +
@@ -875,16 +899,87 @@ function ensureLightbox() {
         // 点最外层或内部空白区域（wrapper）关闭；按钮/图片不触发
         if (e.target === div || e.target === div.firstElementChild) closePhotoLightbox();
     });
-    var sx = null;
-    div.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+    // ★2026-09-01 灯箱手势 v2：双指捏合缩放（1~3×）、放大后单指拖动、双击放大/还原、1× 时滑动翻页
+    var lbPanStart = null;
+    var lbPinchDist = 0, lbPinchScale0 = 1;
+    var lbTapTimer = null;
+    div.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 2) {
+            lbPanStart = null;
+            lbPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            lbPinchScale0 = lbScale;
+        } else if (e.touches.length === 1) {
+            lbPanStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, px: lbPanX, py: lbPanY };
+        }
+    }, { passive: true });
+    div.addEventListener('touchmove', function (e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            lbScale = Math.max(1, Math.min(3, lbPinchScale0 * (d / Math.max(1, lbPinchDist))));
+            lbApplyTransform();
+        } else if (e.touches.length === 1 && lbScale > 1 && lbPanStart) {
+            e.preventDefault();
+            var t = e.touches[0];
+            lbPanX = lbPanStart.px + (t.clientX - lbPanStart.x);
+            lbPanY = lbPanStart.py + (t.clientY - lbPanStart.y);
+            lbApplyTransform();
+        }
+    }, { passive: false });
     div.addEventListener('touchend', function (e) {
-        if (sx === null) return;
-        var dx = e.changedTouches[0].clientX - sx;
-        if (Math.abs(dx) > 50) { if (dx < 0) lbStep(1); else lbStep(-1); }
-        sx = null;
+        var t0 = e.changedTouches[0];
+        var isTap = lbPanStart && Math.abs(t0.clientX - lbPanStart.x) < 20 && Math.abs(t0.clientY - lbPanStart.y) < 20;
+        if (lbScale === 1) {
+            // 1×：滑动翻页
+            if (lbPanStart && Math.abs(t0.clientX - lbPanStart.x) > 50) {
+                if (t0.clientX - lbPanStart.x < 0) lbStep(1); else lbStep(-1);
+                lbPanStart = null;
+                return;
+            }
+            // 双击放大
+            if (isTap) {
+                if (lbTapTimer) { clearTimeout(lbTapTimer); lbTapTimer = null; lbToggleZoom(); }
+                else { lbTapTimer = setTimeout(function () { lbTapTimer = null; }, 300); }
+            }
+        } else {
+            // 放大中：双击还原
+            if (isTap && e.touches.length === 0) {
+                if (lbTapTimer) { clearTimeout(lbTapTimer); lbTapTimer = null; lbToggleZoom(); }
+                else { lbTapTimer = setTimeout(function () { lbTapTimer = null; }, 300); }
+            }
+        }
+        if (e.touches.length === 0) lbPanStart = null;
     }, { passive: true });
     photoLightboxEl = div;
     return div;
+}
+// ★2026-09-01 灯箱缩放状态与变换应用
+var lbScale = 1, lbPanX = 0, lbPanY = 0;
+function lbApplyTransform() {
+    var lb = photoLightboxEl;
+    if (!lb) return;
+    var img = lb.querySelector('#lb-img');
+    if (!img) return;
+    img.style.transform = 'translate(' + lbPanX + 'px,' + lbPanY + 'px) scale(' + lbScale + ')';
+    if (lbScale === 1 && lbPanX === 0 && lbPanY === 0) {
+        img.style.transition = 'transform 0.15s ease-out';
+    } else {
+        img.style.transition = 'none';
+    }
+    var zi = lb.querySelector('#lb-zoom-ind');
+    if (zi) {
+        zi.textContent = lbScale > 1 ? (Math.round(lbScale * 10) / 10) + '×' : '';
+        zi.style.display = lbScale > 1 ? 'block' : 'none';
+    }
+}
+function lbResetZoom() {
+    lbScale = 1; lbPanX = 0; lbPanY = 0;
+    lbApplyTransform();
+}
+function lbToggleZoom() {
+    if (lbScale > 1) { lbScale = 1; lbPanX = 0; lbPanY = 0; }
+    else { lbScale = 2.5; }
+    lbApplyTransform();
 }
 function openPhotoLightbox(recordId, startPid, editing) {
     var rec = records.find(r => r.id === recordId);
@@ -939,6 +1034,7 @@ function lbLoadImg() {
     idxEl.textContent = (lb._idx + 1) + ' / ' + lb._ids.length;
     var pid = lb._ids[lb._idx];
     lb._currentPid = pid;
+    lbResetZoom(); // ★2026-09-01 切图重置缩放
     // ★2026-08-27 缓存命中直接显示（翻页/后退零等待）
     if (lightboxImgCache[pid]) {
         img.src = lightboxImgCache[pid];
@@ -1402,6 +1498,24 @@ function addNewRecord() {
 
 // ★2026-08-27 统计防抖：记录数据指纹（长度+最后修改时间），没变就不重算/不重建图表（14 处调用防抖）
 let statsFingerprint = '';
+// ★2026-09-01 徒步年资：按最早记录日期显示"徒步第 N 天 · 从 X年X月X日 出发"（无记录隐藏）
+function fillAboutSince() {
+    var el = document.getElementById('aboutSinceLine');
+    if (!el) return;
+    var dates = [];
+    (records || []).forEach(function (r) {
+        if (r.createdAt) {
+            var d = new Date(r.createdAt);
+            if (!isNaN(d.getTime())) dates.push(d);
+        }
+    });
+    if (!dates.length) { el.style.display = 'none'; return; }
+    dates.sort(function (a, b) { return a - b; });
+    var first = dates[0];
+    var days = Math.max(1, Math.floor((Date.now() - first.getTime()) / 86400000) + 1);
+    el.innerHTML = '<span class="material-icons" style="font-size:12px;vertical-align:-2px;color:#667eea;">hiking</span> <span>徒步第 ' + days + ' 天 · 从 ' + first.getFullYear() + '年' + (first.getMonth() + 1) + '月' + first.getDate() + '日 出发</span>';
+    el.style.display = '';
+}
 function updateStatistics() {
     const fp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
         const t = r.updatedAt || r.createdAt || '';
