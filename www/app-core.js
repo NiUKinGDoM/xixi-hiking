@@ -21,10 +21,13 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
     });
 }
 
-// ★2026-08-27 关于页：查看更新日志（拉当前版本 GitHub Release，失败提示）
-// ★2026-08-27 更新日志内置（不联网也能看）：最近版本内容缓存在 App 里；查不到当前版本才联网拉取
+// ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.7.4': '## v1.1.7.4 更新内容\n\n**设置页优化**\n- 关于应用卡片样式与其他设置分组完全一致（去掉内层嵌套卡片）\n- 设置分组边框浅色下改为可见灰蓝色\n\n**更新日志本地化**\n- 查看更新日志改为纯本地内置，断网也能看\n\nMade by XiXi 💛',
+    'v1.1.7.3': '## v1.1.7.3 更新内容\n\n**庆祝卡片**\n- 计划完成自动弹出庆祝卡片（彩屑 400 粒满屏爆撒 + 玻璃卡片与热力图弹窗同款参数）\n- 点「继续补全」继续补照片心情，不打断流程\n\nMade by XiXi 💛',
+    'v1.1.7.2': '## v1.1.7.2 更新内容\n\n**计划日历升级**\n- 切月后下方直接列出整月全部计划，按日期分组、每条标注日期（如「9月15日 周二」）\n- 点日期格子聚焦该日（2px 粗框框选），「整月」按钮一键返回\n- 二次点击计划页 tab：日历自动回到今天\n- 日期条深浅色统一玻璃配方\n\nMade by XiXi 💛',
+    'v1.1.7.1': '## v1.1.7.1 更新内容\n\n**计划日历视图**\n- 计划列表/日历双视图切换（默认日历）\n- 日历下隐藏添加/批量按钮，切换按钮固定最右\n- 日历模式搜索直接定位到匹配计划的日期并标记\n\n**计划完成补记录**\n- 确认完成后自动进入记录编辑，名称/难度/海拔已预填\n\nMade by XiXi 💛',
     'v1.1.7.0': '## v1.1.7.0 更新内容\n\n**计划提醒升级**\n- 不打开 App 也能收到计划提醒（计划当天早上 8 点自动提醒，点击直达计划页）\n- 通知简化：去掉「完成」按钮，点击通知直接进计划页\n\nMade by XiXi',
     'v1.1.6.10': '## v1.1.6.10 更新内容\n\n**通知交互升级**\n- 修复关闭通知权限后提醒彻底消失（权限被拒自动降级 App 内提示）\n- 计划提醒通知可一键「✓ 完成」（通知消失 + 计划自动标记完成）\n- 点击通知直达计划页\n\nMade by XiXi',
     'v1.1.6.9': '## v1.1.6.9 更新内容\n\n**架构与体验升级**\n- 代码结构优化：主逻辑拆分为 4 个独立模块，加载更快\n- 计划提醒接入系统通知栏（不再只弹窗提示）\n- 全局禁止长按复制文字和长按图片菜单\n- 修复通知权限被拒时提醒静默丢失的问题\n\nMade by XiXi',
@@ -68,19 +71,12 @@ function showChangelogModal() {
     document.getElementById('changelogClose').addEventListener('click', function () { document.body.removeChild(modal); });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
     var el = document.getElementById('changelogBody');
-    // 优先本地内置（离线可看）
+    // ★2026-08-31 纯本地内置（不联网）：有则显示，无则提示
     var localBody = BUILTIN_CHANGELOG['v' + APP_VERSION];
     if (localBody) {
         if (el) el.textContent = localBody;
     } else {
-        // 当前版本未内置：联网拉取兜底
-        fetchReleaseBodyGuarded('v' + APP_VERSION).then(function (body) {
-            var el2 = document.getElementById('changelogBody');
-            if (el2) el2.textContent = body || '该版本暂无更新内容说明';
-        }).catch(function () {
-            var el3 = document.getElementById('changelogBody');
-            if (el3) el3.textContent = '该版本更新内容未内置，且网络不可用（联网后重试）';
-        });
+        if (el) el.textContent = '该版本暂无内置更新说明';
     }
 }
 
@@ -436,7 +432,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.7.3';
+var APP_VERSION = '1.1.7.4';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
