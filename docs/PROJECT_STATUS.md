@@ -6,7 +6,7 @@
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
-## 当前版本状态（2026-08-30）
+## 当前版本状态（2026-09-01）
 - **正式版 v1.1.7.6**（versionCode 204，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
@@ -23,7 +23,7 @@
 - 最低 Android 7（minSdk 22），target/compileSdk 36
 - 数据存储：localStorage（记录/计划/标题/暗色/帧率/WebDAV 配置）+ IndexedDB（照片大仓库）
 
-## 功能清单（当前全部，v1.1.3.9）
+## 功能清单（当前全部，v1.1.7.6）
 - 📊 概览：统计卡片（总记录数/平均海拔/最高海拔/平均难度/**总里程/总用时**）、**难度分布柱状图（独立卡片，图标标题）**、**年度足迹热力图**（GitHub 风格，点格看当天详情：心情/天气/同行/全部照片/分享，底部「累计爬升 X 米」）
 - 📝 记录：增删改、行内编辑（**心情/天气下拉文字选择**/同行人/里程/用时/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）
 - 📷 照片：记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB）、**编辑行层叠卡片**（无照片时白框加号）、**灯箱：查看/保存/翻页 + 编辑模式添加/删除**、热力图弹窗多图显示
@@ -59,6 +59,9 @@
 11. **可编辑栏不自动弹输入法**
 12. **二次点底栏刷新**：记录/计划先取消编辑态
 13. **玻璃统一配方（2026-08-23 定稿）**：透明 0.08 + blur(2px) saturate(150%) + 白边 0.5 + 双层浮动阴影；**禁止加**光泽带/折射渐变/角部反光/内光晕/四角光斑（都被用户否决过）；toast 浅色同色系底边
+14. **★CSS 特异性坑（2026-09-01 v1.1.7.6）**：`confirm-btn-cancel` 自带 `padding:8px 16px + font-size:16px + font-weight:900`，会**压过 Tailwind 的 `px-2 py-1 text-xs`**（类内联顺序/优先级高于工具类）→ 编辑行保存/取消按钮**一律用内联样式硬锁定**：`padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;font-weight:600;display:inline-flex;align-items:center;justify-content:center`（`check-go-btn` 无自带尺寸，取消按钮就是被 confirm-btn-cancel 撑大才不统一的）
+15. **★年份分组预处理模式（v1.1.7.5 记录页 / v1.1.7.6 计划页）**：**不直接改 map 模板**；先预处理数组插入 `{__year,__count}` 标记项，map 回调开头识别 `__year` 返回年份行（`year-group-row`/`year-group-head`），组内保持原排序，条数用预处理全年统计（跨页准确）；⚠️**模板字符串在 `push(` 换行上下文有 ASI 坑**（报 `missing ) after argument list`）——别把 `return \`...\`` 模板改成 `push(\``，恢复 map 原结构即好
+16. **★死 CSS 清理方法论（2026-09-01）**：先 grep 确认类名无任何 HTML/JS 元素引用再删；**Tailwind 编译产物段（3498+ 行）不可删**，只删自定义覆盖段；`replace_all` 批量替换后必须复查选择器列表（教训：`.btn-click-effect, .edit-input, .sort-header-planned` 被误改成 `.sort-header, .sort-header` 重复，手动清理）
 
 ## ★应用内更新机制（v1.0.8.7 实现）
 - 原生桥 `checkUpdate()`（GET api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/latest 匿名）+ `downloadAndInstall(apkUrl, mirrorUrl)`（OkHttp → FileProvider → 系统安装器）
@@ -77,9 +80,9 @@
    ```
 4. ★构建报 `Could not load compiled classes for settings file ... from cache`（settings 编译类缓存损坏）：删 `%TEMP%\gradle-home-niuxc\caches\8.2.1\scripts` + `executionHistory` 后重试（别清整个 caches，会重新下依赖；2026-08-26 遇过）
    （Release+R8，签名不变 = 覆盖安装数据不丢；proguard 铁律：MainActivity+JsFileBridge 保留、okhttp3 保留）
-4. aapt 验证包名/版本 + apksigner 验证签名 SHA-256 `9396fee4...`
-5. 归档：`XiXiの徒步小记-vX.Y.Z.apk` → 项目根 + `backups/apk-history/`（不主动展示）
-6. 部署网页 + GitHub 同步（见发布流程）
+5. aapt 验证包名/版本 + apksigner 验证签名 SHA-256 `9396fee4...`；★bump.js 后台任务偶发显示 failed 但实际成功（PowerShell 管道尾输出误报）→ 以 stdout `BUILD SUCCESSFUL` + APK 产物存在为准
+6. 归档：`XiXiの徒步小记-vX.Y.Z.apk` → 项目根 + `backups/apk-history/`（不主动展示）
+7. 部署网页 + GitHub 同步（见发布流程）
 
 ## 签名密钥（★重要）
 - 签名 = `C:\Users\NIU-XC\.android\debug.keystore`（SHA256 9396fee4...，所有历史 APK 一致）；别名 androiddebugkey / 密码 android / JKS；备份 `backups/android-signing/`
@@ -87,14 +90,14 @@
 
 ## 工具链真实路径（项目根 `C:\Users\NIU-XC\Desktop\buddy\2026-08-07-13-58-04\`）
 - `jdk-21.0.12\`、`gradle-8.2.1\bin\gradle.bat`、`android-sdk\`（local.properties 写死 sdk.dir）
-- 托管 python：`C:\Users\NIU-XC\.workbuddy\binaries\python\versions\3.13.12\python.exe`；托管 node：`C:\Users\NIU-XC\.workbuddy\binaries\node\versions\22.22.2\node.exe`
+- 托管 python：`C:\Users\NIU-XC\.workbuddy\binaries\python\versions\3.13.12\python.exe`；托管 node：`C:\Users\NIU-XC\.workbuddy\binaries\node\versions\22.22.2-2\node.exe`（★2026-09-01 修正：原 22.22.2 目录已移除，用这个路径）
 
 ## 备份体系
 - `backups/hiking-app3-vX.Y.Z/`：完整源码备份；`backups/apk-history/`：历史 APK；`backups/android-signing/`：签名（绝不上传）
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
 
-## 近期版本要点（v1.1.0.7 ~ v1.1.7.0）
+## 近期版本要点（v1.1.0.7 ~ v1.1.7.6）
 - v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
 - v1.1.1.6（vc138）：导出诊断 + 备份瘦身（完整/纯数据）+ 同步失败提醒 + 云端自动清理（留2份）+ 字段增强（心情/天气/同行人）+ 数据层单测 + 分享卡 v1 + 月度统计
@@ -172,9 +175,9 @@
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
 1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；★★2026-08-27 凭据读取**必须用 Python ctypes CredEnumerate 枚举过滤 `git:https://github.com` 读 blob**（**CredReadW 读该 target 返回空 blob size=0，CredEnumerate 正常**；CredentialBlob 是 UTF-16LE、40 字符裸 token、无 x-access-token 前缀）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；**★★2026-08-27 Release asset 上传必须裸二进制（Content-Type: application/octet-stream，body=APK 原始字节），严禁 multipart（会被原样存成坏文件，手机"解析包出问题"）；上传后必须下载验证 md5 + PK 头；asset 名用 ASCII（中文被替换成 .）**；资产上传端点 **uploads.github.com**；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
 2. **构建必须在 %TEMP%\hiking-build**（桌面路径文件锁）
-3. **★★2026-09-01 新解法：github.com:443 直连超时/被重置（DNS 解析到 20.205.243.166 被限），但 api.github.com（.168）通、140.82.112.3/113.3/114.3/116.3 等 IP 通** → git push 加 `-c http.curloptResolve="github.com:443:140.82.112.3"`；下载 asset 用 `curl -sL --noproxy "*" --resolve github.com:443:140.82.112.3`（python urllib 走系统代理必 502；curl 写文件失败 exit 23 先删旧文件再下）
+3. **★★2026-09-01 新解法：github.com:443 直连超时/被重置（DNS 解析到 20.205.243.166 被限），但 api.github.com（.168）通、140.82.112.3/113.3/114.3/116.3 等 IP 通** → git push 加 `-c http.curloptResolve="github.com:443:140.82.112.3"`；下载 asset 用 `curl -sL --noproxy "*" --resolve github.com:443:140.82.112.3`（python urllib 走系统代理必 502；curl 写文件失败 exit 23 先删旧文件再下）；**IP 会失效需轮换**（当天 docs push 时 140.82.112.3 被重置，换 140.82.113.3 即成功）；**push/上传后一律用 api.github.com（commits/master + releases/tags）核对远程真实状态，避免误判失败**
 4. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
-5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；**test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require
+5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；**test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require；**Edit 工具报 `File has been modified since read`（文件被 lint/其他进程改过）→ 先重新 Read 再 Edit**
 6. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
 7. **换电脑**：绝对路径只对当前电脑有效；local.properties sdk.dir 必须改；见 `backups/新电脑部署指南.md`
 8. **沟通风格**：用户称呼「爹」，助手自称「小小牛 🛠️」；直接给结论不废话
