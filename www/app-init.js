@@ -297,6 +297,16 @@ function setupEventListeners() {
         cleanupFunctions.push(() => addPlannedBtn.removeEventListener('click', handler));
     }
     
+    // ★2026-08-31 计划视图切换（列表/日历）
+    const plansViewToggleBtn = document.getElementById('plansViewToggleBtn');
+    if (plansViewToggleBtn) {
+        const handler = togglePlansView;
+        plansViewToggleBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => plansViewToggleBtn.removeEventListener('click', handler));
+    }
+    // 恢复上次视图模式
+    try { if (typeof applyPlansView === 'function') applyPlansView(); } catch (e) { /* 视图恢复失败不影响 */ }
+    
     // ★主题开关绑定（v1.4.10.2）：设置页「跟随系统」+「深色模式」两开关
     const themeFollowToggle = document.getElementById('themeFollowToggle');
     if (themeFollowToggle) {
@@ -503,7 +513,8 @@ function setupEventListeners() {
         }
         // ★2026-08-27 计划页搜索修复：placeholder 按页切换（计划页不再显示"搜索记录…"）+ 切页自动呼出搜索框一次
         //   （计划少、页面不足一屏时轻滑无法滚动呼出，切页自动出现让用户知道搜索框位置，1 秒不碰自动消失）
-        if (tabId === 'records' || tabId === 'plans') {
+        // ★2026-08-31 日历视图模式跳过（搜索是列表功能，日历下不呼出）
+        if (tabId === 'records' || (tabId === 'plans' && (!window.plansViewMode || window.plansViewMode !== 'calendar'))) {
             var gsi = safeGetElementById('globalSearchInput');
             if (gsi) gsi.placeholder = tabId === 'records' ? '搜索记录…' : '搜索计划…';
             if (window.__pokeSearchBar) { try { window.__pokeSearchBar(); } catch (e) { /* 忽略 */ } }
@@ -517,6 +528,8 @@ function setupEventListeners() {
         }
         currentTabId = tabId;
     }
+    // ★2026-08-31 暴露全局：计划完成补记录（app-data.js markPlannedComplete）需跨文件调用切页
+    window.switchTab = switchTab;
     tabButtons.forEach(function (btn) {
         btn._switchTabHandler = function () {
             // 图标点击弹跳动画

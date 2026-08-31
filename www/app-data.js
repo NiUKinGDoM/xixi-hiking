@@ -81,7 +81,15 @@ function initGlobalSearch() {
         clearTimeout(searchHideTimer); // 打字时取消自动消失计时器
         setBarVisible(true); // 输入时常显
         if (currentTabId === 'records') { recordPage = 1; renderTable(); }
-        else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
+        else if (currentTabId === 'plans') {
+            if (plansViewMode === 'calendar') {
+                // ★2026-08-31 日历模式搜索：定位到匹配计划的日历日期并标记
+                locatePlanInCalendar(searchQuery);
+            } else {
+                plannedPage = 1;
+                renderPlannedTripsTable();
+            }
+        }
     }
     input.addEventListener('compositionstart', function () {
         inputComposing = true;
@@ -209,6 +217,14 @@ function initGlobalSearch() {
         input.value = '';
         clear.style.display = 'none';
         pokeSearchBar(); // 清空后回到「滚动显示 + 1 秒自动消失」规则
+        // ★2026-08-31 日历模式清空搜索：复位日历到今天所在月
+        if (plansViewMode === 'calendar') {
+            calendarSearchMatches = null;
+            calendarSelKey = null;
+            var now = new Date();
+            calendarViewYear = now.getFullYear();
+            calendarViewMonth = now.getMonth();
+        }
         if (currentTabId === 'records') { recordPage = 1; renderTable(); }
         else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
     });
@@ -218,6 +234,8 @@ function initGlobalSearch() {
         if (input) input.value = '';
         if (clear) clear.style.display = 'none';
         setBarVisible(false);
+        // ★2026-08-31 日历模式清空搜索：复位定位状态
+        if (typeof calendarSearchMatches !== 'undefined') calendarSearchMatches = null;
     };
     // ★2026-08-27 计划页搜索修复：暴露呼出函数，供 switchTab 切到记录/计划页时自动显示搜索框
     //   （计划少、页面不足一屏时无法滚动呼出，切页自动出现一次让用户知道搜索框位置）
@@ -1811,6 +1829,242 @@ function getSortedPlannedTrips() {
     return sortedTrips;
 }
 
+// ===== ★2026-08-31 计划日历视图（列表/日历双视图切换）=====
+// ★2026-08-31 默认日历视图（用户指定）；已存偏好尊重存储
+var plansViewMode = 'calendar';
+try { plansViewMode = localStorage.getItem('plans_view_mode') || 'calendar'; } catch (e) { /* 读取失败用默认 */ }
+var calendarViewYear = new Date().getFullYear();
+var calendarViewMonth = new Date().getMonth(); // 0-11
+var calendarSelKey = null; // 选中的日期 YYYY-MM-DD
+
+function applyPlansView() {
+    var listView = safeGetElementById('plannedListView');
+    var calView = safeGetElementById('plannedCalendarView');
+    var icon = safeGetElementById('plansViewToggleIcon');
+    if (!listView || !calView) return;
+    var isCal = plansViewMode === 'calendar';
+    listView.style.display = isCal ? 'none' : '';
+    calView.style.display = isCal ? '' : 'none';
+    if (icon) icon.textContent = isCal ? 'view_list' : 'calendar_month';
+    // ★2026-08-31 日历视图隐藏「批量管理」和「添加」按钮（切换按钮固定最右不动）；列表视图恢复
+    //   ★08-31 去掉淡入淡出动画（用户反馈卡顿），直接显隐最干净
+    var batchBtn = safeGetElementById('plannedBatchModeBtn');
+    var addBtn = safeGetElementById('addPlannedTripBtn');
+    if (batchBtn) batchBtn.style.display = isCal ? 'none' : 'inline-flex';
+    if (addBtn) addBtn.style.display = isCal ? 'none' : 'inline-flex';
+}
+
+function togglePlansView() {
+    plansViewMode = plansViewMode === 'calendar' ? 'list' : 'calendar';
+    try { localStorage.setItem('plans_view_mode', plansViewMode); } catch (e) { /* 忽略 */ }
+    // ★2026-08-31 切视图前退出批量模式（日历下批量按钮隐藏，避免状态残留）
+    if (typeof plannedBatchMode !== 'undefined' && plannedBatchMode) {
+        try { exitPlannedBatchMode(); } catch (e) { /* 忽略 */ }
+    }
+    if (plansViewMode === 'calendar') {
+        var now = new Date();
+        calendarViewYear = now.getFullYear();
+        calendarViewMonth = now.getMonth();
+        calendarSelKey = null;
+        // ★2026-08-31 切到日历视图：有搜索词则直接定位到匹配计划（搜索在日历模式下用于定位）
+        if (searchQuery && searchQuery.trim()) {
+            locatePlanInCalendar(searchQuery);
+        } else {
+            calendarSearchMatches = null;
+            renderPlannedCalendar();
+        }
+    } else {
+        plannedPage = 1;
+        renderPlannedTripsTable();
+    }
+    applyPlansView();
+}
+
+function calendarPrevMonth() {
+    calendarViewMonth--;
+    if (calendarViewMonth < 0) { calendarViewMonth = 11; calendarViewYear--; }
+    calendarSelKey = null;
+    renderPlannedCalendar();
+}
+function calendarNextMonth() {
+    calendarViewMonth++;
+    if (calendarViewMonth > 11) { calendarViewMonth = 0; calendarViewYear++; }
+    calendarSelKey = null;
+    renderPlannedCalendar();
+}
+
+function fmtPlanDateKey(iso) {
+    var t = new Date(iso);
+    if (isNaN(t.getTime())) return '';
+    var m = ('0' + (t.getMonth() + 1)).slice(-2);
+    var d = ('0' + t.getDate()).slice(-2);
+    return t.getFullYear() + '-' + m + '-' + d;
+}
+
+// ★2026-08-31 日历模式搜索定位：跳转匹配计划所在月份/日期并标记（calendarSearchMatches 供明细高亮）
+var calendarSearchMatches = null;
+function locatePlanInCalendar(query) {
+    var q = (query || '').trim();
+    if (!q) {
+        calendarSearchMatches = null;
+        calendarSelKey = null;
+        var now = new Date();
+        calendarViewYear = now.getFullYear();
+        calendarViewMonth = now.getMonth();
+        renderPlannedCalendar();
+        return;
+    }
+    var match = (plannedTrips || []).find(function (t) { return t.name && t.name.indexOf(q) >= 0; });
+    if (!match) {
+        calendarSearchMatches = q;
+        renderPlannedCalendar();
+        return;
+    }
+    var d = new Date(match.createdAt);
+    calendarViewYear = d.getFullYear();
+    calendarViewMonth = d.getMonth();
+    calendarSelKey = fmtPlanDateKey(match.createdAt);
+    calendarSearchMatches = q;
+    renderPlannedCalendar();
+}
+
+// 渲染月历：有计划日期显示蓝点，点击日期下方显示该日计划（完成/删除）
+// ★2026-08-31 五项优化：圆角对齐按钮体系(12)、渲染后淡入动画、日历模式徽标统计
+function renderPlannedCalendar() {
+    var cal = safeGetElementById('plannedCalendarView');
+    if (!cal) return;
+    // 日历模式下徽标统计（列表渲染已提前 return，这里补上）
+    var totalBadge = safeGetElementById('plannedTotalBadge');
+    if (totalBadge) totalBadge.textContent = '总计: ' + (plannedTrips ? plannedTrips.length : 0) + '条计划';
+    var dark = document.body.classList.contains('dark-mode');
+    var accent = dark ? '#818cf8' : '#667eea';
+    var byDate = {};
+    (plannedTrips || []).forEach(function (t) {
+        var key = fmtPlanDateKey(t.createdAt);
+        if (!key) return;
+        if (!byDate[key]) byDate[key] = [];
+        byDate[key].push(t);
+    });
+    var first = new Date(calendarViewYear, calendarViewMonth, 1);
+    var startWeekday = first.getDay(); // 0=周日
+    var daysInMonth = new Date(calendarViewYear, calendarViewMonth + 1, 0).getDate();
+    var todayKey = fmtPlanDateKey(new Date().toISOString());
+
+    var html = '';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    html += '<button class="ripple-effect glass-btn corner-glow" id="calPrevBtn" style="width:34px;height:34px;padding:0;border-radius:10px;"><span class="material-icons" style="font-size:18px;">chevron_left</span></button>';
+    html += '<span style="font-size:16px;font-weight:600;">' + calendarViewYear + '年' + (calendarViewMonth + 1) + '月</span>';
+    html += '<button class="ripple-effect glass-btn corner-glow" id="calNextBtn" style="width:34px;height:34px;padding:0;border-radius:10px;"><span class="material-icons" style="font-size:18px;">chevron_right</span></button>';
+    html += '</div>';
+    var weekLabels = ['日', '一', '二', '三', '四', '五', '六'];
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;">';
+    weekLabels.forEach(function (w) { html += '<div style="text-align:center;font-size:12px;color:rgba(148,163,184,0.9);padding:4px 0;">' + w + '</div>'; });
+    html += '</div>';
+    var cells = '';
+    for (var i = 0; i < startWeekday; i++) cells += '<div></div>';
+    for (var day = 1; day <= daysInMonth; day++) {
+        var m = ('0' + (calendarViewMonth + 1)).slice(-2);
+        var d = ('0' + day).slice(-2);
+        var key = calendarViewYear + '-' + m + '-' + d;
+        var plans = byDate[key] || [];
+        var has = plans.length > 0;
+        var sel = calendarSelKey === key;
+        var isToday = key === todayKey;
+        cells += '<div data-key="' + key + '" style="position:relative;min-height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:' + (has ? 'pointer' : 'default') + ';' +
+            'background:' + (sel ? (dark ? 'rgba(129,140,248,0.25)' : 'rgba(102,126,234,0.2)') : '') + ';' +
+            'border:' + (isToday ? '1px solid ' + accent : '1px solid transparent') + ';">' +
+            '<span style="font-size:13px;font-weight:' + (isToday || sel ? '600' : '400') + ';">' + day + '</span>' +
+            (has ? '<span style="width:6px;height:6px;border-radius:50%;background:' + accent + ';margin-top:2px;"></span>' : '') +
+            '</div>';
+    }
+    var totalCells = startWeekday + daysInMonth;
+    var remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (var j = 0; j < remain; j++) cells += '<div></div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">' + cells + '</div>';
+    html += '<div id="calDayDetail" style="margin-top:12px;"></div>';
+    cal.innerHTML = html;
+    // ★2026-08-31 流畅度：渲染后轻量淡入（切月/切视图/重绘统一），与概览刷新手法一致
+    if (typeof cal.animate === 'function') {
+        try {
+            cal.animate(
+                [{ opacity: 0.4 }, { opacity: 1 }],
+                { duration: 220, easing: 'ease-out' }
+            );
+        } catch (e) { /* 动画失败静默 */ }
+    }
+
+    var prevBtn = safeGetElementById('calPrevBtn');
+    var nextBtn = safeGetElementById('calNextBtn');
+    if (prevBtn) prevBtn.addEventListener('click', calendarPrevMonth);
+    if (nextBtn) nextBtn.addEventListener('click', calendarNextMonth);
+    cal.querySelectorAll('[data-key]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            calendarSelKey = el.getAttribute('data-key');
+            renderPlannedCalendar();
+        });
+    });
+    // 默认选中：今天有计划则选中今天，否则选当月第一个有计划的日期
+    if (!calendarSelKey) {
+        if (byDate[todayKey]) { calendarSelKey = todayKey; }
+        else {
+            var keys = Object.keys(byDate).sort();
+            var monthPrefix = calendarViewYear + '-' + ('0' + (calendarViewMonth + 1)).slice(-2) + '-';
+            for (var k = 0; k < keys.length; k++) {
+                if (keys[k].indexOf(monthPrefix) === 0) { calendarSelKey = keys[k]; break; }
+            }
+        }
+    }
+    if (calendarSelKey) renderCalDayDetail(calendarSelKey);
+}
+
+function renderCalDayDetail(key) {
+    var box = safeGetElementById('calDayDetail');
+    if (!box) return;
+    var plans = (plannedTrips || []).filter(function (t) { return fmtPlanDateKey(t.createdAt) === key; });
+    if (!plans.length) { box.innerHTML = ''; return; }
+    var dark = document.body.classList.contains('dark-mode');
+    var accent = dark ? '#818cf8' : '#667eea';
+    var html = '<div style="font-size:13px;font-weight:600;margin-bottom:6px;">' + key + ' 计划</div>';
+    plans.forEach(function (t) {
+        // ★2026-08-31 搜索匹配标记：计划名含搜索词 → 左侧强调点 + 描边高亮
+        var isMatch = calendarSearchMatches && t.name && t.name.indexOf(calendarSearchMatches) >= 0;
+        var itemBorder = isMatch
+            ? '2px solid ' + accent
+            : '0.5px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)');
+        // ★2026-08-31 浅色模式删除按钮更可见：灰蓝底+描边+深字（class 浅色下白边不可见）
+        var delStyle = dark
+            ? 'padding:6px 12px;border-radius:10px;font-size:12px;'
+            : 'padding:6px 12px;border-radius:10px;font-size:12px;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:6px;' +
+            'background:' + (dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.5)') + ';border:' + itemBorder + ';">' +
+            '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+            (isMatch ? '<span style="color:' + accent + ';font-size:12px;">● </span>' : '') +
+            escapeHtml(t.name) +
+            (isMatch ? ' <span style="font-size:11px;color:' + accent + ';font-weight:400;">匹配</span>' : '') +
+            '</div>' +
+            '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
+            '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+            '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+            '</div></div>';
+    });
+    box.innerHTML = html;
+    box.querySelectorAll('[data-complete]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = b.getAttribute('data-complete');
+            var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
+            showConfirmCompleteModal(id, t2 ? t2.name : '');
+        });
+    });
+    box.querySelectorAll('[data-del]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = b.getAttribute('data-del');
+            var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
+            showDeletePlannedTripConfirmModal(id, t2 ? t2.name : '');
+        });
+    });
+}
+
 let renderPlannedTripsTableRAF = null;
 
 // ★2026-08-25 计划日期提醒：启动时检查未完成计划；★规则：今天有→弹今天（过期忽略）；无今天有过期→弹「计划未完成」；未来 3 天内按 明天/后天/大后天 分组提示
@@ -1864,6 +2118,12 @@ function syncPlanAlarmsBridge() {
 }
 
 function renderPlannedTripsTable() {
+    // ★2026-08-31 日历视图模式：直接显示日历（不渲染列表）
+    if (plansViewMode === 'calendar') {
+        applyPlansView();
+        try { renderPlannedCalendar(); } catch (e) { /* 日历渲染失败不阻塞 */ }
+        return;
+    }
     if (renderPlannedTripsTableRAF) {
         cancelAnimationFrame(renderPlannedTripsTableRAF);
     }
@@ -2234,15 +2494,16 @@ function markPlannedComplete(tripId, tripName) {
     const trip = plannedTrips[idx];
     plannedTrips.splice(idx, 1);
     
-    // 添加到 records（用当前时间作为完成时间）
-    records.push({
+    // ★2026-08-31 计划完成 → 直接补记录：先插入预填记录（名字/难度/海拔），随后进入行内编辑补心情/天气/照片
+    const newRecord = {
         id: generateId(),
         name: trip.name,
         elevation: trip.elevation,
         difficulty: trip.difficulty,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()   // ★2026-08-26 最后修改时间
-    });
+        updatedAt: new Date().toISOString()
+    };
+    records.push(newRecord);
     
     // 保存两边的数据
     savePlannedTripsToStorage();
@@ -2253,7 +2514,9 @@ function markPlannedComplete(tripId, tripName) {
     renderTable();
     renderPlannedTripsTable();
     
-    // 确认后不再弹成功提示（用户要求：确认后不加弹窗了）
+    // ★2026-08-31 跳到记录页并进入行内编辑（名字/难度/海拔已预填，补完即保存）
+    if (typeof window.switchTab === 'function') window.switchTab('records');
+    startEdit(newRecord.id);
 }
 
 function showDeletePlannedTripConfirmModal(tripId, tripName) {
@@ -2362,6 +2625,10 @@ async function savePlannedTripsToStorage() {
             await AppStore.setItem(PLANNED_TRIPS_KEY, { trips: validTrips });
             // ★2026-08-30 计划变更（增删改/完成）后同步系统闹钟：不打开 App 也能提醒
             syncPlanAlarmsBridge();
+            // ★2026-08-31 计划数据变更后日历视图同步重绘
+            if (plansViewMode === 'calendar') {
+                try { renderPlannedCalendar(); } catch (e) { /* 日历重绘失败不阻塞 */ }
+            }
             // ★自动同步（v1.4.10.1）：计划数据变更后同样触发自动上传
             maybeAutoUploadAfterChange();
         } catch (error) {

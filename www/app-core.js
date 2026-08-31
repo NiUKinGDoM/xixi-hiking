@@ -436,7 +436,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.7.0';
+var APP_VERSION = '1.1.7.1';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -1000,6 +1000,12 @@ function applyThemeMode() {
     // v1.4.10.10 修复"切换后自动刷新闪一下"：不再调 updateStatistics()
     // 原因：updateStatistics 重建难度柱状图 DOM（柱子重新生长动画）→ 视觉像页面刷新+闪动；
     // 图表颜色是内联 getDifficultyColor() 生成、与主题无关（darkModeGradients 与亮色一致），切主题无需重绘
+    // ★2026-08-31 计划日历例外：inline 颜色随主题生成（蓝点/选中态/明细条），切主题需重绘刷新
+    try {
+        if (typeof plansViewMode !== 'undefined' && plansViewMode === 'calendar' && typeof renderPlannedCalendar === 'function') {
+            renderPlannedCalendar();
+        }
+    } catch (e) { /* 日历重绘失败忽略 */ }
 }
 
 // 设置主题模式并保存（follow: 是否跟随系统）

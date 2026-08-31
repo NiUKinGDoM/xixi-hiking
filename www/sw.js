@@ -2,8 +2,9 @@
  * network-first：在线取最新（更新立即可见），断网回退缓存（App 壳可离线打开，数据在本地 IndexedDB）
  * ★2026-08-27 CACHE_NAME v1→v2：强制旧 SW 失效重缓存（用户反馈网页版功能未更新，疑似缓存旧壳）
  * ★2026-08-30 v2→v3：方案A 主 JS 拆外部文件，缓存清单加 app-*.js
+ * ★2026-08-31 v3→v4：计划日历视图 + 计划完成补记录
  */
-const CACHE_NAME = 'xixi-hiking-v3';
+const CACHE_NAME = 'xixi-hiking-v4';
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js'];
 
 self.addEventListener('install', function (e) {
