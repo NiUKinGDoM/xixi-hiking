@@ -172,12 +172,13 @@
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
 1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；★★2026-08-27 凭据读取**必须用 Python ctypes CredEnumerate 枚举过滤 `git:https://github.com` 读 blob**（**CredReadW 读该 target 返回空 blob size=0，CredEnumerate 正常**；CredentialBlob 是 UTF-16LE、40 字符裸 token、无 x-access-token 前缀）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；**★★2026-08-27 Release asset 上传必须裸二进制（Content-Type: application/octet-stream，body=APK 原始字节），严禁 multipart（会被原样存成坏文件，手机"解析包出问题"）；上传后必须下载验证 md5 + PK 头；asset 名用 ASCII（中文被替换成 .）**；资产上传端点 **uploads.github.com**；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION
 2. **构建必须在 %TEMP%\hiking-build**（桌面路径文件锁）
-3. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
-4. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；**test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require
-5. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
-6. **换电脑**：绝对路径只对当前电脑有效；local.properties sdk.dir 必须改；见 `backups/新电脑部署指南.md`
-7. **沟通风格**：用户称呼「爹」，助手自称「小小牛 🛠️」；直接给结论不废话
-8. **★换模型/新会话流程（铁律）**：重读本文件 + `.workbuddy/memory/MEMORY.md` + 最新日期日志 → 复述确认（当前版本号/主工程路径/最近发版/发布流程顺序）→ 再开工
+3. **★★2026-09-01 新解法：github.com:443 直连超时/被重置（DNS 解析到 20.205.243.166 被限），但 api.github.com（.168）通、140.82.112.3/113.3/114.3/116.3 等 IP 通** → git push 加 `-c http.curloptResolve="github.com:443:140.82.112.3"`；下载 asset 用 `curl -sL --noproxy "*" --resolve github.com:443:140.82.112.3`（python urllib 走系统代理必 502；curl 写文件失败 exit 23 先删旧文件再下）
+4. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
+5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；**test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require
+6. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
+7. **换电脑**：绝对路径只对当前电脑有效；local.properties sdk.dir 必须改；见 `backups/新电脑部署指南.md`
+8. **沟通风格**：用户称呼「爹」，助手自称「小小牛 🛠️」；直接给结论不废话
+9. **★换模型/新会话流程（铁律）**：重读本文件 + `.workbuddy/memory/MEMORY.md` + 最新日期日志 → 复述确认（当前版本号/主工程路径/最近发版/发布流程顺序）→ 再开工
 
 ## 用户信息
 - 用户称呼：爹；助手自称：小小牛（🛠️）；直接、不废话风格
