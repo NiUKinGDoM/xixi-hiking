@@ -2595,6 +2595,57 @@ function markPlannedComplete(tripId, tripName) {
     // ★2026-08-31 跳到记录页并进入行内编辑（名字/难度/海拔已预填，补完即保存）
     if (typeof window.switchTab === 'function') window.switchTab('records');
     startEdit(newRecord.id);
+    // ★2026-08-31 计划完成庆祝：小卡片 + 彩屑动画（浮在编辑页上方，点掉继续补全）
+    showPlanCompleteCelebration(trip.name);
+}
+
+// ★2026-08-31 计划完成庆祝卡片：彩屑 + 弹入卡片 + 「继续补全」；轻量粒子（≤24），播完自动清理
+function showPlanCompleteCelebration(tripName) {
+    try {
+        // ★五项优化⑤防重入：连续完成计划时移除上一个庆祝弹层
+        var old = document.getElementById('celebrateOverlay');
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+        var dark = document.body.classList.contains('dark-mode');
+        var overlay = document.createElement('div');
+        overlay.id = 'celebrateOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;' +
+            'background:' + (dark ? 'rgba(15,23,42,0.42)' : 'rgba(15,23,42,0.2)') + ';';
+        // 彩屑粒子（★08-31 满屏爆撒：400 粒，覆盖整屏，撒约 2 秒；一次性动画播完自动移除）
+        var confColors = ['#667eea', '#f472b6', '#fbbf24', '#34d399', '#60a5fa', '#f87171', '#a78bfa'];
+        for (var i = 0; i < 400; i++) {
+            var p = document.createElement('div');
+            var size = 5 + Math.random() * 7;
+            var left = Math.random() * 100;
+            var delay = Math.random() * 0.6;
+            var dur = 1.4 + Math.random() * 0.8;
+            p.style.cssText = 'position:fixed;top:-16px;left:' + left + '%;width:' + size + 'px;height:' + (size * 0.62) + 'px;' +
+                'background:' + confColors[Math.floor(Math.random() * confColors.length)] + ';border-radius:2px;' +
+                'z-index:1101;pointer-events:none;opacity:0.95;' +
+                'animation:confetti-fall ' + dur + 's ease-in ' + delay + 's forwards;';
+            overlay.appendChild(p);
+            (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, (dur + delay + 0.3) * 1000); })(p);
+        }
+        // 卡片（★08-31 参数统一热力图弹窗：confirm-modal-content 玻璃弹窗类 + modal-fade-scale 同款动画）
+        var card = document.createElement('div');
+        card.className = 'confirm-modal-content modal-fade-scale celebration-card';
+        card.innerHTML =
+            '<span class="material-icons" style="font-size:44px;color:#f59e0b;line-height:1;">celebration</span>' +
+            '<div style="font-size:20px;font-weight:800;margin:10px 0 6px;color:' + (dark ? '#fff' : '#0f172a') + ';">完成！</div>' +
+            '<div style="font-size:15px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.92)' : '#334155') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">「' + escapeHtml(tripName || '未命名计划') + '」已加入徒步记录</div>' +
+            '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:8px;line-height:1.7;">新的足迹已点亮，期待下一座山 🏔️</div>' +
+            '<button id="celebrateOkBtn" class="check-go-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">继续补全</button>';
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        var close = function () {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            document.removeEventListener('keydown', escHandler);
+        };
+        var escHandler = function (e) { if (e.key === 'Escape') close(); };
+        document.addEventListener('keydown', escHandler);
+        var okBtn = document.getElementById('celebrateOkBtn');
+        if (okBtn) okBtn.addEventListener('click', close);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    } catch (e) { /* 庆祝失败不影响主流程 */ }
 }
 
 function showDeletePlannedTripConfirmModal(tripId, tripName) {
