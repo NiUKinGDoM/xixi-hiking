@@ -1,13 +1,13 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-08-31（v1.1.7.3 / vc201）
+> 最后更新：2026-08-31（v1.1.7.4 / vc202）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-08-30）
-- **正式版 v1.1.7.3**（versionCode 201，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.7.4**（versionCode 202，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
@@ -156,6 +156,7 @@
 - v1.1.7.1（vc199）：**计划列表/日历双视图切换（默认日历，日历下隐藏添加/批量，切换按钮固定最右，日历模式搜索定位+标记）+ 计划完成直接进记录编辑补全（预填名字/难度/海拔）+ 深色模式关于卡片边框统一玻璃配方**（详见 Release）
 - v1.1.7.2（vc200）：**计划日历：二次点击 tab 回当天 + 明细区整月全部计划按日期分组每条标注日期（点日期聚焦该日+2px 框选，「整月」按钮返回）+ 日期条深色统一玻璃配方 + 选中日期 2px 强调框**（详见 Release）
 - v1.1.7.3（vc201）：**计划完成庆祝卡片（彩屑 400 粒满屏爆撒 + 玻璃卡片与热力图弹窗同参数 + 完成计划自动弹出，点掉继续补记录）**（详见 Release）
+- v1.1.7.4（vc202）：**设置页优化（关于应用卡片与其他分组完全一致、分组边框浅色可见灰蓝）+ 更新日志纯本地内置（断网可看，Release body 同步内置）**（详见 Release）
 
 ## 待办/新功能方案（2026-08-28 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）

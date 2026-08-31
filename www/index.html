@@ -1082,12 +1082,9 @@
         }
         /* ========== 设置页 - 关于卡片 ========== */
         .about-card {
-            /* 2026-08-11 用户要求：简介框颜色太深 → 与其他玻璃卡片一致（浅色玻璃白底）
-               ★2026-08-31 边框统一玻璃配方（浅色白边 0.45，与其他卡片一致，去掉原黑边） */
-            background: rgba(255, 255, 255, 0.10);
-            border: 1px solid rgba(255, 255, 255, 0.45);
-            border-radius: 20px;
-            padding: 30px 20px;
+            /* ★2026-08-31 定版：不做"卡片套卡片"——去掉内层卡片外观（背景/边框/毛玻璃），
+               内容直接放在外层 settings-group 玻璃卡片里（与其他设置分组完全一致） */
+            padding: 6px 0 2px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1132,7 +1129,7 @@
             background-color: rgba(255, 255, 255, 0.10);
             backdrop-filter: blur(2px) saturate(120%);   /* ★五项优化①：blur 3→2 统一 */
             -webkit-backdrop-filter: blur(2px) saturate(120%);
-            border: 1px solid rgba(255, 255, 255, 0.45);  /* ★五项优化①：边框统一玻璃配方 */
+            border: 1px solid rgba(100, 116, 139, 0.22);  /* ★2026-08-31 浅色下可见的灰蓝边框（原白边在浅底不可见） */
             border-radius: 20px;
             padding: 16px;
             margin-bottom: 16px;
@@ -1350,11 +1347,7 @@
         body.dark-mode .settings-item-desc {
             color: #94a3b8;
         }
-        body.dark-mode .about-card {
-            /* ★2026-08-31 深色边框统一玻璃配方（白 0.08，与其他卡片一致，去掉原扎眼浅蓝白边框） */
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
+
         body.dark-mode .about-card .about-name {
             color: #ffffff;
         }
@@ -4835,7 +4828,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.7.3</div>
+                        <div class="about-version">版本 1.1.7.4</div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
                         <button id="changelogBtn" class="ripple-effect glass-btn" style="margin-top:12px;padding:8px 22px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">查看更新日志</button>
                         <div class="about-tag" style="display:flex;align-items:center;justify-content:center;gap:8px;">
