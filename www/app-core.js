@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.7.9': '## v1.1.7.9 更新内容\n\n**编辑行优化**\n- 日期时间选择弹窗缩小，更紧凑\n- 里程支持小数点后两位（如 12.34 km）\n- 用时改为「时/分」双框输入，直观又顺手\n- 心情/天气/同行人尺寸微调，与用时框同一行紧凑排列\n\nMade by XiXi 💛',
     'v1.1.7.8': '## v1.1.7.8 更新内容\n\n**自定义日期时间选择器**\n- 编辑日期时间改用 App 同款玻璃弹窗（替换系统原生选择器，设计语言统一）\n- 日历网格选日期：今天靛蓝描边、选中高亮，左右切换月份\n- 时/分步进器：点按调整，长按连续跳动（调分钟不用点几十下）\n- 日期字体不再加粗，与其他输入框统一\n\nMade by XiXi 💛',
     'v1.1.7.7': '## v1.1.7.7 更新内容\n\n**通知升级（能上通知栏的都上）**\n- 备份提醒改通知栏：超过 7 天没同步，启动时通知提醒，点通知直达设置页\n- 自动同步成功/失败、更新下载完成都上通知栏，不用盯着界面也能知道结果\n\n**计划提醒修复**\n- 手机重启后计划提醒自动恢复（原来重启会丢失，要重开 App 才重建）\n\n**设计统一**\n- 编辑行取消按钮浅色模式下可见（原来白边隐形）\n- 编辑行日期/时间框样式统一\n- 里程框后加 km、用时框后加 h\n- 设置页新增「通知权限未开启 → 点击去开启」引导\n\nMade by XiXi 💛',
     'v1.1.7.6': '## v1.1.7.6 更新内容\n\n**记录/计划页面设计统一**\n- 计划页列表视图加年份分组（图标+年份+全年次数），与记录页一致；日历视图保持清爽\n- 记录页行内删除按钮、编辑行保存/取消按钮全部统一为玻璃按钮（保存/完成=浅红玻璃，取消/删除=灰蓝玻璃），与计划页、弹窗完全同款\n- 编辑行保存/取消按钮大小、字重统一，不再一大一小\n- 计划页标题图标色统一为蓝色（与概览/记录/设置一致）\n\n**代码清理**\n- 清理历史遗留死 CSS（老式红/绿/灰按钮样式全部移除）\n\nMade by XiXi 💛',
@@ -436,7 +437,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.7.8';
+var APP_VERSION = '1.1.7.9';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -616,7 +617,7 @@ async function generateShareCard(record) {
     var row1Pairs = [
         { label: '海拔 ', value: (record.elevation || 0) + ' m' }
     ];
-    if (record.distance) row1Pairs.push({ label: '里程 ', value: (Number(record.distance) || 0).toFixed(1) + ' km' }); // ★2026-08-29 与统计页统一 toFixed(1)，防长小数
+    if (record.distance) row1Pairs.push({ label: '里程 ', value: (Number(record.distance) || 0).toFixed(2) + ' km' }); // ★2026-09-01 里程两位小数
     if (record.duration) row1Pairs.push({ label: '用时 ', value: formatDuration(record.duration) });
     // ★2026-08-25 自适应：仅海拔一条 64px，2 条 50px，3+ 条 42px
     var row1Size = row1Pairs.length >= 4 ? 42 : (row1Pairs.length === 1 ? 64 : 50);

@@ -418,8 +418,8 @@ function renderTable() {
                             <div id="photo-thumbs-${record.id}" class="flex items-center">
                                 ${photoThumbsHTML(editingPhotoIds, record.id)}
                             </div>
-                            <!-- ★2026-08-25 恢复原大小（edit-input）：心情/天气 100、同行 130→104(80%)、里程/用时 90→72(80%)；手机两行：照片+心情+天气 / 同行+里程+用时 -->
-                            <select id="edit-mood-${record.id}" class="edit-input input-glow" style="max-width:100px;" title="心情（可选）">
+                            <!-- ★2026-09-01 心情/天气再放大 5%（72→76px）；顺序：心情→天气→同行→时/分→里程（时/分与它们同行） -->
+                            <select id="edit-mood-${record.id}" class="edit-input input-glow" style="max-width:76px;" title="心情（可选）">
                                 <option value="">心情</option>
                                 <option value="😄" ${record.mood === '😄' ? 'selected' : ''}>开心</option>
                                 <option value="😌" ${record.mood === '😌' ? 'selected' : ''}>平静</option>
@@ -427,7 +427,7 @@ function renderTable() {
                                 <option value="😮‍💨" ${record.mood === '😮‍💨' ? 'selected' : ''}>疲惫</option>
                                 ${record.mood && ['😄','😌','🤩','😮‍💨'].indexOf(record.mood) < 0 ? '<option value="' + record.mood + '" selected>' + record.mood + '</option>' : ''}
                             </select>
-                            <select id="edit-weather-${record.id}" class="edit-input input-glow" style="max-width:100px;" title="天气（可选）">
+                            <select id="edit-weather-${record.id}" class="edit-input input-glow" style="max-width:76px;" title="天气（可选）">
                                 <option value="">天气</option>
                                 <option value="☀️" ${record.weather === '☀️' ? 'selected' : ''}>晴</option>
                                 <option value="🌤️" ${record.weather === '🌤️' ? 'selected' : ''}>多云</option>
@@ -436,15 +436,19 @@ function renderTable() {
                                 <option value="❄️" ${record.weather === '❄️' ? 'selected' : ''}>雪</option>
                                 ${record.weather && ['☀️','🌤️','☁️','🌧️','❄️'].indexOf(record.weather) < 0 ? '<option value="' + record.weather + '" selected>' + record.weather + '</option>' : ''}
                             </select>
-                            <input type="text" id="edit-companions-${record.id}" placeholder="同行人" class="edit-input input-glow" style="max-width:104px;" value="${record.companions || ''}">
-                            <!-- ★2026-09-01 里程/用时加单位：框内填数字，框后跟 km / h（.edit-unit-wrap + .edit-unit） -->
+                            <!-- ★2026-09-01 同行人缩小 30%（104→72px） -->
+                            <input type="text" id="edit-companions-${record.id}" placeholder="同行人" class="edit-input input-glow" style="max-width:72px;" value="${record.companions || ''}">
+                            <!-- ★2026-09-01 用时改小时+分钟双框（record.duration 存分钟），紧跟心情/天气/同行人同行 -->
                             <div class="edit-unit-wrap">
-                                <input type="number" id="edit-distance-${record.id}" placeholder="里程" class="edit-input input-glow" style="max-width:60px;" value="${record.distance || ''}" min="0" step="0.1" inputmode="decimal" title="里程（公里）">
-                                <span class="edit-unit">km</span>
+                                <input type="number" id="edit-duration-h-${record.id}" placeholder="时" class="edit-input input-glow" style="max-width:50px;" value="${record.duration ? Math.floor(record.duration / 60) : ''}" min="0" max="23" step="1" inputmode="numeric" title="小时">
+                                <span class="edit-unit">时</span>
+                                <input type="number" id="edit-duration-m-${record.id}" placeholder="分" class="edit-input input-glow" style="max-width:50px;" value="${record.duration ? record.duration % 60 : ''}" min="0" max="59" step="1" inputmode="numeric" title="分钟">
+                                <span class="edit-unit">分</span>
                             </div>
+                            <!-- ★2026-09-01 里程：放大 5%（60→63px）+ 精确到小数点后两位（step 0.01） -->
                             <div class="edit-unit-wrap">
-                                <input type="number" id="edit-duration-${record.id}" placeholder="用时" class="edit-input input-glow" style="max-width:60px;" value="${record.duration ? Math.round(record.duration / 60 * 10) / 10 : ''}" min="0" step="0.1" inputmode="decimal" title="用时（小时，如 2.5 = 2小时30分）">
-                                <span class="edit-unit">h</span>
+                                <input type="number" id="edit-distance-${record.id}" placeholder="里程" class="edit-input input-glow" style="max-width:63px;" value="${record.distance || ''}" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">
+                                <span class="edit-unit">km</span>
                             </div>
                         </div>
                     </td>
@@ -1240,9 +1244,9 @@ function openDateTimePicker(inputId, currentValue) {
 
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
-        // ★2026-09-01 v3：时/分改步进器（- 数字 +），彻底告别 select 全屏原生列表；弹窗 360px 不超屏
+        // ★2026-09-01 v3：时/分改步进器（- 数字 +），彻底告别 select 全屏原生列表；★09-01 弹窗缩小 360→320px
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event</span>选择日期时间</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="dtp-nav" id="dtpNav"></div>' +
@@ -1408,11 +1412,16 @@ function saveRecord(id) {
     if (weatherInput) record.weather = weatherInput.value.trim();
     if (companionsInput) record.companions = companionsInput.value.trim();
 
-    // ★2026-08-25 里程/用时（可选）：distance=km 数字，duration=分钟
+    // ★2026-09-01 里程/用时（可选）：distance=km 数字（保留两位小数），duration=分钟（时/分双框换算）
     const distanceInput = document.getElementById(`edit-distance-${id}`);
-    const durationInput = document.getElementById(`edit-duration-${id}`);
-    if (distanceInput) record.distance = parseFloat(distanceInput.value) || 0;
-    if (durationInput) record.duration = Math.round((parseFloat(durationInput.value) || 0) * 60);
+    if (distanceInput) record.distance = Math.round((parseFloat(distanceInput.value) || 0) * 100) / 100;
+    const durationHInput = document.getElementById(`edit-duration-h-${id}`);
+    const durationMInput = document.getElementById(`edit-duration-m-${id}`);
+    if (durationHInput || durationMInput) {
+        const hh = Math.max(0, parseInt((durationHInput ? durationHInput.value : '0'), 10) || 0);
+        const mm = Math.max(0, parseInt((durationMInput ? durationMInput.value : '0'), 10) || 0);
+        record.duration = hh * 60 + mm;
+    }
 
     // ★2026-08-26 最后修改时间：每次保存记录都更新（合并取新用，区分于徒步日期 createdAt）
     record.updatedAt = new Date().toISOString();
@@ -1764,7 +1773,7 @@ function updateStatistics() {
     // ★2026-08-26 总爬升卡片（原平均难度卡位；平均难度挪到直方图左上角）
     updateWithAnimation(totalClimbCard, Math.round(totalElevation) + 'm');
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
-    updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(1) + ' km' : '0 km');
+    updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(2) + ' km' : '0 km'); // ★2026-09-01 里程两位小数
     updateWithAnimation(totalDuration, totalMin ? (formatDuration(totalMin) || '0h') : '0h');
     // ★2026-08-26 直方图左上角平均难度（字体与右上角总计一致 text-xs）
     if (chartAvgDiff) chartAvgDiff.innerHTML = '<span class="' + (isDarkMode ? 'text-white/70' : 'text-white/60') + '">平均难度 ' + averageDifficulty + ' 级</span>';
