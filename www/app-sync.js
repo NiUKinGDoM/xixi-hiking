@@ -152,12 +152,18 @@ async function loadSyncState() {
             lastSync = statusData.value.lastSyncAt;
         }
         renderSyncForm(lastSync);
-        // ★备份提醒（v1.4.10.1）：配置了同步但超过 7 天没备份 → 提示一次（延迟等页面渲染完）
+        // ★备份提醒（★2026-09-01 改通知栏）：配置了同步但超过 7 天没备份 → 通知栏提示（点通知跳设置页）
+        // 网页版无通知栏 → showSystemNotification 自动降级 toast；同一天不重复提醒
         if (syncConfig.server && syncConfig.username && lastSync) {
             const days = (Date.now() - new Date(lastSync).getTime()) / 86400000;
             if (days >= 7) {
                 setTimeout(function () {
-                    showBackupReminder(days);
+                    try {
+                        const todayStr = new Date().toDateString();
+                        if (localStorage.getItem('hiking_backup_remind_date') === todayStr) return;
+                        localStorage.setItem('hiking_backup_remind_date', todayStr);
+                        showSystemNotification('备份提醒', '距上次同步已 ' + Math.floor(days) + ' 天，建议上传备份到云端', 'settings');
+                    } catch (e) { /* 提醒失败不影响启动 */ }
                 }, 1500);
             }
         }
@@ -166,9 +172,37 @@ async function loadSyncState() {
     }
 }
 
+// ★2026-09-01 通知权限引导行：仅原生 App + 权限未开启时显示「通知权限未开启 → 点击去开启」
+// 网页版（无桥/无通知栏）永远隐藏；权限已开隐藏；点击跳系统通知设置
+let notifyPermRowBound = false;
+function refreshNotifyPermRow() {
+    try {
+        const el = document.getElementById('notifyPermItem');
+        if (!el) return;
+        const isApp = window.XixiFileBridge && typeof window.XixiFileBridge.checkNotificationPermission === 'function';
+        if (!isApp) { el.style.display = 'none'; return; }
+        let granted = true;
+        try { granted = !!window.XixiFileBridge.checkNotificationPermission(); } catch (e) { /* 桥异常按已开启 */ }
+        el.style.display = granted ? 'none' : 'flex';
+        if (!notifyPermRowBound) {
+            notifyPermRowBound = true;
+            el.addEventListener('click', function () {
+                try {
+                    if (window.XixiFileBridge && typeof window.XixiFileBridge.openNotificationSettings === 'function') {
+                        window.XixiFileBridge.openNotificationSettings();
+                    }
+                } catch (e) { /* 跳转失败忽略 */ }
+            });
+        }
+    } catch (e) { /* 忽略 */ }
+}
+
 // ★2026-08-11 设置页手动刷新（底栏点击当前"设置"tab 时调用）：
 //   只刷新动态状态行 + 重播逐块浮现动画；不覆盖输入框、不发网络请求（不卡顿）
 async function refreshSettingsUI() {
+    try {
+        refreshNotifyPermRow(); // ★2026-09-01 每次进设置页刷新通知权限引导行
+    } catch (e) { /* 忽略 */ }
     try {
         const statusData = await AppStore.getItem(SYNC_STATUS_KEY);
         if (statusData && statusData.lastSyncAt) {
@@ -433,7 +467,8 @@ window.XixiUpdaterCallback = function (state, message) {
             if (desc) desc.textContent = '请允许安装未知应用后重试';
         } else if (state === 'installing') {
             hideLoadingToast();
-            showSuccessMessage('已下载完成，正在安装…');
+            // ★2026-09-01 通知分级：下载完成 → 通知栏（用户可能切到别的应用等安装）
+            showSystemNotification('更新下载完成', '已下载完成，正在安装…');
             if (desc) desc.textContent = '已下载完成，请按系统提示安装';
             pendingUpdate = null;
         } else if (state === 'error') {
@@ -470,42 +505,8 @@ function updateLoadingToast(message) {
 }
 
 // ★备份提醒弹窗（v1.4.10.1）：提示用户去上传备份
-function showBackupReminder(days) {
-    closeOpenModals(); // ★2026-08-29 防重入
-    const modal = document.createElement('div');
-    modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
-            <div class="confirm-modal-title">
-                <span class="material-icons" style="color: #f59e0b;">backup</span>
-                备份提醒
-            </div>
-            <div class="confirm-modal-message">
-                已经 ${Math.floor(days)} 天没有备份数据了。建议定期上传备份到云端，防止数据丢失。
-            </div>
-            <div class="confirm-modal-buttons">
-                <button class="confirm-btn-cancel ripple-effect" id="remindLaterBtn">
-                    稍后再说
-                </button>
-                <button class="confirm-btn-delete ripple-effect" id="remindUploadBtn" style="background: #4f46e5;">
-                    <span class="material-icons" style="font-size: 16px;">cloud_upload</span>
-                    去上传备份
-                </button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    document.getElementById('remindLaterBtn').addEventListener('click', function () {
-        document.body.removeChild(modal);
-    });
-    document.getElementById('remindUploadBtn').addEventListener('click', function () {
-        document.body.removeChild(modal);
-        uploadSyncBackup();
-    });
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) document.body.removeChild(modal);
-    });
-}
+// ★2026-09-01 备份提醒已改通知栏（见 loadSyncState），旧弹窗版删除
+//（通知栏版：距上次同步 ≥7 天 → showSystemNotification('备份提醒',...,'settings')，同一天不重复）
 
 function renderSyncForm(lastSync) {
     const serverInput = document.getElementById('syncServer');
@@ -675,6 +676,8 @@ async function uploadSyncBackup(silent) {
             // ★2026-08-25 上传成功 → 对号 + 弹窗「上传成功」（10 秒后 finally 恢复连接检测）
             setSyncStatus('上传成功', 'check_circle', 'success');
             if (!silent) showSuccessMessage('备份上传成功');
+            // ★2026-09-01 通知分级：自动上传（silent）成功 → 通知栏
+            else showSystemNotification('自动同步完成', '备份已上传云端');
             // ★2026-08-21 v1.1.1.6 云端自动清理：保留最近 2 份，更旧的自动删除（防备份堆积）
             try {
                 const cloudFiles = await listSyncFilesFromCloud();
@@ -694,17 +697,20 @@ async function uploadSyncBackup(silent) {
             }
         } else if (result.status === 401 || result.status === 403) {
             setSyncStatus('认证失败，请检查账号和应用密码', 'error', 'error');
-            showErrorMessage('认证失败，请检查账号和应用密码');
+            if (!silent) showErrorMessage('认证失败，请检查账号和应用密码');
+            else notifySyncFailure('自动同步失败：认证错误，请检查账号和应用密码');
         } else {
             const detail = friendlySyncError(result.error ? result.error : ('HTTP ' + result.status));
             const bodyPreview = result.body ? base64ToUtf8(result.body).slice(0, 200) : '';
             setSyncStatus('上传失败：' + detail, 'error', 'error');
-            showErrorMessage('上传失败：' + detail + (bodyPreview ? '（' + bodyPreview + '）' : ''));
+            if (!silent) showErrorMessage('上传失败：' + detail + (bodyPreview ? '（' + bodyPreview + '）' : ''));
+            else notifySyncFailure('自动同步失败：' + detail);
             console.error('[Sync] 上传失败', url, result.status, bodyPreview);
         }
     } catch (e) {
         setSyncStatus('上传失败：' + friendlySyncError(e.message || e), 'error', 'error');
-        showErrorMessage('上传失败：' + friendlySyncError(e.message || e));
+        if (!silent) showErrorMessage('上传失败：' + friendlySyncError(e.message || e));
+        else notifySyncFailure('自动同步失败：' + friendlySyncError(e.message || e));
     } finally {
         syncInProgress = false;
         setSyncBusy(false);
@@ -949,6 +955,9 @@ async function mergeSyncBackup(silent) {
                 if (!silent) {
                     setSyncStatus('合并完成：' + now, 'sync', 'success');
                     showSuccessMessage('合并同步完成');
+                } else {
+                    // ★2026-09-01 自动同步完成 → 通知栏（App 启动后台跑，用户不一定盯着界面）
+                    showSystemNotification('自动同步完成', '数据已与云端合并');
                 }
             } else {
                 if (!silent) {
@@ -986,11 +995,12 @@ async function mergeSyncBackup(silent) {
 }
 
 // ★2026-08-21 v1.1.1.6 自动同步失败提醒：限频（10 分钟内最多提示一次，避免静默也避免轰炸）
+// ★2026-09-01 通知分级：自动同步失败上通知栏（网页版自动降级 toast）
 function notifySyncFailure(msg) {
     var now = Date.now();
     if (!window._lastSyncErrAt || now - window._lastSyncErrAt > 600000) {
         window._lastSyncErrAt = now;
-        showErrorMessage(msg);
+        showSystemNotification('自动同步失败', msg);
     }
 }
 

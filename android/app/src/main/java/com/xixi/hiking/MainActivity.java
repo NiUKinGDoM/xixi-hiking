@@ -337,13 +337,14 @@ public class MainActivity extends BridgeActivity {
         }
 
         // ★2026-08-30 系统通知（计划提醒等，适配小米灵动岛/通知栏）
-        // JS 调用：window.XixiFileBridge.showNotification(title, body) → boolean
+        // JS 调用：window.XixiFileBridge.showNotification(title, body, navigate) → boolean
+        // navigate：点通知本体回 App 后跳转目标（'plans' 计划页 / 'settings' 设置页），缺省 plans
         // 小米 HyperOS 对标准通知自动适配灵动岛胶囊形态；通知渠道固定创建，重复调用幂等
-        // ★2026-08-30 通知交互（v1.1.6.10 简化）：点通知本体 → 回 App 跳计划页（navigate=plans）
+        // ★2026-09-01 通知交互升级：备份提醒等也走通知栏，navigate 由 JS 指定（不再硬编码 plans）
         // ★2026-08-30 修复：权限被拒时 notify() 不抛异常、静默丢弃，
         //   若不检查会误报成功 → JS 收到 true 不降级 toast → 提醒彻底消失
         @JavascriptInterface
-        public boolean showNotification(String title, String body) {
+        public boolean showNotification(String title, String body, String navigate) {
             try {
                 android.app.NotificationManager nm =
                         (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -379,14 +380,15 @@ public class MainActivity extends BridgeActivity {
                 } else {
                     builder = new android.app.Notification.Builder(MainActivity.this);
                 }
-                // 点通知本体 → 回 App 跳计划页
+                // 点通知本体 → 回 App 按 navigate 跳转（null/空 → 计划页，保持旧行为）
+                String nav = (navigate == null || navigate.isEmpty()) ? "plans" : navigate;
                 int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
                 if (android.os.Build.VERSION.SDK_INT >= 23) {
                     piFlags |= android.app.PendingIntent.FLAG_IMMUTABLE;
                 }
                 android.content.Intent contentIntent = new android.content.Intent(MainActivity.this, MainActivity.class)
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP | android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        .putExtra("navigate", "plans");
+                        .putExtra("navigate", nav);
                 android.app.PendingIntent contentPi = android.app.PendingIntent.getActivity(
                         MainActivity.this, 0, contentIntent, piFlags);
                 builder.setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -404,98 +406,61 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // ★2026-09-01 通知权限查询：JS 调用 window.XixiFileBridge.checkNotificationPermission() → boolean
+        // 用于设置页「通知权限未开启 → 点击去开启」引导行显示判断
+        @JavascriptInterface
+        public boolean checkNotificationPermission() {
+            try {
+                android.app.NotificationManager nm =
+                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    return checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                            == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                } else if (android.os.Build.VERSION.SDK_INT >= 24) {
+                    return nm != null && nm.areNotificationsEnabled();
+                }
+                return true; // Android 6.0 以下无需通知权限
+            } catch (Exception e) {
+                Log.e(TAG, "checkNotificationPermission failed", e);
+                return true; // 异常按已开启处理，避免误引导
+            }
+        }
+
+        // ★2026-09-01 打开系统通知设置：JS 调用 window.XixiFileBridge.openNotificationSettings()
+        @JavascriptInterface
+        public void openNotificationSettings() {
+            try {
+                android.content.Intent i;
+                if (android.os.Build.VERSION.SDK_INT >= 26) {
+                    i = new android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+                } else {
+                    // 低版本回退：应用详情页
+                    i = new android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.parse("package:" + getPackageName()));
+                }
+                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+            } catch (Exception e) {
+                Log.e(TAG, "openNotificationSettings failed", e);
+            }
+        }
+
         // ★2026-08-30 不打开 App 也能提醒：JS 把「今天及以后的计划」同步成系统闹钟
         // JS 调用：window.XixiFileBridge.syncPlanAlarms('[{"id":"..","name":"..","date":"YYYY-MM-DD"}]')
         // 按 date 分组，每天 08:00 触发一次 AlarmReceiver → 发通知（点通知跳计划页）
         // 旧闹钟先全 cancel（SharedPreferences 记上次日期集合），App 每次打开/计划变更都全量重设
+        // ★2026-09-01 重启恢复：计划数据持久化到 SharedPreferences，手机重启后由 BootReceiver 重建
+        //（重建逻辑 rebuildPlanAlarms / parsePlanDateMillis / buildPlanAlarmPendingIntent 在 MainActivity 顶层，
+        //  内部类不能有 static 方法——Java 8 语法限制）
         @JavascriptInterface
         public void syncPlanAlarms(String plansJson) {
             try {
-                org.json.JSONArray arr = (plansJson == null || plansJson.isEmpty())
-                        ? new org.json.JSONArray() : new org.json.JSONArray(plansJson);
-                // 按日期分组（LinkedHashMap 保持插入序）
-                java.util.Map<String, java.util.List<org.json.JSONObject>> byDate =
-                        new java.util.LinkedHashMap<>();
-                for (int i = 0; i < arr.length(); i++) {
-                    org.json.JSONObject o = arr.optJSONObject(i);
-                    if (o == null) continue;
-                    String date = o.optString("date", "");
-                    if (date.length() != 10) continue;
-                    if (!byDate.containsKey(date)) byDate.put(date, new java.util.ArrayList<org.json.JSONObject>());
-                    byDate.get(date).add(o);
-                }
-                android.app.AlarmManager am =
-                        (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
-                if (am == null) return;
-                android.content.SharedPreferences sp =
-                        getSharedPreferences("xixi_alarms", MODE_PRIVATE);
-                // 取消旧闹钟
-                org.json.JSONArray oldDates = new org.json.JSONArray(sp.getString("dates", "[]"));
-                for (int i = 0; i < oldDates.length(); i++) {
-                    String d = oldDates.optString(i);
-                    if (d.length() != 10) continue;
-                    am.cancel(buildPlanAlarmPendingIntent(d, ""));
-                }
-                // 设置新闹钟（今天及以后的日期，每天 08:00 触发一次）
-                org.json.JSONArray newDates = new org.json.JSONArray();
-                long now = System.currentTimeMillis();
-                for (java.util.Map.Entry<String, java.util.List<org.json.JSONObject>> e : byDate.entrySet()) {
-                    String date = e.getKey();
-                    java.lang.StringBuilder names = new java.lang.StringBuilder();
-                    for (org.json.JSONObject p : e.getValue()) {
-                        if (names.length() > 0) names.append("、");
-                        names.append(p.optString("name", "未命名计划"));
-                    }
-                    long trigger = parsePlanDateMillis(date) + 8 * 60 * 60 * 1000L; // 当天 08:00
-                    if (trigger <= now) continue; // 已过 08:00 今天不再补设
-                    android.app.PendingIntent pi = buildPlanAlarmPendingIntent(date, names.toString());
-                    if (android.os.Build.VERSION.SDK_INT >= 31) {
-                        if (am.canScheduleExactAlarms()) {
-                            am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
-                        } else {
-                            am.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
-                        }
-                    } else if (android.os.Build.VERSION.SDK_INT >= 23) {
-                        am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
-                    } else {
-                        am.set(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
-                    }
-                    newDates.put(date);
-                }
-                sp.edit().putString("dates", newDates.toString()).apply();
+                getSharedPreferences("xixi_alarms", MODE_PRIVATE)
+                        .edit().putString("plans", plansJson == null ? "" : plansJson).apply();
+                rebuildPlanAlarms(MainActivity.this, plansJson);
             } catch (Exception ex) {
                 Log.e(TAG, "syncPlanAlarms failed", ex);
-            }
-        }
-
-        // 计划日期（YYYY-MM-DD）→ 当天 0 点毫秒（本地时区）
-        private long parsePlanDateMillis(String date) {
-            try {
-                java.text.SimpleDateFormat sdf =
-                        new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
-                sdf.setTimeZone(java.util.TimeZone.getDefault());
-                java.util.Date d = sdf.parse(date);
-                return d == null ? 0L : d.getTime();
-            } catch (Exception e) {
-                return 0L;
-            }
-        }
-
-        // 按日期构造唯一 PendingIntent（requestCode = YYYYMMDD 数字，稳定可 cancel）
-        private android.app.PendingIntent buildPlanAlarmPendingIntent(String date, String names) {
-            try {
-                int rc = Integer.parseInt(date.replace("-", ""));
-                android.content.Intent i = new android.content.Intent(MainActivity.this, AlarmReceiver.class)
-                        .putExtra("alarmDate", date)
-                        .putExtra("alarmNames", names);
-                int flags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
-                if (android.os.Build.VERSION.SDK_INT >= 23) {
-                    flags |= android.app.PendingIntent.FLAG_IMMUTABLE;
-                }
-                return android.app.PendingIntent.getBroadcast(MainActivity.this, rc, i, flags);
-            } catch (Exception e) {
-                Log.e(TAG, "buildPlanAlarmPendingIntent failed", e);
-                return null;
             }
         }
 
@@ -811,6 +776,101 @@ public class MainActivity extends BridgeActivity {
             if (s == null) return "";
             return s.replace("\\", "\\\\").replace("\"", "\\\"")
                     .replace("\n", "\\n").replace("\r", "\\r");
+        }
+    }
+
+    // ★2026-09-01 重建计划闹钟（App 内同步 / 手机重启 BootReceiver 共用同一逻辑）：
+    // 解析计划 JSON → 按日期分组 → 取消旧闹钟 → 每天 08:00 设置新闹钟 → 持久化已设日期
+    // 放 MainActivity 顶层（JsFileBridge 内部类不能有 static 方法，Java 8 语法限制）
+    static void rebuildPlanAlarms(android.content.Context ctx, String plansJson) {
+        try {
+            org.json.JSONArray arr = (plansJson == null || plansJson.isEmpty())
+                    ? new org.json.JSONArray() : new org.json.JSONArray(plansJson);
+            // 按日期分组（LinkedHashMap 保持插入序）
+            java.util.Map<String, java.util.List<org.json.JSONObject>> byDate =
+                    new java.util.LinkedHashMap<>();
+            for (int i = 0; i < arr.length(); i++) {
+                org.json.JSONObject o = arr.optJSONObject(i);
+                if (o == null) continue;
+                String date = o.optString("date", "");
+                if (date.length() != 10) continue;
+                if (!byDate.containsKey(date)) byDate.put(date, new java.util.ArrayList<org.json.JSONObject>());
+                byDate.get(date).add(o);
+            }
+            android.app.AlarmManager am =
+                    (android.app.AlarmManager) ctx.getSystemService(android.content.Context.ALARM_SERVICE);
+            if (am == null) return;
+            android.content.SharedPreferences sp =
+                    ctx.getSharedPreferences("xixi_alarms", android.content.Context.MODE_PRIVATE);
+            // 取消旧闹钟
+            org.json.JSONArray oldDates = new org.json.JSONArray(sp.getString("dates", "[]"));
+            for (int i = 0; i < oldDates.length(); i++) {
+                String d = oldDates.optString(i);
+                if (d.length() != 10) continue;
+                am.cancel(buildPlanAlarmPendingIntent(ctx, d, ""));
+            }
+            // 设置新闹钟（今天及以后的日期，每天 08:00 触发一次）
+            org.json.JSONArray newDates = new org.json.JSONArray();
+            long now = System.currentTimeMillis();
+            for (java.util.Map.Entry<String, java.util.List<org.json.JSONObject>> e : byDate.entrySet()) {
+                String date = e.getKey();
+                java.lang.StringBuilder names = new java.lang.StringBuilder();
+                for (org.json.JSONObject p : e.getValue()) {
+                    if (names.length() > 0) names.append("、");
+                    names.append(p.optString("name", "未命名计划"));
+                }
+                long trigger = parsePlanDateMillis(date) + 8 * 60 * 60 * 1000L; // 当天 08:00
+                if (trigger <= now) continue; // 已过 08:00 今天不再补设
+                android.app.PendingIntent pi = buildPlanAlarmPendingIntent(ctx, date, names.toString());
+                if (pi == null) continue;
+                if (android.os.Build.VERSION.SDK_INT >= 31) {
+                    if (am.canScheduleExactAlarms()) {
+                        am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                    } else {
+                        am.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                    }
+                } else if (android.os.Build.VERSION.SDK_INT >= 23) {
+                    am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                } else {
+                    am.set(android.app.AlarmManager.RTC_WAKEUP, trigger, pi);
+                }
+                newDates.put(date);
+            }
+            sp.edit().putString("dates", newDates.toString()).apply();
+        } catch (Exception ex) {
+            Log.e(TAG, "rebuildPlanAlarms failed", ex);
+        }
+    }
+
+    // 计划日期（YYYY-MM-DD）→ 当天 0 点毫秒（本地时区）
+    private static long parsePlanDateMillis(String date) {
+        try {
+            java.text.SimpleDateFormat sdf =
+                    new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+            sdf.setTimeZone(java.util.TimeZone.getDefault());
+            java.util.Date d = sdf.parse(date);
+            return d == null ? 0L : d.getTime();
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    // 按日期构造唯一 PendingIntent（requestCode = YYYYMMDD 数字，稳定可 cancel）
+    private static android.app.PendingIntent buildPlanAlarmPendingIntent(
+            android.content.Context ctx, String date, String names) {
+        try {
+            int rc = Integer.parseInt(date.replace("-", ""));
+            android.content.Intent i = new android.content.Intent(ctx, AlarmReceiver.class)
+                    .putExtra("alarmDate", date)
+                    .putExtra("alarmNames", names);
+            int flags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+            if (android.os.Build.VERSION.SDK_INT >= 23) {
+                flags |= android.app.PendingIntent.FLAG_IMMUTABLE;
+            }
+            return android.app.PendingIntent.getBroadcast(ctx, rc, i, flags);
+        } catch (Exception e) {
+            Log.e(TAG, "buildPlanAlarmPendingIntent failed", e);
+            return null;
         }
     }
 

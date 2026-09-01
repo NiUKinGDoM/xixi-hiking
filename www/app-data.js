@@ -325,6 +325,10 @@ function renderTable() {
     const recordDelStyle = recordDark
         ? 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;'
         : 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+    // ★2026-09-01 编辑行取消按钮：尺寸硬锁定 + 浅色下可见灰蓝底（根治 confirm-btn-cancel 白玻璃底在浅色不可见）
+    const recordCancelStyle = recordDark
+        ? 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;'
+        : 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;';
 
     const tableContent = groupedRecords.map((record, idx) => {
         // ★2026-09-01 年份标题行（图标 + 年份 + 全年次数；★09-01 用户去掉延伸分隔线）
@@ -382,7 +386,7 @@ function renderTable() {
                                id="edit-created-at-${record.id}" 
                                value="${formatDateTimeLocal(record.createdAt)}" 
                                data-testid="edit-created-at-${record.id}"
-                               class="edit-input input-glow text-xs">
+                               class="edit-input input-glow">
                     </td>
                     <td class="p-2 text-center" data-label="操作">
                         <div class="edit-action-btns">
@@ -395,7 +399,7 @@ function renderTable() {
                             <button id="cancel-btn-${record.id}" 
                                     data-testid="cancel-button-${record.id}"
                                     class="ripple-effect btn-click-effect confirm-btn-cancel"
-                                    style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
+                                    style="${recordCancelStyle}">
                                 取消
                             </button>
                         </div>
@@ -427,9 +431,15 @@ function renderTable() {
                                 ${record.weather && ['☀️','🌤️','☁️','🌧️','❄️'].indexOf(record.weather) < 0 ? '<option value="' + record.weather + '" selected>' + record.weather + '</option>' : ''}
                             </select>
                             <input type="text" id="edit-companions-${record.id}" placeholder="同行人" class="edit-input input-glow" style="max-width:104px;" value="${record.companions || ''}">
-                            <!-- ★2026-08-25 里程/用时（可选，不进表格列宽，宽度=原 90 的 80%） -->
-                            <input type="number" id="edit-distance-${record.id}" placeholder="里程" class="edit-input input-glow" style="max-width:72px;" value="${record.distance || ''}" min="0" step="0.1" inputmode="decimal" title="里程（公里）">
-                            <input type="number" id="edit-duration-${record.id}" placeholder="用时" class="edit-input input-glow" style="max-width:72px;" value="${record.duration ? Math.round(record.duration / 60 * 10) / 10 : ''}" min="0" step="0.1" inputmode="decimal" title="用时（小时，如 2.5 = 2小时30分）">
+                            <!-- ★2026-09-01 里程/用时加单位：框内填数字，框后跟 km / h（.edit-unit-wrap + .edit-unit） -->
+                            <div class="edit-unit-wrap">
+                                <input type="number" id="edit-distance-${record.id}" placeholder="里程" class="edit-input input-glow" style="max-width:60px;" value="${record.distance || ''}" min="0" step="0.1" inputmode="decimal" title="里程（公里）">
+                                <span class="edit-unit">km</span>
+                            </div>
+                            <div class="edit-unit-wrap">
+                                <input type="number" id="edit-duration-${record.id}" placeholder="用时" class="edit-input input-glow" style="max-width:60px;" value="${record.duration ? Math.round(record.duration / 60 * 10) / 10 : ''}" min="0" step="0.1" inputmode="decimal" title="用时（小时，如 2.5 = 2小时30分）">
+                                <span class="edit-unit">h</span>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -2406,6 +2416,10 @@ function renderPlannedTripsTable() {
         const plannedDelStyle = plannedDark
             ? 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;'
             : 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+        // ★2026-09-01 编辑行取消按钮：尺寸硬锁定 + 浅色下可见灰蓝底（与记录页同款）
+        const plannedCancelStyle = plannedDark
+            ? 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;'
+            : 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;';
 
         const tableContent = groupedTrips.map((trip, idx) => {
             // ★2026-09-01 年份标题行（与记录页同款样式）
@@ -2459,11 +2473,11 @@ function renderPlannedTripsTable() {
                             </select>
                         </td>
                         <td class="p-2" data-label="记录时间">
-                            <input type="datetime-local" 
-                                   id="edit-planned-created-at-${trip.id}" 
-                                   value="${formatDateTimeLocal(trip.createdAt)}" 
-                                   data-testid="edit-planned-created-at-${trip.id}"
-                                   class="edit-input input-glow text-xs">
+                        <input type="datetime-local" 
+                               id="edit-planned-created-at-${trip.id}" 
+                               value="${formatDateTimeLocal(trip.createdAt)}" 
+                               data-testid="edit-planned-created-at-${trip.id}"
+                               class="edit-input input-glow">
                         </td>
                         <td class="p-2 text-center" data-label="操作">
                             <div class="edit-action-btns">
@@ -2476,7 +2490,7 @@ function renderPlannedTripsTable() {
                                 <button id="cancel-planned-btn-${trip.id}" 
                                         data-testid="cancel-planned-button-${trip.id}"
                                         class="ripple-effect btn-click-effect confirm-btn-cancel"
-                                        style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
+                                        style="${plannedCancelStyle}">
                                     取消
                                 </button>
                             </div>

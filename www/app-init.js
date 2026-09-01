@@ -140,8 +140,9 @@ async function init() {
             if (currentTabId === 'records' && typeof renderTable === 'function') renderTable();
             else if (currentTabId === 'plans' && typeof renderPlannedTripsTable === 'function') renderPlannedTripsTable();
         } catch (e) { /* 补渲染失败不影响启动 */ }
-        // ★2026-08-30 通知点击动作消费（冷启动路径）：点通知本体 → 跳计划页
+        // ★2026-08-30 通知点击动作消费（冷启动路径）：点通知本体 → 按 navigate 跳转
         //（consumeNotifyAction 取走即清空，重复调用幂等）
+        // ★2026-09-01 通知分级：备份提醒点通知 → 跳设置页（navigate=settings）
         function consumeNotifyActionOnce() {
             try {
                 if (!window.XixiFileBridge || typeof window.XixiFileBridge.consumeNotifyAction !== 'function') return;
@@ -150,6 +151,8 @@ async function init() {
                 var notifyObj = JSON.parse(notifyAction);
                 if (notifyObj && notifyObj.navigate === 'plans') {
                     try { switchTab('plans'); } catch (e) { /* 跳转失败不影响 */ }
+                } else if (notifyObj && notifyObj.navigate === 'settings') {
+                    try { switchTab('settings'); } catch (e) { /* 跳转失败不影响 */ }
                 }
             } catch (e) { /* 消费失败不影响启动 */ }
         }
@@ -173,6 +176,7 @@ async function init() {
         try {
             setupSyncEventListeners();
             bindAutoCheckOnSettingsTab();
+            if (typeof refreshNotifyPermRow === 'function') refreshNotifyPermRow(); // ★2026-09-01 通知权限引导行首帧检测
             initSystemThemeListener(); // ★跟随系统深色模式监听（v1.4.10.2）
             if (syncAuto && syncConfig.server && syncConfig.username) {
                 // ★2026-08-19 v1.1.0.1 根治启动卡死：0.8s→3s（等首屏稳定后再同步；原生同步桥超时已缩，双保险）
