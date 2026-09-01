@@ -1,13 +1,13 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-01（v1.1.7.10 / vc208）
+> 最后更新：2026-09-01（v1.1.8.0 / vc209）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-01）
-- **正式版 v1.1.7.10**（versionCode 208，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.8.0**（versionCode 209，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
@@ -24,7 +24,7 @@
 - 最低 Android 7（minSdk 22），target/compileSdk 36
 - 数据存储：localStorage（记录/计划/标题/暗色/帧率/WebDAV 配置）+ IndexedDB（照片大仓库）
 
-## 功能清单（当前全部，v1.1.7.10）
+## 功能清单（当前全部，v1.1.8.0）
 - 📊 概览：统计卡片（总记录数/平均海拔/最高海拔/平均难度/**总里程/总用时**）、**难度分布柱状图（独立卡片，图标标题）**、**年度足迹热力图**（GitHub 风格，点格看当天详情：心情/天气/同行/全部照片/分享，底部「累计爬升 X 米」）
 - 📝 记录：增删改、行内编辑（**心情/天气统一玻璃弹窗（v1.1.7.10，替换原生下拉）**/同行人/里程 km/用时 h 单位/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）、**★自定义日期时间选择器（v1.1.7.8：玻璃弹窗日历选日期+时分步进器，替换系统原生 picker）**
 - 📷 照片：记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB）、**编辑行层叠卡片**（无照片时白框加号）、**灯箱：查看/保存/翻页 + 编辑模式添加/删除**、热力图弹窗多图显示
@@ -167,6 +167,8 @@
 - v1.1.7.8（vc206）：**★自定义日期时间选择器（替换系统原生 datetime-local picker：readonly + 点击弹玻璃弹窗，日历网格选日期（今天靛蓝描边/选中高亮/左右切月）+ 时分步进器（点按调整/长按连续跳动），值格式保持 YYYY-MM-DDTHH:mm 兼容保存，日期字体与其他输入框统一）**（详见 Release）
 - v1.1.7.9（vc207）：**编辑行体验优化（日期时间选择弹窗缩小 360→320px 更紧凑；里程支持两位小数 12.34 km；用时改「时/分」双框输入直观顺手；心情/天气/同行人尺寸微调（72→76px）与用时框同行紧凑排列）**（详见 Release）
 - v1.1.7.10（vc208）：**★心情/天气选择统一玻璃弹窗（替换原生 select：readonly 输入框 + 点击弹 App 同款玻璃弹窗，心情 4 项/天气 5 项网格点选、当前值预选高亮、支持清空，与日期选择器同设计语言）**（详见 Release）
+
+- v1.1.8.0（vc209）：**五项优化（弹窗底部按钮统一尺寸 10px24px/96px 宽、心情保存 trim 统一）**（详见 Release）
 
 ## 待办/新功能方案（2026-09-01 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）

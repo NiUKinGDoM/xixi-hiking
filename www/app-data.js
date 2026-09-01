@@ -1176,7 +1176,7 @@ function lbDeleteCurrent() {
         </div>
     `;
     document.body.appendChild(modal);
-    modal.style.zIndex = '300'; // ★2026-08-29 灯箱 z-index=200，确认弹窗必须盖在灯箱之上（否则被挡住看不到）
+    modal.style.zIndex = '300'; // ★2026-08-29 本弹窗=照片删除确认（confirm-modal 体系），内联 300 盖住灯箱 200（普通 confirm-modal 100 只在无灯箱时出现，互不干扰）
     const closeModal = () => {
         if (modal.parentNode) modal.parentNode.removeChild(modal);
     };
@@ -1462,7 +1462,7 @@ function saveRecord(id) {
     const moodInput = document.getElementById(`edit-mood-${id}`);
     const weatherInput = document.getElementById(`edit-weather-${id}`);
     const companionsInput = document.getElementById(`edit-companions-${id}`);
-    if (moodInput) record.mood = moodInput.value || '';
+    if (moodInput) record.mood = moodInput.value.trim() || '';   // ★五项优化⑤：与 weather 一致 trim（防意外空格）
     if (weatherInput) record.weather = weatherInput.value.trim();
     if (companionsInput) record.companions = companionsInput.value.trim();
 
