@@ -11,6 +11,7 @@
 - **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
+- **★★2026-09-01 用户新约定：「以后改完直接部署网页版，我先看」**——改完 www 代码**不用问、直接部署网页版**给用户验收（workbuddy_sites_deploy），再等用户「同步」才 bump/构建/发布
 - **★★★未确认同步前只改 www/index.html + 部署网页，绝不 bump/构建/归档/push**；确认「同步」才 bump→test→构建→push→Release
 - **★版本号铁律（2026-08-24 强化）**：发版口头汇报版本号必须用 **bump.js 实际输出**，禁止十进制直觉（v1.1.2.10 → 必须说 1.1.3.0，不许说 1.1.2.11，被用户叫停纠正过）
 - **★五项优化约定（2026-08-23 起）**：①设计统一性 ②底层代码清理 ③流畅度帧率 ④文档更新（README/CHANGELOG/本文件随版本同步）⑤查 bug——每次更新必做，完成后汇报
