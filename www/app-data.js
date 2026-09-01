@@ -382,11 +382,17 @@ function renderTable() {
                         </select>
                     </td>
                     <td class="p-2" data-label="记录时间">
-                        <input type="datetime-local" 
+                        <!-- ★2026-09-01 自定义日期时间选择器（替换系统原生 picker，统一设计语言）：readonly + 点击弹自定义弹窗，值格式保持 YYYY-MM-DDTHH:mm 兼容保存逻辑 -->
+                        <input type="text" 
                                id="edit-created-at-${record.id}" 
                                value="${formatDateTimeLocal(record.createdAt)}" 
                                data-testid="edit-created-at-${record.id}"
-                               class="edit-input input-glow">
+                               class="edit-input input-glow"
+                               readonly
+                               style="cursor:pointer;font-weight:400;"
+                               onclick="openDateTimePicker(this.id, this.value)"
+                               enterkeyhint="done"
+                               title="点击选择日期时间">
                     </td>
                     <td class="p-2 text-center" data-label="操作">
                         <div class="edit-action-btns">
@@ -1212,6 +1218,159 @@ function saveCurrentPhoto() {
         setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
         showSuccessMessage('已开始下载<b>缩略图</b>（非原图）');
     }).catch(function () { showErrorMessage('保存失败'); });
+}
+
+// ★2026-09-01 自定义日期时间选择弹窗（替换系统原生 picker，统一玻璃设计语言）
+// 值格式保持 YYYY-MM-DDTHH:mm（与 formatDateTimeLocal 一致，保存逻辑 new Date(value) 兼容）
+let dtpState = null; // { inputId, year, month(0-11), day, hour, minute }
+function openDateTimePicker(inputId, currentValue) {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals(); // 防重入
+        // 解析当前值（缺省今天此刻）
+        const now = new Date();
+        let y = now.getFullYear(), m = now.getMonth(), d = now.getDate(), h = now.getHours(), mi = now.getMinutes();
+        if (currentValue) {
+            const m2 = String(currentValue).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+            if (m2) {
+                y = parseInt(m2[1], 10); m = parseInt(m2[2], 10) - 1; d = parseInt(m2[3], 10);
+                h = parseInt(m2[4], 10); mi = parseInt(m2[5], 10);
+            }
+        }
+        dtpState = { inputId: inputId, year: y, month: m, day: d, hour: h, minute: mi };
+
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        // ★2026-09-01 v3：时/分改步进器（- 数字 +），彻底告别 select 全屏原生列表；弹窗 360px 不超屏
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event</span>选择日期时间</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;">' +
+            '<div class="dtp-nav" id="dtpNav"></div>' +
+            '<div class="dtp-grid" id="dtpGrid"></div>' +
+            '<div class="dtp-time-row">' +
+            '<div class="dtp-stepper">' +
+            '<button type="button" class="ripple-effect icon-glass-btn" id="dtpHourMinus" style="width:38px;height:38px;padding:0;border-radius:12px;flex-shrink:0;"><span class="material-icons" style="font-size:18px;">remove</span></button>' +
+            '<span class="dtp-num" id="dtpHourNum">00</span>' +
+            '<button type="button" class="ripple-effect icon-glass-btn" id="dtpHourPlus" style="width:38px;height:38px;padding:0;border-radius:12px;flex-shrink:0;"><span class="material-icons" style="font-size:18px;">add</span></button>' +
+            '</div>' +
+            '<span class="dtp-colon">:</span>' +
+            '<div class="dtp-stepper">' +
+            '<button type="button" class="ripple-effect icon-glass-btn" id="dtpMinuteMinus" style="width:38px;height:38px;padding:0;border-radius:12px;flex-shrink:0;"><span class="material-icons" style="font-size:18px;">remove</span></button>' +
+            '<span class="dtp-num" id="dtpMinuteNum">00</span>' +
+            '<button type="button" class="ripple-effect icon-glass-btn" id="dtpMinutePlus" style="width:38px;height:38px;padding:0;border-radius:12px;flex-shrink:0;"><span class="material-icons" style="font-size:18px;">add</span></button>' +
+            '</div>' +
+            '</div></div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="dtpCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
+            '<button class="check-go-btn ripple-effect" id="dtpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('dtpCancel').addEventListener('click', function () { document.body.removeChild(modal); });
+        document.getElementById('dtpOk').addEventListener('click', function () {
+            try {
+                const hh = String(dtpState.hour).padStart(2, '0');
+                const mm = String(dtpState.minute).padStart(2, '0');
+                const dd = String(dtpState.day).padStart(2, '0');
+                const mo = String(dtpState.month + 1).padStart(2, '0');
+                const input = document.getElementById(dtpState.inputId);
+                if (input) input.value = dtpState.year + '-' + mo + '-' + dd + 'T' + hh + ':' + mm;
+                document.body.removeChild(modal);
+            } catch (e) { /* 忽略 */ }
+        });
+        // ★v4 步进器：点按一次 + 长按 350ms 后连续加速（touchstart preventDefault 防与 mousedown 双触发）
+        function bindStepperHold(btnId, stepFn) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            let holdTimer = null, fastTimer = null;
+            function start(e) {
+                try { e.preventDefault(); } catch (err) { /* 忽略 */ }
+                stepFn();
+                holdTimer = setTimeout(function () {
+                    fastTimer = setInterval(stepFn, 90);
+                }, 350);
+            }
+            function stop() {
+                if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+                if (fastTimer) { clearInterval(fastTimer); fastTimer = null; }
+            }
+            btn.addEventListener('touchstart', start, { passive: false });
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('touchend', stop);
+            btn.addEventListener('touchcancel', stop);
+            btn.addEventListener('mouseup', stop);
+            btn.addEventListener('mouseleave', stop);
+        }
+        bindStepperHold('dtpHourMinus', function () { dtpState.hour = (dtpState.hour + 23) % 24; renderDtpTime(); });
+        bindStepperHold('dtpHourPlus', function () { dtpState.hour = (dtpState.hour + 1) % 24; renderDtpTime(); });
+        bindStepperHold('dtpMinuteMinus', function () { dtpState.minute = (dtpState.minute + 59) % 60; renderDtpTime(); });
+        bindStepperHold('dtpMinutePlus', function () { dtpState.minute = (dtpState.minute + 1) % 60; renderDtpTime(); });
+        modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+        renderDtpNav();
+        renderDtpGrid();
+        renderDtpTime();
+    } catch (e) { /* 弹窗失败不影响编辑 */ }
+}
+
+// 月份导航（‹ 2026年9月 ›）
+function renderDtpNav() {
+    const nav = document.getElementById('dtpNav');
+    if (!nav || !dtpState) return;
+    nav.innerHTML =
+        '<button type="button" class="ripple-effect icon-glass-btn" id="dtpPrev" style="width:36px;height:36px;padding:0;border-radius:12px;flex-shrink:0;"><span class="material-icons" style="font-size:20px;">chevron_left</span></button>' +
+        '<span style="font-size:17px;font-weight:900;flex:1;text-align:center;">' + dtpState.year + '年' + (dtpState.month + 1) + '月</span>' +
+        '<button type="button" class="ripple-effect icon-glass-btn" id="dtpNext" style="width:36px;height:36px;padding:0;border-radius:12px;flex-shrink:0;"><span class="material-icons" style="font-size:20px;">chevron_right</span></button>';
+    document.getElementById('dtpPrev').addEventListener('click', function () {
+        dtpState.month--;
+        if (dtpState.month < 0) { dtpState.month = 11; dtpState.year--; }
+        const maxD = new Date(dtpState.year, dtpState.month + 1, 0).getDate();
+        if (dtpState.day > maxD) dtpState.day = maxD;
+        renderDtpNav(); renderDtpGrid();
+    });
+    document.getElementById('dtpNext').addEventListener('click', function () {
+        dtpState.month++;
+        if (dtpState.month > 11) { dtpState.month = 0; dtpState.year++; }
+        const maxD = new Date(dtpState.year, dtpState.month + 1, 0).getDate();
+        if (dtpState.day > maxD) dtpState.day = maxD;
+        renderDtpNav(); renderDtpGrid();
+    });
+}
+
+// 日期网格（周一开头，今天描边，选中靛蓝）
+function renderDtpGrid() {
+    const grid = document.getElementById('dtpGrid');
+    if (!grid || !dtpState) return;
+    const y = dtpState.year, m = dtpState.month;
+    const firstDay = new Date(y, m, 1).getDay();
+    const lead = (firstDay === 0 ? 6 : firstDay - 1); // 周一开始
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + today.getMonth() + '-' + today.getDate();
+    let html = ['一', '二', '三', '四', '五', '六', '日'].map(function (w) { return '<div class="dtp-week">' + w + '</div>'; }).join('');
+    for (let i = 0; i < lead; i++) html += '<div></div>';
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cellDateStr = y + '-' + m + '-' + day;
+        const cls = ['dtp-cell'];
+        if (cellDateStr === todayStr) cls.push('today');
+        if (day === dtpState.day) cls.push('selected');
+        html += '<div class="' + cls.join(' ') + '" data-day="' + day + '">' + day + '</div>';
+    }
+    grid.innerHTML = html;
+    grid.querySelectorAll('.dtp-cell').forEach(function (cell) {
+        cell.addEventListener('click', function () {
+            dtpState.day = parseInt(cell.getAttribute('data-day'), 10);
+            grid.querySelectorAll('.dtp-cell.selected').forEach(function (c) { c.classList.remove('selected'); });
+            cell.classList.add('selected');
+        });
+    });
+}
+
+// 时/分步进器数字显示（v3：不再用 select，避免原生全屏列表）
+function renderDtpTime() {
+    if (!dtpState) return;
+    const hourNum = document.getElementById('dtpHourNum');
+    const minNum = document.getElementById('dtpMinuteNum');
+    if (hourNum) hourNum.textContent = String(dtpState.hour).padStart(2, '0');
+    if (minNum) minNum.textContent = String(dtpState.minute).padStart(2, '0');
 }
 
 function saveRecord(id) {
@@ -2473,11 +2632,17 @@ function renderPlannedTripsTable() {
                             </select>
                         </td>
                         <td class="p-2" data-label="记录时间">
-                        <input type="datetime-local" 
-                               id="edit-planned-created-at-${trip.id}" 
-                               value="${formatDateTimeLocal(trip.createdAt)}" 
-                               data-testid="edit-planned-created-at-${trip.id}"
-                               class="edit-input input-glow">
+                            <!-- ★2026-09-01 自定义日期时间选择器（同记录页，替换原生 picker） -->
+                            <input type="text" 
+                                   id="edit-planned-created-at-${trip.id}" 
+                                   value="${formatDateTimeLocal(trip.createdAt)}" 
+                                   data-testid="edit-planned-created-at-${trip.id}"
+                                   class="edit-input input-glow"
+                                   readonly
+                                   style="cursor:pointer;font-weight:400;"
+                                   onclick="openDateTimePicker(this.id, this.value)"
+                                   enterkeyhint="done"
+                                   title="点击选择日期时间">
                         </td>
                         <td class="p-2 text-center" data-label="操作">
                             <div class="edit-action-btns">
