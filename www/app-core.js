@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.7.7': '## v1.1.7.7 更新内容\n\n**通知升级（能上通知栏的都上）**\n- 备份提醒改通知栏：超过 7 天没同步，启动时通知提醒，点通知直达设置页\n- 自动同步成功/失败、更新下载完成都上通知栏，不用盯着界面也能知道结果\n\n**计划提醒修复**\n- 手机重启后计划提醒自动恢复（原来重启会丢失，要重开 App 才重建）\n\n**设计统一**\n- 编辑行取消按钮浅色模式下可见（原来白边隐形）\n- 编辑行日期/时间框样式统一\n- 里程框后加 km、用时框后加 h\n- 设置页新增「通知权限未开启 → 点击去开启」引导\n\nMade by XiXi 💛',
     'v1.1.7.6': '## v1.1.7.6 更新内容\n\n**记录/计划页面设计统一**\n- 计划页列表视图加年份分组（图标+年份+全年次数），与记录页一致；日历视图保持清爽\n- 记录页行内删除按钮、编辑行保存/取消按钮全部统一为玻璃按钮（保存/完成=浅红玻璃，取消/删除=灰蓝玻璃），与计划页、弹窗完全同款\n- 编辑行保存/取消按钮大小、字重统一，不再一大一小\n- 计划页标题图标色统一为蓝色（与概览/记录/设置一致）\n\n**代码清理**\n- 清理历史遗留死 CSS（老式红/绿/灰按钮样式全部移除）\n\nMade by XiXi 💛',
     'v1.1.7.5': '## v1.1.7.5 更新内容\n\n**记录列表按年份分组**\n- 列表按年份分组显示（图标+年份+全年次数+分割线），翻回忆一目了然\n\n**灯箱照片双指缩放**\n- 双指捏合放大（最高 3 倍）、放大后单指拖动、双击放大/还原\n- 放大时操作按钮不被遮挡，切图自动恢复原大小\n\n**徒步年资**\n- 关于页显示「徒步第 N 天 · 从 X年X月X日 出发」（按最早记录自动计算）\n\nMade by XiXi 💛',
     'v1.1.7.4': '## v1.1.7.4 更新内容\n\n**设置页优化**\n- 关于应用卡片样式与其他设置分组完全一致（去掉内层嵌套卡片）\n- 设置分组边框浅色下改为可见灰蓝色\n\n**更新日志本地化**\n- 查看更新日志改为纯本地内置，断网也能看\n\nMade by XiXi 💛',
@@ -434,7 +435,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.7.6';
+var APP_VERSION = '1.1.7.7';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -955,13 +956,15 @@ function showSuccessMessage(message, duration) {
 }
 
 // ★2026-08-30 系统通知（计划提醒等）：App 原生环境走通知栏（小米灵动岛由系统自动适配），网页版降级 toast
-// JS 桥：window.XixiFileBridge.showNotification(title, body) → boolean
+// JS 桥：window.XixiFileBridge.showNotification(title, body, navigate) → boolean
+// navigate：点通知本体回 App 的跳转目标（'plans' 计划页 / 'settings' 设置页），缺省 'plans'
 // ★2026-08-30 五项优化：桥发送失败（如通知权限被拒）→ 降级 App 内 toast，提醒不丢失
 // ★2026-08-30 通知交互：点通知本体 → 回 App 跳计划页（原生 navigate=plans → JS consumeNotifyAction）
-function showSystemNotification(title, body) {
+// ★2026-09-01 通知分级：备份提醒/自动同步/更新下载等后台事件也走通知栏，navigate 按场景传
+function showSystemNotification(title, body, navigate) {
     try {
         if (window.XixiFileBridge && typeof window.XixiFileBridge.showNotification === 'function') {
-            var sent = window.XixiFileBridge.showNotification(title, body);
+            var sent = window.XixiFileBridge.showNotification(title, body, navigate || 'plans');
             if (sent) return true;
         }
     } catch (e) { /* 桥异常降级 */ }
