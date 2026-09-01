@@ -1,13 +1,13 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-01（v1.1.7.7 / vc205）
+> 最后更新：2026-09-01（v1.1.7.8 / vc206）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-01）
-- **正式版 v1.1.7.7**（versionCode 205，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.7.8**（versionCode 206，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
 - **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
@@ -23,9 +23,9 @@
 - 最低 Android 7（minSdk 22），target/compileSdk 36
 - 数据存储：localStorage（记录/计划/标题/暗色/帧率/WebDAV 配置）+ IndexedDB（照片大仓库）
 
-## 功能清单（当前全部，v1.1.7.7）
+## 功能清单（当前全部，v1.1.7.8）
 - 📊 概览：统计卡片（总记录数/平均海拔/最高海拔/平均难度/**总里程/总用时**）、**难度分布柱状图（独立卡片，图标标题）**、**年度足迹热力图**（GitHub 风格，点格看当天详情：心情/天气/同行/全部照片/分享，底部「累计爬升 X 米」）
-- 📝 记录：增删改、行内编辑（**心情/天气下拉文字选择**/同行人/里程/用时/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）
+- 📝 记录：增删改、行内编辑（**心情/天气下拉文字选择**/同行人/里程 km/用时 h 单位/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）、**★自定义日期时间选择器（v1.1.7.8：玻璃弹窗日历选日期+时分步进器，替换系统原生 picker）**
 - 📷 照片：记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB）、**编辑行层叠卡片**（无照片时白框加号）、**灯箱：查看/保存/翻页 + 编辑模式添加/删除**、热力图弹窗多图显示
 - 📅 计划：计划徒步管理、难度选择、完成标记（确认弹窗）、**默认按计划时间由近到远排序**、**启动提醒（系统通知，点通知跳计划页，权限被拒自动降级 App 内 toast）+ 不打开 App 也能提醒（原生 AlarmManager 闹钟，计划当天 08:00 触发，v1.1.7.0；★v1.1.7.7 手机重启后 BootReceiver 自动重建闹钟）**、**★列表/日历双视图切换（默认日历，v1.1.7.1）+ 计划完成直接进记录编辑补全（名字/难度/海拔预填，v1.1.7.1）**
 - 🎴 **分享卡（v1.1.3.0 定版）**：canvas 720×960，**外置背景图 share-bg.jpg**（v1.1.3.1 从 base64 内置换为外置，发版必须同步此文件）+ 白渐变遮罩 + 楷体艺术字 + 顶部软件标题 + 海拔/难度/心情/天气/同行（**标题加粗**）+ Made by XiXi；入口 = 热力图弹窗底部「分享」按钮
@@ -163,6 +163,7 @@
 - v1.1.7.5（vc203）：**记录列表按年份分组（图标+年份+全年次数+分割线）+ 灯箱照片双指缩放（1~3×、双击、放大时按钮可见、切图还原）+ 关于页徒步年资（按最早记录自动算）**（详见 Release）
 - v1.1.7.6（vc204）：**记录/计划页面设计统一（计划列表年份分组同记录页、全部操作按钮统一浅红/灰蓝玻璃、编辑行保存取消大小统一、标题图标色统一、清理死 CSS）**（详见 Release）
 - v1.1.7.7（vc205）：**通知分级（备份提醒改通知栏+点通知跳设置页、自动同步成功/失败+更新下载完成上通知栏，navigate 参数化）+ 开机恢复闹钟（BootReceiver 重启重建，计划数据持久化）+ 自动上传成功/失败通知栏 + 5 项优化（编辑行取消按钮浅色可见/日期时间框统一/里程 km 用时 h 单位/设置页通知权限引导行/confirm-btn-cancel 浅色统一可见灰蓝）**（详见 Release）
+- v1.1.7.8（vc206）：**★自定义日期时间选择器（替换系统原生 datetime-local picker：readonly + 点击弹玻璃弹窗，日历网格选日期（今天靛蓝描边/选中高亮/左右切月）+ 时分步进器（点按调整/长按连续跳动），值格式保持 YYYY-MM-DDTHH:mm 兼容保存，日期字体与其他输入框统一）**（详见 Release）
 
 ## 待办/新功能方案（2026-09-01 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
@@ -171,7 +172,7 @@
 - ✅ 备份 zip 二期 **已完成**（v1.1.3.9：完整备份改 zip 压缩包，照片二进制省 33%）
 - ✅ 设置页数据管理框空白约 1 秒 **已解决**（v1.1.3.1 缩短 settingsBlockIn 动画 0.3s+0.56s → 0.18s+0.28s，最后块 0.46s 出现，见 index.html 907 行注释）
 - ✅ **方案 A 单文件拆分 已落地**（2026-08-30：主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js；bump.js/test.js/test-ui.js/sw.js 全部适配；同步清单+回退点已更新，漏同步 JS 会白屏）
-- 💡 备份提醒（距上次同步超 7 天启动轻提示）——用户未采纳，仍建议
+- ✅ **备份提醒**（v1.1.7.7 已做：距上次同步超 7 天启动通知栏提示，点通知跳设置页，同一天不重复）
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
 1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；★★2026-08-27 凭据读取**必须用 Python ctypes CredEnumerate 枚举过滤 `git:https://github.com` 读 blob**（**CredReadW 读该 target 返回空 blob size=0，CredEnumerate 正常**；CredentialBlob 是 UTF-16LE、40 字符裸 token、无 x-access-token 前缀）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；**★★2026-08-27 Release asset 上传必须裸二进制（Content-Type: application/octet-stream，body=APK 原始字节），严禁 multipart（会被原样存成坏文件，手机"解析包出问题"）；上传后必须下载验证 md5 + PK 头；asset 名用 ASCII（中文被替换成 .）**；资产上传端点 **uploads.github.com**；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION

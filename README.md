@@ -101,7 +101,7 @@ cd android && ./gradlew assembleRelease
 - **桌面路径构建会文件锁** → 先复制到 `%TEMP%\hiking-build` 再构建
 - **WebDAV 必须 OkHttp**（HttpURLConnection 反射在 Android 9+ 被 hidden API 拦截）
 - **R8 keep 规则**：JS 桥 `MainActivity$JsFileBridge` 禁 `allowobfuscation`
-- **旧 WebView 兼容**：不用 `inset`/`aspect-ratio` 等新 CSS 属性（用户 WebView 较老），必要时加兜底
+- **WebView 兼容（★2026-09-01 用户澄清）**：用户设备 WebView 为跟随系统自动更新的**新版**（Chrome 内核），`inset`/`aspect-ratio` 等现代 CSS 属性可用；仅面向旧 Android（5-7）的兜底习惯保留，不再假设设备旧
 - GitHub 更新流程：**clone 远程 → 覆盖文件 → 提交推送**（勿 git init 重建）
 
 ## 签名与安全
