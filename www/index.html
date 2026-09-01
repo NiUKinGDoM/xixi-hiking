@@ -1921,6 +1921,73 @@
         .dark-mode .dtp-colon {
             color: #94a3b8;
         }
+        /* ★2026-09-01 心情/天气选择弹窗（替换原生 select，统一玻璃设计语言，与日期选择器同款选中态） */
+        .mwp-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin: 4px 0 10px;
+        }
+        .mwp-opt {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #334155;
+            font-size: 15px;
+            font-weight: 600;
+            user-select: none;
+            transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .dark-mode .mwp-opt {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.22);
+            color: #e5e7eb;
+        }
+        .mwp-opt .mwp-emoji {
+            font-size: 18px;
+            line-height: 1;
+        }
+        .mwp-opt.selected {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: #fff;
+        }
+        .dark-mode .mwp-opt.selected {
+            background: #6366f1;
+            border-color: #6366f1;
+        }
+        .mwp-opt:active {
+            transform: scale(0.94);
+        }
+        .mwp-clear-wrap {
+            text-align: center;
+            margin-top: 2px;
+        }
+        .mwp-clear-btn {
+            background: rgba(100, 116, 139, 0.14);
+            border: 1px solid rgba(100, 116, 139, 0.6);
+            color: #334155;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            min-width: 56px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .dark-mode .mwp-clear-btn {
+            background: rgba(148, 163, 184, 0.14);
+            border-color: rgba(148, 163, 184, 0.6);
+            color: #e5e7eb;
+        }
         
         select.edit-input {
             -webkit-appearance: none;
@@ -4851,7 +4918,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.7.9</div>
+                        <div class="about-version">版本 1.1.7.10</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

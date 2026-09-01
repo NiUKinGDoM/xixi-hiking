@@ -419,23 +419,9 @@ function renderTable() {
                                 ${photoThumbsHTML(editingPhotoIds, record.id)}
                             </div>
                             <!-- ★2026-09-01 心情/天气再放大 5%（72→76px）；顺序：心情→天气→同行→时/分→里程（时/分与它们同行） -->
-                            <select id="edit-mood-${record.id}" class="edit-input input-glow" style="max-width:76px;" title="心情（可选）">
-                                <option value="">心情</option>
-                                <option value="😄" ${record.mood === '😄' ? 'selected' : ''}>开心</option>
-                                <option value="😌" ${record.mood === '😌' ? 'selected' : ''}>平静</option>
-                                <option value="🤩" ${record.mood === '🤩' ? 'selected' : ''}>兴奋</option>
-                                <option value="😮‍💨" ${record.mood === '😮‍💨' ? 'selected' : ''}>疲惫</option>
-                                ${record.mood && ['😄','😌','🤩','😮‍💨'].indexOf(record.mood) < 0 ? '<option value="' + record.mood + '" selected>' + record.mood + '</option>' : ''}
-                            </select>
-                            <select id="edit-weather-${record.id}" class="edit-input input-glow" style="max-width:76px;" title="天气（可选）">
-                                <option value="">天气</option>
-                                <option value="☀️" ${record.weather === '☀️' ? 'selected' : ''}>晴</option>
-                                <option value="🌤️" ${record.weather === '🌤️' ? 'selected' : ''}>多云</option>
-                                <option value="☁️" ${record.weather === '☁️' ? 'selected' : ''}>阴</option>
-                                <option value="🌧️" ${record.weather === '🌧️' ? 'selected' : ''}>雨</option>
-                                <option value="❄️" ${record.weather === '❄️' ? 'selected' : ''}>雪</option>
-                                ${record.weather && ['☀️','🌤️','☁️','🌧️','❄️'].indexOf(record.weather) < 0 ? '<option value="' + record.weather + '" selected>' + record.weather + '</option>' : ''}
-                            </select>
+                            <!-- ★2026-09-01 心情/天气改统一玻璃弹窗（readonly input + 点击弹自定义弹窗，替换原生 select，设计语言统一） -->
+                            <input type="text" id="edit-mood-${record.id}" class="edit-input input-glow" style="max-width:76px;" value="${record.mood || ''}" placeholder="心情" readonly title="心情（可选）">
+                            <input type="text" id="edit-weather-${record.id}" class="edit-input input-glow" style="max-width:76px;" value="${record.weather || ''}" placeholder="天气" readonly title="天气（可选）">
                             <!-- ★2026-09-01 同行人缩小 30%（104→72px） -->
                             <input type="text" id="edit-companions-${record.id}" placeholder="同行人" class="edit-input input-glow" style="max-width:72px;" value="${record.companions || ''}">
                             <!-- ★2026-09-01 用时改小时+分钟双框（record.duration 存分钟），紧跟心情/天气/同行人同行 -->
@@ -568,6 +554,20 @@ function attachEventListeners() {
                 const cancelHandler = () => cancelEdit();
                 cancelBtn.addEventListener('click', cancelHandler);
                 eventListeners.push({ element: cancelBtn, event: 'click', handler: cancelHandler });
+            }
+            
+            // ★2026-09-01 心情/天气统一玻璃弹窗：readonly input 点击弹自定义选择器（替换原生 select）
+            const moodInput = safeGetElementById(`edit-mood-${record.id}`);
+            if (moodInput) {
+                const moodHandler = () => openMoodWeatherPicker('mood', record.id);
+                moodInput.addEventListener('click', moodHandler);
+                eventListeners.push({ element: moodInput, event: 'click', handler: moodHandler });
+            }
+            const weatherInput = safeGetElementById(`edit-weather-${record.id}`);
+            if (weatherInput) {
+                const weatherHandler = () => openMoodWeatherPicker('weather', record.id);
+                weatherInput.addEventListener('click', weatherHandler);
+                eventListeners.push({ element: weatherInput, event: 'click', handler: weatherHandler });
             }
             
             // ★2026-08-25 照片区：层叠卡片点击（有照片→灯箱编辑；无照片→白框加号直接添加）；删除/添加在灯箱内操作
@@ -1337,6 +1337,60 @@ function renderDtpNav() {
         if (dtpState.day > maxD) dtpState.day = maxD;
         renderDtpNav(); renderDtpGrid();
     });
+}
+
+// ★2026-09-01 心情/天气选择弹窗（替换原生 select，统一玻璃设计语言，与日期选择器同款选中态）
+const MOOD_OPTIONS = [['😄', '开心'], ['😌', '平静'], ['🤩', '兴奋'], ['😮‍💨', '疲惫']];
+const WEATHER_OPTIONS = [['☀️', '晴'], ['🌤️', '多云'], ['☁️', '阴'], ['🌧️', '雨'], ['❄️', '雪']];
+function openMoodWeatherPicker(type, recordId) {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals(); // 防重入
+        const input = document.getElementById('edit-' + type + '-' + recordId);
+        const current = input ? input.value : '';
+        const opts = type === 'mood' ? MOOD_OPTIONS : WEATHER_OPTIONS;
+        const title = type === 'mood' ? '选择心情' : '选择天气';
+        const icon = type === 'mood' ? 'sentiment_satisfied' : 'wb_sunny';
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 300px;">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">' + icon + '</span>' + title + '</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;">' +
+            '<div class="mwp-grid" id="mwpGrid"></div>' +
+            '<div class="mwp-clear-wrap"><button type="button" class="mwp-clear-btn ripple-effect" id="mwpClear">清空</button></div>' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="mwpCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
+            '<button class="check-go-btn ripple-effect" id="mwpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+        let selected = current;
+        const grid = document.getElementById('mwpGrid');
+        opts.forEach(function (pair) {
+            const cell = document.createElement('div');
+            cell.className = 'mwp-opt' + (pair[0] === current ? ' selected' : '');
+            cell.innerHTML = '<span class="mwp-emoji">' + pair[0] + '</span>' + pair[1];
+            cell.addEventListener('click', function () {
+                selected = pair[0];
+                grid.querySelectorAll('.mwp-opt').forEach(function (c) { c.classList.remove('selected'); });
+                cell.classList.add('selected');
+            });
+            grid.appendChild(cell);
+        });
+        document.getElementById('mwpClear').addEventListener('click', function () {
+            selected = '';
+            grid.querySelectorAll('.mwp-opt').forEach(function (c) { c.classList.remove('selected'); });
+        });
+        document.getElementById('mwpCancel').addEventListener('click', function () { document.body.removeChild(modal); });
+        document.getElementById('mwpOk').addEventListener('click', function () {
+            try {
+                const inp = document.getElementById('edit-' + type + '-' + recordId);
+                if (inp) inp.value = selected;
+                document.body.removeChild(modal);
+            } catch (e) { /* 忽略 */ }
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    } catch (e) { /* 忽略 */ }
 }
 
 // 日期网格（周一开头，今天描边，选中靛蓝）
