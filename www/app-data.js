@@ -55,6 +55,12 @@ function initGlobalSearch() {
     function pokeSearchBar() {
         if (currentTabId !== 'records' && currentTabId !== 'plans') { setBarVisible(false); return; }
         if (document.activeElement === input) { setBarVisible(true); return; } // 输入中常显
+        // ★2026-09-02 自动避让分页键（用户要求）：滚动接近页面底部（分页/批量条区域露出）时收起搜索框，
+        //   避免悬浮条盖住"上一页/下一页/页码"；向上离开底部区域即恢复显示
+        const vh = window.innerHeight || document.documentElement.clientHeight;
+        const scrolled = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const totalH = document.documentElement.scrollHeight || document.body.scrollHeight || 0;
+        if (vh + scrolled >= totalH - 150) { setBarVisible(false); clearTimeout(searchHideTimer); return; }
         if (searchQuery && searchQuery.trim()) { setBarVisible(true); return; }
         setBarVisible(true);
         clearTimeout(searchHideTimer);
