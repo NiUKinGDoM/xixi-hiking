@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.8.3': '## v1.1.8.3 更新内容\n\n**细节打磨**\n- 概览统计卡片去掉「一道光划过」效果\n- 设置页分组边框调浅（更轻盈）\n\nMade by XiXi 💛',
     'v1.1.8.2': '## v1.1.8.2 更新内容\n\n**背景流光增强**\n- 光斑更明显、范围更大、流速更快\n- 流动轨迹改蜿蜒折返（不再是直线来回晃）\n\nMade by XiXi 💛',
     'v1.1.8.1': '## v1.1.8.1 更新内容\n\n**液态玻璃更灵动**\n- 全 App 玻璃按钮/卡片/格子统一「轻沉回弹」按压手感\n- 页面背景加极淡流动光斑（所有页面共享，深色模式自动换暗色系）\n- 搜索框自动避让底部分页键（翻页不再被挡住）\n\nMade by XiXi 💛',
     'v1.1.8.0': '## v1.1.8.0 更新内容\n\n**五项优化**\n- 弹窗底部按钮统一尺寸（取消/删除/确定按钮全部统一，与日期/心情选择器一致）\n- 心情保存 trim 统一（防意外空格）\n\nMade by XiXi 💛',
@@ -441,7 +442,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.8.2';
+var APP_VERSION = '1.1.8.3';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
