@@ -107,7 +107,7 @@
 
 ## 备份体系
 - `backups/hiking-app3-vX.Y.Z/`：完整源码备份；`backups/android-signing/`：签名（绝不上传）
-- **★2026-09-03 起本地不留 APK**：APK 归档只发 GitHub Release（云端即备份）；上传+下载验证通过后**删除本地 APK**（项目根 + 原 apk-history 已清空退役）——历史版本需要可随时从 Release assets 取
+- **★2026-09-03 起本地不留 APK**：APK 归档只发 GitHub Release（云端即备份）；上传+下载验证通过后**删除本地 APK**（项目根 + 原 apk-history 已清空退役）；**★删除一律走回收站（Windows 回收站 API），禁止永久删除**（历史版本可随时从 Release assets 恢复，v1.0.10.4 起云端全量覆盖）
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
 
