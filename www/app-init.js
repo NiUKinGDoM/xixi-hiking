@@ -171,6 +171,8 @@ async function init() {
         setupEventListeners();
         updateSortIcons();
         initGlobalSearch(); // ★2026-08-27 记录/计划搜索（方案A 滚动显示）
+        initYearReview(); // ★2026-09-02 年度回顾（入口绑定 + 每年 1/1 自动展示）
+        initRecordsView(); // ★2026-09-02 记录页 列表/山册 双视图
         
         // WebDAV 同步：配置已由 loadSyncState 并行加载，这里绑定事件 + 若开启自动同步则静默合并
         try {
@@ -410,8 +412,13 @@ function setupEventListeners() {
             if (tabId === 'records' && typeof renderTable === 'function') {
                 // ★2026-08-26 二次点击刷新回到第一页（否则停留在第二页等会让人以为刷新没生效）
                 recordPage = 1;
-                // ★2026-08-11 二次点击刷新：若正在行内编辑，先取消编辑恢复显示态再渲染
-                if (typeof editingId !== 'undefined' && editingId !== null) {
+                // ★2026-09-03 山册模式下刷新山册（不是隐藏的列表）
+                if (typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') {
+                    if (typeof renderMountainBook === 'function') {
+                        try { renderMountainBook(); } catch (e) { console.error('refresh mountain book failed:', e); }
+                    }
+                } else if (typeof editingId !== 'undefined' && editingId !== null) {
+                    // ★2026-08-11 二次点击刷新：若正在行内编辑，先取消编辑恢复显示态再渲染
                     try { cancelEdit(); } catch (e) { console.error('cancel edit failed:', e); }
                 } else {
                     try { renderTable(); } catch (e) { console.error('refresh records failed:', e); }
@@ -514,8 +521,14 @@ function setupEventListeners() {
             try { updateStatistics(); } catch (e) { console.error('updateStatistics failed:', e); }
         }
         // ★2026-08-21 v1.1.1.5 懒渲染：切到记录/计划页时渲染对应表格（启动不再全量渲染）
-        if (tabId === 'records' && typeof renderTable === 'function') {
-            try { renderTable(); } catch (e) { console.error('lazy render records failed:', e); }
+        // ★2026-09-03 记录页双视图修复：recordsViewMode 为 mountain 时渲染山册而非列表——
+        //   否则状态是山册却显示列表，切换钮要点两次才「看起来」生效（首次点击实际是回列表，无视觉变化）
+        if (tabId === 'records') {
+            if (typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') {
+                try { applyRecordsView(); } catch (e) { console.error('lazy render mountain book failed:', e); }
+            } else if (typeof renderTable === 'function') {
+                try { renderTable(); } catch (e) { console.error('lazy render records failed:', e); }
+            }
         }
         if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
             try { renderPlannedTripsTable(); } catch (e) { console.error('lazy render plans failed:', e); }
