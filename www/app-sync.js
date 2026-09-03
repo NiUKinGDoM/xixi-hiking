@@ -517,10 +517,8 @@ function renderSyncForm(lastSync) {
     if (userInput) userInput.value = syncConfig.username || '';
     if (passInput) passInput.value = syncConfig.password || '';
     if (autoToggle) autoToggle.checked = syncAuto;
-    // ★2026-08-25 未配置引导条：server+username 都填了才隐藏
-    const guideEl = document.getElementById('syncGuideHint');
-    if (guideEl) guideEl.style.display = (syncConfig.server && syncConfig.username) ? 'none' : 'block';
     syncUiState.lastSyncAt = lastSync || ''; // 2026-08-12 状态行删除 → 存全局，弹窗读取
+    // ★2026-09-03 未配置引导已融合进「自动同步」卡健康子行（updateSyncHealthRow），不再单独蓝条
 }
 
 // 从表单读取并保存配置
@@ -1283,11 +1281,45 @@ function formatSyncTime(date) {
 }
 
 function setSyncStatus(text, icon, type) {
-    // 2026-08-12 重构：状态行删除 → 更新全局状态 + 「自动同步」标题旁 i 标识视觉
+    // ★2026-09-03 i 标识已删：状态视觉全部由健康行承担（setSyncStatus → updateSyncHealthRow）
     syncUiState.text = text || '';
     syncUiState.icon = icon || 'info';
     syncUiState.status = type === 'success' ? 'success' : (type === 'error' ? 'error' : 'idle');
-    updateSyncIconVisual();
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
+}
+
+// ★2026-09-03 P1 同步健康行（融合在自动同步卡内）：优先反映最近一次操作结果，其次距上次同步天数
+//   未配置灰引导 / 同步中转圈蓝 / 失败红 / 成功绿 / 闲置按天龄（绿≤3 黄4-7 红>7）
+async function updateSyncHealthRow() {
+    try {
+        const txt = document.getElementById('syncHealthText');
+        const dot = document.getElementById('syncHealthDot');
+        if (!txt || !dot) return;
+        const url = buildSyncFileUrl();
+        const hasCfg = !!(url && syncConfig && syncConfig.username && syncConfig.password);
+        let color = '#94a3b8';
+        let label = '还没连接云端 · 点这里配置备份';
+        if (!hasCfg) { dot.style.background = color; txt.textContent = label; return; }
+        // 同步中：蓝点 + 文案
+        if (syncUiBusy) { color = '#4f46e5'; label = syncUiState.text || '正在同步…'; dot.style.background = color; txt.textContent = label; return; }
+        // 最近一次失败：红 + 错误提示（点击弹详情）
+        if (syncUiState.status === 'error') { color = '#dc2626'; label = (syncUiState.text || '同步失败') + ' · 点这里查看'; dot.style.background = color; txt.textContent = label; return; }
+        let lastSyncAt = '';
+        try { const d = await AppStore.getItem(SYNC_STATUS_KEY); if (d && d.lastSyncAt) lastSyncAt = d.lastSyncAt; } catch (e) { /* 忽略 */ }
+        if (!lastSyncAt) {
+            color = '#d97706';
+            label = '已连接，还没备份过 · 建议先上传一次';
+        } else {
+            const diffDays = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 86400000);
+            if (diffDays <= 0) { color = '#16a34a'; label = '上次同步：刚刚 · 云端有备份'; }
+            else if (diffDays === 1) { color = '#16a34a'; label = '上次同步：昨天 · 云端有备份'; }
+            else if (diffDays <= 3) { color = '#16a34a'; label = '上次同步：' + diffDays + ' 天前 · 云端有备份'; }
+            else if (diffDays <= 7) { color = '#d97706'; label = '上次同步：' + diffDays + ' 天前 · 快一周了，抽空备份一下'; }
+            else { color = '#dc2626'; label = '上次同步：' + diffDays + ' 天前 · 有点久了，建议立即备份'; }
+        }
+        dot.style.background = color;
+        txt.textContent = label;
+    } catch (e) { /* 静默 */ }
 }
 
 function setSyncBusy(busy, label) {
@@ -1308,38 +1340,12 @@ function setSyncBusy(busy, label) {
         syncUiState.text = label;
         syncUiState.status = 'busy';
     }
-    updateSyncIconVisual();
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
 }
 
-// 2026-08-12 同步状态 UI 重构：状态行 → 自动同步标题旁 i 标识
+// 2026-08-12 同步状态 UI 重构：状态行 → 自动同步卡健康行（★2026-09-03 i 标识已删）
 let syncUiState = { status: 'idle', text: '', icon: 'info', lastSyncAt: '' };
 let syncUiBusy = false;
-
-function updateSyncIconVisual() {
-    const icon = document.getElementById('syncStatusIcon');
-    if (!icon) return;
-    if (syncUiBusy) {
-        icon.textContent = 'sync';
-        icon.className = 'material-icons sync-spin';
-        icon.style.color = '#4f46e5';
-        icon.style.fontSize = '15px';
-    } else if (syncUiState.status === 'success') {
-        icon.textContent = 'check_circle';
-        icon.className = 'material-icons';
-        icon.style.color = '#16a34a';
-        icon.style.fontSize = '15px';
-    } else if (syncUiState.status === 'error') {
-        icon.textContent = 'error';
-        icon.className = 'material-icons';
-        icon.style.color = '#dc2626';
-        icon.style.fontSize = '15px';
-    } else {
-        icon.textContent = 'info';
-        icon.className = 'material-icons';
-        icon.style.color = 'rgba(100,116,139,0.65)';
-        icon.style.fontSize = '15px';
-    }
-}
 
 // 2026-08-12 i 标识点击弹窗：上次同步时间 + 连接状态（成功✓绿/失败✗红/同步中转圈）
 async function showSyncStatusModal() {
@@ -1388,9 +1394,9 @@ async function showSyncStatusModal() {
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 }
 
-// 自动检测连接：进入设置页或输入配置后调用，结果展示在 i 标识 + 可选 toast 提示
+// 自动检测连接：进入设置页或输入配置后调用，结果展示在同步健康行 + 可选 toast 提示
 async function autoCheckSyncConnection(showTip) {
-    if (!document.getElementById('syncStatusIcon')) return; // 2026-08-12 状态行已删，i 标识存在才检测
+    if (!document.getElementById('syncHealthRow')) return; // ★2026-09-03 守卫改健康行（i 标识已删）
     await saveSyncConfigFromForm();
     const url = buildSyncFileUrl();
     if (!url) {
@@ -1402,8 +1408,8 @@ async function autoCheckSyncConnection(showTip) {
         return;
     }
     setSyncStatus('正在检测连接…', 'info', '');
-    syncUiBusy = true; // 2026-08-12 检测中转圈
-    updateSyncIconVisual();
+    syncUiBusy = true; // 2026-08-12 检测中状态（健康行蓝点 + 文案）
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
     try {
         const dirsResult = await ensureSyncParentDirs(url);
         if (!dirsResult.ok) {
@@ -1425,13 +1431,26 @@ async function autoCheckSyncConnection(showTip) {
 }
 
 function setupSyncEventListeners() {
-    // 2026-08-12 同步状态 i 标识 → 状态弹窗（上次同步时间 + 连接状态）
-    const syncStatusIcon = document.getElementById('syncStatusIcon');
-    if (syncStatusIcon) {
-        const handler = showSyncStatusModal;
-        syncStatusIcon.addEventListener('click', handler);
-        cleanupFunctions.push(() => syncStatusIcon.removeEventListener('click', handler));
+    // ★2026-09-03 i 标识已删：同步状态入口统一由健康行承担（见下方 healthRow 绑定）
+    // ★2026-09-03 P1 同步健康行（融合在自动同步卡内）：已配置 → 弹状态弹窗；未配置 → 展开配置折叠并聚焦服务器输入框
+    const healthRow = document.getElementById('syncHealthRow');
+    if (healthRow) {
+        const hHandler = function () {
+            try {
+                const url = buildSyncFileUrl();
+                const configured = !!(url && syncConfig && syncConfig.username && syncConfig.password);
+                if (configured) { showSyncStatusModal(); return; }
+                const toggleBtn = document.getElementById('syncConfigToggleBtn');
+                const collapse = document.getElementById('syncConfigCollapse');
+                if (toggleBtn && collapse && !collapse.classList.contains('open')) toggleBtn.click();
+                const serverInput = document.getElementById('syncServer');
+                setTimeout(function () { if (serverInput) { try { serverInput.focus(); } catch (e) { /* 忽略 */ } } }, 350);
+            } catch (e) { /* 静默 */ }
+        };
+        healthRow.addEventListener('click', hHandler);
+        cleanupFunctions.push(() => healthRow.removeEventListener('click', hHandler));
     }
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
     const uploadBtn = document.getElementById('syncUploadBtn');
     if (uploadBtn) {
         // ★2026-08-25 上传完成后由函数内部 10 秒恢复连接状态（原 2 秒回正会盖掉「上传成功」对号）
