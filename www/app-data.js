@@ -3121,8 +3121,11 @@ function historyCopySources() {
         return r && r.name && String(r.name).trim();
     });
 }
-// ★2026-09-03 P0 入口：点「＋添加」→ 有历史可复制则弹「添加」选择卡（最近记录单选填充 / 直接新建）
-// 无任何历史记录 → 直接进空白新建（原逻辑，不打扰）
+// ★2026-09-03 P0 入口（v3 定稿）：点「＋添加」→ 弹窗 =
+//  ①「直接新建空白记录」独立整行（不藏进下拉，点即空白新建）
+//  ②「或者」分隔
+//  ③ 下拉框只做「从历史记录复制」：点开展开最近记录圆点单选，选中收起、栏文本变「山名 · 日期」
+//  ④ 底部「用这条填充」确认键（check-go-btn 玻璃主钮，未选置灰，点确认才带出字段）
 function handleAddRecordFlow() {
     try {
         if (typeof closeOpenModals === 'function') closeOpenModals(); // 防重入
@@ -3138,6 +3141,7 @@ function handleAddRecordFlow() {
             if (dur) meta.push(formatDuration(dur));
             if (el) meta.push(el + 'm');
             return '<div class="hcm-item" data-id="' + r.id + '" role="button" tabindex="0">' +
+                '<span class="hcm-dot"></span>' +
                 '<div class="hcm-main"><div class="hcm-row1"><span class="hcm-name">' + escapeHtml(r.name) + '</span>' +
                 '<span class="hcm-date">' + fmtYMD(r.createdAt) + '</span></div>' +
                 '<div class="hcm-meta">' + escapeHtml(meta.join(' · ')) + '</div></div></div>';
@@ -3146,39 +3150,67 @@ function handleAddRecordFlow() {
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:400px;width:calc(100vw - 44px);box-sizing:border-box;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">add_circle_outline</span>添加徒步记录</div>' +
-            '<div class="confirm-modal-message" style="text-align:left;margin-bottom:10px;">' +
-            '<div class="hcm-sub">从最近记录复制一条（日期与照片不会带），或直接新建空白</div>' +
-            '<div class="hcm-list" data-count="' + srcs.length + '">' + items + '</div></div>' +
+            '<div class="confirm-modal-message" style="text-align:left;margin-bottom:14px;">' +
+            '<div class="ap-new" id="apNew" role="button" tabindex="0">' +
+            '<span class="material-icons ic">edit_note</span>' +
+            '<span class="ap-t"><span class="m1">新建空白记录</span><span class="s1">从零开始填，日期自动是今天</span></span></div>' +
+            '<div class="ap-seg">或者</div>' +
+            '<button type="button" class="ap-field" id="apField">' +
+            '<span class="material-icons ap-ic">content_copy</span>' +
+            '<span class="ap-t"><span class="ap-main" id="apMain">从历史记录复制</span>' +
+            '<span class="ap-sub" id="apSub">挑一条最近去过的山，选完点确认</span></span>' +
+            '<span class="material-icons ap-arr">expand_more</span></button>' +
+            '<div class="ap-fold" id="apFold"><div class="ap-fold-inner">' +
+            '<div class="ap-recent-tip">最近记录 · 点选一条（日期与照片不复制）</div>' +
+            '<div class="hcm-list" data-count="' + srcs.length + '" style="max-height:42vh;">' + items + '</div>' +
+            '</div></div></div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="confirm-btn-cancel ripple-effect" id="hcm-new" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">直接新建</button>' +
-            '<button class="check-go-btn ripple-effect" id="hcm-ok" disabled style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">用这条填充</button>' +
+            '<button class="check-go-btn ripple-effect" id="apOk" disabled type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;margin-top:2px;">填充</button>' +
             '</div></div>';
         document.body.appendChild(modal);
-        var selId = null;
+        var field = modal.querySelector('#apField');
+        var fold = modal.querySelector('#apFold');
         var listEl = modal.querySelector('.hcm-list');
+        var okBtn = modal.querySelector('#apOk');
+        var mainTxt = modal.querySelector('#apMain');
+        var subTxt = modal.querySelector('#apSub');
+        var selId = null;
+        function closeMdl() { if (modal.parentNode) modal.parentNode.removeChild(modal); }
         function setSel(id) {
             selId = id;
             Array.prototype.forEach.call(listEl.querySelectorAll('.hcm-item'), function (it) {
                 it.classList.toggle('sel', it.getAttribute('data-id') === id);
             });
-            var ok = modal.querySelector('#hcm-ok');
-            if (ok) ok.disabled = !selId;
+            var src = (records || []).find(function (r) { return r.id === id; });
+            if (src) {
+                field.classList.add('chosen');
+                mainTxt.textContent = escapeHtml(src.name) + ' · ' + fmtYMD(src.createdAt);
+                subTxt.textContent = '已选，点下方「填充」带出';
+            }
+            fold.classList.remove('open');
+            field.classList.remove('open');
+            okBtn.disabled = !selId;
         }
-        function closeMdl() { if (modal.parentNode) modal.parentNode.removeChild(modal); }
+        field.addEventListener('click', function () {
+            if (okBtn.disabled === false) return; // 已选定时先点下方确认；想换条可点列表内其它项前先重置：仍允许重开
+            fold.classList.toggle('open');
+            field.classList.toggle('open', fold.classList.contains('open'));
+        });
         listEl.addEventListener('click', function (e) {
             var it = e.target.closest ? e.target.closest('.hcm-item') : null;
             if (it) setSel(it.getAttribute('data-id'));
         });
-        modal.querySelector('#hcm-new').addEventListener('click', function () {
+        modal.querySelector('#apNew').addEventListener('click', function () {
             closeMdl();
             addNewRecord();
         });
-        modal.querySelector('#hcm-ok').addEventListener('click', function () {
+        okBtn.addEventListener('click', function () {
             if (!selId) return;
             closeMdl();
             addRecordFromHistory(selId);
         });
         modal.addEventListener('click', function (e) { if (e.target === modal) closeMdl(); });
+        try { modal.querySelector('#apField').focus(); } catch (e) { /* 忽略 */ }
     } catch (e) { /* 静默 */ }
 }
 // ★2026-09-03 P0：从历史记录复制创建新记录（草稿日期=今天；日期/照片不复制，其余字段填入编辑行）
