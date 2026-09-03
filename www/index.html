@@ -1737,7 +1737,14 @@
             min-width: 0;
             box-sizing: border-box;
             transition: background-color 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            /* ★2026-09-03 与大卡同款 fadeInUp 渐入，delay 排在大卡（4 张约 0.2s 完）之后接力，避免三张矮卡"干显示" */
+            opacity: 0;
+            transform: translateY(14px) translateZ(0);
+            animation: fadeInUp 0.5s ease-out forwards;
         }
+        .ov-mini-row .ov-mini:nth-child(1) { animation-delay: 0.4s; }
+        .ov-mini-row .ov-mini:nth-child(2) { animation-delay: 0.48s; }
+        .ov-mini-row .ov-mini:nth-child(3) { animation-delay: 0.56s; }
         body.dark-mode .ov-mini {
             background: rgba(30, 41, 59, calc(var(--glass-alpha) * 0.6));
             border-color: rgba(255, 255, 255, 0.04);
