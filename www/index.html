@@ -3398,13 +3398,16 @@
         .hcm-item:active {
             background: rgba(148, 163, 184, 0.22);
         }
+        /* ★2026-09-03 选中改玻璃质感（同「和去年比」点亮配方：靛蓝透底+实描边+主色字，非纯色实底） */
         .hcm-item.sel {
-            background: #4f46e5;
-            border-color: #4f46e5;
+            background: rgba(79, 70, 229, 0.12);
+            border-color: rgba(79, 70, 229, 0.75);
+            backdrop-filter: blur(2px) saturate(150%);
+            -webkit-backdrop-filter: blur(2px) saturate(150%);
         }
         body.dark-mode .hcm-item.sel {
-            background: #6366f1;
-            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.16);
+            border-color: rgba(129, 140, 248, 0.7);
         }
         .hcm-main {
             flex: 1;
@@ -3428,7 +3431,10 @@
             color: #e5e7eb;
         }
         .hcm-item.sel .hcm-name {
-            color: #fff;
+            color: #4f46e5;
+        }
+        body.dark-mode .hcm-item.sel .hcm-name {
+            color: #c7d2fe;
         }
         .hcm-date {
             font-size: 12px;
@@ -3438,9 +3444,6 @@
         }
         body.dark-mode .hcm-date {
             color: #94a3b8;
-        }
-        .hcm-item.sel .hcm-date {
-            color: rgba(255, 255, 255, 0.75);
         }
         .hcm-meta {
             font-size: 12px;
@@ -3453,8 +3456,17 @@
         body.dark-mode .hcm-meta {
             color: #a3b1c6;
         }
+        .hcm-item.sel .hcm-date {
+            color: rgba(79, 70, 229, 0.72);
+        }
+        body.dark-mode .hcm-item.sel .hcm-date {
+            color: rgba(199, 210, 254, 0.7);
+        }
         .hcm-item.sel .hcm-meta {
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(79, 70, 229, 0.85);
+        }
+        body.dark-mode .hcm-item.sel .hcm-meta {
+            color: rgba(199, 210, 254, 0.85);
         }
         /* 「用这条填充」按钮禁用态（同 dtp/mwp 主按钮视觉体系） */
         .confirm-modal-buttons .check-go-btn:disabled {
