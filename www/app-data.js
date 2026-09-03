@@ -2081,9 +2081,10 @@ function showHeatmapDayDetail(year, month, day) {
         // （难度里程拆开与用时分行，防一行过长换行错位/间距不均）
         const MOOD_TEXT = { '😄': '开心', '😌': '平静', '🤩': '兴奋', '😮‍💨': '疲惫' };
         const WEATHER_TEXT = { '☀️': '晴', '🌤️': '多云', '☁️': '阴', '🌧️': '雨', '❄️': '雪' };
-        const moodTxt = r.mood ? '<span class="hm-meta-item"><span class="hm-meta-label">心情：</span><span class="hm-meta-value">' + (MOOD_TEXT[r.mood] || r.mood) + '</span></span>' : '';
-        const weatherTxt = r.weather ? '<span class="hm-meta-item"><span class="hm-meta-label">天气：</span><span class="hm-meta-value">' + (WEATHER_TEXT[r.weather] || r.weather) + '</span></span>' : '';
-        const companionTxt = r.companions ? '<span class="hm-meta-item"><span class="hm-meta-label">同行：</span><span class="hm-meta-value">' + r.companions + '</span></span>' : '';
+        // ★2026-09-03 五项优化⑤：同行必为用户输入 → escapeHtml；心情/天气旧数据可能存过文本 → 兜底分支也转义（emoji 原样安全）
+        const moodTxt = r.mood ? '<span class="hm-meta-item"><span class="hm-meta-label">心情：</span><span class="hm-meta-value">' + escapeHtml(MOOD_TEXT[r.mood] || r.mood) + '</span></span>' : '';
+        const weatherTxt = r.weather ? '<span class="hm-meta-item"><span class="hm-meta-label">天气：</span><span class="hm-meta-value">' + escapeHtml(WEATHER_TEXT[r.weather] || r.weather) + '</span></span>' : '';
+        const companionTxt = r.companions ? '<span class="hm-meta-item"><span class="hm-meta-label">同行：</span><span class="hm-meta-value">' + escapeHtml(r.companions) + '</span></span>' : '';
         const metaRow = (moodTxt || weatherTxt || companionTxt)
             ? '<div style="margin-top:3px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">' + moodTxt + weatherTxt + companionTxt + '</div>'
             : '';
@@ -2633,21 +2634,22 @@ function calcYearStats(year) {
     var sorted = list.slice().sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
     st.early = sorted[0]; st.late = sorted[sorted.length - 1];
     var lines = [];
-    if (farl && Number(farl.distance) > 0) lines.push('最远单程 · ' + farl.name + ' · ' + Number(farl.distance).toFixed(1) + ' km');
-    if (longl && Number(longl.duration) > 0) lines.push('最长时间 · ' + longl.name + ' · ' + formatDuration(Number(longl.duration)));
-    if (maxEl > 0) lines.push('最高海拔 · ' + (maxElName || '') + ' · ' + maxEl + ' m');
-    if (maxName && maxCnt >= 2) lines.push('最常去 · ' + maxName + '（' + maxCnt + ' 次）');
-    if (topCompanion && topCompanionCnt >= 2) lines.push('最多同行 · ' + topCompanion + '（' + topCompanionCnt + ' 次）');
-    if (st.early) lines.push('第一次出发 · ' + fmtYMD(st.early.createdAt) + ' · ' + st.early.name);
-    if (st.late && st.early !== st.late) lines.push('最后一次出发 · ' + fmtYMD(st.late.createdAt) + ' · ' + st.late.name);
+    // ★2026-09-03 五项优化⑤：lines 内用户文本（山名/同行名）escapeHtml 后再入 innerHTML（与全 App XSS 约定一致）
+    if (farl && Number(farl.distance) > 0) lines.push('最远单程 · ' + escapeHtml(farl.name) + ' · ' + Number(farl.distance).toFixed(1) + ' km');
+    if (longl && Number(longl.duration) > 0) lines.push('最长时间 · ' + escapeHtml(longl.name) + ' · ' + formatDuration(Number(longl.duration)));
+    if (maxEl > 0) lines.push('最高海拔 · ' + escapeHtml(maxElName || '') + ' · ' + maxEl + ' m');
+    if (maxName && maxCnt >= 2) lines.push('最常去 · ' + escapeHtml(maxName) + '（' + maxCnt + ' 次）');
+    if (topCompanion && topCompanionCnt >= 2) lines.push('最多同行 · ' + escapeHtml(topCompanion) + '（' + topCompanionCnt + ' 次）');
+    if (st.early) lines.push('第一次出发 · ' + fmtYMD(st.early.createdAt) + ' · ' + escapeHtml(st.early.name));
+    if (st.late && st.early !== st.late) lines.push('最后一次出发 · ' + fmtYMD(st.late.createdAt) + ' · ' + escapeHtml(st.late.name));
     if (!lines.length) lines.push('这一年没有更多之最，去徒步吧！');
     st.lines = lines;
     return st;
 }
 // ★2026-09-03 P3 定稿（用户示例版）：6 指标 3 列卡片；对比卡 = 去年划线值 + 今年值 + 增幅同排
-// 数值+单位（示例版式：大数字 18 + 小单位 次）
+// 数值+单位（示例版式：大数字 18 + 小单位 次）；★2026-09-03 五项优化⑤：num 统一转义（数值无副作用，「最常去」山名防注入）
 function yrBig(num, unit) {
-    return '<span class="uv">' + num + '</span>' + (unit ? '<span class="us"> ' + unit + '</span>' : '');
+    return '<span class="uv">' + escapeHtml(num) + '</span>' + (unit ? '<span class="us"> ' + escapeHtml(unit) + '</span>' : '');
 }
 // 卡片：lab + 值区（单版=数字行；对比版=去年划线/今年/增幅一行）
 function yrCard(lab, valHtml) {
@@ -2716,24 +2718,29 @@ function yrGridCompare(cur, last) {
 function yrTabHtml(tt, body) {
     return '<div class="yr-tab"><span class="tt">' + tt + '</span>' + body + '</div>';
 }
-// 一年小结自然语言生成（仿示例口吻，数据驱动）
+// 一年小结自然语言生成（★2026-09-03 五项优化后：文案池化 + 活泼口吻 + 每次随机，数据保持准确）
+// 结构 = y 年 + 随机开场（按趋势方向分池）+ 数据段（次数/里程/新山/活跃月/常去对比）+ 随机收尾
 function yrSummaryText(cur, last) {
     var y = cur.year;
     var nd = cur.n - last.n, kmd = +(cur.km - last.km).toFixed(1), pd = cur.peaks - last.peaks;
     var pos = [nd > 0, kmd > 0, pd > 0].filter(Boolean).length;
     var neg = [nd < 0, kmd < 0, pd < 0].filter(Boolean).length;
-    if (last.n === 0) {
-        return y + ' 年第一次有了完整的足迹：走了 ' + cur.n + ' 次、' + cur.km.toFixed(1) + ' km，打卡 ' + cur.peaks + ' 座山，期待下一年继续出发。';
-    }
-    if (pos === 0 && neg === 0) {
-        return y + ' 年与去年几乎持平，节奏稳定本身就是一种坚持。';
-    }
-    var trend = pos >= 2 && neg === 0 ? '更勤快了'
-        : (pos >= 2 && neg === 1 ? '更有收获'
-            : (pos === 1 && neg === 2 ? '有些调整'
-                : (neg >= 2 && pos === 0 ? '比去年放缓了些' : '有增有减')));
+    function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+    // 活泼文案池（按趋势方向分：开场 + 收尾；句首都避「今年/这一年」字样——句首已有年份，防重复指代）
+    var PO = {
+        up: ['你像一阵风，山都替你开心', '山都快被你踩热了', '出发的瘾，好像又大了一点', '你和山野的约会，肉眼可见地变多了'],
+        down: ['走得慢了些，但每一步都算数', '山不会跑，歇够了随时再出发', '脚步轻了些，心却更稳了'],
+        flat: ['和去年打了个平手，稳得很', '节奏没变，热爱也没变'],
+        mixed: ['有起有伏，才是登山的味道', '多走了几座山，也偷偷懒过几回', '玩得挺随性，也挺尽兴']
+    };
+    var PE = {
+        up: ['继续保持，下一座山头在等你！', '就按这个节奏，把山头一座座点亮吧！', '山在，腿也在，明年继续冲！', '这份热爱，山顶都看得到！'],
+        down: ['不着急，山又不会跑。', '缓一缓，是为了走更远的路。', '只要还想出发，就永远不算晚。'],
+        flat: ['走自己的节奏，山顶总会到。', '每一步都算数，明年继续。', '稳稳的幸福，山也知道。'],
+        mixed: ['下一座山，已经在等你了。', '明年接着折腾，也挺好。']
+    };
+    // 数据段
     var segs = [];
-    // 数据：次数/里程百分比
     var np = last.n > 0 ? Math.round(nd / last.n * 100) : null;
     var kp = last.km > 0 ? Math.round(kmd / last.km * 100) : null;
     if (nd !== 0 && kmd !== 0 && np !== null && kp !== null && (nd > 0) === (kmd > 0)) {
@@ -2742,29 +2749,35 @@ function yrSummaryText(cur, last) {
         if (nd !== 0 && np !== null) segs.push('次数' + (nd > 0 ? '+' : '') + np + '%');
         if (kmd !== 0 && kp !== null) segs.push('里程' + (kmd > 0 ? '+' : '') + kp + '%');
     }
-    if (pd > 0) segs.push('新解锁 ' + pd + ' 座山');
-    else if (pd < 0) segs.push('打卡山峰少了 ' + Math.abs(pd) + ' 座');
+    if (pd > 0) segs.push('又解锁 ' + pd + ' 座新山');
+    else if (pd < 0) segs.push('打卡的山峰少了 ' + Math.abs(pd) + ' 座');
     // 今年最活跃月（并列最高且连续 → X-Y 月）
     if (cur.maxM >= 1) {
         var ms = [];
         cur.monthly.forEach(function (c, i) { if (c === cur.maxM) ms.push(i + 1); });
         var act = ms.length > 1 && ms[ms.length - 1] - ms[0] === ms.length - 1
-            ? ms[0] + '-' + ms[ms.length - 1] + ' 月最活跃'
-            : ms[0] + ' 月最活跃';
+            ? ms[0] + '-' + ms[ms.length - 1] + ' 月最勤快'
+            : ms[0] + ' 月最勤快';
         segs.push(act);
     }
-    // 常去对比
+    // 常去对比（去年无固定常去 → 「今年常去」；去年常去别山 → 「换了山头」更有趣）
     if (cur.mostOften !== '—') {
         var curCnt = cur.nameCnt[cur.mostOften] || 0;
         var lastCnt = last.nameCnt[cur.mostOften] || 0;
         if (lastCnt > 0) {
             var dd = curCnt - lastCnt;
-            segs.push('常去的还是 ' + cur.mostOften + (dd > 0 ? '，比去年多去 ' + dd + ' 次' : (dd < 0 ? '，比去年少去 ' + Math.abs(dd) + ' 次' : '')));
+            segs.push('老地方还是 ' + escapeHtml(cur.mostOften) + (dd > 0 ? '，比去年多爬了 ' + dd + ' 趟' : (dd < 0 ? '，比去年少去了 ' + Math.abs(dd) + ' 趟' : '，一趟不多一趟不少')));
+        } else if (last.mostOften !== '—') {
+            segs.push('换了山头，常去 ' + escapeHtml(cur.mostOften));
         } else {
-            segs.push('今年常去 ' + cur.mostOften);
+            segs.push('今年常去 ' + escapeHtml(cur.mostOften));
         }
     }
-    return y + ' 年' + trend + '：' + segs.join('；') + '。';
+    // 组装：开场（按方向）+ 数据 + 收尾
+    var dir = pos >= 2 && neg === 0 ? 'up' : (neg >= 2 && pos === 0 ? 'down' : (pos === 0 && neg === 0 ? 'flat' : 'mixed'));
+    var head = y + ' 年，' + pick(PO[dir]);
+    if (!segs.length) return head + '，和去年几乎打平。' + pick(PE[dir]);
+    return head + '：' + segs.join('；') + '。' + pick(PE[dir]);
 }
 // ★2026-09-03 P3 定稿：对比版渲染（去年 = year-1；去年无数据由上层保证不进入）
 function renderYearCompare(year) {
@@ -2919,7 +2932,7 @@ function renderMountainBook() {
             '<div class="mb-stat">' +
             statCell(n + ' 次', '累计') + statCell(km ? km.toFixed(1) + 'km' : '—', '总里程') +
             statCell(min ? formatDuration(min) : '—', '总用时') + statCell(el ? el + 'm' : '—', '最高海拔') +
-            statCell(diffName[avgD] || '—', '平均难度') + statCell(comp.length ? comp.join('/') : '—', '一起走过') +
+            statCell(diffName[avgD] || '—', '平均难度') + statCell(comp.length ? comp.map(escapeHtml).join('/') : '—', '一起走过') +
             '</div><div class="mb-records">' + rows + '</div></div>';
     }).join('');
     wrap.innerHTML = html;
