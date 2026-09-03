@@ -1,13 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-03（v1.1.8.7 / vc216）
+> 最后更新：2026-09-03（v1.1.8.8 / vc217）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
-- **正式版 v1.1.8.7**（versionCode 216，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.8.8**（versionCode 217，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.8.8 更新：概览统计主次分离（4 主卡 + 平均海拔/平均难度/平均用时矮副卡、总爬升并入热力图底部汇总）+ 徒步足迹热力图前置难度分布上 + 年月单框弹窗选择（替代双下拉、仅记录月可选）+ 年回入口入热力图卡右上 + 设置页数据管理 i 弹窗重排 + 括号文案删除
 - v1.1.8.7 更新：山册「照片回忆」横排带（展开某山看全部照片/点照进灯箱/收起单行化/无照片山不显示）+ 同步健康行融合进自动同步卡（i 图标删除、蓝/绿/黄/红状态、未配置点击直达配置）+ 照片占用挪杂项 + 全 App 滚动条玻璃化 + 同步状态弹窗虚线加深
 - v1.1.8.6 更新：年度回顾「一年小结」文案活泼化随机（趋势分池开场/收尾，数据准确）+ 用户文本 XSS 转义加固（年度之最/山册一起走过/热力图详情/最常去等 5 处）+ 死类清理
 - v1.1.8.5 更新：添加从历史复制弹窗（＋添加选择卡/直接新建）、年度回顾「和去年比」（3列/划线增幅/一年小结/底部操作区）、山册↗跳转修复（照片/定位/滚动）、iOS 网页适配
@@ -80,7 +81,7 @@
 - ★2026-08-25 起网页版也可弹检查更新确认窗并真实检测（GitHub API 支持 CORS），但无法安装（点立即更新有兜底提示）；更新源版本号必须 > 本地
 
 ## 构建流程（PowerShell，牢记）
-1. 改 `www/`（★2026-08-30 方案A 落地：主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js，index.html 只留 HTML+CSS+引脚本）→ `node test.js`（60项）+ `node test-ui.js`（26项 jsdom UI，2026-08-28 起）+ ★新功能集成脚本 `node _test_p0p3.js`（55项 jsdom 链路，2026-09-03 P0/P3/山册照片带/健康行 起）→ `node bump.js`（版本号：build.gradle + app-core.js APP_VERSION + index.html 版本显示）
+1. 改 `www/`（★2026-08-30 方案A 落地：主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js，index.html 只留 HTML+CSS+引脚本）→ `node test.js`（60项）+ `node test-ui.js`（26项 jsdom UI，2026-08-28 起）+ ★新功能集成脚本 `node _test_p0p3.js`（69项 jsdom 链路，2026-09-03 P0/P3/山册照片带/健康行/概览布局/年月弹窗 起）→ `node bump.js`（版本号：build.gradle + app-core.js APP_VERSION + index.html 版本显示）
 2. 复制 **index.html + app-core.js + app-data.js + app-sync.js + app-init.js** + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`（★漏同步 JS 会白屏！）；**build.gradle → temp 的 `android/app/build.gradle`**（★2026-09-03 教训：错放 `android/app/src/build.gradle` 会构建出「壳旧版内容新版」的错 APK，aapt 验证才兜住）；**原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；删 temp 的 app/build 旧产物（若 rm 被沙箱拦则直接重建，gradle 会覆盖）
 3. 构建（★2026-09-03 起用 java 直启 GradleMain，勿再走 gradle.bat——PowerShell 后台跑 .bat 会 0 输出、Start-Process 撞 http_proxy 字典重复，白折腾多轮）：
    ```
@@ -195,6 +196,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
+- v1.1.8.8（vc217）：**概览布局重构（统计主次分离 4 主卡+平均海拔/难度/用时矮副卡 .ov-mini、徒步足迹热力图前置难度分布上 ensureOverviewLayout、年回入口收进热力图卡右上改图标钮）+ 热力图年月单框弹窗（删双下拉、openHmYmPicker 年份 chips+12 月格仅记录月可点、底部汇总去日期留 次数·累计爬升）+ 设置页数据管理 i 弹窗分组重排 + 括号文案删除 + 累计爬升回热力图汇总不丢数据**（详见 Release）
 - v1.1.8.7（vc216）：**山册照片回忆（展开顶部横排看该山全部照片、点照进灯箱、标题日期=最近一次记录日期、收起单行化、统计收进展开）+ 同步健康行融合进自动同步卡（i 图标删除去重、busy/error/天龄三态、未配置点击直达配置、照片占用挪杂项第一行）+ 全 App 滚动条玻璃化（含弹窗 6px 细条）+ 同步状态弹窗虚线加深 + 工程治理（prev-snapshot.js 回滚点/五对策）**（详见 Release）
 ## 待办/新功能方案（2026-09-01 更新）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
