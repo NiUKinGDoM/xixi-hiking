@@ -1802,9 +1802,7 @@ function updateStatistics() {
     // ★2026-09-03 A 布局：矮副卡新增 平均难度/平均用时（总爬升卡已随布局精简移除，累计爬升仍在热力图底部汇总）
     const avgDifficultyMini = safeGetElementById('avgDifficultyMini');
     const avgDurationMini = safeGetElementById('avgDurationMini');
-    const difficultyChart = safeGetElementById('difficultyChart');
-    const chartLabels = safeGetElementById('chartLabels');
-    const chartAvgDiff = safeGetElementById('chartAvgDiff');
+    // ★2026-09-03 难度分布图卡已删除（用户：首页不需要）；相关元素/渲染逻辑全部移除
     
     // 辅助函数：更新数字并添加动画（用 WAAPI 取消旧动画，避免强制同步布局重排）
     // ★2026-08-25 卡片渐入由 .stat-card CSS 行级 stagger 负责，数字动画不再单独 delay
@@ -1836,9 +1834,6 @@ function updateStatistics() {
         if (avgDurationMini) avgDurationMini.textContent = '—';
         if (totalDistance) totalDistance.textContent = '0 km';
         if (totalDuration) totalDuration.textContent = '0h';
-        if (chartAvgDiff) safeSetElementContent('chartAvgDiff', '');
-        if (difficultyChart) safeSetElementContent('difficultyChart', '<div class="text-white/50 text-center w-full">暂无数据</div>');
-        if (chartLabels) safeSetElementContent('chartLabels', '');
         return;
     }
     
@@ -1863,103 +1858,12 @@ function updateStatistics() {
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
     updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(2) + ' km' : '0 km'); // ★2026-09-01 里程两位小数
     updateWithAnimation(totalDuration, totalMin ? (formatDuration(totalMin) || '0h') : '0h');
-    // ★2026-08-26 直方图左上角平均难度（字体与右上角总计一致 text-xs）
-    if (chartAvgDiff) chartAvgDiff.innerHTML = '<span class="' + (isDarkMode ? 'text-white/70' : 'text-white/60') + '">平均难度 ' + averageDifficulty + ' 级</span>';
-    
-    const difficultyCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    records.forEach(record => {
-        difficultyCounts[record.difficulty]++;
-    });
-    
-    const maxCount = Math.max(...Object.values(difficultyCounts));
-    
-    if (difficultyChart && chartLabels) {
-        const difficultyNames = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
-        const difficultyColors = { 1: '#10b981', 2: '#84cc16', 3: '#f59e0b', 4: '#f97316', 5: '#dc2626' };
-        const difficultyGradients = {
-            1: 'from-green-400 to-green-600',
-            2: 'from-lime-400 to-lime-600', 
-            3: 'from-amber-400 to-amber-600',
-            4: 'from-orange-400 to-orange-600',
-            5: 'from-red-400 to-red-600'
-        };
-        
-        // 深色模式下的渐变样式
-        const darkModeGradients = {
-            1: 'from-green-400 to-green-600',
-            2: 'from-lime-400 to-lime-600', 
-            3: 'from-amber-400 to-amber-600',
-            4: 'from-orange-400 to-orange-600',
-            5: 'from-red-400 to-red-600'
-        };
-        
-        const currentGradients = isDarkMode ? darkModeGradients : difficultyGradients;
-        
-        let chartHtml = '';
-        let labelsHtml = '';
-        
-        Object.entries(difficultyCounts).forEach(([difficulty, count]) => {
-            const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
-            const color = difficultyColors[difficulty];
-            const gradient = currentGradients[difficulty];
-            const name = difficultyNames[difficulty];
-            
-            chartHtml += `
-                <div class="flex flex-col items-center flex-1">
-                    <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar glass-bar absolute bottom-0 w-full rounded-t-lg hover:scale-105 cursor-pointer"
-                             style="height: ${percentage}%; min-height: ${count > 0 ? '8px' : '0'}; animation-delay: ${parseInt(difficulty) * 0.15}s; background: linear-gradient(to top, ${getDifficultyColor(difficulty)}cc, ${getDifficultyColor(difficulty)}85); box-shadow: 0 0 8px ${getDifficultyColor(difficulty)}40;"
-                             title="${name}级: ${count}个 (${((count/total)*100).toFixed(1)}%)">
-                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold whitespace-nowrap" style="color: ${getDifficultyColor(difficulty)}">
-                                ${count > 0 ? count : ''}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            labelsHtml += `
-                <div class="flex-1 text-center">
-                    <div class="text-xs font-medium ${isDarkMode ? 'text-gray-300' : ''}">${difficulty}级</div>
-                </div>
-            `;
-        });
-        
-        difficultyChart.innerHTML = chartHtml;
-        chartLabels.innerHTML = labelsHtml;
-        // ★2026-08-26 右上角「总计」已删除（避免与统计卡片重复）；平均难度在左上角 chartAvgDiff 显示
-        
-        difficultyChart.querySelectorAll('.bg-gradient-to-t').forEach((bar, index) => {
-            bar.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.1)';
-                this.style.zIndex = '10';
-            });
-            bar.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1.05)';
-                this.style.zIndex = '1';
-            });
-        });
-    }
     renderHeatmap(); // v1.0.7.7 切到概览刷新热力图
 }
 
 // ===== 徒步足迹热力图（v1.0.7.7：红色渐变 + 年月可选 + 日历式月视图） =====
+// ★2026-09-03 难度分布卡已删除 → ensureOverviewLayout 整段移除（原负责把热力图卡插到难度分布卡前）
 let hmYear = 0, hmMonth = 0;
-// ★2026-09-03 B 布局：概览页区块重排（「徒步足迹」热力图移到「难度分布」之前，回忆优先）只执行一次
-let overviewReordered = false;
-function ensureOverviewLayout() {
-    try {
-        if (overviewReordered) return;
-        const hp = document.getElementById('heatmapPanel');
-        const dc = document.getElementById('difficultyChart');
-        if (!hp || !dc) return;
-        const diffPanel = dc.closest ? dc.closest('.glass-panel') : null;
-        if (diffPanel && hp.parentNode === diffPanel.parentNode && hp !== diffPanel) {
-            diffPanel.parentNode.insertBefore(hp, diffPanel);
-        }
-        overviewReordered = true;
-    } catch (e) { /* 静默 */ }
-}
 // ★2026-08-11 热力图事件只绑定一次（initHeatmap 会被多次调用：初始化 + 底栏刷新重置）
 let hmBound = false;
 function updateHmYmBtn() {
@@ -2047,7 +1951,7 @@ function openHmYmPicker() {
 }
 
 function initHeatmap() {
-    ensureOverviewLayout(); // ★2026-09-03 B：保证热力图卡已移到难度分布卡之前
+    // ★2026-09-03 难度分布卡删除后无需布局重排（原 ensureOverviewLayout 已移除）
     const ymBtn = document.getElementById('hmYmBtn');
     if (!ymBtn) return;
     const now = new Date();
@@ -2931,17 +2835,21 @@ function initRecordsView() {
             if (rid && pid && typeof openPhotoLightbox === 'function') { try { openPhotoLightbox(rid, pid, false); } catch (e2) { /* 忽略 */ } }
             return;
         }
-        // ★2026-09-03 逐条记录跳转入口已删（日期收进照片带标题），无相关分支
+        // ★2026-09-03 点卡头 → 抽屉整行展开（drawer 在同 .mb-row 内、data-mountain 与卡一致）
         var head = e.target.closest ? e.target.closest('.mb-head') : null;
         if (head) {
             var card = head.closest('.mb-card');
             if (card) {
+                var mtn = card.getAttribute('data-mountain');
                 var willOpen = !card.classList.contains('open');
                 card.classList.toggle('open');
-                // ★2026-09-03 展开时才懒加载本卡照片（img data-record 占位 → loadPhotoThumbs 异步填图，_photoLoaded 防重复）
-                if (willOpen) {
+                var rowEl = card.closest('.mb-row');
+                var drawer = rowEl ? rowEl.querySelector('.mb-drawer[data-mountain="' + mtn + '"]') : null;
+                if (drawer) drawer.classList.toggle('open', willOpen);
+                // ★2026-09-03 展开时才懒加载抽屉内照片（img data-record 占位 → loadPhotoThumbs 异步填图，_photoLoaded 防重复）
+                if (willOpen && drawer) {
                     var ridSet = {};
-                    card.querySelectorAll('.mbp-item img').forEach(function (im) { var r2 = im.getAttribute('data-record'); if (r2) ridSet[r2] = 1; });
+                    drawer.querySelectorAll('.mbp-item img').forEach(function (im) { var r2 = im.getAttribute('data-record'); if (r2) ridSet[r2] = 1; });
                     Object.keys(ridSet).forEach(function (r3) { try { loadPhotoThumbs(r3); } catch (e3) { /* 忽略 */ } });
                 }
             }
@@ -2979,7 +2887,7 @@ function applyRecordsView() {
     if (gs) gs.placeholder = isMb ? '搜索山峰…' : '搜索记录…';
 }
 // ★2026-09-02 山册渲染：按记录名（山）聚合卡片；点卡片头展开这座山的记录；点记录右侧 ↗ 定位打开
-// ★2026-09-03 支持全局搜索词（方案A搜索框）：按山名实时过滤卡片；无匹配显示空态（与列表空态同文案逻辑）
+// ★2026-09-03 双列名册：网格两列排卡片（山影天空带已按用户要求删除，卡只显示山名行）
 function renderMountainBook() {
     var wrap = safeGetElementById('mountainBookView');
     if (!wrap) return;
@@ -2996,7 +2904,23 @@ function renderMountainBook() {
         if (!groups[k]) groups[k] = [];
         groups[k].push(r);
     });
-    var keys = Object.keys(groups).filter(function (k) {
+    // ★2026-09-03 集章序号：每座山按「第一次去的先后」编号 01/02/03…（首登 = 该组最早 createdAt）；
+    //   全量排序后过滤，搜索命中时序号仍保持全册编号不重排
+    function firstAt(arr) {
+        var m = '';
+        arr.forEach(function (r) { var c = r.createdAt || ''; if (!m || c < m) m = c; });
+        return m;
+    }
+    var allKeys = Object.keys(groups).sort(function (a, b) {
+        var fa = firstAt(groups[a]), fb = firstAt(groups[b]);
+        if (fa !== fb) return fa < fb ? -1 : 1;
+        if (groups[b].length !== groups[a].length) return groups[b].length - groups[a].length;
+        return 0;
+    });
+    var sealNo = {};
+    allKeys.forEach(function (k, i) { sealNo[k] = i + 1; });
+    var padLen = Math.max(2, String(allKeys.length).length);
+    var keys = allKeys.filter(function (k) {
         if (!q) return true;
         if (k.toLowerCase().indexOf(q) >= 0) return true;
         // 山名本身没匹配时，再翻这座山的所有记录（同伴/备注等字段也可能命中）
@@ -3004,64 +2928,80 @@ function renderMountainBook() {
             return String(r.companions || '').toLowerCase().indexOf(q) >= 0 ||
                 String(r.notes || '').toLowerCase().indexOf(q) >= 0;
         });
-    }).sort(function (a, b) {
-        if (groups[b].length !== groups[a].length) return groups[b].length - groups[a].length;
-        return (groups[b][0].createdAt || '') < (groups[a][0].createdAt || '') ? -1 : 1;
     });
     if (q && !keys.length) {
         wrap.innerHTML = '<div class="yr-empty">' + (window.__isComposing ? '正在输入…' : '没有找到匹配的山，换个词试试') + '</div>';
         return;
     }
+    // ★2026-09-03 双列山册 + 整行抽屉：每两座山一组 .mb-row；
+    //   先排两个卡头（占两列），再排两个抽屉（grid-column 1/-1 整行）；
+    //   点卡头 → 对应抽屉以整行宽在卡头行下方拉开，卡头留在原列（用户需求 v2）
+    var rowHtml = '';
+    for (var ri = 0; ri < keys.length; ri += 2) {
+        var cellA = renderMountainCard(keys[ri], groups, sealNo, padLen, diffName);
+        var cellB = (ri + 1 < keys.length) ? renderMountainCard(keys[ri + 1], groups, sealNo, padLen, diffName) : null;
+        rowHtml += '<div class="mb-row">' + cellA.head + (cellB ? cellB.head : '') + cellA.drawer + (cellB ? cellB.drawer : '') + '</div>';
+    }
+    wrap.innerHTML = rowHtml;
+}
+// 渲染单座山的「卡头 + 整行抽屉」两部分（head 放两列，drawer 整行下拉）
+function renderMountainCard(k, groups, sealNo, padLen, diffName) {
     function statCell(v, l) { return '<div><div class="sv">' + v + '</div><div class="sl">' + l + '</div></div>'; }
     function cmpSet(c) {
         var out = {}, n = 0;
         String(c || '').split(/[,，、\s]+/).forEach(function (s) { s = s.trim(); if (s && !out[s]) { out[s] = 1; n++; } });
         return Object.keys(out).slice(0, 3);
     }
-    var html = keys.map(function (k) {
-        var arr = groups[k];
-        var sorted = arr.slice().sort(function (x, y) { return (x.createdAt || '') < (y.createdAt || '') ? -1 : 1; });
-        var n = arr.length;
-        var km = arr.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
-        var min = arr.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
-        var el = arr.reduce(function (m, r) { return Math.max(m, Number(r.elevation) || 0); }, 0);
-        var avgD = Math.round(arr.reduce(function (s, r) { return s + (Number(r.difficulty) || 0); }, 0) / n);
-        var comp = [];
-        var seen = {};
-        arr.forEach(function (r) { cmpSet(r.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } }); });
-        // ★2026-09-03 P0 山册照片回忆：聚合这座山全部记录的照片（横排，最多 24 张防 DOM 过大）；无照片的山不生成此块
-        // ★2026-09-03 记录行已删（不再逐条时间+跳转）：日期收进照片带标题「N 张 · 日期范围」
-        var pItems = [];
-        var dMax = '';
-        sorted.forEach(function (r) {
-            var ps = (r.photos && r.photos.length) ? r.photos : [];
-            if (!ps.length) return;
-            var d = fmtYMD(r.createdAt) || '';
-            if (d && d > dMax) dMax = d;
-            for (var pi = 0; pi < ps.length && pItems.length < 24; pi++) {
-                pItems.push({ rid: r.id, pid: ps[pi] });
-            }
-        });
-        // ★2026-09-03 标题日期 = 这座山（照片所属记录里）最近一次徒步的记录日期；与照片本身无时间关联
-        var dLabel = dMax || '';
-        var photosHtml = pItems.length
-            ? '<div class="mb-photos"><div class="mb-photos-head"><span class="mb-photos-tt">照片回忆</span>' +
-            '<span class="mb-photos-cnt">' + pItems.length + ' 张' + (dLabel ? ' · ' + dLabel : '') + '</span></div>' +
-            '<div class="mb-photos-strip">' + pItems.map(function (it) {
-                return '<div class="mbp-item" data-rid="' + it.rid + '" data-pid="' + it.pid + '" title="看大图">' +
-                    '<img data-record="' + it.rid + '" data-pid="' + it.pid + '" alt="照片"></div>';
-            }).join('') + '</div></div>'
-            : '';
-        return '<div class="mb-card"><div class="mb-head"><span class="mb-name">' + escapeHtml(k) + '</span>' +
-            '<span class="mb-badge">去过 ' + n + ' 次</span><span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div>' +
-            photosHtml +
-            '<div class="mb-stat">' +
-            statCell(n + ' 次', '累计') + statCell(km ? km.toFixed(1) + 'km' : '—', '总里程') +
-            statCell(min ? formatDuration(min) : '—', '总用时') + statCell(el ? el + 'm' : '—', '最高海拔') +
-            statCell(diffName[avgD] || '—', '平均难度') + statCell(comp.length ? comp.map(escapeHtml).join('/') : '—', '一起走过') +
-            '</div></div>';
-    }).join('');
-    wrap.innerHTML = html;
+    var arr = groups[k];
+    var sorted = arr.slice().sort(function (x, y) { return (x.createdAt || '') < (y.createdAt || '') ? -1 : 1; });
+    var n = arr.length;
+    var km = arr.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
+    var min = arr.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
+    var el = arr.reduce(function (m, r) { return Math.max(m, Number(r.elevation) || 0); }, 0);
+    var avgD = Math.round(arr.reduce(function (s, r) { return s + (Number(r.difficulty) || 0); }, 0) / n);
+    var comp = [];
+    var seen = {};
+    arr.forEach(function (r) { cmpSet(r.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } }); });
+    var pItems = [];
+    var dMax = '';
+    sorted.forEach(function (r) {
+        var ps = (r.photos && r.photos.length) ? r.photos : [];
+        if (!ps.length) return;
+        var d = fmtYMD(r.createdAt) || '';
+        if (d && d > dMax) dMax = d;
+        for (var pi = 0; pi < ps.length && pItems.length < 24; pi++) {
+            pItems.push({ rid: r.id, pid: ps[pi] });
+        }
+    });
+    var dLabel = dMax || '';
+    var photosHtml = pItems.length
+        ? '<div class="mb-photos"><div class="mb-photos-head"><span class="mb-photos-tt">照片回忆</span>' +
+        '<span class="mb-photos-cnt">' + pItems.length + ' 张' + (dLabel ? ' · ' + dLabel : '') + '</span></div>' +
+        '<div class="mb-photos-strip">' + pItems.map(function (it) {
+            return '<div class="mbp-item" data-rid="' + it.rid + '" data-pid="' + it.pid + '" title="看大图">' +
+                '<img data-record="' + it.rid + '" data-pid="' + it.pid + '" alt="照片"></div>';
+        }).join('') + '</div></div>'
+        : '';
+    var ridgeCls = '';
+    if (el > 0) {
+        if (el < 1000) ridgeCls = 'mb-ridge-1';
+        else if (el < 2000) ridgeCls = 'mb-ridge-2';
+        else if (el < 3000) ridgeCls = 'mb-ridge-3';
+        else if (el < 4000) ridgeCls = 'mb-ridge-4';
+        else ridgeCls = 'mb-ridge-5';
+    }
+    var no = String(sealNo[k]).padStart(padLen, '0');
+    var statHtml = '<div class="mb-stat">' +
+        statCell(n + ' 次', '累计') + statCell(km ? km.toFixed(1) + 'km' : '—', '总里程') +
+        statCell(min ? formatDuration(min) : '—', '总用时') + statCell(el ? el + 'm' : '—', '最高海拔') +
+        statCell(diffName[avgD] || '—', '平均难度') + statCell(comp.length ? comp.map(escapeHtml).join('/') : '—', '一起走过') +
+        '</div>';
+    var head = '<div class="mb-card ' + ridgeCls + '" data-mountain="' + no + '"><div class="mb-head">' +
+        '<span class="mb-seal">' + no + '</span>' +
+        '<div class="mb-body"><div class="mb-name">' + escapeHtml(k) + '</div></div>' +
+        '<span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div></div>';
+    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + '</div>';
+    return { head: head, drawer: drawer };
 }
 // 从山册记录定位到列表并直接打开该条编辑
 // ★2026-09-03 修复三个跳转 bug：

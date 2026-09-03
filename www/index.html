@@ -548,84 +548,6 @@
             color: #f3f4f6 !important;
         }
         
-        /* 深色模式下的难度分布图表优化 */
-        .dark-mode .bg-gradient-to-t.from-green-400 {
-            background: linear-gradient(0deg, rgba(34, 197, 94, 0.8), rgba(74, 222, 128, 0.6)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-lime-400 {
-            background: linear-gradient(0deg, rgba(163, 230, 53, 0.8), rgba(132, 204, 22, 0.6)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-amber-400 {
-            background: linear-gradient(0deg, rgba(251, 191, 36, 0.8), rgba(245, 158, 11, 0.6)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-orange-400 {
-            background: linear-gradient(0deg, rgba(251, 146, 60, 0.8), rgba(249, 115, 22, 0.6)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-red-400 {
-            background: linear-gradient(0deg, rgba(248, 113, 113, 0.8), rgba(220, 38, 38, 0.6)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-green-600 {
-            background: linear-gradient(0deg, rgba(22, 163, 74, 0.9), rgba(34, 197, 94, 0.7)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-lime-600 {
-            background: linear-gradient(0deg, rgba(101, 163, 13, 0.9), rgba(163, 230, 53, 0.7)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-amber-600 {
-            background: linear-gradient(0deg, rgba(217, 119, 6, 0.9), rgba(251, 191, 36, 0.7)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-orange-600 {
-            background: linear-gradient(0deg, rgba(221, 107, 32, 0.9), rgba(251, 146, 60, 0.7)) !important;
-        }
-        
-        .dark-mode .bg-gradient-to-t.from-red-600 {
-            background: linear-gradient(0deg, rgba(185, 28, 28, 0.9), rgba(220, 38, 38, 0.7)) !important;
-        }
-        
-        /* 深色模式下图表容器优化 */
-        
-        /* 深色模式下图表文字优化 */
-        .dark-mode #chartLabels .text-xs {
-            color: #d1d5db !important;
-        }
-        
-        /* 深色模式下图表悬停效果优化 */
-        .dark-mode .bg-gradient-to-t:hover {
-            filter: brightness(1.2) !important;
-        }
-        
-        /* 深色模式下图表阴影优化 */
-        .dark-mode .shadow-lg {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        /* 深色模式下图表数值文字优化 */
-        .dark-mode .text-green-400 {
-            color: #86efac !important;
-        }
-        
-        .dark-mode .text-lime-400 {
-            color: #bef264 !important;
-        }
-        
-        .dark-mode .text-amber-400 {
-            color: #fcd34d !important;
-        }
-        
-        .dark-mode .text-orange-400 {
-            color: #fdba74 !important;
-        }
-        
-        .dark-mode .text-red-400 {
-            color: #fca5a5 !important;
-        }
         
         /* 难度徽章（★2026-08-25 玻璃质感：半透明背景 + 细边框，内联覆盖 background/border-color） */
         .difficulty-badge {
@@ -1698,8 +1620,8 @@
             /* ★2026-09-02 灵动：统计卡降透明（0.10→0.05）同 glass-panel 让光斑透上来 */
             background: rgba(255, 255, 255, 0.05);
                     border: 1px solid rgba(0, 0, 0, 0.04);
-            border-radius: 16px;
-            padding: 16px;
+            border-radius: 14px;   /* ★2026-09-03 与大卡协调：16→14 */
+            padding: 13px;         /* ★2026-09-03 收身：16→13（配小一号数字） */
             box-shadow: 
                 0 2px 16px rgba(0, 0, 0, 0.02);
             overflow: hidden;
@@ -1738,11 +1660,11 @@
         .ov-mini {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(0, 0, 0, 0.04);
-            border-radius: 12px;
-            padding: 8px 12px 8px 12px;
+            border-radius: 13px;   /* ★2026-09-03 协调：12→13 */
+            padding: 11px 12px 11px 12px;   /* ★2026-09-03 放大：8→11 */
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
             min-width: 0;
             box-sizing: border-box;
@@ -1761,25 +1683,25 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
         .ov-ic {
-            font-size: 16px;
+            font-size: 18px;   /* ★2026-09-03 放大：16→18 */
             flex-shrink: 0;
         }
         .ov-txt {
             min-width: 0;
         }
         .ov-lab {
-            font-size: 10px;
-            color: #64748b;
+            font-size: 11px;   /* ★2026-09-03 放大：10→11 */
+            color: #52606f;
             line-height: 1.3;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         body.dark-mode .ov-lab {
-            color: #94a3b8;
+            color: #a3b1c6;
         }
         .ov-val {
-            font-size: 14px;
+            font-size: 16px;   /* ★2026-09-03 放大：14→16 */
             font-weight: 700;
             color: #0f172a;
             line-height: 1.25;
@@ -2643,44 +2565,6 @@
             opacity: 1;
             transition: transform 0s, opacity 0s;
         }
-        
-        /* 柱状图生长动画 */
-        .chart-bar {
-            transform-origin: bottom;
-            animation: growUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            /* 2026-08-11 3条优化：Tailwind transition-transform 类未编译生成，用 CSS 直写（只过渡 hover 的 scale） */
-            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* 玻璃质感柱状图 */
-        .glass-bar {
-            transform-origin: bottom;
-            animation: growUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            /* 2026-08-11 3条优化：同上，只过渡 transform */
-            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* 图表容器（难度分布框）跟随全局玻璃透明度 */
-        .chart-box {
-            background: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.8));
-            /* ★2026-08-25 边框调浅：与总记录数框(.glass-stat-card)一致 rgba(0,0,0,0.04)（原灰蓝 0.35 太深） */
-            border-color: rgba(0, 0, 0, 0.04);
-        }
-        body.dark-mode .chart-box {
-            background: rgba(15, 23, 42, calc(var(--glass-alpha) * 1.5));
-            border-color: rgba(255, 255, 255, 0.04);
-        }
-        
-        @keyframes growUp {
-            from {
-                transform: scaleY(0);
-            }
-            to {
-                transform: scaleY(1);
-            }
-        }
-        
-        
         
         @keyframes slideInRight {
             from {
@@ -3951,62 +3835,154 @@
             box-shadow: none;
             cursor: default;
         }
-        /* ★2026-09-02 山册视图（记录页 列表/山册 切换）：按山聚合卡片 */
+        /* ★2026-09-02 山册视图（记录页 列表/山册 切换）：按山聚合卡片
+           ★2026-09-03 双列名册 + 整行抽屉：每两座山一组 .mb-row；
+           卡头占两列并排，点开某山 → 组内 .mb-drawer（grid-column 跨整行）在卡头行
+           下方以整行宽度下拉照片/统计；卡头本身留在原列不动（用户需求 v2） */
+        #mountainBookView {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .mb-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            align-items: start;
+        }
+        .mb-drawer {
+            display: none;
+            grid-column: 1 / -1;   /* 跨整行：卡头行下方整行拉开 */
+            background: rgba(255, 255, 255, 0.32);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 14px;
+            padding: 4px 12px 10px;
+            margin-top: 2px;
+        }
+        body.dark-mode .mb-drawer {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .mb-drawer.open {
+            display: block;
+        }
+        /* ★2026-09-03 抽屉本身已是独立面板：展开后最上边的分隔线删掉（第一块不画 border-top） */
+        .mb-drawer > :first-child {
+            border-top: none;
+        }
         .mb-card {
             background: rgba(255, 255, 255, 0.32);
             border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 16px;
-            margin-bottom: 12px;   /* ★2026-09-03 每座山之间留间距，收起态一排排更透气 */
             overflow: hidden;
+            transition: background-color 0.2s ease, border-color 0.3s ease;
+            min-width: 0;
         }
         body.dark-mode .mb-card {
             background: rgba(255, 255, 255, 0.06);
             border-color: rgba(255, 255, 255, 0.12);
         }
+        /* ★2026-09-03 .mb-card.open 只做高亮态，布局由 .mb-drawer 承担（卡头留在原列） */
+        /* ★2026-09-03 海拔书脊色带：右缘 + 下缘各 4px（右下包角成"书脊+底托"），
+           按最高海拔分档（低山青绿 → 高山靛紫）；无海拔数据的山不带 */
+        .mb-card.mb-ridge-1 {
+            border-right: 4px solid #0d9488;
+            border-bottom: 4px solid #0d9488;
+        }
+        .mb-card.mb-ridge-2 {
+            border-right: 4px solid #0284c7;
+            border-bottom: 4px solid #0284c7;
+        }
+        .mb-card.mb-ridge-3 {
+            border-right: 4px solid #2563eb;
+            border-bottom: 4px solid #2563eb;
+        }
+        .mb-card.mb-ridge-4 {
+            border-right: 4px solid #4f46e5;
+            border-bottom: 4px solid #4f46e5;
+        }
+        .mb-card.mb-ridge-5 {
+            border-right: 4px solid #7c3aed;
+            border-bottom: 4px solid #7c3aed;
+        }
+        body.dark-mode .mb-card.mb-ridge-1 {
+            border-right-color: #2dd4bf;
+            border-bottom-color: #2dd4bf;
+        }
+        body.dark-mode .mb-card.mb-ridge-2 {
+            border-right-color: #38bdf8;
+            border-bottom-color: #38bdf8;
+        }
+        body.dark-mode .mb-card.mb-ridge-3 {
+            border-right-color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+        body.dark-mode .mb-card.mb-ridge-4 {
+            border-right-color: #818cf8;
+            border-bottom-color: #818cf8;
+        }
+        body.dark-mode .mb-card.mb-ridge-5 {
+            border-right-color: #a78bfa;
+            border-bottom-color: #a78bfa;
+        }
         .mb-head {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 14px 16px;   /* ★2026-09-03 名称行更高挑（12/14 → 14/16） */
+            padding: 12px 14px;
             cursor: pointer;
             transition: background-color 0.15s ease;
         }
         .mb-head:active {
             background: rgba(148, 163, 184, 0.1);
         }
+        /* ★2026-09-03 集章序号圆章（C+B 方案）：按首登先后 01/02/03…，像册子盖满章 */
+        .mb-seal {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #534ab7;
+            background: rgba(79, 70, 229, 0.07);
+            border: 1.5px solid rgba(79, 70, 229, 0.4);
+            letter-spacing: 0.5px;
+        }
+        body.dark-mode .mb-seal {
+            color: #a5b4fc;
+            background: rgba(129, 140, 248, 0.13);
+            border-color: rgba(129, 140, 248, 0.55);
+        }
+        .mb-body {
+            flex: 1;
+            min-width: 0;
+        }
         .mb-name {
-            font-size: 15px;
+            font-size: 13px;   /* ★2026-09-03 15→13：长山名（祥峪森林公园）能多显示几字 */
             font-weight: 600;
             color: #334155;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;   /* ★2026-09-03 长名最多两行，不再一行截断成「祥峪森…」 */
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            white-space: normal;
+            word-break: break-all;
+            line-height: 1.35;
         }
         body.dark-mode .mb-name {
             color: #e5e7eb;
         }
-        .mb-badge {
-            font-size: 11px;
-            background: rgba(79, 70, 229, 0.12);
-            border: 1px solid rgba(79, 70, 229, 0.35);
-            color: #534ab7;
-            padding: 2px 9px;
-            border-radius: 99px;
-            flex-shrink: 0;
-        }
-        body.dark-mode .mb-badge {
-            background: rgba(99, 102, 241, 0.16);
-            border-color: rgba(99, 102, 241, 0.45);
-            color: #a5b4fc;
-        }
+        /* ★2026-09-03 次数点阵已按用户要求删除：卡上只留 圆章 + 山名 */
+        /* ★2026-09-03 抽屉整行宽：统计 6 格一行横排（不再 2 列 wrap；显隐由 .mb-drawer.open 整体控制） */
         .mb-stat {
-            display: none;   /* ★2026-09-03 收起态只留一排名称，统计信息随展开一起显示 */
+            display: flex;
             gap: 0;
             border-top: 1px solid rgba(148, 163, 184, 0.16);
             padding: 10px 6px;
-        }
-        .mb-card.open .mb-stat {
-            display: flex;
         }
         .mb-stat > div {
             flex: 1;
@@ -4026,14 +4002,10 @@
             color: #52606f;   /* ★2026-09-03 浅色提档（原 #94a3b8 过淡） */
             margin-top: 1px;
         }
-        /* ★2026-09-03 P0 山册照片回忆：展开某座山看这座山全部照片（横排滑动，点照片进灯箱） */
+        /* ★2026-09-03 P0 山册照片回忆：抽屉里横排滑动这座山的全部照片，点照片进灯箱 */
         .mb-photos {
-            display: none;
             border-top: 1px solid rgba(148, 163, 184, 0.16);
             padding: 10px 14px 2px;
-        }
-        .mb-card.open .mb-photos {
-            display: block;
         }
         .mb-photos-head {
             display: flex;
@@ -4085,10 +4057,10 @@
         }
         .mbp-item {
             position: relative;
-            flex: 0 0 76px;
-            width: 76px;
-            height: 76px;
-            border-radius: 10px;
+            flex: 0 0 60px;   /* ★2026-09-03 小卡原地展开适配（原 76 跨整行用） */
+            width: 60px;
+            height: 60px;
+            border-radius: 9px;
             overflow: hidden;
             cursor: pointer;
             background: rgba(148, 163, 184, 0.16);
@@ -4118,6 +4090,9 @@
             color: #94a3b8;
             flex-shrink: 0;
             transition: transform 0.2s ease;
+        }
+        body.dark-mode .mb-open-arrow {
+            color: #a3b1c6;   /* ★2026-09-03 深色提亮（原 #64748b） */
         }
         .mb-card.open .mb-open-arrow {
             transform: rotate(180deg);
@@ -5507,37 +5482,37 @@
                     <div class="stat-card glass-stat-card blue-accent">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-blue-300 font-medium">总记录数</p>
-                                <p class="text-2xl font-bold text-white" id="totalCount">10</p>
+                                <p class="text-[13px] text-blue-300 font-medium">总记录数</p>
+                                <p class="text-xl font-bold text-white" id="totalCount">10</p>
                             </div>
-                            <span class="material-icons text-blue-300 text-3xl icon-pulse">hiking</span>
+                            <span class="material-icons text-blue-300 text-2xl icon-pulse">hiking</span>
                         </div>
                     </div>
                     <div class="stat-card glass-stat-card teal-accent">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-teal-300 font-medium">总里程</p>
-                                <p class="text-2xl font-bold text-white" id="totalDistance">0 km</p>
+                                <p class="text-[13px] text-teal-300 font-medium">总里程</p>
+                                <p class="text-xl font-bold text-white" id="totalDistance">0 km</p>
                             </div>
-                            <span class="material-icons text-teal-300 text-3xl icon-pulse">route</span>
+                            <span class="material-icons text-teal-300 text-2xl icon-pulse">route</span>
                         </div>
                     </div>
                     <div class="stat-card glass-stat-card rose-accent">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-rose-300 font-medium">总用时</p>
-                                <p class="text-2xl font-bold text-white" id="totalDuration">0h</p>
+                                <p class="text-[13px] text-rose-300 font-medium">总用时</p>
+                                <p class="text-xl font-bold text-white" id="totalDuration">0h</p>
                             </div>
-                            <span class="material-icons text-rose-300 text-3xl icon-pulse">schedule</span>
+                            <span class="material-icons text-rose-300 text-2xl icon-pulse">schedule</span>
                         </div>
                     </div>
                     <div class="stat-card glass-stat-card orange-accent">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-orange-300 font-medium">最高海拔</p>
-                                <p class="text-2xl font-bold text-white" id="maxElevation">4506m</p>
+                                <p class="text-[13px] text-orange-300 font-medium">最高海拔</p>
+                                <p class="text-xl font-bold text-white" id="maxElevation">4506m</p>
                             </div>
-                            <span class="material-icons text-orange-300 text-3xl icon-pulse">terrain</span>
+                            <span class="material-icons text-orange-300 text-2xl icon-pulse">terrain</span>
                         </div>
                     </div>
                 </div>
@@ -5555,93 +5530,6 @@
                         <div class="ov-txt"><div class="ov-lab">平均用时</div><div class="ov-val" id="avgDurationMini">—</div></div>
                     </div>
                 </div>
-            </div>
-            <!-- ★2026-08-25 难度分布独立成卡片：统一概览页格式（glass-panel + h2 图标标题，原嵌在统计概览内 h3 无图标） -->
-            <div class="glass-panel p-6 mb-6">
-                <h2 class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors">
-                    <span class="material-icons text-amber-300 text-xl">bar_chart</span>
-                    <span class="title-text">难度分布</span>
-                </h2>
-                    <div class="relative h-60 chart-box backdrop-blur-md rounded-xl p-4 border">
-                        <div class="absolute inset-0 flex items-end justify-around px-4 pb-8" id="difficultyChart">
-                <div class="flex flex-col items-center flex-1">
-                    <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-green-400 to-green-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 50%; min-height: 8px; animation-delay: 0.15s;" title="简单级: 2个 (20.0%)">
-                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
-                                2
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            
-                <div class="flex flex-col items-center flex-1">
-                    <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-lime-400 to-lime-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 100%; min-height: 8px; animation-delay: 0.3s;" title="较易级: 4个 (40.0%)">
-                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
-                                4
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            
-                <div class="flex flex-col items-center flex-1">
-                    <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-amber-400 to-amber-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 50%; min-height: 8px; animation-delay: 0.44999999999999996s;" title="中等级: 2个 (20.0%)">
-                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
-                                2
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            
-                <div class="flex flex-col items-center flex-1">
-                    <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-orange-400 to-orange-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 25%; min-height: 8px; animation-delay: 0.6s;" title="较难级: 1个 (10.0%)">
-                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
-                                1
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            
-                <div class="flex flex-col items-center flex-1">
-                    <div class="relative w-full max-w-12 h-32 flex items-end justify-center">
-                        <div class="chart-bar absolute bottom-0 w-full bg-gradient-to-t from-red-400 to-red-600 rounded-t-lg hover:scale-105 cursor-pointer shadow-lg" style="height: 25%; min-height: 8px; animation-delay: 0.75s;" title="困难级: 1个 (10.0%)">
-                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white whitespace-nowrap">
-                                1
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-                        <div class="absolute bottom-0 left-0 right-0 h-6 flex items-center justify-around px-4 text-xs text-white/60 font-medium" id="chartLabels">
-                <div class="flex-1 text-center">
-                    <div class="text-xs font-medium ">1级</div>
-                    <div class="text-xs text-white/50">简单</div>
-                </div>
-            
-                <div class="flex-1 text-center">
-                    <div class="text-xs font-medium ">2级</div>
-                    <div class="text-xs text-white/50">较易</div>
-                </div>
-            
-                <div class="flex-1 text-center">
-                    <div class="text-xs font-medium ">3级</div>
-                    <div class="text-xs text-white/50">中等</div>
-                </div>
-            
-                <div class="flex-1 text-center">
-                    <div class="text-xs font-medium ">4级</div>
-                    <div class="text-xs text-white/50">较难</div>
-                </div>
-            
-                <div class="flex-1 text-center">
-                    <div class="text-xs font-medium ">5级</div>
-                    <div class="text-xs text-white/50">困难</div>
-                </div>
-            </div>
-                        <div class="absolute top-2 right-2 text-xs text-white/50" id="chartAvgDiff"><span class="text-white/60">平均难度 - 级</span></div>
-                    </div>
             </div>
 <!-- 徒步足迹热力图（v1.0.7.8：统一玻璃红 + 年月可选(仅去过的年月) + 日历式月视图） -->
                 <div class="glass-panel p-6 mb-6" id="heatmapPanel">
@@ -6036,7 +5924,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.8.9</div>
+                        <div class="about-version">版本 1.1.8.10</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
