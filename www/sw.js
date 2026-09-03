@@ -10,8 +10,10 @@
  * ★2026-09-03 v8→v9：v1.1.8.7（山册照片回忆/健康行融合/滚动条玻璃）
  * ★2026-09-03 v9→v10：v1.1.8.8（概览主次卡布局/热力图前置/年月单框弹窗）
  * ★2026-09-03 v10→v11：v1.1.8.9（添加 v3 下拉 + 全选中态玻璃 + 弹窗可读性提升）
+ * ★2026-09-03 v11→v12：山册改版（双列/集章序号/书脊色带/原地下拉展开）——强制旧缓存失效
+ * ★2026-09-04 v12→v13：v1.1.8.10（山册双列圆章书脊 + 难度分布图删除）
  */
-const CACHE_NAME = 'xixi-hiking-v11';
+const CACHE_NAME = 'xixi-hiking-v13';
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js'];
 
 self.addEventListener('install', function (e) {
