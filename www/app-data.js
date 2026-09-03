@@ -353,8 +353,8 @@ function renderTable() {
                 '</div></td></tr>';
         }
         if (editingId === record.id) {
-            return `
-                <tr class="border-b border-gray-200">
+            var editRows = `
+                <tr id="row-${record.id}" class="border-b border-gray-200">
                     <td class="p-2" data-label="名称">
                         <div class="input-with-search">
                             <input type="text" 
@@ -453,6 +453,8 @@ function renderTable() {
                     </td>
                 </tr>
             `;
+            // ★2026-09-03 P0 定稿：复制改走「＋添加」弹窗流程，行内不再渲染复制条（编辑旧记录不出现）
+            return editRows;
         } else {
             // ★2026-08-27 入场动画只首次播（后续刷新/编辑/翻页不重播，省布局抖动）
             const rowAnimCls = recordsRowsAnimated ? '' : 'table-row-animate ';
@@ -2514,6 +2516,15 @@ let renderPlannedTripsTableRAF = null;
 
 // ★2026-09-02 年度回顾（独立全屏页）：概览入口打开 + 每年 1/1 自动展示（回顾上一年）
 var yearReviewYear = null;
+// ★2026-09-03 P3：「和去年比」开关状态（点亮=对比版 / 熄灭=只看今年）
+var yrCompareOn = false;
+function yrSetCompare(on) {
+    yrCompareOn = !!on;
+    var cBtn = safeGetElementById('yrCompareToggle');
+    if (cBtn) cBtn.classList.toggle('on', yrCompareOn);
+    var txt = safeGetElementById('yrCompareText');
+    if (txt) txt.textContent = yrCompareOn ? '只看今年' : '和去年比';
+}
 function initYearReview() {
     try {
         var openBtn = safeGetElementById('yearReviewOpenBtn');
@@ -2526,6 +2537,20 @@ function initYearReview() {
         if (prev) prev.addEventListener('click', function () { if (yearReviewYear != null) renderYearReview(yearReviewYear - 1); });
         var next = safeGetElementById('yearNextBtn');
         if (next) next.addEventListener('click', function () { if (yearReviewYear != null) renderYearReview(yearReviewYear + 1); });
+        // ★2026-09-03 P3「和去年比」开关：点亮校验去年有数据（无 → toast 不点亮）；再点回「只看今年」
+        var cmpBtn = safeGetElementById('yrCompareToggle');
+        if (cmpBtn) cmpBtn.addEventListener('click', function () {
+            if (yearReviewYear == null) return;
+            if (!yrCompareOn) {
+                var lastStats = calcYearStats(yearReviewYear - 1);
+                if (!lastStats.has) {
+                    if (typeof showErrorMessage === 'function') showErrorMessage((yearReviewYear - 1) + ' 年还没有记录，没法对比', 2200);
+                    return;
+                }
+            }
+            yrSetCompare(!yrCompareOn);
+            renderYearReview(yearReviewYear);
+        });
         // ★每年 1/1 自动展示上一年的年度回顾；同一年只自动弹一次（不打扰）
         var now = new Date();
         if (now.getMonth() === 0 && now.getDate() === 1) {
@@ -2551,13 +2576,209 @@ function openYearReview(year) {
             var thisY = new Date().getFullYear();
             target = ks.length ? (ks.indexOf(thisY) >= 0 ? thisY : ks[0]) : (thisY - 1);
         }
+        yrSetCompare(false); // ★每次打开回到「只看今年」
         panel.style.display = 'flex';
         renderYearReview(target);
     } catch (e) { /* 静默 */ }
 }
 function closeYearReview() {
+    yrSetCompare(false);
     var panel = safeGetElementById('yearReviewPanel');
     if (panel) panel.style.display = 'none';
+}
+// ★2026-09-03 P3 年度回顾数据统计函数化：今年/去年共用同一口径，供单版与对比版渲染
+function yearRecordsOf(year) {
+    return (records || []).filter(function (r) { return r && r.createdAt && !isNaN(new Date(r.createdAt).getTime()) && new Date(r.createdAt).getFullYear() === year; });
+}
+function calcYearStats(year) {
+    var list = yearRecordsOf(year);
+    var st = { year: year, list: list, has: list.length > 0, n: list.length };
+    if (!st.has) return st;
+    st.km = list.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
+    st.min = list.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
+    var nameCnt = {};
+    list.forEach(function (r) { if (r.name) nameCnt[r.name] = (nameCnt[r.name] || 0) + 1; });
+    st.nameCnt = nameCnt;
+    st.peaks = Object.keys(nameCnt).length;
+    st.avgKm = st.km / st.n;
+    var maxName = null, maxCnt = 0;
+    Object.keys(nameCnt).forEach(function (k) { if (nameCnt[k] > maxCnt) { maxCnt = nameCnt[k]; maxName = k; } });
+    st.maxName = maxName; st.maxCnt = maxCnt;
+    st.mostOften = (maxName && maxCnt >= 2) ? maxName : '—';
+    var maxEl = 0, maxElName = '';
+    list.forEach(function (r) { var e = Number(r.elevation) || 0; if (e > maxEl) { maxEl = e; maxElName = r.name; } });
+    st.maxEl = maxEl; st.maxElName = maxElName;
+    st.monthly = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    list.forEach(function (r) { st.monthly[new Date(r.createdAt).getMonth()]++; });
+    st.maxM = Math.max.apply(null, st.monthly);
+    var farl = null, longl = null;
+    list.forEach(function (r) {
+        var d = Number(r.distance) || 0;
+        var m = Number(r.duration) || 0;
+        if (!farl || d > (Number(farl.distance) || 0)) farl = r;
+        if (!longl || m > (Number(longl.duration) || 0)) longl = r;
+    });
+    st.farl = farl; st.longl = longl;
+    var companionCounts = {};
+    list.forEach(function (r) {
+        String(r.companions || '').split(/[,，、\s]+/).forEach(function (s) {
+            s = s.trim(); if (s) companionCounts[s] = (companionCounts[s] || 0) + 1;
+        });
+    });
+    var topCompanion = null, topCompanionCnt = 0;
+    Object.keys(companionCounts).forEach(function (k) {
+        if (companionCounts[k] > topCompanionCnt) { topCompanionCnt = companionCounts[k]; topCompanion = k; }
+    });
+    st.topCompanion = topCompanion; st.topCompanionCnt = topCompanionCnt;
+    var sorted = list.slice().sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
+    st.early = sorted[0]; st.late = sorted[sorted.length - 1];
+    var lines = [];
+    if (farl && Number(farl.distance) > 0) lines.push('最远单程 · ' + farl.name + ' · ' + Number(farl.distance).toFixed(1) + ' km');
+    if (longl && Number(longl.duration) > 0) lines.push('最长时间 · ' + longl.name + ' · ' + formatDuration(Number(longl.duration)));
+    if (maxEl > 0) lines.push('最高海拔 · ' + (maxElName || '') + ' · ' + maxEl + ' m');
+    if (maxName && maxCnt >= 2) lines.push('最常去 · ' + maxName + '（' + maxCnt + ' 次）');
+    if (topCompanion && topCompanionCnt >= 2) lines.push('最多同行 · ' + topCompanion + '（' + topCompanionCnt + ' 次）');
+    if (st.early) lines.push('第一次出发 · ' + fmtYMD(st.early.createdAt) + ' · ' + st.early.name);
+    if (st.late && st.early !== st.late) lines.push('最后一次出发 · ' + fmtYMD(st.late.createdAt) + ' · ' + st.late.name);
+    if (!lines.length) lines.push('这一年没有更多之最，去徒步吧！');
+    st.lines = lines;
+    return st;
+}
+// ★2026-09-03 P3 定稿（用户示例版）：6 指标 3 列卡片；对比卡 = 去年划线值 + 今年值 + 增幅同排
+// 数值+单位（示例版式：大数字 18 + 小单位 次）
+function yrBig(num, unit) {
+    return '<span class="uv">' + num + '</span>' + (unit ? '<span class="us"> ' + unit + '</span>' : '');
+}
+// 卡片：lab + 值区（单版=数字行；对比版=去年划线/今年/增幅一行）
+function yrCard(lab, valHtml) {
+    return '<div class="yr-metric"><div class="lab">' + lab + '</div>' + valHtml + '</div>';
+}
+// 增幅文本（示例版式：次数/里程/平均用 %，山峰/用时用差值）
+function yrChgTxt(d, lastV, kind) {
+    if (Math.abs(d) < 1e-9) return '<span class="ychg flat">持平</span>';
+    var up = d > 0, absd = Math.abs(d);
+    var cls = up ? 'ychg' : 'ychg down';
+    if (kind === 'count' || kind === 'km') {
+        if (lastV > 0) return '<span class="' + cls + '">' + (up ? '+' : '-') + Math.round(absd / lastV * 100) + '%</span>';
+        return '<span class="ychg">新增</span>';
+    }
+    if (kind === 'peak') return '<span class="' + cls + '">' + (up ? '+' : '-') + Math.round(absd) + '</span>';
+    if (kind === 'dur') { // 用时差值：>=60 分钟折小时，否则分钟
+        var t = absd >= 60 ? (Math.round(absd / 60 * 10) / 10).toString().replace(/\.0$/, '') + 'h' : Math.round(absd) + 'm';
+        return '<span class="' + cls + '">' + (up ? '+' : '-') + t + '</span>';
+    }
+    if (kind === 'avg') {
+        if (lastV > 0) return '<span class="' + cls + '">' + (up ? '+' : '-') + Math.round(absd / lastV * 100) + '%</span>';
+        return '<span class="ychg">新增</span>';
+    }
+    return '';
+}
+// 去年划线值 + 今年值 + 增幅（同一行）
+function yrCmpVal(oldNum, curNum, curUnit, chgHtml) {
+    return '<div class="yvo"><span class="yold">' + oldNum + '</span>' + yrBig(curNum, curUnit) + (chgHtml || '') + '</div>';
+}
+// 用时拆「数字+单位」（>=1h 折小时一位小数；否则分钟）
+function yrDurParts(min) {
+    min = Number(min) || 0;
+    if (min >= 60) {
+        var h = Math.round(min / 60 * 10) / 10;
+        return { num: String(h).replace(/\.0$/, ''), unit: 'h' };
+    }
+    return { num: String(Math.round(min)), unit: 'min' };
+}
+// 单版 6 指标
+function yrGridSingle(st) {
+    var d = yrDurParts(st.min);
+    return '<div class="yr-grid">' +
+        yrCard('徒步次数', yrBig(st.n, '次')) +
+        yrCard('总里程', yrBig(st.km.toFixed(1), 'km')) +
+        yrCard('总用时', yrBig(d.num, d.unit)) +
+        yrCard('打卡山峰', yrBig(st.peaks, '座')) +
+        yrCard('平均里程', yrBig(st.avgKm.toFixed(1), 'km')) +
+        yrCard('最常去', yrBig(st.mostOften, '')) +
+        '</div>';
+}
+// 对比版 6 指标（去年划线值 + 今年 + 增幅）
+function yrGridCompare(cur, last) {
+    var dc = yrDurParts(cur.min), dl = yrDurParts(last.min);
+    var oldDurNum = dl.num, durChg = yrChgTxt(cur.min - last.min, last.min, 'dur');
+    // 平均里程 diff 小到 ±0.2km 内且 >5%? 直接用 pct
+    return '<div class="yr-grid">' +
+        yrCard('徒步次数', yrCmpVal(last.n, cur.n, '次', yrChgTxt(cur.n - last.n, last.n, 'count'))) +
+        yrCard('总里程', yrCmpVal(+(last.km.toFixed(1)), cur.km.toFixed(1), 'km', yrChgTxt(cur.km - last.km, last.km, 'km'))) +
+        yrCard('总用时', yrCmpVal(oldDurNum, dc.num, dc.unit, durChg)) +
+        yrCard('打卡山峰', yrCmpVal(last.peaks, cur.peaks, '座', yrChgTxt(cur.peaks - last.peaks, last.peaks, 'peak'))) +
+        yrCard('平均里程', yrCmpVal(+(last.avgKm.toFixed(1)), cur.avgKm.toFixed(1), 'km', yrChgTxt(cur.avgKm - last.avgKm, last.avgKm, 'avg'))) +
+        yrCard('最常去', yrBig(cur.mostOften, '')) +
+        '</div>';
+}
+// 文本面板（今年=年度之最；对比=一年小结·自然语言）
+function yrTabHtml(tt, body) {
+    return '<div class="yr-tab"><span class="tt">' + tt + '</span>' + body + '</div>';
+}
+// 一年小结自然语言生成（仿示例口吻，数据驱动）
+function yrSummaryText(cur, last) {
+    var y = cur.year;
+    var nd = cur.n - last.n, kmd = +(cur.km - last.km).toFixed(1), pd = cur.peaks - last.peaks;
+    var pos = [nd > 0, kmd > 0, pd > 0].filter(Boolean).length;
+    var neg = [nd < 0, kmd < 0, pd < 0].filter(Boolean).length;
+    if (last.n === 0) {
+        return y + ' 年第一次有了完整的足迹：走了 ' + cur.n + ' 次、' + cur.km.toFixed(1) + ' km，打卡 ' + cur.peaks + ' 座山，期待下一年继续出发。';
+    }
+    if (pos === 0 && neg === 0) {
+        return y + ' 年与去年几乎持平，节奏稳定本身就是一种坚持。';
+    }
+    var trend = pos >= 2 && neg === 0 ? '更勤快了'
+        : (pos >= 2 && neg === 1 ? '更有收获'
+            : (pos === 1 && neg === 2 ? '有些调整'
+                : (neg >= 2 && pos === 0 ? '比去年放缓了些' : '有增有减')));
+    var segs = [];
+    // 数据：次数/里程百分比
+    var np = last.n > 0 ? Math.round(nd / last.n * 100) : null;
+    var kp = last.km > 0 ? Math.round(kmd / last.km * 100) : null;
+    if (nd !== 0 && kmd !== 0 && np !== null && kp !== null && (nd > 0) === (kmd > 0)) {
+        segs.push('次数与里程分别 ' + (nd > 0 ? '+' : '') + np + '% / ' + (kmd > 0 ? '+' : '') + kp + '%');
+    } else {
+        if (nd !== 0 && np !== null) segs.push('次数' + (nd > 0 ? '+' : '') + np + '%');
+        if (kmd !== 0 && kp !== null) segs.push('里程' + (kmd > 0 ? '+' : '') + kp + '%');
+    }
+    if (pd > 0) segs.push('新解锁 ' + pd + ' 座山');
+    else if (pd < 0) segs.push('打卡山峰少了 ' + Math.abs(pd) + ' 座');
+    // 今年最活跃月（并列最高且连续 → X-Y 月）
+    if (cur.maxM >= 1) {
+        var ms = [];
+        cur.monthly.forEach(function (c, i) { if (c === cur.maxM) ms.push(i + 1); });
+        var act = ms.length > 1 && ms[ms.length - 1] - ms[0] === ms.length - 1
+            ? ms[0] + '-' + ms[ms.length - 1] + ' 月最活跃'
+            : ms[0] + ' 月最活跃';
+        segs.push(act);
+    }
+    // 常去对比
+    if (cur.mostOften !== '—') {
+        var curCnt = cur.nameCnt[cur.mostOften] || 0;
+        var lastCnt = last.nameCnt[cur.mostOften] || 0;
+        if (lastCnt > 0) {
+            var dd = curCnt - lastCnt;
+            segs.push('常去的还是 ' + cur.mostOften + (dd > 0 ? '，比去年多去 ' + dd + ' 次' : (dd < 0 ? '，比去年少去 ' + Math.abs(dd) + ' 次' : '')));
+        } else {
+            segs.push('今年常去 ' + cur.mostOften);
+        }
+    }
+    return y + ' 年' + trend + '：' + segs.join('；') + '。';
+}
+// ★2026-09-03 P3 定稿：对比版渲染（去年 = year-1；去年无数据由上层保证不进入）
+function renderYearCompare(year) {
+    var cur = calcYearStats(year);
+    var last = calcYearStats(year - 1);
+    if (!last.has) { // 兜底：切年份到某年而去年无数据 → 自动退回单版
+        yrSetCompare(false);
+        renderYearReview(year);
+        return;
+    }
+    var content = safeGetElementById('yearReviewContent');
+    if (!content) return;
+    var tabBody = yrTabHtml('一年小结 · 和去年比', yrSummaryText(cur, last));
+    content.innerHTML = yrGridCompare(cur, last) + tabBody;
 }
 function renderYearReview(year) {
     try {
@@ -2566,74 +2787,14 @@ function renderYearReview(year) {
         if (title) title.textContent = String(year);
         var content = safeGetElementById('yearReviewContent');
         if (!content) return;
-        var list = (records || []).filter(function (r) { return r && r.createdAt && new Date(r.createdAt).getFullYear() === year; });
-        if (!list.length) {
+        // ★2026-09-03 P3：对比开关点亮 → 切到「和去年比」对比版（去年无数据自动退回单版）
+        if (yrCompareOn) { renderYearCompare(year); return; }
+        var st = calcYearStats(year);
+        if (!st.has) {
             content.innerHTML = '<div class="yr-empty">' + year + ' 年还没留下徒步足迹<br>去「记录」页添加第一条吧</div>';
             return;
         }
-        var n = list.length;
-        var km = list.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
-        var min = list.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
-        var nameCnt = {};
-        list.forEach(function (r) { if (r.name) nameCnt[r.name] = (nameCnt[r.name] || 0) + 1; });
-        var maxName = null, maxCnt = 0;
-        Object.keys(nameCnt).forEach(function (k) { if (nameCnt[k] > maxCnt) { maxCnt = nameCnt[k]; maxName = k; } });
-        var maxEl = 0, maxElName = '';
-        list.forEach(function (r) { var e = Number(r.elevation) || 0; if (e > maxEl) { maxEl = e; maxElName = r.name; } });
-        var monthly = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        list.forEach(function (r) { monthly[new Date(r.createdAt).getMonth()]++; });
-        var maxM = Math.max.apply(null, monthly);
-        var monthsHtml = monthly.map(function (c, i) {
-            var h = c ? Math.max(6, Math.round(c / maxM * 62)) : 2;   // ★2026-09-03 柱高上限（容器 92px 配套）
-            return '<div class="yr-month" title="' + (i + 1) + ' 月 · ' + c + ' 次">' +
-                '<div class="cnt">' + (c ? c : '') + '</div>' +
-                '<div class="yr-bar' + (c ? '' : ' empty') + '" style="height:' + h + 'px;"></div>' +
-                '<div class="m">' + (i + 1) + '月</div></div>';
-        }).join('');
-        var farl = null, longl = null;
-        list.forEach(function (r) {
-            var d = Number(r.distance) || 0;
-            var m = Number(r.duration) || 0;
-            if (!farl || d > (Number(farl.distance) || 0)) farl = r;
-            if (!longl || m > (Number(longl.duration) || 0)) longl = r;
-        });
-        // ★2026-09-03 「最多同行」改为按同行人累计次数：只有 ≥2 次同行的才显示（全是不同人/无同行→整条去掉）
-        var companionCounts = {};
-        list.forEach(function (r) {
-            String(r.companions || '').split(/[,，、\s]+/).forEach(function (s) {
-                s = s.trim(); if (s) companionCounts[s] = (companionCounts[s] || 0) + 1;
-            });
-        });
-        var topCompanion = null, topCompanionCnt = 0;
-        Object.keys(companionCounts).forEach(function (k) {
-            if (companionCounts[k] > topCompanionCnt) { topCompanionCnt = companionCounts[k]; topCompanion = k; }
-        });
-        var sorted = list.slice().sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
-        var early = sorted[0], late = sorted[sorted.length - 1];
-        var lines = [];
-        if (farl && Number(farl.distance) > 0) lines.push('最远单程 · ' + farl.name + ' · ' + Number(farl.distance).toFixed(1) + ' km');
-        // ★2026-09-03 文案：最长一次 → 最时间？改为「最长时间」；最近一次 → 最后一次出发
-        if (longl && Number(longl.duration) > 0) lines.push('最长时间 · ' + longl.name + ' · ' + formatDuration(Number(longl.duration)));
-        if (maxEl > 0) lines.push('最高海拔 · ' + (maxElName || '') + ' · ' + maxEl + ' m');
-        if (maxName && maxCnt >= 2) lines.push('最常去 · ' + maxName + '（' + maxCnt + ' 次）');
-        if (topCompanion && topCompanionCnt >= 2) lines.push('最多同行 · ' + topCompanion + '（' + topCompanionCnt + ' 次）');
-        if (early) lines.push('第一次出发 · ' + fmtYMD(early.createdAt) + ' · ' + early.name);
-        if (late && early !== late) lines.push('最后一次出发 · ' + fmtYMD(late.createdAt) + ' · ' + late.name);
-        if (!lines.length) lines.push('这一年没有更多之最，去徒步吧！');
-        function metric(lab, val) { return '<div class="yr-metric"><div class="lab">' + lab + '</div><div class="val">' + val + '</div></div>'; }
-        // ★2026-09-03 网格第6格「最常去」按条件显示（所有山只去一次→显示「—」，避免误导）
-        var mostOftenVal = (maxName && maxCnt >= 2) ? maxName : '—';
-        content.innerHTML =
-            '<div class="yr-grid">' +
-            metric('徒步次数', n + ' 次') +
-            metric('总里程', km.toFixed(1) + ' km') +
-            metric('总用时', (formatDuration(min) || '0h')) +
-            metric('打卡山峰', Object.keys(nameCnt).length + ' 座') +
-            metric('平均里程', (km / n).toFixed(1) + ' km') +
-            metric('最常去', mostOftenVal) +
-            '</div>' +
-            '<div class="yr-block"><div class="yr-block-title"><span class="material-icons" style="font-size:15px;color:#4f46e5;">bar_chart</span>徒步节奏（按月）</div><div class="yr-months-panel"><div class="yr-months">' + monthsHtml + '</div></div></div>' +
-            '<div class="yr-block"><div class="yr-block-title"><span class="material-icons" style="font-size:15px;color:#4f46e5;">emoji_events</span>年度之最</div><div class="yr-lines">' + lines.join('<br>') + '</div></div>';
+        content.innerHTML = yrGridSingle(st) + yrTabHtml('年度之最', st.lines.join('<br>'));
     } catch (e) { /* 静默 */ }
 }
 function fmtYMD(t) {
@@ -2764,20 +2925,170 @@ function renderMountainBook() {
     wrap.innerHTML = html;
 }
 // 从山册记录定位到列表并直接打开该条编辑
+// ★2026-09-03 修复三个跳转 bug：
+//   ① 照片不显示——原实现漏了 editingPhotoIds 同步（photoThumbsHTML 用全局 editingPhotoIds 渲染，不是 record.photos），
+//      editingPhotoIds 停留上次取消编辑后的 [] → 照片区渲染成空加号框；现与 startEdit 一致先同步照片列表
+//   ② 错页——原用 records 存储顺序 findIndex 算页码，但渲染走 getSortedRecords()（默认 createdAt 倒序 + 年份分组），
+//      只要任一条记录改过日期/时间（编辑行可改）存储序就≠时间序 → 跳错页/找不到；现按渲染同一序计算
+//   ③ 看不见——切回列表后视口停在原滚动位置（山册可能滚到底），编辑行不在屏内像没跳转；现自动滚动定位到该条
 function openRecordById(id) {
     try {
-        var idx = (records || []).findIndex(function (r) { return r.id === id; });
-        if (idx < 0) return;
-        recordPage = Math.floor(idx / 10) + 1;
+        if (typeof records === 'undefined' || !records || !records.length) return;
+        // 按渲染同序（排序 + 搜索过滤后）定位
+        var list = (typeof getSortedRecords === 'function') ? getSortedRecords() : records;
+        var idx = list.findIndex(function (r) { return r.id === id; });
+        // 目标被搜索词滤掉（山册搜索可命中同伴/备注，列表过滤只看名称）：清空搜索词让该条可见（山册能看到的一定存在）
+        if (idx < 0 && (typeof searchQuery === 'string' && searchQuery.trim())) {
+            searchQuery = '';
+            var gsInp = safeGetElementById('globalSearchInput');
+            if (gsInp) gsInp.value = '';
+            var gsClr = safeGetElementById('globalSearchClear');
+            if (gsClr) gsClr.style.display = 'none';
+            list = (typeof getSortedRecords === 'function') ? getSortedRecords() : records;
+            idx = list.findIndex(function (r) { return r.id === id; });
+        }
+        if (idx < 0) return; // 记录已不存在
+        recordPage = Math.floor(idx / RECORD_PAGE_SIZE) + 1;
         if (typeof batchMode !== 'undefined' && batchMode) batchMode = false;
         if (typeof batchSelected !== 'undefined' && batchSelected && typeof batchSelected.clear === 'function') batchSelected.clear();
+        // ★修复①：先同步照片列表再渲染（与 startEdit 一致），否则照片区渲染成空加号框
+        var rec = records.find(function (r) { return r.id === id; });
+        if (typeof editingPhotoIds !== 'undefined') editingPhotoIds = (rec && rec.photos) ? rec.photos.slice() : [];
         if (typeof editingId !== 'undefined') editingId = id;
         recordsViewMode = 'list';
         try { localStorage.setItem('records_view_mode', 'list'); } catch (e) { /* 忽略 */ }
         applyRecordsView(); // 内部会 renderTable()（editingId 生效即打开编辑行）
+        // ★修复③：renderTable 走 requestAnimationFrame 异步渲染，轮询等该条照片行出现后滚动到屏幕中央
+        var tries = 0;
+        var scrollTimer = setInterval(function () {
+            tries++;
+            var el = safeGetElementById('row-' + id) || safeGetElementById('photo-row-' + id);
+            if (el && el.scrollIntoView) {
+                clearInterval(scrollTimer);
+                try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+                catch (e2) { try { el.scrollIntoView(); } catch (e3) { /* 忽略 */ } }
+            } else if (tries > 10) {
+                clearInterval(scrollTimer);
+            }
+        }, 100);
     } catch (e) { /* 静默 */ }
 }
 
+
+// ★2026-09-03 P0 从历史记录复制（方案定稿：点「＋添加」先弹选择卡；行内不再有复制条）：
+// 可复制的历史记录 = 有名字的记录
+function historyCopySources() {
+    return (records || []).filter(function (r) {
+        return r && r.name && String(r.name).trim();
+    });
+}
+// ★2026-09-03 P0 入口：点「＋添加」→ 有历史可复制则弹「添加」选择卡（最近记录单选填充 / 直接新建）
+// 无任何历史记录 → 直接进空白新建（原逻辑，不打扰）
+function handleAddRecordFlow() {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals(); // 防重入
+        var srcs = historyCopySources();
+        if (!srcs.length) { addNewRecord(); return; }
+        srcs = srcs.slice().sort(function (a, b) { return ((b.createdAt || '') < (a.createdAt || '')) ? -1 : 1; });
+        var diffMap = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
+        var items = srcs.map(function (r) {
+            var meta = [];
+            meta.push(diffMap[r.difficulty] || '');
+            var km = Number(r.distance) || 0, dur = Number(r.duration) || 0, el = Number(r.elevation) || 0;
+            if (km) meta.push(km.toFixed(1) + 'km');
+            if (dur) meta.push(formatDuration(dur));
+            if (el) meta.push(el + 'm');
+            return '<div class="hcm-item" data-id="' + r.id + '" role="button" tabindex="0">' +
+                '<div class="hcm-main"><div class="hcm-row1"><span class="hcm-name">' + escapeHtml(r.name) + '</span>' +
+                '<span class="hcm-date">' + fmtYMD(r.createdAt) + '</span></div>' +
+                '<div class="hcm-meta">' + escapeHtml(meta.join(' · ')) + '</div></div></div>';
+        }).join('');
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:400px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">add_circle_outline</span>添加徒步记录</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;margin-bottom:10px;">' +
+            '<div class="hcm-sub">从最近记录复制一条（日期与照片不会带），或直接新建空白</div>' +
+            '<div class="hcm-list" data-count="' + srcs.length + '">' + items + '</div></div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="hcm-new" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">直接新建</button>' +
+            '<button class="check-go-btn ripple-effect" id="hcm-ok" disabled style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">用这条填充</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+        var selId = null;
+        var listEl = modal.querySelector('.hcm-list');
+        function setSel(id) {
+            selId = id;
+            Array.prototype.forEach.call(listEl.querySelectorAll('.hcm-item'), function (it) {
+                it.classList.toggle('sel', it.getAttribute('data-id') === id);
+            });
+            var ok = modal.querySelector('#hcm-ok');
+            if (ok) ok.disabled = !selId;
+        }
+        function closeMdl() { if (modal.parentNode) modal.parentNode.removeChild(modal); }
+        listEl.addEventListener('click', function (e) {
+            var it = e.target.closest ? e.target.closest('.hcm-item') : null;
+            if (it) setSel(it.getAttribute('data-id'));
+        });
+        modal.querySelector('#hcm-new').addEventListener('click', function () {
+            closeMdl();
+            addNewRecord();
+        });
+        modal.querySelector('#hcm-ok').addEventListener('click', function () {
+            if (!selId) return;
+            closeMdl();
+            addRecordFromHistory(selId);
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeMdl(); });
+    } catch (e) { /* 静默 */ }
+}
+// ★2026-09-03 P0：从历史记录复制创建新记录（草稿日期=今天；日期/照片不复制，其余字段填入编辑行）
+function addRecordFromHistory(srcId) {
+    try {
+        var src = (records || []).find(function (r) { return r.id === srcId; });
+        if (!src) { addNewRecord(); return; }
+        addNewRecord(); // 顶部插入空白草稿并进入编辑（createdAt=今天）
+        var dstId = (typeof editingId !== 'undefined') ? editingId : null;
+        if (!dstId) return;
+        // 等 renderTable(RAF) 渲染出编辑行后再写值 + 高亮
+        setTimeout(function () {
+            applyCopyFillToForm(src, dstId);
+            markCopyFilled(dstId);
+            var el = safeGetElementById('photo-row-' + dstId);
+            if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e2) { /* 忽略 */ } }
+        }, 120);
+    } catch (e) { /* 静默 */ }
+}
+// 把源记录字段写入编辑行输入框（记录对象保持未保存，点「保存」才入库）
+function applyCopyFillToForm(src, dstId) {
+    if (!src || !dstId) return;
+    function setVal(prefix, v) {
+        var el = document.getElementById(prefix + dstId);
+        if (!el) return;
+        el.value = (v === undefined || v === null) ? '' : String(v);
+    }
+    setVal('edit-name-', src.name);
+    setVal('edit-elevation-', Number(src.elevation) || '');
+    var diffEl = document.getElementById('edit-difficulty-' + dstId);
+    if (diffEl) diffEl.value = String((typeof src.difficulty === 'number') ? src.difficulty : (parseInt(src.difficulty, 10) || 3));
+    setVal('edit-mood-', src.mood);
+    setVal('edit-weather-', src.weather);
+    setVal('edit-companions-', src.companions);
+    var dur = Number(src.duration) || 0;
+    setVal('edit-duration-h-', dur ? Math.floor(dur / 60) : '');
+    setVal('edit-duration-m-', dur ? dur % 60 : '');
+    setVal('edit-distance-', Number(src.distance) || '');
+}
+// 填充后：被带出字段常驻靛蓝描边（保存/取消/翻页重渲染后自然消失）
+function markCopyFilled(id) {
+    try {
+        if (!id) return;
+        ['edit-name-', 'edit-elevation-', 'edit-difficulty-', 'edit-mood-', 'edit-weather-', 'edit-companions-', 'edit-duration-h-', 'edit-duration-m-', 'edit-distance-'].forEach(function (p) {
+            var el = document.getElementById(p + id);
+            if (el) el.classList.add('copy-filled');
+        });
+    } catch (e) { /* 静默 */ }
+}
 
 // ★2026-08-25 计划日期提醒：启动时检查未完成计划
 // ★2026-09-02 改：今天+未来 3 天照旧提醒；计划过期（最近 3 天内）独立提醒，同一天不重复（不再被今天计划盖住，也不轰炸）
