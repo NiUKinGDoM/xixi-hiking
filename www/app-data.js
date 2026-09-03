@@ -86,7 +86,10 @@ function initGlobalSearch() {
         if (clear) clear.style.display = searchQuery ? 'inline-flex' : 'none';
         clearTimeout(searchHideTimer); // 打字时取消自动消失计时器
         setBarVisible(true); // 输入时常显
-        if (currentTabId === 'records') { recordPage = 1; renderTable(); }
+        if (currentTabId === 'records') {
+            if (typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') renderMountainBook(); // ★2026-09-03 山册模式按山名实时过滤
+            else { recordPage = 1; renderTable(); }
+        }
         else if (currentTabId === 'plans') {
             if (plansViewMode === 'calendar') {
                 // ★2026-08-31 日历模式搜索：定位到匹配计划的日历日期并标记
@@ -231,7 +234,11 @@ function initGlobalSearch() {
             calendarViewYear = now.getFullYear();
             calendarViewMonth = now.getMonth();
         }
-        if (currentTabId === 'records') { recordPage = 1; renderTable(); }
+        // ★2026-09-03 山册模式清空搜索：同样要重渲染山册（原只 renderTable 渲染隐藏列表，山册残留过滤结果不还原）
+        if (currentTabId === 'records') {
+            if (typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') renderMountainBook();
+            else { recordPage = 1; renderTable(); }
+        }
         else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
     });
     // 搜索框内回车/失焦不收起（保持简单）；供 switchTab 切页时清空
@@ -2505,7 +2512,275 @@ function renderCalDayDetail(key) {
 
 let renderPlannedTripsTableRAF = null;
 
-// ★2026-08-25 计划日期提醒：启动时检查未完成计划；★规则：今天有→弹今天（过期忽略）；无今天有过期→弹「计划未完成」；未来 3 天内按 明天/后天/大后天 分组提示
+// ★2026-09-02 年度回顾（独立全屏页）：概览入口打开 + 每年 1/1 自动展示（回顾上一年）
+var yearReviewYear = null;
+function initYearReview() {
+    try {
+        var openBtn = safeGetElementById('yearReviewOpenBtn');
+        if (openBtn) openBtn.addEventListener('click', function () { openYearReview(null); });
+        var closeBtn = safeGetElementById('yearReviewCloseBtn');
+        if (closeBtn) closeBtn.addEventListener('click', closeYearReview);
+        var mask = safeGetElementById('yearReviewMask');
+        if (mask) mask.addEventListener('click', closeYearReview);
+        var prev = safeGetElementById('yearPrevBtn');
+        if (prev) prev.addEventListener('click', function () { if (yearReviewYear != null) renderYearReview(yearReviewYear - 1); });
+        var next = safeGetElementById('yearNextBtn');
+        if (next) next.addEventListener('click', function () { if (yearReviewYear != null) renderYearReview(yearReviewYear + 1); });
+        // ★每年 1/1 自动展示上一年的年度回顾；同一年只自动弹一次（不打扰）
+        var now = new Date();
+        if (now.getMonth() === 0 && now.getDate() === 1) {
+            var lastY = now.getFullYear() - 1;
+            try {
+                if (localStorage.getItem('hiking_yr_auto_' + lastY) === '1') return;
+                localStorage.setItem('hiking_yr_auto_' + lastY, '1');
+            } catch (e) { /* 存储失败仍展示一次 */ }
+            setTimeout(function () { openYearReview(lastY); }, 1200);
+        }
+    } catch (e) { /* 静默 */ }
+}
+function openYearReview(year) {
+    try {
+        var panel = safeGetElementById('yearReviewPanel');
+        if (!panel) return;
+        if (typeof closeOpenModals === 'function') closeOpenModals();
+        var target = year;
+        if (target == null) {
+            var years = {};
+            (records || []).forEach(function (r) { if (r && r.createdAt) { var y = new Date(r.createdAt).getFullYear(); if (!isNaN(y)) years[y] = 1; } });
+            var ks = Object.keys(years).map(Number).sort(function (a, b) { return b - a; });
+            var thisY = new Date().getFullYear();
+            target = ks.length ? (ks.indexOf(thisY) >= 0 ? thisY : ks[0]) : (thisY - 1);
+        }
+        panel.style.display = 'flex';
+        renderYearReview(target);
+    } catch (e) { /* 静默 */ }
+}
+function closeYearReview() {
+    var panel = safeGetElementById('yearReviewPanel');
+    if (panel) panel.style.display = 'none';
+}
+function renderYearReview(year) {
+    try {
+        yearReviewYear = year;
+        var title = safeGetElementById('yearReviewYear');
+        if (title) title.textContent = String(year);
+        var content = safeGetElementById('yearReviewContent');
+        if (!content) return;
+        var list = (records || []).filter(function (r) { return r && r.createdAt && new Date(r.createdAt).getFullYear() === year; });
+        if (!list.length) {
+            content.innerHTML = '<div class="yr-empty">' + year + ' 年还没留下徒步足迹<br>去「记录」页添加第一条吧</div>';
+            return;
+        }
+        var n = list.length;
+        var km = list.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
+        var min = list.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
+        var nameCnt = {};
+        list.forEach(function (r) { if (r.name) nameCnt[r.name] = (nameCnt[r.name] || 0) + 1; });
+        var maxName = null, maxCnt = 0;
+        Object.keys(nameCnt).forEach(function (k) { if (nameCnt[k] > maxCnt) { maxCnt = nameCnt[k]; maxName = k; } });
+        var maxEl = 0, maxElName = '';
+        list.forEach(function (r) { var e = Number(r.elevation) || 0; if (e > maxEl) { maxEl = e; maxElName = r.name; } });
+        var monthly = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        list.forEach(function (r) { monthly[new Date(r.createdAt).getMonth()]++; });
+        var maxM = Math.max.apply(null, monthly);
+        var monthsHtml = monthly.map(function (c, i) {
+            var h = c ? Math.max(6, Math.round(c / maxM * 62)) : 2;   // ★2026-09-03 柱高上限（容器 92px 配套）
+            return '<div class="yr-month" title="' + (i + 1) + ' 月 · ' + c + ' 次">' +
+                '<div class="cnt">' + (c ? c : '') + '</div>' +
+                '<div class="yr-bar' + (c ? '' : ' empty') + '" style="height:' + h + 'px;"></div>' +
+                '<div class="m">' + (i + 1) + '月</div></div>';
+        }).join('');
+        var farl = null, longl = null;
+        list.forEach(function (r) {
+            var d = Number(r.distance) || 0;
+            var m = Number(r.duration) || 0;
+            if (!farl || d > (Number(farl.distance) || 0)) farl = r;
+            if (!longl || m > (Number(longl.duration) || 0)) longl = r;
+        });
+        // ★2026-09-03 「最多同行」改为按同行人累计次数：只有 ≥2 次同行的才显示（全是不同人/无同行→整条去掉）
+        var companionCounts = {};
+        list.forEach(function (r) {
+            String(r.companions || '').split(/[,，、\s]+/).forEach(function (s) {
+                s = s.trim(); if (s) companionCounts[s] = (companionCounts[s] || 0) + 1;
+            });
+        });
+        var topCompanion = null, topCompanionCnt = 0;
+        Object.keys(companionCounts).forEach(function (k) {
+            if (companionCounts[k] > topCompanionCnt) { topCompanionCnt = companionCounts[k]; topCompanion = k; }
+        });
+        var sorted = list.slice().sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
+        var early = sorted[0], late = sorted[sorted.length - 1];
+        var lines = [];
+        if (farl && Number(farl.distance) > 0) lines.push('最远单程 · ' + farl.name + ' · ' + Number(farl.distance).toFixed(1) + ' km');
+        // ★2026-09-03 文案：最长一次 → 最时间？改为「最长时间」；最近一次 → 最后一次出发
+        if (longl && Number(longl.duration) > 0) lines.push('最长时间 · ' + longl.name + ' · ' + formatDuration(Number(longl.duration)));
+        if (maxEl > 0) lines.push('最高海拔 · ' + (maxElName || '') + ' · ' + maxEl + ' m');
+        if (maxName && maxCnt >= 2) lines.push('最常去 · ' + maxName + '（' + maxCnt + ' 次）');
+        if (topCompanion && topCompanionCnt >= 2) lines.push('最多同行 · ' + topCompanion + '（' + topCompanionCnt + ' 次）');
+        if (early) lines.push('第一次出发 · ' + fmtYMD(early.createdAt) + ' · ' + early.name);
+        if (late && early !== late) lines.push('最后一次出发 · ' + fmtYMD(late.createdAt) + ' · ' + late.name);
+        if (!lines.length) lines.push('这一年没有更多之最，去徒步吧！');
+        function metric(lab, val) { return '<div class="yr-metric"><div class="lab">' + lab + '</div><div class="val">' + val + '</div></div>'; }
+        // ★2026-09-03 网格第6格「最常去」按条件显示（所有山只去一次→显示「—」，避免误导）
+        var mostOftenVal = (maxName && maxCnt >= 2) ? maxName : '—';
+        content.innerHTML =
+            '<div class="yr-grid">' +
+            metric('徒步次数', n + ' 次') +
+            metric('总里程', km.toFixed(1) + ' km') +
+            metric('总用时', (formatDuration(min) || '0h')) +
+            metric('打卡山峰', Object.keys(nameCnt).length + ' 座') +
+            metric('平均里程', (km / n).toFixed(1) + ' km') +
+            metric('最常去', mostOftenVal) +
+            '</div>' +
+            '<div class="yr-block"><div class="yr-block-title"><span class="material-icons" style="font-size:15px;color:#4f46e5;">bar_chart</span>徒步节奏（按月）</div><div class="yr-months-panel"><div class="yr-months">' + monthsHtml + '</div></div></div>' +
+            '<div class="yr-block"><div class="yr-block-title"><span class="material-icons" style="font-size:15px;color:#4f46e5;">emoji_events</span>年度之最</div><div class="yr-lines">' + lines.join('<br>') + '</div></div>';
+    } catch (e) { /* 静默 */ }
+}
+function fmtYMD(t) {
+    try {
+        var d = new Date(t);
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    } catch (e) { return ''; }
+}
+
+// ★2026-09-02 记录页「列表 / 山册」双视图（同计划页日历/列表切换模式；切换键在记录页添加按钮右侧）
+var recordsViewMode = 'list';
+try { recordsViewMode = localStorage.getItem('records_view_mode') || 'list'; } catch (e) { /* 默认列表 */ }
+function initRecordsView() {
+    var btn = safeGetElementById('recordsViewToggleBtn');
+    if (btn) btn.addEventListener('click', function () {
+        // ★2026-09-03 全链路 try：任何一步抛错都不能让视图停在中间态（用户报过「点两次才切换」= 首次点击中断）
+        try {
+            recordsViewMode = recordsViewMode === 'list' ? 'mountain' : 'list';
+            try { localStorage.setItem('records_view_mode', recordsViewMode); } catch (e) { /* 忽略 */ }
+            if (typeof batchMode !== 'undefined' && batchMode) { try { exitBatchMode(); } catch (e) { /* 忽略 */ } }
+            applyRecordsView();
+        } catch (e) {
+            // 兜底：异常也要保证视图与状态一致（先显隐、后内容渲染，异常只丢内容不丢切换）
+            try { applyRecordsView(); } catch (e2) { /* 忽略 */ }
+        }
+    });
+    var wrap = safeGetElementById('mountainBookView');
+    if (wrap) wrap.addEventListener('click', function (e) {
+        var head = e.target.closest ? e.target.closest('.mb-head') : null;
+        if (head) { var card = head.closest('.mb-card'); if (card) card.classList.toggle('open'); return; }
+        var che = e.target.closest ? e.target.closest('.mb-che') : null;
+        if (che) { openRecordById(che.getAttribute('data-id')); }
+    });
+}
+function applyRecordsView() {
+    var isMb = recordsViewMode === 'mountain';
+    var lv = safeGetElementById('recordsListViewWrap'); // 列表整体（表格+分页+批量条）
+    var mb = safeGetElementById('mountainBookView');
+    var icon = safeGetElementById('recordsViewToggleIcon');
+    var bBtn = safeGetElementById('batchModeBtn');
+    var aBtn = safeGetElementById('addBtn');
+    // ★2026-09-03 先完成显隐与图标（视图切换主视觉），内容渲染放 try——渲染异常只丢卡片不丢切换
+    if (isMb) {
+        if (lv) lv.style.display = 'none';
+        if (bBtn) bBtn.style.display = 'none';
+        if (aBtn) aBtn.style.display = 'none';
+        if (mb) mb.style.display = '';
+        if (icon) icon.textContent = 'view_list';
+        if (mb) { try { renderMountainBook(); } catch (e) { mb.innerHTML = '<div class="yr-empty">山册生成失败，请稍后重试</div>'; } }
+    } else {
+        if (lv) lv.style.display = '';
+        if (mb) mb.style.display = 'none';
+        if (bBtn) bBtn.style.display = 'inline-flex';
+        if (aBtn) aBtn.style.display = 'inline-flex';
+        if (icon) icon.textContent = 'landscape';
+        try { if (typeof renderTable === 'function') renderTable(); } catch (e) { /* 渲染异常不影响切换 */ }
+    }
+    var btn = safeGetElementById('recordsViewToggleBtn');
+    if (btn) btn.title = isMb ? '切回记录列表' : '查看我的山册';
+    // ★2026-09-03 搜索框提示随视图切换（山册 = 搜山名）
+    var gs = safeGetElementById('globalSearchInput');
+    if (gs) gs.placeholder = isMb ? '搜索山峰…' : '搜索记录…';
+}
+// ★2026-09-02 山册渲染：按记录名（山）聚合卡片；点卡片头展开这座山的记录；点记录右侧 ↗ 定位打开
+// ★2026-09-03 支持全局搜索词（方案A搜索框）：按山名实时过滤卡片；无匹配显示空态（与列表空态同文案逻辑）
+function renderMountainBook() {
+    var wrap = safeGetElementById('mountainBookView');
+    if (!wrap) return;
+    var list = (records || []).filter(function (r) { return r && r.name && String(r.name).trim(); });
+    var q = (typeof searchQuery === 'string' && searchQuery.trim()) ? searchQuery.trim().toLowerCase() : '';
+    if (!list.length) {
+        wrap.innerHTML = '<div class="yr-empty">还没有任何记录<br>去「列表」添加第一条，山册会自动在这里汇总</div>';
+        return;
+    }
+    var diffName = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
+    var groups = {};
+    list.forEach(function (r) {
+        var k = String(r.name).trim();
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(r);
+    });
+    var keys = Object.keys(groups).filter(function (k) {
+        if (!q) return true;
+        if (k.toLowerCase().indexOf(q) >= 0) return true;
+        // 山名本身没匹配时，再翻这座山的所有记录（同伴/备注等字段也可能命中）
+        return groups[k].some(function (r) {
+            return String(r.companions || '').toLowerCase().indexOf(q) >= 0 ||
+                String(r.notes || '').toLowerCase().indexOf(q) >= 0;
+        });
+    }).sort(function (a, b) {
+        if (groups[b].length !== groups[a].length) return groups[b].length - groups[a].length;
+        return (groups[b][0].createdAt || '') < (groups[a][0].createdAt || '') ? -1 : 1;
+    });
+    if (q && !keys.length) {
+        wrap.innerHTML = '<div class="yr-empty">' + (window.__isComposing ? '正在输入…' : '没有找到匹配的山，换个词试试') + '</div>';
+        return;
+    }
+    function statCell(v, l) { return '<div><div class="sv">' + v + '</div><div class="sl">' + l + '</div></div>'; }
+    function cmpSet(c) {
+        var out = {}, n = 0;
+        String(c || '').split(/[,，、\s]+/).forEach(function (s) { s = s.trim(); if (s && !out[s]) { out[s] = 1; n++; } });
+        return Object.keys(out).slice(0, 3);
+    }
+    var html = keys.map(function (k) {
+        var arr = groups[k];
+        var sorted = arr.slice().sort(function (x, y) { return (x.createdAt || '') < (y.createdAt || '') ? -1 : 1; });
+        var n = arr.length;
+        var km = arr.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
+        var min = arr.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
+        var el = arr.reduce(function (m, r) { return Math.max(m, Number(r.elevation) || 0); }, 0);
+        var avgD = Math.round(arr.reduce(function (s, r) { return s + (Number(r.difficulty) || 0); }, 0) / n);
+        var comp = [];
+        var seen = {};
+        arr.forEach(function (r) { cmpSet(r.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } }); });
+        // ★2026-09-03 展开行精简：整卡已是这座山，行内只保留记录时间 + 打开箭头（去掉重复山名/难度/用时/里程）
+        var rows = sorted.map(function (r) {
+            return '<div class="mb-record"><span class="mb-date">' + (fmtYMD(r.createdAt) || '') + '</span>' +
+                '<span class="mb-che" data-id="' + r.id + '" title="打开这条记录"><span class="material-icons" style="font-size:16px;">open_in_new</span></span></div>';
+        }).join('');
+        return '<div class="mb-card"><div class="mb-head"><span class="mb-name">' + escapeHtml(k) + '</span>' +
+            '<span class="mb-badge">去过 ' + n + ' 次</span><span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div>' +
+            '<div class="mb-stat">' +
+            statCell(n + ' 次', '累计') + statCell(km ? km.toFixed(1) + 'km' : '—', '总里程') +
+            statCell(min ? formatDuration(min) : '—', '总用时') + statCell(el ? el + 'm' : '—', '最高海拔') +
+            statCell(diffName[avgD] || '—', '平均难度') + statCell(comp.length ? comp.join('/') : '—', '一起走过') +
+            '</div><div class="mb-records">' + rows + '</div></div>';
+    }).join('');
+    wrap.innerHTML = html;
+}
+// 从山册记录定位到列表并直接打开该条编辑
+function openRecordById(id) {
+    try {
+        var idx = (records || []).findIndex(function (r) { return r.id === id; });
+        if (idx < 0) return;
+        recordPage = Math.floor(idx / 10) + 1;
+        if (typeof batchMode !== 'undefined' && batchMode) batchMode = false;
+        if (typeof batchSelected !== 'undefined' && batchSelected && typeof batchSelected.clear === 'function') batchSelected.clear();
+        if (typeof editingId !== 'undefined') editingId = id;
+        recordsViewMode = 'list';
+        try { localStorage.setItem('records_view_mode', 'list'); } catch (e) { /* 忽略 */ }
+        applyRecordsView(); // 内部会 renderTable()（editingId 生效即打开编辑行）
+    } catch (e) { /* 静默 */ }
+}
+
+
+// ★2026-08-25 计划日期提醒：启动时检查未完成计划
+// ★2026-09-02 改：今天+未来 3 天照旧提醒；计划过期（最近 3 天内）独立提醒，同一天不重复（不再被今天计划盖住，也不轰炸）
 function checkPlannedTripReminders() {
     try {
         var now = new Date();
@@ -2517,20 +2792,31 @@ function checkPlannedTripReminders() {
             if (isNaN(d.getTime())) return;
             var day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
             var diff = Math.round((day - today) / 86400000);
-            if (diff < 0) overdue.push(t.name);
+            if (diff < 0) overdue.push({ name: t.name, diff: diff });
             else if (diff === 0) todayList.push(t.name);
             else if (diff === 1) tomorrowList.push(t.name);
             else if (diff === 2) dayAfterList.push(t.name);
             else if (diff === 3) thirdDayList.push(t.name);
         });
-        // ★2026-08-25 今天 + 未来 3 天合并成一条（不重叠）；仅无任何计划时弹过期
+        // 今天 + 未来 3 天合并成一条（不重叠）
         var parts = [];
         if (todayList.length) parts.push('今天有徒步计划：' + todayList.join('、'));
         if (tomorrowList.length) parts.push('明天有徒步计划：' + tomorrowList.join('、'));
         if (dayAfterList.length) parts.push('后天有徒步计划：' + dayAfterList.join('、'));
         if (thirdDayList.length) parts.push('大后天有徒步计划：' + thirdDayList.join('、'));
-        if (parts.length) showSystemNotification('徒步计划提醒', parts.join(' · ')); // ★2026-08-30 系统通知（网页版降级 toast）
-        else if (overdue.length) showSystemNotification('徒步计划未完成', '计划未完成：' + overdue.join('、'));
+        if (parts.length) { showSystemNotification('徒步计划提醒', parts.join(' · ')); return; }
+        // ★2026-09-02 计划过期提醒：只提最近 3 天内过期的（太久远的不轰炸）；同一天不重复
+        var recent = overdue.filter(function (o) { return o.diff >= -3; });
+        if (recent.length) {
+            var todayStr = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+            try {
+                if (localStorage.getItem('hiking_overdue_remind_date') === todayStr) return;
+                localStorage.setItem('hiking_overdue_remind_date', todayStr);
+            } catch (e) { /* 存储失败仍提醒 */ }
+            var tag = { '-1': '昨天', '-2': '前天', '-3': '3 天前' };
+            var label = recent.map(function (o) { return o.name + '（' + (tag[o.diff] || Math.abs(o.diff) + ' 天前') + '）'; }).join('、');
+            showSystemNotification('徒步计划已过期', '还没去：' + label + '。可以去完成或删除');
+        }
     } catch (e) { /* 静默 */ }
 }
 
