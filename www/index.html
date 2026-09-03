@@ -514,24 +514,7 @@
         .dark-mode .confirm-modal {
             background: rgba(0, 0, 0, 0.7) !important;
         }
-        
-        /* 深色模式下的滚动条样式 */
-        .dark-mode ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .dark-mode ::-webkit-scrollbar-track {
-            background: rgba(55, 65, 81, 0.3);
-        }
-        
-        .dark-mode ::-webkit-scrollbar-thumb {
-            background: rgba(75, 85, 99, 0.3);
-            border-radius: 4px;
-        }
-        
-        .dark-mode ::-webkit-scrollbar-thumb:hover {
-            background: rgba(75, 85, 99, 0.45);
-        }
+        /* ★2026-09-03 深色滚动条已统一到「24. 滚动条玻璃质感」段（body.dark-mode 规则），此处旧灰轨道样式已删 */
         
         /* 深色模式下的选择框样式
            ★2026-08-10 修复 v2：用户反馈夜间模式难度下拉框双箭头 + 箭头不可见。
@@ -1114,9 +1097,12 @@
         .sync-status-time {
             margin-top: 10px;
             padding-top: 10px;
-            border-top: 1px dashed rgba(100, 116, 139, 0.07);
+            border-top: 1px dashed rgba(100, 116, 139, 0.4);   /* ★2026-09-03 弹窗内虚线加深（原 0.07 看不见） */
             color: inherit;   /* ★v1.1.2.6 跟随主题：原固定 #64748b 浅色偏淡/深色看不清 */
             font-size: 13px;
+        }
+        body.dark-mode .sync-status-time {
+            border-top-color: rgba(148, 163, 184, 0.45);
         }
         .sync-config-toggle-btn {
             display: flex;
@@ -1266,6 +1252,60 @@
             color: #a5b4fc;
         }
 /* ========== 设置页 - 数据同步（WebDAV） ========== */
+        /* ★2026-09-03 P1 同步健康行：玻璃格 + 状态圆点（绿/黄/红/灰），点击弹原状态弹窗 */
+        /* ★2026-09-03 P1 同步健康行（融合进「自动同步」卡底部子行）：虚线分隔（加深可见）+ 状态圆点 + 点击引导/详情 */
+        .sync-health-inline {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            padding: 9px 16px 13px;
+            box-sizing: border-box;
+            border-top: 1px dashed rgba(100, 116, 139, 0.5);   /* ★2026-09-03 虚线加深（原 0.28 太淡） */
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            transition: background-color 0.15s ease;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        body.dark-mode .sync-health-inline {
+            border-top-color: rgba(148, 163, 184, 0.4);
+        }
+        .sync-health-inline:active {
+            background: rgba(148, 163, 184, 0.1);
+        }
+        body.dark-mode .sync-health-inline:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .sync-health-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #94a3b8;
+            flex-shrink: 0;
+        }
+        .sync-health-text {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        body.dark-mode .sync-health-text {
+            color: #cbd5e1;
+        }
+        .sync-health-arrow {
+            font-size: 15px;
+            color: rgba(100, 116, 139, 0.6);
+            flex-shrink: 0;
+        }
+        body.dark-mode .sync-health-arrow {
+            color: rgba(148, 163, 184, 0.65);
+        }
         .sync-config-item {
             margin-bottom: 12px;
         }
@@ -1300,11 +1340,6 @@
         }
         body.dark-mode .sync-config-label {
             color: rgba(255, 255, 255, 0.55);
-        }
-        body.dark-mode #syncGuideHint {
-            background: rgba(99, 102, 241, 0.14);
-            border-color: rgba(129, 140, 248, 0.3);
-            color: #c7d2fe;
         }
         body.dark-mode .sync-config-toggle-btn {
             color: #cbd5e1;   /* ★v1.1.2.7 深色适配 */
@@ -2851,30 +2886,51 @@
             }
         }
         
-        /* 24. 滚动条美化动画 */
+        /* 24. 滚动条玻璃质感（★2026-09-03：透明轨道 + 半透明灰蓝滑块，同 restore-file-list 玻璃语言，深浅自适应） */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         
         ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 4px;
-            transition: background 0.3s ease;
-        }
-        
-        ::-webkit-scrollbar-track:hover {
-            background: rgba(0, 0, 0, 0.1);
+            background: transparent;
         }
         
         ::-webkit-scrollbar-thumb {
-            background: rgba(102, 126, 234, 0.15);
+            background: rgba(100, 116, 139, 0.35);
             border-radius: 4px;
-            transition: background-color 0.3s ease; /* 2026-08-11 3条优化：只过渡 hover 的背景色 */
+            transition: background-color 0.3s ease;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(118, 75, 162, 0.3);
+            background: rgba(100, 116, 139, 0.55);
+        }
+        
+        ::-webkit-scrollbar-thumb:active {
+            background: rgba(100, 116, 139, 0.7);
+        }
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.28);
+        }
+        body.dark-mode ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.45);
+        }
+        /* Firefox：同款细玻璃滚动条 */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+        }
+        body.dark-mode * {
+            scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+        }
+        /* ★2026-09-03 小弹窗内滚动容器：同玻璃滑块色，收窄 6px 更精致（thumb/track 继承全局玻璃） */
+        .confirm-modal-content::-webkit-scrollbar,
+        .confirm-modal-message::-webkit-scrollbar,
+        .hcm-list::-webkit-scrollbar,
+        .yr-body::-webkit-scrollbar,
+        .sync-config-collapse::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
         
         /* 25. 页面过渡动画 */
@@ -3479,7 +3535,7 @@
             background: rgba(255, 255, 255, 0.32);
             border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 16px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;   /* ★2026-09-03 每座山之间留间距，收起态一排排更透气 */
             overflow: hidden;
         }
         body.dark-mode .mb-card {
@@ -3490,7 +3546,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 12px 14px;
+            padding: 14px 16px;   /* ★2026-09-03 名称行更高挑（12/14 → 14/16） */
             cursor: pointer;
             transition: background-color 0.15s ease;
         }
@@ -3523,10 +3579,13 @@
             color: #a5b4fc;
         }
         .mb-stat {
-            display: flex;
+            display: none;   /* ★2026-09-03 收起态只留一排名称，统计信息随展开一起显示 */
             gap: 0;
             border-top: 1px solid rgba(148, 163, 184, 0.16);
             padding: 10px 6px;
+        }
+        .mb-card.open .mb-stat {
+            display: flex;
         }
         .mb-stat > div {
             flex: 1;
@@ -3546,56 +3605,79 @@
             color: #94a3b8;
             margin-top: 1px;
         }
-        .mb-records {
+        /* ★2026-09-03 P0 山册照片回忆：展开某座山看这座山全部照片（横排滑动，点照片进灯箱） */
+        .mb-photos {
             display: none;
             border-top: 1px solid rgba(148, 163, 184, 0.16);
-            padding: 6px 14px 10px;
+            padding: 10px 14px 2px;
         }
-        .mb-card.open .mb-records {
+        .mb-card.open .mb-photos {
             display: block;
         }
-        .mb-record {
+        .mb-photos-head {
             display: flex;
-            align-items: center;
+            align-items: baseline;
             gap: 8px;
-            padding: 7px 2px;
-            font-size: 13px;
-            border-bottom: 1px dashed rgba(148, 163, 184, 0.14);
+            margin-bottom: 6px;
+        }
+        .mb-photos-tt {
+            font-size: 12px;
+            font-weight: 600;
             color: #475569;
+            flex-shrink: 0;
         }
-        .mb-record:last-child {
-            border-bottom: none;
-        }
-        body.dark-mode .mb-record {
+        body.dark-mode .mb-photos-tt {
             color: #cbd5e1;
         }
-        .mb-record .mb-date {
-            color: #64748b;
-            font-variant-numeric: tabular-nums;
-            flex-shrink: 0;
-            font-size: 12px;
-        }
-        body.dark-mode .mb-record .mb-date {
+        .mb-photos-cnt {
+            font-size: 11px;
             color: #94a3b8;
+            white-space: nowrap;   /* ★2026-09-03 日期含年份后防换行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
-        .mb-record .mb-che {
+        body.dark-mode .mb-photos-cnt {
+            color: #64748b;
+        }
+        .mb-photos-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
+        .mbp-item {
+            position: relative;
+            flex: 0 0 76px;
+            width: 76px;
+            height: 76px;
+            border-radius: 10px;
+            overflow: hidden;
             cursor: pointer;
+            background: rgba(148, 163, 184, 0.16);
+            border: 1px solid rgba(148, 163, 184, 0.28);
             flex-shrink: 0;
-            margin-left: auto;   /* ★2026-09-03 行内只剩日期+箭头，箭头靠右 */
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            border-radius: 7px;
-            color: #64748b;
         }
-        .mb-record .mb-che:active {
-            background: rgba(148, 163, 184, 0.18);
+        .mbp-item:active {
+            opacity: 0.8;
         }
-        body.dark-mode .mb-record .mb-che {
-            color: #94a3b8;
+        body.dark-mode .mbp-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
         }
+        .mbp-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #e2e8f0;
+        }
+        body.dark-mode .mbp-item img {
+            background: #1e293b;
+        }
+        /* ★2026-09-03 记录行（时间+↗）与照片角标已按用户要求删除：日期只在照片带标题「N 张 · MM-DD」汇总 */
         .mb-open-arrow {
             margin-left: auto;
             color: #94a3b8;
@@ -5369,38 +5451,31 @@
                     <button id="syncDemoBtn" style="display:none;margin-top:8px;width:100%;padding:8px 10px;border-radius:10px;font-size:12px;background:rgba(99,102,241,0.08);border:1px dashed rgba(99,102,241,0.35);color:#4f46e5;cursor:pointer;" data-testid="sync-demo-button">
                         🧪 弹窗示例：管理云端备份（网页预览）
                     </button>
-                    <!-- 2026-08-21 v1.1.2.1 照片占用恢复独立一行（导出诊断已并入导出弹窗） -->
-                    <div class="settings-item" style="border-radius: 12px; margin-top: 10px; cursor: default;">
-                        <div class="settings-item-icon">
-                            <span class="material-icons" style="font-size: 20px;">photo_library</span>
+                    <!-- ★2026-09-03 自动同步 + 同步健康行融合：开关行下方同卡嵌健康状态子行（未配置=引导/已配置=距上次同步），点击未配置展开配置、已配置弹状态 -->
+                    <div id="autoSyncCard" class="settings-item" style="border-radius: 12px; flex-wrap: wrap; padding: 0; align-items: stretch; gap: 0; margin-top: 10px;">  <!-- ★2026-09-03 gap:0 去掉 settings-item 默认 12px（否则两子行之间拉开空隙）；margin-top:10 与上方示例按钮分离不贴边 -->
+                        <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px 10px;">
+                            <div class="settings-item-icon">
+                                <span class="material-icons" style="font-size: 20px;">autorenew</span>
+                            </div>
+                            <div class="settings-item-text">
+                                <div class="settings-item-title">自动同步</div>
+                                <div class="settings-item-desc">数据变更后自动上传备份（防丢失）</div>
+                            </div>
+                            <label class="settings-switch">
+                                <input type="checkbox" id="syncAutoToggle">
+                                <span class="switch-slider"></span>
+                            </label>
                         </div>
-                        <div class="settings-item-text">
-                            <div class="settings-item-title">照片占用</div>
-                            <div class="settings-item-desc" id="photoUsageDesc">统计中…</div>
+                        <div id="syncHealthRow" class="sync-health-inline" data-testid="sync-health-row" title="同步状态">
+                            <span id="syncHealthDot" class="sync-health-dot"></span>
+                            <span id="syncHealthText" class="sync-health-text">同步状态计算中…</span>
+                            <span class="material-icons sync-health-arrow">chevron_right</span>
                         </div>
-                    </div>
-                    <div class="settings-item" style="border-radius: 12px;">
-                        <div class="settings-item-icon">
-                            <span class="material-icons" style="font-size: 20px;">autorenew</span>
-                        </div>
-                        <div class="settings-item-text">
-                            <!-- 2026-08-12 同步状态收进 i 标识（自动同步标题右侧），点击弹窗显示上次同步时间/连接状态 -->
-                            <div class="settings-item-title"><span style="display:inline-flex;align-items:center;gap:4px;">自动同步<span id="syncStatusIcon" class="material-icons" style="font-size:15px;cursor:pointer;color:rgba(100,116,139,0.65);margin-left:2px;" title="同步状态">info</span></span></div>
-                            <div class="settings-item-desc">数据变更后自动上传备份（防丢失）</div>
-                        </div>
-                        <label class="settings-switch">
-                            <input type="checkbox" id="syncAutoToggle">
-                            <span class="switch-slider"></span>
-                        </label>
                     </div>
                     <button id="syncConfigToggleBtn" class="sync-config-toggle-btn" data-testid="sync-config-toggle">
                         <span class="material-icons">keyboard_arrow_down</span>
                         <span>配置服务器 / 账号</span>
                     </button>
-                    <!-- ★2026-08-25 未配置云端同步引导（配置后自动隐藏） -->
-                    <div id="syncGuideHint" style="display:none;margin-top:8px;padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.5;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.22);color:#4f46e5;">
-                        📌 记录目前仅保存在本机。配置上方 WebDAV 并开启自动同步，即可云端备份防丢失。
-                    </div>
                     <div id="syncConfigCollapse" class="sync-config-collapse">
                         <div class="sync-config-item">
                             <label class="sync-config-label" for="syncServer">服务器地址（WebDAV）</label>
@@ -5457,6 +5532,16 @@
                     <div class="settings-group-title">
                         <span class="material-icons">tune</span>
                         <span>杂项</span>
+                    </div>
+                    <!-- ★2026-09-03 照片占用从数据管理移入杂项第一行（给自动同步卡+配置折叠让位，同组连续） -->
+                    <div class="settings-item" style="border-radius: 12px; cursor: default;">
+                        <div class="settings-item-icon">
+                            <span class="material-icons" style="font-size: 20px;">photo_library</span>
+                        </div>
+                        <div class="settings-item-text">
+                            <div class="settings-item-title">照片占用</div>
+                            <div class="settings-item-desc" id="photoUsageDesc">统计中…</div>
+                        </div>
                     </div>
                     <div class="settings-item" style="border-radius: 12px;">
                         <div class="settings-item-icon">
@@ -5518,7 +5603,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.8.6</div>
+                        <div class="about-version">版本 1.1.8.7</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

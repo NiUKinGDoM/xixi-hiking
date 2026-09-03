@@ -2836,10 +2836,29 @@ function initRecordsView() {
     });
     var wrap = safeGetElementById('mountainBookView');
     if (wrap) wrap.addEventListener('click', function (e) {
+        // ★2026-09-03 P0 山册照片回忆：点照片 → 灯箱全屏看大图（该记录照片集，可滑动/保存）
+        var ph = e.target.closest ? e.target.closest('.mbp-item') : null;
+        if (ph) {
+            var rid = ph.getAttribute('data-rid'), pid = ph.getAttribute('data-pid');
+            if (rid && pid && typeof openPhotoLightbox === 'function') { try { openPhotoLightbox(rid, pid, false); } catch (e2) { /* 忽略 */ } }
+            return;
+        }
+        // ★2026-09-03 逐条记录跳转入口已删（日期收进照片带标题），无相关分支
         var head = e.target.closest ? e.target.closest('.mb-head') : null;
-        if (head) { var card = head.closest('.mb-card'); if (card) card.classList.toggle('open'); return; }
-        var che = e.target.closest ? e.target.closest('.mb-che') : null;
-        if (che) { openRecordById(che.getAttribute('data-id')); }
+        if (head) {
+            var card = head.closest('.mb-card');
+            if (card) {
+                var willOpen = !card.classList.contains('open');
+                card.classList.toggle('open');
+                // ★2026-09-03 展开时才懒加载本卡照片（img data-record 占位 → loadPhotoThumbs 异步填图，_photoLoaded 防重复）
+                if (willOpen) {
+                    var ridSet = {};
+                    card.querySelectorAll('.mbp-item img').forEach(function (im) { var r2 = im.getAttribute('data-record'); if (r2) ridSet[r2] = 1; });
+                    Object.keys(ridSet).forEach(function (r3) { try { loadPhotoThumbs(r3); } catch (e3) { /* 忽略 */ } });
+                }
+            }
+            return;
+        }
     });
 }
 function applyRecordsView() {
@@ -2922,18 +2941,37 @@ function renderMountainBook() {
         var comp = [];
         var seen = {};
         arr.forEach(function (r) { cmpSet(r.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } }); });
-        // ★2026-09-03 展开行精简：整卡已是这座山，行内只保留记录时间 + 打开箭头（去掉重复山名/难度/用时/里程）
-        var rows = sorted.map(function (r) {
-            return '<div class="mb-record"><span class="mb-date">' + (fmtYMD(r.createdAt) || '') + '</span>' +
-                '<span class="mb-che" data-id="' + r.id + '" title="打开这条记录"><span class="material-icons" style="font-size:16px;">open_in_new</span></span></div>';
-        }).join('');
+        // ★2026-09-03 P0 山册照片回忆：聚合这座山全部记录的照片（横排，最多 24 张防 DOM 过大）；无照片的山不生成此块
+        // ★2026-09-03 记录行已删（不再逐条时间+跳转）：日期收进照片带标题「N 张 · 日期范围」
+        var pItems = [];
+        var dMax = '';
+        sorted.forEach(function (r) {
+            var ps = (r.photos && r.photos.length) ? r.photos : [];
+            if (!ps.length) return;
+            var d = fmtYMD(r.createdAt) || '';
+            if (d && d > dMax) dMax = d;
+            for (var pi = 0; pi < ps.length && pItems.length < 24; pi++) {
+                pItems.push({ rid: r.id, pid: ps[pi] });
+            }
+        });
+        // ★2026-09-03 标题日期 = 这座山（照片所属记录里）最近一次徒步的记录日期；与照片本身无时间关联
+        var dLabel = dMax || '';
+        var photosHtml = pItems.length
+            ? '<div class="mb-photos"><div class="mb-photos-head"><span class="mb-photos-tt">照片回忆</span>' +
+            '<span class="mb-photos-cnt">' + pItems.length + ' 张' + (dLabel ? ' · ' + dLabel : '') + '</span></div>' +
+            '<div class="mb-photos-strip">' + pItems.map(function (it) {
+                return '<div class="mbp-item" data-rid="' + it.rid + '" data-pid="' + it.pid + '" title="看大图">' +
+                    '<img data-record="' + it.rid + '" data-pid="' + it.pid + '" alt="照片"></div>';
+            }).join('') + '</div></div>'
+            : '';
         return '<div class="mb-card"><div class="mb-head"><span class="mb-name">' + escapeHtml(k) + '</span>' +
             '<span class="mb-badge">去过 ' + n + ' 次</span><span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div>' +
+            photosHtml +
             '<div class="mb-stat">' +
             statCell(n + ' 次', '累计') + statCell(km ? km.toFixed(1) + 'km' : '—', '总里程') +
             statCell(min ? formatDuration(min) : '—', '总用时') + statCell(el ? el + 'm' : '—', '最高海拔') +
             statCell(diffName[avgD] || '—', '平均难度') + statCell(comp.length ? comp.map(escapeHtml).join('/') : '—', '一起走过') +
-            '</div><div class="mb-records">' + rows + '</div></div>';
+            '</div></div>';
     }).join('');
     wrap.innerHTML = html;
 }

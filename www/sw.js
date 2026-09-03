@@ -6,8 +6,10 @@
  * ★2026-09-03 v4→v5：v1.1.8.4 大版本（年度回顾/我的山册/过期提醒）+ iOS 网页适配
  * ★2026-09-03 v5→v6：＋添加弹窗(从历史复制/直接新建) + 年回和去年比 + 弹窗设计统一
  * ★2026-09-03 v6→v7：v1.1.8.6（小结文案活泼化 + XSS 转义加固）
+ * ★2026-09-03 v7→v8：山册照片回忆横排带 + 同步健康行（v1.1.8.6 后积累，未 bump）
+ * ★2026-09-03 v8→v9：v1.1.8.7（山册照片回忆/健康行融合/滚动条玻璃）
  */
-const CACHE_NAME = 'xixi-hiking-v7';
+const CACHE_NAME = 'xixi-hiking-v9';
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js'];
 
 self.addEventListener('install', function (e) {
