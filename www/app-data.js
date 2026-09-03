@@ -1646,8 +1646,23 @@ function showDataInfoModal() {
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
             </div>
-            <div class="confirm-modal-message" style="line-height: 1.4;">
-                导出/导入完整备份（压缩包 .zip，含徒步记录、计划与照片；另有不含照片的纯数据备份）。数据仅保存在本机，建议定期导出备份；开启自动同步后，数据变更自动上传云端防丢失。导入或恢复时，相同记录按最后修改时间取新（改了的字段更新，未改的保持），空字段自动用另一份补全；本地独有的记录合并保留。
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:2px;">
+                <!-- ★2026-09-03 排版统一：大段文字改分组条目（小图标+标题+12px 说明，深浅色自适应 dmi-* 类） -->
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">inventory_2</span>
+                    <div style="min-width:0;"><div class="dmi-title">完整备份 / 纯数据</div>
+                    <div class="dmi-body">导出「完整备份」是压缩包（记录 + 计划 + 照片）；「纯数据」不含照片。数据只保存在本机，建议定期导出。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">merge</span>
+                    <div style="min-width:0;"><div class="dmi-title">恢复 / 合并规则</div>
+                    <div class="dmi-body">同一条记录按最后修改时间取新：改过的字段更新、没改的保持；空字段自动用另一份补全；本地独有的记录合并保留。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">cloud_done</span>
+                    <div style="min-width:0;"><div class="dmi-title">自动同步</div>
+                    <div class="dmi-body">开启后数据变更自动上传云端备份，本机数据多一层保险。</div></div>
+                </div>
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-cancel ripple-effect" id="data-info-close">知道了</button>
@@ -1784,8 +1799,9 @@ function updateStatistics() {
     const totalCount = safeGetElementById('totalCount');
     const avgElevation = safeGetElementById('avgElevation');
     const maxElevation = safeGetElementById('maxElevation');
-    // ★2026-08-26 平均难度卡片 → 总爬升卡片（平均难度移入直方图左上角 chartAvgDiff）
-    const totalClimbCard = safeGetElementById('totalClimbCard');
+    // ★2026-09-03 A 布局：矮副卡新增 平均难度/平均用时（总爬升卡已随布局精简移除，累计爬升仍在热力图底部汇总）
+    const avgDifficultyMini = safeGetElementById('avgDifficultyMini');
+    const avgDurationMini = safeGetElementById('avgDurationMini');
     const difficultyChart = safeGetElementById('difficultyChart');
     const chartLabels = safeGetElementById('chartLabels');
     const chartAvgDiff = safeGetElementById('chartAvgDiff');
@@ -1816,7 +1832,8 @@ function updateStatistics() {
         if (totalCount) totalCount.textContent = '0';
         if (avgElevation) avgElevation.textContent = '0m';
         if (maxElevation) maxElevation.textContent = '0m';
-        if (totalClimbCard) totalClimbCard.textContent = '0m';
+        if (avgDifficultyMini) avgDifficultyMini.textContent = '—';
+        if (avgDurationMini) avgDurationMini.textContent = '—';
         if (totalDistance) totalDistance.textContent = '0 km';
         if (totalDuration) totalDuration.textContent = '0h';
         if (chartAvgDiff) safeSetElementContent('chartAvgDiff', '');
@@ -1839,8 +1856,10 @@ function updateStatistics() {
     updateWithAnimation(totalCount, total.toString());
     updateWithAnimation(avgElevation, `${averageElevation}m`);
     updateWithAnimation(maxElevation, `${highestElevation}m`);
-    // ★2026-08-26 总爬升卡片（原平均难度卡位；平均难度挪到直方图左上角）
-    updateWithAnimation(totalClimbCard, Math.round(totalElevation) + 'm');
+    // ★2026-09-03 A 布局：矮副卡 平均难度/平均用时（原总爬升卡精简移除，累计爬升回到热力图底部汇总行）
+    updateWithAnimation(avgDifficultyMini, averageDifficulty);
+    const avgMin = total ? Math.round(totalMin / total) : 0;
+    updateWithAnimation(avgDurationMini, avgMin ? (formatDuration(avgMin) || '0h') : '0h');
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
     updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(2) + ' km' : '0 km'); // ★2026-09-01 里程两位小数
     updateWithAnimation(totalDuration, totalMin ? (formatDuration(totalMin) || '0h') : '0h');
@@ -1926,44 +1945,120 @@ function updateStatistics() {
 
 // ===== 徒步足迹热力图（v1.0.7.7：红色渐变 + 年月可选 + 日历式月视图） =====
 let hmYear = 0, hmMonth = 0;
+// ★2026-09-03 B 布局：概览页区块重排（「徒步足迹」热力图移到「难度分布」之前，回忆优先）只执行一次
+let overviewReordered = false;
+function ensureOverviewLayout() {
+    try {
+        if (overviewReordered) return;
+        const hp = document.getElementById('heatmapPanel');
+        const dc = document.getElementById('difficultyChart');
+        if (!hp || !dc) return;
+        const diffPanel = dc.closest ? dc.closest('.glass-panel') : null;
+        if (diffPanel && hp.parentNode === diffPanel.parentNode && hp !== diffPanel) {
+            diffPanel.parentNode.insertBefore(hp, diffPanel);
+        }
+        overviewReordered = true;
+    } catch (e) { /* 静默 */ }
+}
 // ★2026-08-11 热力图事件只绑定一次（initHeatmap 会被多次调用：初始化 + 底栏刷新重置）
 let hmBound = false;
+function updateHmYmBtn() {
+    const t = document.getElementById('hmYmText');
+    if (t) t.textContent = (hmYear ? hmYear : '—') + '年' + (hmMonth ? hmMonth : '—') + '月';
+}
 function bindHeatmapEvents() {
-    const ySel = document.getElementById('hmYear');
-    const mSel = document.getElementById('hmMonth');
-    if (!ySel || !mSel || hmBound) return;
+    const ymBtn = document.getElementById('hmYmBtn');
+    if (!ymBtn || hmBound) return;
     hmBound = true;
-    ySel.addEventListener('change', function () {
-        hmYear = parseInt(ySel.value, 10);
-        fillHmMonths(hmYear, 1);
-        renderHeatmap();
-    });
-    mSel.addEventListener('change', function () {
-        hmMonth = parseInt(mSel.value, 10);
-        renderHeatmap();
-    });
+    ymBtn.addEventListener('click', function () { openHmYmPicker(); });
+}
+// ★2026-09-03 年月单框弹窗：年份 chips（有记录年份）+ 月份 12 格（有足迹月可点），选中整格靛蓝实心白字（同 App 单选态）
+function openHmYmPicker() {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals();
+        const now = new Date();
+        const years = getRecordYears();
+        const yearList = years.length ? years : [now.getFullYear()];
+        const nowY = now.getFullYear();
+        let y = (hmYear && yearList.indexOf(hmYear) >= 0) ? hmYear : (yearList.indexOf(nowY) >= 0 ? nowY : yearList[0]);
+        const nowM = now.getMonth() + 1;
+        const ms0 = getRecordMonths(y);
+        let m = (hmMonth && ms0.indexOf(hmMonth) >= 0) ? hmMonth : (ms0.length ? (ms0.indexOf(nowM) >= 0 ? nowM : ms0[ms0.length - 1]) : nowM);
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width:380px;">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">calendar_view_month</span>选择年月</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;">' +
+            '<div class="hmyp-yrs" id="hmypYrs"></div>' +
+            '<div class="hmyp-months" id="hmypMonths"></div>' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="hmyp-cancel" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">取消</button>' +
+            '<button class="check-go-btn ripple-effect" id="hmyp-ok" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">确定</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+        const yrsEl = modal.querySelector('#hmypYrs');
+        const mosEl = modal.querySelector('#hmypMonths');
+        function renderYrs() {
+            yrsEl.innerHTML = yearList.map(function (yy) {
+                return '<span class="hmyp-yr' + (yy === y ? ' sel' : '') + '" data-y="' + yy + '" role="button">' + yy + '年</span>';
+            }).join('');
+        }
+        function renderMos() {
+            const avail = getRecordMonths(y);
+            const usable = avail.length ? avail : [now.getMonth() + 1];
+            let cells = '';
+            for (let i = 1; i <= 12; i++) {
+                const on = usable.indexOf(i) >= 0;
+                cells += '<span class="hmyp-m' + (i === m && on ? ' sel' : '') + (on ? '' : ' no') + '" data-m="' + i + '" role="button">' + i + '月</span>';
+            }
+            mosEl.innerHTML = cells;
+        }
+        renderYrs();
+        renderMos();
+        yrsEl.addEventListener('click', function (e) {
+            const chip = e.target.closest ? e.target.closest('.hmyp-yr') : null;
+            if (!chip) return;
+            y = parseInt(chip.getAttribute('data-y'), 10);
+            const avail = getRecordMonths(y);
+            const usable = avail.length ? avail : [now.getMonth() + 1];
+            if (usable.indexOf(m) < 0) m = usable[usable.length - 1];
+            renderYrs();
+            renderMos();
+        });
+        mosEl.addEventListener('click', function (e) {
+            const cell = e.target.closest ? e.target.closest('.hmyp-m') : null;
+            if (!cell || cell.classList.contains('no')) return;
+            m = parseInt(cell.getAttribute('data-m'), 10);
+            renderMos();
+        });
+        function closeMdl() { if (modal.parentNode) modal.parentNode.removeChild(modal); }
+        modal.querySelector('#hmyp-cancel').addEventListener('click', closeMdl);
+        modal.querySelector('#hmyp-ok').addEventListener('click', function () {
+            hmYear = y;
+            hmMonth = m;
+            updateHmYmBtn();
+            closeMdl();
+            renderHeatmap();
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeMdl(); });
+    } catch (e) { /* 静默 */ }
 }
 
 function initHeatmap() {
-    const ySel = document.getElementById('hmYear');
-    const mSel = document.getElementById('hmMonth');
-    if (!ySel || !mSel) return;
+    ensureOverviewLayout(); // ★2026-09-03 B：保证热力图卡已移到难度分布卡之前
+    const ymBtn = document.getElementById('hmYmBtn');
+    if (!ymBtn) return;
     const now = new Date();
-    // 只显示有记录的年（无记录兜底当前年）
     const years = getRecordYears();
     const yearList = years.length ? years : [now.getFullYear()];
-    ySel.innerHTML = '';
-    yearList.forEach(function (y) {
-        const opt = document.createElement('option');
-        opt.value = y; opt.textContent = y + '年';
-        ySel.appendChild(opt);
-    });
-    const curYear = now.getFullYear();
-    const targetYear = yearList.indexOf(curYear) >= 0 ? curYear : yearList[0];
-    ySel.value = targetYear;
-    hmYear = targetYear;
-    fitSelectWidth(ySel);
-    fillHmMonths(targetYear, now.getMonth() + 1);
+    const nowY = now.getFullYear();
+    hmYear = yearList.indexOf(nowY) >= 0 ? nowY : yearList[0];
+    const ms = getRecordMonths(hmYear);
+    const nowM = now.getMonth() + 1;
+    hmMonth = ms.length ? (ms.indexOf(nowM) >= 0 ? nowM : ms[ms.length - 1]) : nowM;
+    updateHmYmBtn();
     bindHeatmapEvents();
     renderHeatmap();
 }
@@ -1995,23 +2090,6 @@ function getRecordMonths(year) {
     return months.sort(function (a, b) { return a - b; });
 }
 
-function fillHmMonths(year, preferred) {
-    const mSel = document.getElementById('hmMonth');
-    if (!mSel) return;
-    const now = new Date();
-    const months = getRecordMonths(year);
-    const list = months.length ? months : [now.getMonth() + 1];
-    mSel.innerHTML = '';
-    list.forEach(function (m) {
-        const opt = document.createElement('option');
-        opt.value = m; opt.textContent = m + '月';
-        mSel.appendChild(opt);
-    });
-    const target = list.indexOf(preferred) >= 0 ? preferred : list[list.length - 1];
-    mSel.value = target;
-    hmMonth = parseInt(mSel.value, 10);
-    fitSelectWidth(mSel);
-}
 // ★2026-08-27 热力图渲染缓存：key = 年月+数据指纹（记录变才重建，重复进入秒开）
 let heatmapCache = {};
 function renderHeatmap() {
@@ -2056,8 +2134,18 @@ function renderHeatmap() {
     const total = Array.prototype.reduce.call(cal.querySelectorAll('.hm-day:not(.empty)'), function (s, el) {
         return s + (parseInt(el.getAttribute('data-count'), 10) || 0);
     }, 0);
-    if (sumEl) sumEl.textContent = year + '年' + month + '月 · 徒步 ' + total + ' 次';
-    // ★2026-08-26 累计爬升已移到概览统计卡片（总爬升），热力图底部不再重复显示
+    if (sumEl) {
+        // ★2026-09-03 底部汇总：去掉年月日期前缀（顶部选择器已显示年月），只留「徒步 N 次 · 累计爬升 Xm」（爬升与次数同口径 = 当前所选年月内的合计）
+        let climbThis = 0;
+        records.forEach(function (r) {
+            if (!r.createdAt) return;
+            const d = new Date(r.createdAt);
+            if (!isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() + 1 === month) {
+                climbThis += Number(r.elevation) || 0;
+            }
+        });
+        sumEl.textContent = '徒步 ' + total + ' 次' + (climbThis ? ' · 累计爬升 ' + Math.round(climbThis) + 'm' : '');
+    }
     cal.querySelectorAll('.hm-day:not(.empty)').forEach(function (el) {
         el.addEventListener('click', function () {
             showHeatmapDayDetail(year, month, parseInt(el.getAttribute('data-day'), 10));
