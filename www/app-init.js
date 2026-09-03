@@ -239,7 +239,8 @@ function setupEventListeners() {
     }
     const addBtn = document.getElementById('addBtn');
     if (addBtn) {
-        const handler = addNewRecord;
+        // ★2026-09-03 P0 定稿：点「＋添加」先弹「添加徒步记录」选择卡（从历史复制 / 直接新建）
+        const handler = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : addNewRecord;
         addBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => addBtn.removeEventListener('click', handler));
     }

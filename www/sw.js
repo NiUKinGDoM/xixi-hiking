@@ -3,8 +3,10 @@
  * ★2026-08-27 CACHE_NAME v1→v2：强制旧 SW 失效重缓存（用户反馈网页版功能未更新，疑似缓存旧壳）
  * ★2026-08-30 v2→v3：方案A 主 JS 拆外部文件，缓存清单加 app-*.js
  * ★2026-08-31 v3→v4：计划日历视图 + 计划完成补记录
+ * ★2026-09-03 v4→v5：v1.1.8.4 大版本（年度回顾/我的山册/过期提醒）+ iOS 网页适配
+ * ★2026-09-03 v5→v6：＋添加弹窗(从历史复制/直接新建) + 年回和去年比 + 弹窗设计统一
  */
-const CACHE_NAME = 'xixi-hiking-v4';
+const CACHE_NAME = 'xixi-hiking-v6';
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js'];
 
 self.addEventListener('install', function (e) {
