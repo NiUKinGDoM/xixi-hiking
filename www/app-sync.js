@@ -300,25 +300,6 @@ function fetchLatestReleaseGuarded(timeoutMs) {
     return Promise.race([fetchLatestRelease(ms), raceReject]);
 }
 // ★2026-08-26 按 tag 拉取 Release body（确认弹窗显示当前版本更新内容用；超时/不存在返回空）
-function fetchReleaseBodyGuarded(tag, timeoutMs) {
-    var ms = timeoutMs || 8000;
-    var ctrl = null, timer = null;
-    if (typeof AbortController !== 'undefined') {
-        ctrl = new AbortController();
-        timer = setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, ms);
-    }
-    return fetch('https://api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/tags/' + encodeURIComponent(tag), {
-        signal: ctrl ? ctrl.signal : undefined
-    }).then(function (res) {
-        return res.ok ? res.json() : null;
-    }).then(function (d) {
-        if (timer) clearTimeout(timer);
-        return (d && d.body) ? d.body : '';
-    }, function () {
-        if (timer) clearTimeout(timer);
-        return '';
-    });
-}
 
 // ★2026-08-27 检查更新确认弹窗已删（功能与「关于页 → 查看更新日志」重复）：
 // 点击「检查更新」直接检查，发现新版本弹大窗，无新版 toast「已是最新」
