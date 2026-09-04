@@ -405,6 +405,15 @@ function closeRecordDetailModal() {
 function rdDifficultyColor(d) {
     return { 1: '#10b981', 2: '#84cc16', 3: '#f59e0b', 4: '#f97316', 5: '#dc2626' }[d] || '#f59e0b';
 }
+// ★2026-09-04 弹窗难度徽章文字色（700 档深色）：白底浅色模式下 500 档亮色对比不足看不清；dark 由 CSS .rd-chip !important 覆盖为亮字
+function rdDifficultyColorDeep(d) {
+    return { 1: '#047857', 2: '#3f6212', 3: '#92400e', 4: '#9a3412', 5: '#991b1b' }[d] || '#92400e';
+}
+// ★2026-09-04 编辑框难度文案「N级 档名」（如 5级 困难）：value 前缀数字保证 parseInt 兼容保存/复制/弹窗 current
+function diffLabel(d) {
+    var n = Math.min(5, Math.max(1, parseInt(d, 10) || 3));
+    return n + '级 ' + ({ 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' })[n];
+}
 
 // 阅读态弹窗 body（点行默认）
 function recordViewBodyHTML(r) {
@@ -417,19 +426,20 @@ function recordViewBodyHTML(r) {
     // 照片墙（只读，点开灯箱查看）
     var photosHtml = '';
     if (r.photos && r.photos.length) {
+        // ★2026-09-04 展示弹窗照片墙改横向滑动条（原 3 列网格贴满）：一排缩略图可左右滑，与山册照片回忆同款交互
         var cells = r.photos.slice(0, 24).map(function (pid) {
-            return '<img data-pid="' + pid + '" data-record="' + r.id + '" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#e2e8f0;cursor:pointer;" alt="照片">';
+            return '<img data-pid="' + pid + '" data-record="' + r.id + '" style="width:92px;height:92px;object-fit:cover;border-radius:10px;background:#e2e8f0;cursor:pointer;flex-shrink:0;display:block;" alt="照片">';
         }).join('');
-        photosHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;" id="rd-photos-' + r.id + '">' + cells + '</div>';
+        photosHtml = '<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;-webkit-overflow-scrolling:touch;" id="rd-photos-' + r.id + '">' + cells + '</div>';
     }
     return '' +
         '<div class="rd-head" style="display:flex;align-items:baseline;gap:8px;margin:2px 0 6px;">' +
         '<span class="rd-name" style="font-size:20px;font-weight:700;color:#1e293b;line-height:1.35;">' + escapeHtml(r.name) + '</span>' +
-        '<span class="rd-no" style="font-size:11px;color:#52606f;flex-shrink:0;">' + fmtYMD(r.createdAt) + '</span></div>' +
+        '<span class="rd-no" style="font-size:13px;color:#475569;flex-shrink:0;font-weight:500;">' + fmtYMD(r.createdAt) + '</span></div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">' +
-        '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;color:' + dColor + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + r.difficulty + ' 级 · ' + diffName + '</span>' +
-        (r.mood ? '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(148,163,184,0.14);border:1px solid rgba(148,163,184,0.4);color:#475569;">心情 ' + escapeHtml(r.mood) + '</span>' : '') +
-        (r.weather ? '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(148,163,184,0.14);border:1px solid rgba(148,163,184,0.4);color:#475569;">天气 ' + escapeHtml(r.weather) + '</span>' : '') +
+        '<span class="rd-chip" style="font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px;color:' + rdDifficultyColorDeep(Number(r.difficulty)) + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + r.difficulty + ' 级 · ' + diffName + '</span>' +
+        (r.mood ? '<span class="rd-chip" style="font-size:12px;font-weight:500;padding:2px 10px;border-radius:99px;background:rgba(148,163,184,0.14);border:1px solid rgba(148,163,184,0.4);color:#334155;">心情 ' + escapeHtml(r.mood) + '</span>' : '') +
+        (r.weather ? '<span class="rd-chip" style="font-size:12px;font-weight:500;padding:2px 10px;border-radius:99px;background:rgba(148,163,184,0.14);border:1px solid rgba(148,163,184,0.4);color:#334155;">天气 ' + escapeHtml(r.weather) + '</span>' : '') +
         '</div>' +
         photosHtml +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">' +
@@ -450,30 +460,30 @@ function recordEditBodyHTML(r) {
         '<div style="display:flex;flex-direction:column;gap:10px;">' +
         // 名称（全宽）
         '<input type="text" id="edit-name-' + r.id + '" value="' + escapeHtml(r.name) + '" data-testid="edit-name-' + r.id + '" class="edit-input input-glow" placeholder="输入名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="next">' +
-        // 日期时间
-        '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
-        // 海拔 + 难度 一行
+        // 海拔 + 难度 一行（★2026-09-04 1:1 均分，难度框显示「N级 档名」）
         '<div style="display:flex;gap:8px;">' +
         '<input type="number" id="edit-elevation-' + r.id + '" value="' + (r.elevation || 0) + '" data-testid="edit-elevation-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
-        '<input type="text" id="edit-difficulty-' + r.id + '" data-testid="edit-difficulty-' + r.id + '" value="' + (r.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (r.difficulty || 3) + '" readonly style="flex:0 0 84px;cursor:pointer;font-weight:600;--dfc-light:' + getDifficultyColor(r.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(r.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-difficulty-' + r.id + '\')" title="点击选择难度" enterkeyhint="done">' +
+        '<input type="text" id="edit-difficulty-' + r.id + '" data-testid="edit-difficulty-' + r.id + '" value="' + diffLabel(r.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (r.difficulty || 3) + '" readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(r.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(r.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-difficulty-' + r.id + '\')" title="点击选择难度" enterkeyhint="done">' +
         '</div>' +
         // 心情/天气/同行人 一行
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-        '<input type="text" id="edit-mood-' + r.id + '" class="edit-input input-glow" style="flex:0 0 calc(33% - 6px);min-width:0;" value="' + (r.mood || '') + '" placeholder="心情" readonly title="心情（可选）">' +
-        '<input type="text" id="edit-weather-' + r.id + '" class="edit-input input-glow" style="flex:0 0 calc(33% - 6px);min-width:0;" value="' + (r.weather || '') + '" placeholder="天气" readonly title="天气（可选）">' +
-        '<input type="text" id="edit-companions-' + r.id + '" placeholder="同行人" class="edit-input input-glow" style="flex:0 0 calc(33% - 6px);min-width:0;" value="' + (r.companions || '') + '">' +
+        '<input type="text" id="edit-mood-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + (r.mood || '') + '" placeholder="心情" readonly title="心情（可选）">' +
+        '<input type="text" id="edit-weather-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + (r.weather || '') + '" placeholder="天气" readonly title="天气（可选）">' +
+        '<input type="text" id="edit-companions-' + r.id + '" placeholder="同行人" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + (r.companions || '') + '">' +
         '</div>' +
-        // 时/分/里程 一行
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-        '<div class="edit-unit-wrap" style="display:flex;align-items:center;gap:2px;">' +
-        '<input type="number" id="edit-duration-h-' + r.id + '" placeholder="时" class="edit-input input-glow" style="max-width:52px;" value="' + (r.duration ? Math.floor(Number(r.duration) / 60) : '') + '" min="0" max="23" step="1" inputmode="numeric" title="小时">' +
+        // 用时 + 里程 一行（★2026-09-04 均匀分布）
+        '<div style="display:flex;gap:8px;align-items:center;">' +
+        '<div style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 6px;">' +
+        '<input type="number" id="edit-duration-h-' + r.id + '" placeholder="时" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.duration ? Math.floor(Number(r.duration) / 60) : '') + '" min="0" max="23" step="1" inputmode="numeric" title="小时">' +
         '<span class="edit-unit">时</span>' +
-        '<input type="number" id="edit-duration-m-' + r.id + '" placeholder="分" class="edit-input input-glow" style="max-width:52px;" value="' + (r.duration ? Number(r.duration) % 60 : '') + '" min="0" max="59" step="1" inputmode="numeric" title="分钟">' +
+        '<input type="number" id="edit-duration-m-' + r.id + '" placeholder="分" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.duration ? Number(r.duration) % 60 : '') + '" min="0" max="59" step="1" inputmode="numeric" title="分钟">' +
         '<span class="edit-unit">分</span></div>' +
-        '<div class="edit-unit-wrap" style="display:flex;align-items:center;gap:2px;">' +
-        '<input type="number" id="edit-distance-' + r.id + '" placeholder="里程" class="edit-input input-glow" style="max-width:70px;" value="' + (r.distance || '') + '" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">' +
+        '<div style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 8px;">' +
+        '<input type="number" id="edit-distance-' + r.id + '" placeholder="里程" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.distance || '') + '" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">' +
         '<span class="edit-unit">km</span></div>' +
         '</div>' +
+        // 日期时间（★2026-09-04 移至末位：时/分/里程下方整行）
+        '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         // 照片区（层叠卡 + 灯箱管理）
         '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span class="rd-ph-lab" style="font-size:12px;color:#52606f;margin-right:4px;">照片</span>' +
         '<div id="photo-thumbs-' + r.id + '" style="display:flex;align-items:center;">' + photoThumbsHTML(editingPhotoIds, r.id) + '</div>' +
@@ -518,6 +528,8 @@ function openRecordDetailModal(id, startMode) {
             bodyEl.innerHTML = recordViewBodyHTML(r);
         }
         bindRecordDetailEvents(modal, id, r);
+        // ★2026-09-04 修复：详情弹窗照片不显示——view 照片墙/编辑 thumbs 的 img 全靠 loadPhotoThumbs 异步填 src，打开后必须触发
+        try { loadPhotoThumbs(id); } catch (e) { /* 忽略 */ }
         // 点遮罩关闭（与 confirm-modal 一致）
         modal.addEventListener('click', function (e) { if (e.target === modal) { closeRecordDetailModal(); renderTable(); } });
     } catch (e) { /* 打开失败不影响 */ }
@@ -551,6 +563,7 @@ function bindRecordDetailEvents(modal, id, r) {
                 if (ic) ic.textContent = 'edit_note';
                 bodyEl.innerHTML = recordEditBodyHTML(r);
                 bindEditBody(modal, id);
+                try { loadPhotoThumbs(id); } catch (e2) { /* 忽略 */ }   // ★2026-09-04 view→edit 切换重建 DOM 后重新填图
             });
         }
         return;
@@ -1418,7 +1431,7 @@ function openDifficultyPicker(inputId) {
             try {
                 const inp = document.getElementById(inputId);
                 if (inp) {
-                    inp.value = String(selected);
+                    inp.value = diffLabel(selected);   // ★2026-09-04 「N级 档名」文案（parseInt 兼容）
                     // ★2026-09-04 同步难度色变量（浅/深两套），框色即时跟随档位
                     inp.style.setProperty('--dfc-light', getDifficultyColor(selected));
                     inp.style.setProperty('--dfc-dark', getDifficultyColorDark(selected));
@@ -2291,6 +2304,13 @@ function applyPlansView() {
     listView.style.display = isCal ? 'none' : '';
     calView.style.display = isCal ? '' : 'none';
     if (icon) icon.textContent = isCal ? 'view_list' : 'calendar_month';
+    // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换（帮新用户看懂当前视图与切换目标）
+    var lab = safeGetElementById('plansViewToggleLabel');
+    if (lab) lab.textContent = isCal ? '列表' : '日历';
+    var capIcon = safeGetElementById('plansViewCaptionIcon');
+    var capTxt = safeGetElementById('plansViewCaptionText');
+    if (capIcon) capIcon.textContent = isCal ? 'calendar_month' : 'view_list';
+    if (capTxt) capTxt.textContent = isCal ? '日历视图 · 哪天有行程一眼看清，点日期看当天安排' : '列表视图 · 全部计划按时间排列，点一行可查看';
     // ★2026-08-31 日历视图隐藏「批量管理」和「添加」按钮（切换按钮固定最右不动）；列表视图恢复
     //   ★08-31 去掉淡入淡出动画（用户反馈卡顿），直接显隐最干净
     var batchBtn = safeGetElementById('plannedBatchModeBtn');
@@ -2963,6 +2983,13 @@ function applyRecordsView() {
         if (icon) icon.textContent = 'landscape';
         try { if (typeof renderTable === 'function') renderTable(); } catch (e) { /* 渲染异常不影响切换 */ }
     }
+    // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换
+    var labR = safeGetElementById('recordsViewToggleLabel');
+    if (labR) labR.textContent = isMb ? '列表' : '山册';
+    var capIconR = safeGetElementById('recordsViewCaptionIcon');
+    var capTxtR = safeGetElementById('recordsViewCaptionText');
+    if (capIconR) capIconR.textContent = isMb ? 'landscape' : 'view_list';
+    if (capTxtR) capTxtR.textContent = isMb ? '山册视图 · 按山峰汇总成册，一座山一张卡片' : '列表视图 · 全部记录按时间排列，点一行可查看';
     var btn = safeGetElementById('recordsViewToggleBtn');
     if (btn) btn.title = isMb ? '切回记录列表' : '查看我的山册';
     // ★2026-09-03 搜索框提示随视图切换（山册 = 搜山名）
@@ -3265,7 +3292,7 @@ function applyCopyFillToForm(src, dstId) {
     var diffEl = document.getElementById('edit-difficulty-' + dstId);
     if (diffEl) {
         var dff = (typeof src.difficulty === 'number') ? src.difficulty : (parseInt(src.difficulty, 10) || 3);
-        diffEl.value = String(dff);
+        diffEl.value = diffLabel(dff);   // ★2026-09-04 与编辑框文案格式统一「N级 档名」
         // ★2026-09-04 复制填充后同步难度色变量
         diffEl.style.setProperty('--dfc-light', getDifficultyColor(dff));
         diffEl.style.setProperty('--dfc-dark', getDifficultyColorDark(dff));
@@ -3561,9 +3588,9 @@ function plannedViewBodyHTML(t) {
     return '' +
         '<div style="display:flex;align-items:baseline;gap:8px;margin:2px 0 6px;">' +
         '<span class="rd-name" style="font-size:20px;font-weight:700;color:#1e293b;line-height:1.35;">' + escapeHtml(t.name) + '</span>' +
-        '<span class="rd-no" style="font-size:11px;color:#52606f;flex-shrink:0;">计划 ' + fmtYMD(t.createdAt) + '</span></div>' +
+        '<span class="rd-no" style="font-size:13px;color:#475569;flex-shrink:0;font-weight:500;">计划 ' + fmtYMD(t.createdAt) + '</span></div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">' +
-        '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;color:' + dColor + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + t.difficulty + ' 级 · ' + diffName + '</span>' +
+        '<span class="rd-chip" style="font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px;color:' + rdDifficultyColorDeep(Number(t.difficulty)) + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + t.difficulty + ' 级 · ' + diffName + '</span>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">' +
         '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">目标海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
@@ -3582,11 +3609,12 @@ function plannedEditBodyHTML(t) {
     return '' +
         '<div style="display:flex;flex-direction:column;gap:10px;">' +
         '<input type="text" id="edit-planned-name-' + t.id + '" value="' + escapeHtml(t.name) + '" data-testid="edit-planned-name-' + t.id + '" class="edit-input input-glow" placeholder="输入名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="next">' +
-        '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
+        // ★2026-09-04 海拔+难度 1:1 提前（与记录页同构），日期时间移到其后
         '<div style="display:flex;gap:8px;">' +
         '<input type="number" id="edit-planned-elevation-' + t.id + '" value="' + (t.elevation || 0) + '" data-testid="edit-planned-elevation-' + t.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
-        '<input type="text" id="edit-planned-difficulty-' + t.id + '" data-testid="edit-planned-difficulty-' + t.id + '" value="' + (t.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (t.difficulty || 3) + '" readonly style="flex:0 0 84px;cursor:pointer;font-weight:600;--dfc-light:' + getDifficultyColor(t.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(t.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-planned-difficulty-' + t.id + '\')" title="点击选择难度" enterkeyhint="done">' +
+        '<input type="text" id="edit-planned-difficulty-' + t.id + '" data-testid="edit-planned-difficulty-' + t.id + '" value="' + diffLabel(t.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (t.difficulty || 3) + '" readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(t.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(t.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-planned-difficulty-' + t.id + '\')" title="点击选择难度" enterkeyhint="done">' +
         '</div>' +
+        '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         '<div style="display:flex;gap:10px;margin-top:2px;">' +
         '<button id="cancel-planned-btn-' + t.id + '" data-testid="cancel-planned-button-' + t.id + '" class="ripple-effect btn-click-effect confirm-btn-cancel" style="' + pCancel + '">取消</button>' +
         '<button id="save-planned-btn-' + t.id + '" data-testid="save-planned-button-' + t.id + '" class="ripple-effect btn-click-effect check-go-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +

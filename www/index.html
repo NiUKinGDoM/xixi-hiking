@@ -2921,6 +2921,27 @@
         
         /* 10. 微交互动画 */
         
+        /* ========== ★2026-09-04 视图说明小标题 + 切换按钮文字 ========== */
+        .view-caption {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #64748b;
+            margin: -0.5rem 0 0.875rem;
+            padding: 0 2px;
+            letter-spacing: 0.2px;
+        }
+        body.dark-mode .view-caption {
+            color: #94a3b8;
+        }
+        .view-toggle-label {
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: 0.5px;
+        }
         /* ========== 玻璃按钮 ========== */
         .glass-btn {
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(255, 255, 255, var(--glass-alpha));   /* ★2026-08-23 液态玻璃：顶部微反光渐变 */
@@ -5693,10 +5714,17 @@
                             <span class="material-icons">add</span>
                         </button>
                         <!-- ★2026-09-02 山册视图切换键（样式与计划页列表/日历切换一致，固定最右） -->
-                        <button id="recordsViewToggleBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" title="切换列表/山册视图">
-                            <span class="material-icons" id="recordsViewToggleIcon">landscape</span>
+                        <!-- ★2026-09-04 按钮带文字（山册/列表），不再是光秃秃图标：别人一眼知道可切到什么视图 -->
+                        <button id="recordsViewToggleBtn" class="ripple-effect glass-btn corner-glow px-2.5 py-2.5 flex items-center justify-center gap-1" title="切换列表/山册视图">
+                            <span class="material-icons" id="recordsViewToggleIcon" style="font-size:20px;">landscape</span>
+                            <span class="view-toggle-label" id="recordsViewToggleLabel">山册</span>
                         </button>
                     </div>
+                </div>
+                <!-- ★2026-09-04 视图小标题说明：告诉新用户当前是什么视图、能干什么（随模式切文案） -->
+                <div class="view-caption" id="recordsViewCaption" data-testid="records-view-caption">
+                    <span class="material-icons" id="recordsViewCaptionIcon" style="font-size:15px;">view_list</span>
+                    <span id="recordsViewCaptionText">列表视图 · 全部记录按时间排列，点一行可查看</span>
                 </div>
                 
                 <!-- ★2026-09-02 山册视图（与列表视图切换，默认隐藏） -->
@@ -5766,10 +5794,17 @@
                             <span class="material-icons">add</span>
                         </button>
                         <!-- ★2026-08-31 视图切换按钮固定最右（添加按钮右边），切视图位置不动 -->
-                        <button id="plansViewToggleBtn" class="ripple-effect glass-btn corner-glow px-3 py-2.5 flex items-center justify-center" title="切换日历/列表视图">
-                            <span class="material-icons" id="plansViewToggleIcon">calendar_month</span>
+                        <!-- ★2026-09-04 按钮带文字（日历/列表），不再是光秃秃图标 -->
+                        <button id="plansViewToggleBtn" class="ripple-effect glass-btn corner-glow px-2.5 py-2.5 flex items-center justify-center gap-1" title="切换日历/列表视图">
+                            <span class="material-icons" id="plansViewToggleIcon" style="font-size:20px;">view_list</span>
+                            <span class="view-toggle-label" id="plansViewToggleLabel">列表</span>
                         </button>
                     </div>
+                </div>
+                <!-- ★2026-09-04 视图小标题说明（随模式切文案） -->
+                <div class="view-caption" id="plansViewCaption" data-testid="plans-view-caption">
+                    <span class="material-icons" id="plansViewCaptionIcon" style="font-size:15px;">calendar_month</span>
+                    <span id="plansViewCaptionText">日历视图 · 哪天有行程一眼看清，点日期看详情</span>
                 </div>
                 
                 <!-- ★2026-08-31 日历视图（与列表视图切换，默认隐藏） -->
@@ -6018,7 +6053,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.9.1</div>
+                        <div class="about-version">版本 1.1.9.2</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
