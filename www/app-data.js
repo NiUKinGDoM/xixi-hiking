@@ -384,15 +384,18 @@ function renderTable() {
                                enterkeyhint="next">
                     </td>
                     <td class="p-2" data-label="难度">
-                        <select id="edit-difficulty-${record.id}" 
-                                data-testid="edit-difficulty-${record.id}"
-                                class="edit-input input-glow">
-                            <option value="1" ${record.difficulty === 1 ? 'selected' : ''}>1级</option>
-                            <option value="2" ${record.difficulty === 2 ? 'selected' : ''}>2级</option>
-                            <option value="3" ${record.difficulty === 3 ? 'selected' : ''}>3级</option>
-                            <option value="4" ${record.difficulty === 4 ? 'selected' : ''}>4级</option>
-                            <option value="5" ${record.difficulty === 5 ? 'selected' : ''}>5级</option>
-                        </select>
+                        <!-- ★2026-09-04 难度改玻璃弹窗（替换原生 select）：readonly input + 点击弹 df 弹窗；字色浅色=难度色/深色=同档亮色 -->
+                        <input type="text"
+                               id="edit-difficulty-${record.id}"
+                               data-testid="edit-difficulty-${record.id}"
+                               value="${record.difficulty || 3}"
+                               class="edit-input input-glow difficulty-color"
+                               data-diff="${record.difficulty || 3}"
+                               readonly
+                               style="cursor:pointer;font-weight:600;--dfc-light:${getDifficultyColor(record.difficulty || 3)};--dfc-dark:${getDifficultyColorDark(record.difficulty || 3)};"
+                               onclick="openDifficultyPicker('edit-difficulty-${record.id}')"
+                               title="点击选择难度"
+                               enterkeyhint="done">
                     </td>
                     <td class="p-2" data-label="记录时间">
                         <!-- ★2026-09-01 自定义日期时间选择器（替换系统原生 picker，统一设计语言）：readonly + 点击弹自定义弹窗，值格式保持 YYYY-MM-DDTHH:mm 兼容保存逻辑 -->
@@ -500,8 +503,6 @@ function renderTable() {
         
         attachEventListeners();
     });
-
-    fitEditSelects(); // v1.0.7.11 编辑行难度框宽度自适应
 }
 
 function attachEventListeners() {
@@ -1352,6 +1353,59 @@ function renderDtpNav() {
         if (dtpState.day > maxD) dtpState.day = maxD;
         renderDtpNav(); renderDtpGrid();
     });
+}
+
+// ★2026-09-04 难度选择弹窗（替换原生 select，统一玻璃设计语言，与心情/天气/日期同款选中态）
+// prefix 传 'edit-difficulty-' 或 'edit-planned-difficulty-'，由调用方拼接 id
+function openDifficultyPicker(inputId) {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals(); // 防重入
+        const input = document.getElementById(inputId);
+        const current = input ? parseInt(input.value, 10) : 3;
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">signal_cellular_alt</span>选择难度</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;">' +
+            '<div class="df-grid" id="dfGrid"></div>' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="dfCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
+            '<button class="check-go-btn ripple-effect" id="dfOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+        let selected = current;
+        const grid = document.getElementById('dfGrid');
+        const DIFF_NAMES = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
+        for (let d = 1; d <= 5; d++) {
+            const cell = document.createElement('div');
+            cell.className = 'df-opt' + (d === current ? ' selected' : '');
+            cell.setAttribute('data-v', d);
+            cell.style.setProperty('--df-color', getDifficultyColor(d));
+            cell.innerHTML = '<span class="df-dot"></span>' + d + '级 <span class="df-name">' + DIFF_NAMES[d] + '</span>';
+            cell.addEventListener('click', function () {
+                selected = parseInt(this.getAttribute('data-v'), 10);
+                grid.querySelectorAll('.df-opt').forEach(function (c) { c.classList.remove('selected'); });
+                this.classList.add('selected');
+            });
+            grid.appendChild(cell);
+        }
+        document.getElementById('dfCancel').addEventListener('click', function () { document.body.removeChild(modal); });
+        document.getElementById('dfOk').addEventListener('click', function () {
+            try {
+                const inp = document.getElementById(inputId);
+                if (inp) {
+                    inp.value = String(selected);
+                    // ★2026-09-04 同步难度色变量（浅/深两套），框色即时跟随档位
+                    inp.style.setProperty('--dfc-light', getDifficultyColor(selected));
+                    inp.style.setProperty('--dfc-dark', getDifficultyColorDark(selected));
+                }
+                document.body.removeChild(modal);
+            } catch (e) { /* 忽略 */ }
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    } catch (e) { /* 忽略 */ }
 }
 
 // ★2026-09-01 心情/天气选择弹窗（替换原生 select，统一玻璃设计语言，与日期选择器同款选中态）
@@ -3181,7 +3235,13 @@ function applyCopyFillToForm(src, dstId) {
     setVal('edit-name-', src.name);
     setVal('edit-elevation-', Number(src.elevation) || '');
     var diffEl = document.getElementById('edit-difficulty-' + dstId);
-    if (diffEl) diffEl.value = String((typeof src.difficulty === 'number') ? src.difficulty : (parseInt(src.difficulty, 10) || 3));
+    if (diffEl) {
+        var dff = (typeof src.difficulty === 'number') ? src.difficulty : (parseInt(src.difficulty, 10) || 3);
+        diffEl.value = String(dff);
+        // ★2026-09-04 复制填充后同步难度色变量
+        diffEl.style.setProperty('--dfc-light', getDifficultyColor(dff));
+        diffEl.style.setProperty('--dfc-dark', getDifficultyColorDark(dff));
+    }
     setVal('edit-mood-', src.mood);
     setVal('edit-weather-', src.weather);
     setVal('edit-companions-', src.companions);
@@ -3398,15 +3458,18 @@ function renderPlannedTripsTable() {
                                    enterkeyhint="next">
                         </td>
                         <td class="p-2" data-label="难度">
-                            <select id="edit-planned-difficulty-${trip.id}" 
-                                    data-testid="edit-planned-difficulty-${trip.id}"
-                                    class="edit-input input-glow">
-                                <option value="1" ${trip.difficulty === 1 ? 'selected' : ''}>1级</option>
-                                <option value="2" ${trip.difficulty === 2 ? 'selected' : ''}>2级</option>
-                                <option value="3" ${trip.difficulty === 3 ? 'selected' : ''}>3级</option>
-                                <option value="4" ${trip.difficulty === 4 ? 'selected' : ''}>4级</option>
-                                <option value="5" ${trip.difficulty === 5 ? 'selected' : ''}>5级</option>
-                            </select>
+                            <!-- ★2026-09-04 难度改玻璃弹窗（同记录页，替换原生 select）；字色深浅双适配 -->
+                            <input type="text"
+                                   id="edit-planned-difficulty-${trip.id}"
+                                   data-testid="edit-planned-difficulty-${trip.id}"
+                                   value="${trip.difficulty || 3}"
+                                   class="edit-input input-glow difficulty-color"
+                                   data-diff="${trip.difficulty || 3}"
+                                   readonly
+                                   style="cursor:pointer;font-weight:600;--dfc-light:${getDifficultyColor(trip.difficulty || 3)};--dfc-dark:${getDifficultyColorDark(trip.difficulty || 3)};"
+                                   onclick="openDifficultyPicker('edit-planned-difficulty-${trip.id}')"
+                                   title="点击选择难度"
+                                   enterkeyhint="done">
                         </td>
                         <td class="p-2" data-label="记录时间">
                             <!-- ★2026-09-01 自定义日期时间选择器（同记录页，替换原生 picker） -->
@@ -3479,8 +3542,6 @@ function renderPlannedTripsTable() {
         
         attachPlannedTripsEventListeners();
     });
-
-    fitEditSelects(); // v1.0.7.11 编辑行难度框宽度自适应
 }
 
 function attachPlannedTripsEventListeners() {

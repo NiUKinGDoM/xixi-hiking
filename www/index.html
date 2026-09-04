@@ -1952,6 +1952,13 @@
             border-color: rgba(102, 126, 234, 0.5);
             background: rgba(255, 255, 255, 1);
         }
+        /* ★2026-09-04 难度框字色：浅色=档位色(--dfc-light)，深色=同档亮色(--dfc-dark)；!important 压过 .edit-input 深色白字 */
+        .difficulty-color {
+            color: var(--dfc-light, #0f766e) !important;
+        }
+        body.dark-mode .difficulty-color {
+            color: var(--dfc-dark, #34d399) !important;
+        }
 
         /* ★2026-09-01 编辑行里程/用时单位（框内数字 + 框后 km/h）：灰蓝小字与玻璃输入框搭配 */
         .edit-unit-wrap {
@@ -2135,6 +2142,63 @@
             background: rgba(148, 163, 184, 0.14);
             border-color: rgba(148, 163, 184, 0.6);
             color: #e5e7eb;
+        }
+        
+        /* ★2026-09-04 难度选择弹窗（替换原生 select）：色点 + 档名卡，选中靛蓝玻璃同心情/天气 */
+        .df-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin: 4px 0 6px;
+        }
+        .df-opt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #334155;
+            font-size: 15px;
+            font-weight: 600;
+            user-select: none;
+            transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .dark-mode .df-opt {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.22);
+            color: #e5e7eb;
+        }
+        .df-opt .df-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--df-color, #10b981);
+            flex-shrink: 0;
+        }
+        .df-opt .df-name {
+            margin-left: auto;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 400;
+        }
+        .dark-mode .df-opt .df-name {
+            color: #a3b1c6;
+        }
+        .df-opt.selected {
+            background: rgba(79, 70, 229, 0.16);
+            border-color: rgba(79, 70, 229, 0.8);
+            color: #4338ca;
+        }
+        .dark-mode .df-opt.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(129, 140, 248, 0.8);
+            color: #c7d2fe;
+        }
+        .df-opt:active {
+            transform: scale(0.94);
         }
         
         select.edit-input {
@@ -5924,7 +5988,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.8.10</div>
+                        <div class="about-version">版本 1.1.9.0</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

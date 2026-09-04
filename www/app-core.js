@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.9.0': '## v1.1.9.0 更新内容\n\n**交互更统一**\n- 难度选择告别原生下拉：点击弹玻璃弹窗，五档难度带色点与档名，选中即改\n- 难度数字带档位色（浅色深色各自适配），改完框色即时同步\n\n**更干净**\n- 清除难度下拉宽度自适应等无用旧逻辑\n\nMade by XiXi 💛',
     'v1.1.8.10': '## v1.1.8.10 更新内容\n\n**我的山册 · 像本册子了**\n- 山册改双列名册，一屏能看更多座山\n- 每座山盖一枚圆章序号 01 / 02 / 03……按你第一次登山的先后自动编号\n- 卡片右缘+下缘一条海拔书脊色带：低山青绿、高山靛紫，翻册子像翻一摞书\n- 长山名自动两行完整显示，不再截成「祥峪森…」\n\n**概览页更纯粹**\n- 统计大卡收身、矮卡放大，层级更协调\n- 删掉首页「难度分布」柱状图：首页留给统计与足迹回忆\n\nMade by XiXi 💛',
     'v1.1.8.9': '## v1.1.8.9 更新内容\n\n**添加记录更顺手**\n- 「＋添加」改下拉式：新建空白与从历史复制分两条路\n- 顶部独立「新建空白记录」一行直达；下拉展开选最近记录，点底部「填充」才带出（防止误建）\n\n**可读性整体提升**\n- 所有弹窗的说明文字/去年对比值/日期等小字统一加深（浅色/深色模式都调过）\n- 弹窗内虚线与分割线加深，不再若隐若现\n- 年月/日期/心情选择器选中态全部改玻璃质感，告别纯色块\n\nMade by XiXi 💛',
     'v1.1.8.8': '## v1.1.8.8 更新内容\n\n**概览页更聚焦**\n- 统计卡主次分离：只留 4 张主卡（次数/总里程/总用时/最高海拔）大字展示，平均海拔/平均难度/平均用时收成一行矮副卡\n- 「徒步足迹」热力图挪到难度分布上方，打开概览先看回忆再看数据\n- 年度回顾入口收进热力图卡右上角\n\n**徒步足迹 · 更好用**\n- 年月选择器合并成一个框：点开弹窗选年月，只有去过徒步的月份能选\n- 底部汇总精简为「徒步 N 次 · 累计爬升 Xm」，不再重复日期\n\n**界面细节**\n- 设置页数据管理说明重新排版，删掉多余说明文字\n- 滚动条统一玻璃质感（含照片横排条）\n- 细节与稳定性优化\n\nMade by XiXi 💛',
@@ -448,7 +449,7 @@ function applyFpsPreference() {
 
 const STORAGE_KEY = 'hiking_records';
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.8.10';
+var APP_VERSION = '1.1.9.0';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -1112,37 +1113,16 @@ async function saveHeatmapTitleToStorage(title) {
     }
 }
 
-// v1.0.7.11 下拉框宽度自适应文字（canvas 精确测量最长选项 + 箭头/padding 余量）
-function fitSelectWidth(sel) {
-    if (!sel) return;
-    try {
-        const ctx = document.createElement('canvas').getContext('2d');
-        const cs = getComputedStyle(sel);
-        ctx.font = (cs.fontWeight || '400') + ' ' + (cs.fontSize || '13px') + ' ' + (cs.fontFamily || 'sans-serif');
-        let maxW = 0;
-        Array.from(sel.options).forEach(function (opt) {
-            const w = ctx.measureText(opt.textContent || '').width;
-            if (w > maxW) maxW = w;
-        });
-        // v1.0.8.2 修复：box-sizing:border-box 下 44px 余量被 padding 吃掉 → 按 padding+箭头动态算
-        const pl = parseFloat(cs.paddingLeft) || 12;
-        const pr = parseFloat(cs.paddingRight) || 14;
-        const arrow = 22;
-        let extra = arrow;
-        if (cs.boxSizing === 'border-box') extra += pl + pr;
-        sel.style.width = Math.ceil(maxW) + extra + 'px';
-    } catch (e) { console.warn('fitSelectWidth failed:', e); }
-}
-
-function fitEditSelects() {
-    document.querySelectorAll('select[id^="edit-difficulty-"], select[id^="edit-planned-difficulty-"]').forEach(function (sel) {
-        fitSelectWidth(sel);
-    });
-}// 区块标题加载函数
+// ★2026-09-04 fitSelectWidth/fitEditSelects 已删除：难度选择改玻璃弹窗后全 App 无 select，原自适应宽度逻辑成死代码
 
 function getDifficultyColor(difficulty) {
     const colors = ['#10b981', '#84cc16', '#f59e0b', '#f97316', '#dc2626'];
     return colors[difficulty - 1] || '#10b981';
+}
+// ★2026-09-04 深色模式难度字色：同档位的 400 级亮色（深底上保持辨识度，配 .difficulty-color input 用）
+function getDifficultyColorDark(difficulty) {
+    const colors = ['#34d399', '#a3e635', '#fbbf24', '#fb923c', '#f87171'];
+    return colors[difficulty - 1] || '#34d399';
 }
 // ★2026-08-25 难度徽章玻璃质感：hex → rgba 半透明背景 / 同色系细边框
 function hexToRgba(hex, alpha) {
