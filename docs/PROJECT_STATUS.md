@@ -1,13 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-04（v1.1.9.2 / vc222）
+> 最后更新：2026-09-04（v1.1.9.3 / vc223）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
-- **正式版 v1.1.9.2**（versionCode 222，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.9.3**（versionCode 223，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.9.3 更新：视图说明灰字去 icon 改居中纯文字（色对齐体系 #52606f/#a3b1c6）+ 批量多选框从名称列移到操作列（18px 居中）+ 多选框弃 accent 深红改玻璃自绘（appearance:none：未选白玻璃灰蓝边/选中浅红玻璃红勾，dark 对应暗玻璃亮勾）+ 死码清理（12 个零引用死函数 -153 行）+ 编辑弹窗 3 处 value 补 escapeHtml + 自动测试 P0P3 沉淀 99→115 项 + README 5 处过时修订 & GitHub 全文档同步（docs/PROJECT_STATUS、清 3 个误入 py）
 - v1.1.9.2 更新：记录详情弹窗照片显示修复（打开即 loadPhotoThumbs）+ 照片墙 3 列网格改横向滑动条 + 浅色徽章/日期可读性（难度 700 档深色 rdDifficultyColorDeep、心情天气 #334155+12px、日期 13px）+ 快捷方式「记一笔」轮询加固（防漏弹/防重复新建）+ 编辑弹窗布局重排（记录：名称/海拔+难度 1:1（难度框「N级 档名」diffLabel）/心情天气同行人 flex:1/用时里程双组合框/日期时间后置；计划：海拔难度提前日期前同款档名）+ 视图模式可读性（切换按钮图标+文字、各视图 .view-caption 小标题说明）
 - v1.1.9.1 更新：记录/计划列表瘦身两列+居中详情弹窗（点行看日记、弹窗内编辑）+ 照片上限 24（分批压图）+ 首次引导横幅 + 桌面快捷方式「记一笔」+ 表格布局修复（fixed→auto 名称列消失）+ 弹窗文字深浅提亮 + 时间列 14px
 - v1.1.8.8 更新：概览统计主次分离（4 主卡 + 平均海拔/平均难度/平均用时矮副卡、总爬升并入热力图底部汇总）+ 徒步足迹热力图前置难度分布上 + 年月单框弹窗选择（替代双下拉、仅记录月可选）+ 年回入口入热力图卡右上 + 设置页数据管理 i 弹窗重排 + 括号文案删除
@@ -198,6 +199,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
+- v1.1.9.3（vc223）：**视图说明纯文字居中 + 批量多选移操作列玻璃化 + 死码清理（12 函数）+ 转义加固 + 测试 115 + 文档全面同步（含 GH docs/ 清杂项）**（详见 Release）
 - v1.1.9.2（vc222）：**弹窗照片修复+横滑照片墙+徽章日期可读+快捷方式加固+编辑布局重排（diffLabel/1:1 均分/日期换位）+视图说明（按钮文字+view-caption）**（详见 Release）
 - v1.1.9.1（vc221）：**阅读态 v2（行内编辑表格退役→列表瘦身名称+操作+时间三列、点行 .record-detail-modal 居中详情弹窗(独立 class 非 confirm-modal 便于子选择器叠层)、弹窗内编辑 id 体系全保留复用、引导文案适配）+ 照片 9→24(MAX_RECORD_PHOTOS+分批压缩)+首次引导横幅(welcomeBanner)+桌面快捷方式(shortcuts.xml+quickadd 分支)+表格布局修复(fixed→auto)+弹窗文字深浅提亮(rd-* 全 !important+52606f/a3b1c6)+时间列 14px**（详见 Release）
 - v1.1.9.0（vc220）：**难度玻璃弹窗 openDifficultyPicker（df-grid 五档色点+档名，记录/计划通用）+ 难度框 .difficulty-color 深浅双色变量（--dfc-light 600 档/--dfc-dark 400 档，压过 .dark-mode .edit-input 白字）+ dfOk/复制填充 setProperty 同步 + getDifficultyColorDark 新增 + fitSelectWidth/fitEditSelects 死码删除**（详见 Release）
