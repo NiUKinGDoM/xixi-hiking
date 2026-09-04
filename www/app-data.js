@@ -352,145 +352,24 @@ function renderTable() {
                 (record.__count ? '<span class="year-group-count">' + record.__count + ' 次</span>' : '') +
                 '</div></td></tr>';
         }
-        if (editingId === record.id) {
-            var editRows = `
-                <tr id="row-${record.id}" class="border-b border-gray-200">
-                    <td class="p-2" data-label="名称">
-                        <div class="input-with-search">
-                            <input type="text" 
-                                   id="edit-name-${record.id}" 
-                                   value="${escapeHtml(record.name)}" 
-                                   data-testid="edit-name-${record.id}"
-                                   class="edit-input input-glow"
-                                   placeholder="输入名称"
-                                   autocomplete="off"
-                                   autocorrect="off"
-                                   autocapitalize="off"
-                                   spellcheck="false"
-                                   inputmode="text"
-                                   enterkeyhint="next">
-                        </div>
-                    </td>
-                    <td class="p-2" data-label="海拔">
-                        <input type="number" 
-                               id="edit-elevation-${record.id}" 
-                               value="${record.elevation}" 
-                               data-testid="edit-elevation-${record.id}"
-                               class="edit-input input-glow"
-                               min="0"
-                               placeholder="海拔"
-                               inputmode="numeric"
-                               pattern="[0-9]*"
-                               enterkeyhint="next">
-                    </td>
-                    <td class="p-2" data-label="难度">
-                        <!-- ★2026-09-04 难度改玻璃弹窗（替换原生 select）：readonly input + 点击弹 df 弹窗；字色浅色=难度色/深色=同档亮色 -->
-                        <input type="text"
-                               id="edit-difficulty-${record.id}"
-                               data-testid="edit-difficulty-${record.id}"
-                               value="${record.difficulty || 3}"
-                               class="edit-input input-glow difficulty-color"
-                               data-diff="${record.difficulty || 3}"
-                               readonly
-                               style="cursor:pointer;font-weight:600;--dfc-light:${getDifficultyColor(record.difficulty || 3)};--dfc-dark:${getDifficultyColorDark(record.difficulty || 3)};"
-                               onclick="openDifficultyPicker('edit-difficulty-${record.id}')"
-                               title="点击选择难度"
-                               enterkeyhint="done">
-                    </td>
-                    <td class="p-2" data-label="记录时间">
-                        <!-- ★2026-09-01 自定义日期时间选择器（替换系统原生 picker，统一设计语言）：readonly + 点击弹自定义弹窗，值格式保持 YYYY-MM-DDTHH:mm 兼容保存逻辑 -->
-                        <input type="text" 
-                               id="edit-created-at-${record.id}" 
-                               value="${formatDateTimeLocal(record.createdAt)}" 
-                               data-testid="edit-created-at-${record.id}"
-                               class="edit-input input-glow"
-                               readonly
-                               style="cursor:pointer;font-weight:400;"
-                               onclick="openDateTimePicker(this.id, this.value)"
-                               enterkeyhint="done"
-                               title="点击选择日期时间">
-                    </td>
-                    <td class="p-2 text-center" data-label="操作">
-                        <div class="edit-action-btns">
-                            <button id="save-btn-${record.id}" 
-                                    data-testid="save-button-${record.id}"
-                                    class="ripple-effect btn-click-effect check-go-btn"
-                                    style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
-                                保存
-                            </button>
-                            <button id="cancel-btn-${record.id}" 
-                                    data-testid="cancel-button-${record.id}"
-                                    class="ripple-effect btn-click-effect confirm-btn-cancel"
-                                    style="${recordCancelStyle}">
-                                取消
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <!-- ★2026-08-20 照片区（编辑行下方，最多 9 张） -->
-                <tr id="photo-row-${record.id}" class="border-b border-gray-200 bg-white/5">
-                    <td colspan="5" class="p-2">
-                        <div class="flex flex-wrap items-center gap-1.5">
-                            <div id="photo-thumbs-${record.id}" class="flex items-center">
-                                ${photoThumbsHTML(editingPhotoIds, record.id)}
-                            </div>
-                            <!-- ★2026-09-01 心情/天气再放大 5%（72→76px）；顺序：心情→天气→同行→时/分→里程（时/分与它们同行） -->
-                            <!-- ★2026-09-01 心情/天气改统一玻璃弹窗（readonly input + 点击弹自定义弹窗，替换原生 select，设计语言统一） -->
-                            <input type="text" id="edit-mood-${record.id}" class="edit-input input-glow" style="max-width:76px;" value="${record.mood || ''}" placeholder="心情" readonly title="心情（可选）">
-                            <input type="text" id="edit-weather-${record.id}" class="edit-input input-glow" style="max-width:76px;" value="${record.weather || ''}" placeholder="天气" readonly title="天气（可选）">
-                            <!-- ★2026-09-01 同行人缩小 30%（104→72px） -->
-                            <input type="text" id="edit-companions-${record.id}" placeholder="同行人" class="edit-input input-glow" style="max-width:72px;" value="${record.companions || ''}">
-                            <!-- ★2026-09-01 用时改小时+分钟双框（record.duration 存分钟），紧跟心情/天气/同行人同行 -->
-                            <div class="edit-unit-wrap">
-                                <input type="number" id="edit-duration-h-${record.id}" placeholder="时" class="edit-input input-glow" style="max-width:50px;" value="${record.duration ? Math.floor(record.duration / 60) : ''}" min="0" max="23" step="1" inputmode="numeric" title="小时">
-                                <span class="edit-unit">时</span>
-                                <input type="number" id="edit-duration-m-${record.id}" placeholder="分" class="edit-input input-glow" style="max-width:50px;" value="${record.duration ? record.duration % 60 : ''}" min="0" max="59" step="1" inputmode="numeric" title="分钟">
-                                <span class="edit-unit">分</span>
-                            </div>
-                            <!-- ★2026-09-01 里程：放大 5%（60→63px）+ 精确到小数点后两位（step 0.01） -->
-                            <div class="edit-unit-wrap">
-                                <input type="number" id="edit-distance-${record.id}" placeholder="里程" class="edit-input input-glow" style="max-width:63px;" value="${record.distance || ''}" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">
-                                <span class="edit-unit">km</span>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            // ★2026-09-03 P0 定稿：复制改走「＋添加」弹窗流程，行内不再渲染复制条（编辑旧记录不出现）
-            return editRows;
-        } else {
-            // ★2026-08-27 入场动画只首次播（后续刷新/编辑/翻页不重播，省布局抖动）
-            const rowAnimCls = recordsRowsAnimated ? '' : 'table-row-animate ';
-            const rowDelayStyle = recordsRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
-            return `
-                <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="${rowDelayStyle}">
-                    <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
-                        <span class="inline-flex items-center gap-1.5">
-                            ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
-                            ${escapeHtml(record.name)}
-                            ${record.weather ? '<span class="text-base" title="天气">' + record.weather + '</span>' : ''}
-                            <!-- ★2026-08-25 名称后照片按钮：新版玻璃配方图标按钮（.icon-glass-btn）；查看模式只读（保存+左右翻页） -->
-                            ${record.photos && record.photos.length ? '<button id="photos-btn-' + record.id + '" data-testid="photos-button-' + record.id + '" class="ripple-effect btn-click-effect icon-glass-btn" style="width:30px;height:30px;padding:0;border-radius:8px;flex-shrink:0;" title="查看照片"><span class="material-icons" style="font-size:16px;line-height:1;">photo_library</span></button>' : ''}
-                        </span>
-                    </td>
-                    <td class="p-2 text-white/80 text-base font-medium" data-label="海拔">
-                        ${record.elevation}
-                    </td>
-                    <td class="p-2" data-label="难度">
-                        <span class="difficulty-badge difficulty-badge-advanced px-2 py-1 rounded text-white text-sm font-medium"
-                              style="background: ${getDifficultyGlass(record.difficulty)}; border-color: ${getDifficultyBorder(record.difficulty)};">
-                            ${getDifficultyText(record.difficulty)}
-                        </span>
-                    </td>
-                    <td class="p-2 text-white/60 text-sm" data-label="记录时间">
-                        ${formatDateTime(record.createdAt)}
-                    </td>
-                    <td class="p-2 text-center" data-label="操作">
-                        ${batchMode ? '' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
-                    </td>
-                </tr>
-            `;
-        }
+        // ★2026-09-04 阅读态 v2：列表瘦身——只显示 名称 + 操作(删除)，海拔/难度/时间等全收进详情弹窗
+        //   （行内编辑表格已废弃：编辑搬进居中详情弹窗，点行=看详情，弹窗内「编辑」才进编辑态）
+        const rowAnimCls = recordsRowsAnimated ? '' : 'table-row-animate ';
+        const rowDelayStyle = recordsRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
+        return `
+            <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="${rowDelayStyle}">
+                <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
+                    <span class="inline-flex items-center gap-1.5" style="max-width:100%;">
+                        ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
+                        <span class="rd-name-main">${escapeHtml(record.name)}</span>
+                    </span>
+                </td>
+                <td class="rd-time-cell" data-label="记录时间">${formatDateTime(record.createdAt)}</td>
+                <td class="p-2 text-center" data-label="操作">
+                    ${batchMode ? '' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                </td>
+            </tr>
+        `;
     }).join('');
     
     if (tbody) safeSetElementContent('recordsTable', tableContent);
@@ -503,6 +382,203 @@ function renderTable() {
         
         attachEventListeners();
     });
+}
+
+// ===== ★2026-09-04 阅读态 v2：居中详情弹窗（列表瘦身为 名称+操作，点行看详情，弹窗内编辑）=====
+// 全局：当前打开的详情弹窗记录 id 与模式（null=无；view=阅读 / edit=编辑）
+var detailModalRecordId = null;
+var detailModalMode = 'view';
+// 弹窗内编辑临时照片列表（与行内编辑共用 editingPhotoIds 全局——photoThumbsHTML/灯箱/保存都读它）
+// 弹窗 DOM 引用
+var recordDetailModalEl = null;
+
+function closeRecordDetailModal() {
+    if (recordDetailModalEl && recordDetailModalEl.parentNode) {
+        try { recordDetailModalEl.parentNode.removeChild(recordDetailModalEl); } catch (e) { /* 忽略 */ }
+    }
+    recordDetailModalEl = null;
+    detailModalRecordId = null;
+    detailModalMode = 'view';
+}
+
+// 阅读态徽章颜色（难度沿用现有色系；心情/天气中性玻璃）
+function rdDifficultyColor(d) {
+    return { 1: '#10b981', 2: '#84cc16', 3: '#f59e0b', 4: '#f97316', 5: '#dc2626' }[d] || '#f59e0b';
+}
+
+// 阅读态弹窗 body（点行默认）
+function recordViewBodyHTML(r) {
+    var durTxt = (Number(r.duration) || 0) ? formatDuration(Number(r.duration)) : '—';
+    var kmTxt = (Number(r.distance) || 0) ? Number(r.distance).toFixed(1) + 'km' : '—';
+    var elTxt = (Number(r.elevation) || 0) ? r.elevation + 'm' : '—';
+    var mateTxt = (r.companions && String(r.companions).trim()) ? escapeHtml(String(r.companions).trim()) : '—';
+    var dColor = rdDifficultyColor(Number(r.difficulty));
+    var diffName = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' }[Number(r.difficulty)] || '中等';
+    // 照片墙（只读，点开灯箱查看）
+    var photosHtml = '';
+    if (r.photos && r.photos.length) {
+        var cells = r.photos.slice(0, 24).map(function (pid) {
+            return '<img data-pid="' + pid + '" data-record="' + r.id + '" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#e2e8f0;cursor:pointer;" alt="照片">';
+        }).join('');
+        photosHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;" id="rd-photos-' + r.id + '">' + cells + '</div>';
+    }
+    return '' +
+        '<div class="rd-head" style="display:flex;align-items:baseline;gap:8px;margin:2px 0 6px;">' +
+        '<span class="rd-name" style="font-size:20px;font-weight:700;color:#1e293b;line-height:1.35;">' + escapeHtml(r.name) + '</span>' +
+        '<span class="rd-no" style="font-size:11px;color:#52606f;flex-shrink:0;">' + fmtYMD(r.createdAt) + '</span></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">' +
+        '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;color:' + dColor + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + r.difficulty + ' 级 · ' + diffName + '</span>' +
+        (r.mood ? '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(148,163,184,0.14);border:1px solid rgba(148,163,184,0.4);color:#475569;">心情 ' + escapeHtml(r.mood) + '</span>' : '') +
+        (r.weather ? '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(148,163,184,0.14);border:1px solid rgba(148,163,184,0.4);color:#475569;">天气 ' + escapeHtml(r.weather) + '</span>' : '') +
+        '</div>' +
+        photosHtml +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">最高海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">里程</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + kmTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">用时</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + durTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">同行人</div><div style="font-size:13px;font-weight:700;color:#1e293b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + mateTxt + '</div></div>' +
+        '</div>' +
+        '<button id="rd-edit-btn" class="check-go-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
+}
+
+// 编辑态弹窗 body（与行内编辑同 id 体系：保存/照片/日期/难度/心情/天气全复用）
+function recordEditBodyHTML(r) {
+    var recordCancelStyle2 = (document.body.classList.contains('dark-mode'))
+        ? 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;'
+        : 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;';
+    return '' +
+        '<div style="display:flex;flex-direction:column;gap:10px;">' +
+        // 名称（全宽）
+        '<input type="text" id="edit-name-' + r.id + '" value="' + escapeHtml(r.name) + '" data-testid="edit-name-' + r.id + '" class="edit-input input-glow" placeholder="输入名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="next">' +
+        // 日期时间
+        '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
+        // 海拔 + 难度 一行
+        '<div style="display:flex;gap:8px;">' +
+        '<input type="number" id="edit-elevation-' + r.id + '" value="' + (r.elevation || 0) + '" data-testid="edit-elevation-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
+        '<input type="text" id="edit-difficulty-' + r.id + '" data-testid="edit-difficulty-' + r.id + '" value="' + (r.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (r.difficulty || 3) + '" readonly style="flex:0 0 84px;cursor:pointer;font-weight:600;--dfc-light:' + getDifficultyColor(r.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(r.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-difficulty-' + r.id + '\')" title="点击选择难度" enterkeyhint="done">' +
+        '</div>' +
+        // 心情/天气/同行人 一行
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+        '<input type="text" id="edit-mood-' + r.id + '" class="edit-input input-glow" style="flex:0 0 calc(33% - 6px);min-width:0;" value="' + (r.mood || '') + '" placeholder="心情" readonly title="心情（可选）">' +
+        '<input type="text" id="edit-weather-' + r.id + '" class="edit-input input-glow" style="flex:0 0 calc(33% - 6px);min-width:0;" value="' + (r.weather || '') + '" placeholder="天气" readonly title="天气（可选）">' +
+        '<input type="text" id="edit-companions-' + r.id + '" placeholder="同行人" class="edit-input input-glow" style="flex:0 0 calc(33% - 6px);min-width:0;" value="' + (r.companions || '') + '">' +
+        '</div>' +
+        // 时/分/里程 一行
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+        '<div class="edit-unit-wrap" style="display:flex;align-items:center;gap:2px;">' +
+        '<input type="number" id="edit-duration-h-' + r.id + '" placeholder="时" class="edit-input input-glow" style="max-width:52px;" value="' + (r.duration ? Math.floor(Number(r.duration) / 60) : '') + '" min="0" max="23" step="1" inputmode="numeric" title="小时">' +
+        '<span class="edit-unit">时</span>' +
+        '<input type="number" id="edit-duration-m-' + r.id + '" placeholder="分" class="edit-input input-glow" style="max-width:52px;" value="' + (r.duration ? Number(r.duration) % 60 : '') + '" min="0" max="59" step="1" inputmode="numeric" title="分钟">' +
+        '<span class="edit-unit">分</span></div>' +
+        '<div class="edit-unit-wrap" style="display:flex;align-items:center;gap:2px;">' +
+        '<input type="number" id="edit-distance-' + r.id + '" placeholder="里程" class="edit-input input-glow" style="max-width:70px;" value="' + (r.distance || '') + '" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">' +
+        '<span class="edit-unit">km</span></div>' +
+        '</div>' +
+        // 照片区（层叠卡 + 灯箱管理）
+        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span class="rd-ph-lab" style="font-size:12px;color:#52606f;margin-right:4px;">照片</span>' +
+        '<div id="photo-thumbs-' + r.id + '" style="display:flex;align-items:center;">' + photoThumbsHTML(editingPhotoIds, r.id) + '</div>' +
+        '</div>' +
+        // 操作按钮
+        '<div style="display:flex;gap:10px;margin-top:2px;">' +
+        '<button id="cancel-btn-' + r.id + '" data-testid="cancel-button-' + r.id + '" class="ripple-effect btn-click-effect confirm-btn-cancel" style="' + recordCancelStyle2 + '">取消</button>' +
+        '<button id="save-btn-' + r.id + '" data-testid="save-button-' + r.id + '" class="ripple-effect btn-click-effect check-go-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
+        '</div>' +
+        '</div>';
+}
+
+// 打开记录详情弹窗（居中玻璃，同 confirm-modal 体系）
+function openRecordDetailModal(id, startMode) {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals(); // 防重入（含计划/其它弹窗）
+        closeRecordDetailModal();
+        var r = (records || []).find(function (x) { return x.id === id; });
+        if (!r) return;
+        detailModalRecordId = id;
+        detailModalMode = (startMode === 'edit') ? 'edit' : 'view';
+        var modal = document.createElement('div');
+        // ★2026-09-04 详情弹窗用独立 class（不带 confirm-modal）：子选择弹窗（难度/日期/心情）open 时 closeOpenModals()
+        //   只清 .confirm-modal，不会误删本弹窗 → 编辑态里再弹子选择器才能叠层工作
+        modal.className = 'record-detail-modal modal-backdrop-animate';
+        recordDetailModalEl = modal;
+        var modalInner =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width:440px;width:calc(100vw - 44px);box-sizing:border-box;max-height:86vh;overflow-y:auto;border-radius:20px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
+            '<span class="material-icons" style="color:#4f46e5;">' + (detailModalMode === 'edit' ? 'edit_note' : 'landscape') + '</span>' +
+            '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (detailModalMode === 'edit' ? '编辑记录' : '记录详情') + '</span>' +
+            '<button id="rd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
+            '</div><div id="rd-body" style="margin-top:8px;"></div></div>';
+        modal.innerHTML = modalInner;
+        document.body.appendChild(modal);
+        var bodyEl = modal.querySelector('#rd-body');
+        if (detailModalMode === 'edit') {
+            editingId = id;
+            editingPhotoIds = (r.photos || []).slice();
+            bodyEl.innerHTML = recordEditBodyHTML(r);
+        } else {
+            bodyEl.innerHTML = recordViewBodyHTML(r);
+        }
+        bindRecordDetailEvents(modal, id, r);
+        // 点遮罩关闭（与 confirm-modal 一致）
+        modal.addEventListener('click', function (e) { if (e.target === modal) { closeRecordDetailModal(); renderTable(); } });
+    } catch (e) { /* 打开失败不影响 */ }
+}
+
+// 弹窗内事件绑定（随弹窗 DOM 重建，不入 cleanup 体系）
+function bindRecordDetailEvents(modal, id, r) {
+    var closeBtn = modal.querySelector('#rd-close');
+    if (closeBtn) closeBtn.addEventListener('click', function () { closeRecordDetailModal(); renderTable(); });
+    var bodyEl = modal.querySelector('#rd-body');
+    // 阅读态：照片只读灯箱 + 编辑按钮
+    if (detailModalMode === 'view') {
+        var phBox = bodyEl.querySelector('#rd-photos-' + id);
+        if (phBox) {
+            phBox.addEventListener('click', function (e) {
+                var img = e.target.closest('img[data-pid]');
+                if (!img) return;
+                var pid = img.getAttribute('data-pid');
+                openPhotoLightbox(id, pid, false); // 只读灯箱
+            });
+        }
+        var editBtn = bodyEl.querySelector('#rd-edit-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', function () {
+                detailModalMode = 'edit';
+                editingId = id;
+                editingPhotoIds = (r.photos || []).slice();
+                var tt = modal.querySelector('.rd-tt');
+                if (tt) tt.textContent = '编辑记录';
+                var ic = modal.querySelector('.material-icons');
+                if (ic) ic.textContent = 'edit_note';
+                bodyEl.innerHTML = recordEditBodyHTML(r);
+                bindEditBody(modal, id);
+            });
+        }
+        return;
+    }
+    bindEditBody(modal, id);
+}
+// 编辑态表单事件（保存/取消/心情/天气/照片）
+function bindEditBody(modal, id) {
+    var saveBtn = modal.querySelector('#save-btn-' + id);
+    var cancelBtn = modal.querySelector('#cancel-btn-' + id);
+    if (saveBtn) saveBtn.addEventListener('click', function () { saveRecord(id); });
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { cancelEdit(); });
+    var moodInput = modal.querySelector('#edit-mood-' + id);
+    if (moodInput) moodInput.addEventListener('click', function () { openMoodWeatherPicker('mood', id); });
+    var weatherInput = modal.querySelector('#edit-weather-' + id);
+    if (weatherInput) weatherInput.addEventListener('click', function () { openMoodWeatherPicker('weather', id); });
+    var phBox = modal.querySelector('#photo-thumbs-' + id);
+    if (phBox) {
+        phBox.addEventListener('click', function (e) {
+            var stack = e.target.closest('.photo-stack');
+            if (!stack) return;
+            var firstImg = stack.querySelector('.photo-thumb-img');
+            if (!firstImg) { addPhotosToEdit(id, false); return; }
+            var firstPid = firstImg.getAttribute('data-pid');
+            openPhotoLightbox(id, firstPid, true);
+        });
+    }
+    try { loadPhotoThumbs(id); } catch (e) { /* 忽略 */ }
 }
 
 function attachEventListeners() {
@@ -555,94 +631,32 @@ function attachEventListeners() {
     updateBatchBar(); // 渲染后同步批量工具栏状态（跨页勾选保留）
     
     sortedRecords.forEach(record => {
-        if (editingId === record.id) {
-            const saveBtn = safeGetElementById(`save-btn-${record.id}`);
-            const cancelBtn = safeGetElementById(`cancel-btn-${record.id}`);
-            const nameInput = safeGetElementById(`edit-name-${record.id}`);
-            
-            if (saveBtn) {
-                const saveHandler = () => saveRecord(record.id);
-                saveBtn.addEventListener('click', saveHandler);
-                eventListeners.push({ element: saveBtn, event: 'click', handler: saveHandler });
-            }
-            
-            if (cancelBtn) {
-                const cancelHandler = () => cancelEdit();
-                cancelBtn.addEventListener('click', cancelHandler);
-                eventListeners.push({ element: cancelBtn, event: 'click', handler: cancelHandler });
-            }
-            
-            // ★2026-09-01 心情/天气统一玻璃弹窗：readonly input 点击弹自定义选择器（替换原生 select）
-            const moodInput = safeGetElementById(`edit-mood-${record.id}`);
-            if (moodInput) {
-                const moodHandler = () => openMoodWeatherPicker('mood', record.id);
-                moodInput.addEventListener('click', moodHandler);
-                eventListeners.push({ element: moodInput, event: 'click', handler: moodHandler });
-            }
-            const weatherInput = safeGetElementById(`edit-weather-${record.id}`);
-            if (weatherInput) {
-                const weatherHandler = () => openMoodWeatherPicker('weather', record.id);
-                weatherInput.addEventListener('click', weatherHandler);
-                eventListeners.push({ element: weatherInput, event: 'click', handler: weatherHandler });
-            }
-            
-            // ★2026-08-25 照片区：层叠卡片点击（有照片→灯箱编辑；无照片→白框加号直接添加）；删除/添加在灯箱内操作
-            const photoThumbsBox = safeGetElementById(`photo-thumbs-${record.id}`);
-            if (photoThumbsBox) {
-                const thumbsHandler = (e) => {
-                    const stack = e.target.closest('.photo-stack');
-                    if (!stack) return;
-                    const firstImg = stack.querySelector('.photo-thumb-img');
-                    if (!firstImg) {
-                        // 空状态白框加号 → 直接打开相册添加第一张
-                        addPhotosToEdit(record.id, false);
-                        return;
-                    }
-                    const firstPid = firstImg.getAttribute('data-pid');
-                    openPhotoLightbox(record.id, firstPid, true);
-                };
-                photoThumbsBox.addEventListener('click', thumbsHandler);
-                eventListeners.push({ element: photoThumbsBox, event: 'click', handler: thumbsHandler });
-            }
-            loadPhotoThumbs(record.id);
-        } else {
-            const row = safeGetElementById(`row-${record.id}`);
-            const deleteBtn = safeGetElementById(`delete-btn-${record.id}`);
-            
-            if (row) {
-                const rowHandler = (e) => {
-                    // 如果点击的是按钮或批量勾选框，不触发编辑
-                    if (e.target.closest('button') || e.target.classList.contains('batch-check')) {
-                        return;
-                    }
-                    // ★2026-08-27 批量模式：点击行切换勾选
-                    if (batchMode) {
-                        toggleBatchSelect(record.id, null);
-                        return;
-                    }
-                    startEdit(record.id);
-                };
-                row.addEventListener('click', rowHandler);
-                eventListeners.push({ element: row, event: 'click', handler: rowHandler });
-            }
-            // ★2026-08-25 照片按钮 → 灯箱查看（查看模式只读：保存 + 左右翻页，无删除/添加）
-            const photosBtn = safeGetElementById(`photos-btn-${record.id}`);
-            if (photosBtn) {
-                const photosHandler = (e) => {
-                    e.stopPropagation();
-                    const pids = record.photos || [];
-                    if (pids.length) openPhotoLightbox(record.id, pids[0]);
-                };
-                photosBtn.addEventListener('click', photosHandler);
-                eventListeners.push({ element: photosBtn, event: 'click', handler: photosHandler });
-            }
-            
-            // ★2026-08-21 v1.1.1.7 分享按钮已移到热力图详情弹窗（记录行内不再显示）
-            if (deleteBtn) {
-                const deleteHandler = () => showDeleteConfirmModal(record.id, record.name);
-                deleteBtn.addEventListener('click', deleteHandler);
-                eventListeners.push({ element: deleteBtn, event: 'click', handler: deleteHandler });
-            }
+        const row = safeGetElementById(`row-${record.id}`);
+        const deleteBtn = safeGetElementById(`delete-btn-${record.id}`);
+        
+        if (row) {
+            const rowHandler = (e) => {
+                // 如果点击的是按钮或批量勾选框，不触发编辑
+                if (e.target.closest('button') || e.target.classList.contains('batch-check')) {
+                    return;
+                }
+                // ★2026-08-27 批量模式：点击行切换勾选
+                if (batchMode) {
+                    toggleBatchSelect(record.id, null);
+                    return;
+                }
+                // ★2026-09-04 阅读态 v2：点行打开居中详情弹窗（不再直接进编辑表格）
+                openRecordDetailModal(record.id);
+            };
+            row.addEventListener('click', rowHandler);
+            eventListeners.push({ element: row, event: 'click', handler: rowHandler });
+        }
+        
+        // ★2026-08-21 v1.1.1.7 分享按钮已移到热力图详情弹窗（记录行内不再显示）
+        if (deleteBtn) {
+            const deleteHandler = () => showDeleteConfirmModal(record.id, record.name);
+            deleteBtn.addEventListener('click', deleteHandler);
+            eventListeners.push({ element: deleteBtn, event: 'click', handler: deleteHandler });
         }
     });
     
@@ -775,11 +789,11 @@ function deletePlannedBatchSelected() {
 }
 
 function startEdit(id) {
+    // ★2026-09-04 阅读态 v2：编辑已搬进居中详情弹窗——startEdit 语义改为打开该记录的编辑弹窗
     editingId = id;
-    // ★2026-08-20 照片：进入编辑时从记录拷贝当前照片列表
     const rec = records.find(r => r.id === id);
     editingPhotoIds = rec && rec.photos ? rec.photos.slice() : [];
-    renderTable();
+    openRecordDetailModal(id, 'edit');
 }
 
 function cancelEdit() {
@@ -801,6 +815,10 @@ function cancelEdit() {
     updateStatistics();
     saveToStorage();
     renderTable();
+    // ★2026-09-04 弹窗内取消 → 关闭详情弹窗（回到瘦身列表）
+    if (recordDetailModalEl) {
+        closeRecordDetailModal();
+    }
 }
 
 // ★2026-08-20 编辑行照片区渲染辅助：生成照片缩略图占位（异步填充在 loadPhotoThumbs）
@@ -828,6 +846,9 @@ function photoThumbsHTML(ids, recordId) {
     html += '</div>';
     return html;
 }
+// ★2026-09-04 单条记录照片上限 9→24（日记场景照片是灵魂，放宽一倍多）；
+//   防卡靠压缩管线（canvas 1280px/JPEG0.7 已存在）+ 多选分批压缩（app-core pickPhotos 每批 3 张）
+var MAX_RECORD_PHOTOS = 24;
 // 异步填充缩略图（从 IndexedDB 取 blob → objectURL）
 // ★2026-08-27 列表照片缩略图内存缓存（pid → blob URL）：编辑保存/翻页不再重复读 IndexedDB，秒显不闪烁
 // LRU 上限 300 条防内存膨胀；照片变更（保存/删除/导入恢复）时全清
@@ -872,14 +893,14 @@ function loadPhotoThumbs(recordId) {
     });
 }
 // ★2026-08-20 添加照片到当前编辑（拍照 capture=true / 相册 false）
-// ★2026-08-25 编辑行添加照片支持多选：相册多选（≤9 上限，超出取前几张并提示）；相机仍单选
+// ★2026-08-25 编辑行添加照片支持多选：相册多选（≤MAX_RECORD_PHOTOS 上限，超出取前几张并提示）；相机仍单选
 function addPhotosToEdit(recordId, capture) {
-    if (editingPhotoIds.length >= 9) { showErrorMessage('最多添加 9 张照片'); return; }
+    if (editingPhotoIds.length >= MAX_RECORD_PHOTOS) { showErrorMessage('最多添加 ' + MAX_RECORD_PHOTOS + ' 张照片'); return; }
     if (!photosEnabled()) { showErrorMessage('照片存储不可用，请刷新重试'); return; }
-    var remaining = 9 - editingPhotoIds.length;
+    var remaining = MAX_RECORD_PHOTOS - editingPhotoIds.length;
     (capture ? pickPhoto(capture).then(function (r) { return [r]; }) : pickPhotos(false)).then(function (arr) {
         if (arr.length > remaining) {
-            showErrorMessage('最多添加 9 张照片，仅添加前 ' + remaining + ' 张');
+            showErrorMessage('最多添加 ' + MAX_RECORD_PHOTOS + ' 张照片，仅添加前 ' + remaining + ' 张');
             arr = arr.slice(0, remaining);
         }
         var tasks = arr.map(function (r) {
@@ -901,7 +922,8 @@ function refreshPhotoStrip(recordId) {
     if (!box) return;
     box.innerHTML = photoThumbsHTML(editingPhotoIds, recordId);
     loadPhotoThumbs(recordId);
-    var c = document.querySelector('#photo-row-' + recordId + ' .photo-stack-count');
+    // ★2026-09-04 计数角标：优先查弹窗容器内的 photo-thumbs（详情/编辑弹窗），兼容旧行内 photo-row
+    var c = box.querySelector('.photo-stack-count');
     if (c) c.textContent = editingPhotoIds.length;
 }
 
@@ -1136,16 +1158,16 @@ function lbPrimaryAction() {
     else saveCurrentPhoto();
 }
 // ★2026-08-25 灯箱内添加照片（编辑模式，替代原编辑行「添加照片」按钮）：相册选图 → IndexedDB → 刷新照片区 + 灯箱跳到新照片
-// ★2026-08-25 灯箱添加照片支持多选（相册多选，≤9 上限；添加后跳到最后一张）
+// ★2026-08-25 灯箱添加照片支持多选（相册多选，≤MAX_RECORD_PHOTOS 上限；添加后跳到最后一张）
 function lbAddPhoto() {
     var lb = photoLightboxEl;
     if (!lb || !lb._editing) return;
-    if (editingPhotoIds.length >= 9) { showErrorMessage('最多添加 9 张照片'); return; }
+    if (editingPhotoIds.length >= MAX_RECORD_PHOTOS) { showErrorMessage('最多添加 ' + MAX_RECORD_PHOTOS + ' 张照片'); return; }
     if (!photosEnabled()) { showErrorMessage('照片存储不可用，请刷新重试'); return; }
-    var remaining = 9 - editingPhotoIds.length;
+    var remaining = MAX_RECORD_PHOTOS - editingPhotoIds.length;
     pickPhotos(false).then(function (arr) {
         if (arr.length > remaining) {
-            showErrorMessage('最多添加 9 张照片，仅添加前 ' + remaining + ' 张');
+            showErrorMessage('最多添加 ' + MAX_RECORD_PHOTOS + ' 张照片，仅添加前 ' + remaining + ' 张');
             arr = arr.slice(0, remaining);
         }
         var tasks = arr.map(function (r) {
@@ -1554,6 +1576,10 @@ function saveRecord(id) {
     saveToStorage();
     thumbCacheClear(); // ★2026-08-27 照片可能增删：缩略图缓存全清，下次渲染重新读
     renderTable();
+    // ★2026-09-04 弹窗内保存成功 → 关闭详情弹窗（表格已刷新）
+    if (recordDetailModalEl) {
+        closeRecordDetailModal();
+    }
     triggerHaptic(15); // ★2026-08-27 渐进增强：保存成功轻震动反馈
 }
 
@@ -1814,8 +1840,11 @@ function addNewRecord() {
     records.unshift(newRecord);
     recordPage = 1; // ★2026-08-26 新增记录回到第一页（新记录在最前）
     editingId = newRecord.id;
+    editingPhotoIds = [];
+    // ★2026-09-04 阅读态 v2：新建后直接打开编辑弹窗（列表本身是瘦身只读态）
     updateStatistics();
     renderTable();
+    openRecordDetailModal(newRecord.id, 'edit');
 }
 
 // 更新山脉数据的函数
@@ -3084,24 +3113,22 @@ function openRecordById(id) {
         recordPage = Math.floor(idx / RECORD_PAGE_SIZE) + 1;
         if (typeof batchMode !== 'undefined' && batchMode) batchMode = false;
         if (typeof batchSelected !== 'undefined' && batchSelected && typeof batchSelected.clear === 'function') batchSelected.clear();
-        // ★修复①：先同步照片列表再渲染（与 startEdit 一致），否则照片区渲染成空加号框
-        var rec = records.find(function (r) { return r.id === id; });
-        if (typeof editingPhotoIds !== 'undefined') editingPhotoIds = (rec && rec.photos) ? rec.photos.slice() : [];
-        if (typeof editingId !== 'undefined') editingId = id;
         recordsViewMode = 'list';
         try { localStorage.setItem('records_view_mode', 'list'); } catch (e) { /* 忽略 */ }
-        applyRecordsView(); // 内部会 renderTable()（editingId 生效即打开编辑行）
-        // ★修复③：renderTable 走 requestAnimationFrame 异步渲染，轮询等该条照片行出现后滚动到屏幕中央
+        applyRecordsView(); // 内部 renderTable() 渲染瘦身列表
+        // ★2026-09-04 阅读态 v2：renderTable 走 requestAnimationFrame 异步渲染，轮询等行出现后滚动到中央，
+        //   然后打开居中详情弹窗（原「直接编辑行」已由弹窗编辑取代）
         var tries = 0;
         var scrollTimer = setInterval(function () {
             tries++;
-            var el = safeGetElementById('row-' + id) || safeGetElementById('photo-row-' + id);
+            var el = safeGetElementById('row-' + id);
             if (el && el.scrollIntoView) {
                 clearInterval(scrollTimer);
-                try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-                catch (e2) { try { el.scrollIntoView(); } catch (e3) { /* 忽略 */ } }
+                try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e2) { /* 忽略 */ }
+                setTimeout(function () { openRecordDetailModal(id, 'edit'); }, 120); // 滚动后再弹，视觉顺滑
             } else if (tries > 10) {
                 clearInterval(scrollTimer);
+                setTimeout(function () { openRecordDetailModal(id, 'edit'); }, 60);
             }
         }, 100);
     } catch (e) { /* 静默 */ }
@@ -3215,12 +3242,13 @@ function addRecordFromHistory(srcId) {
         addNewRecord(); // 顶部插入空白草稿并进入编辑（createdAt=今天）
         var dstId = (typeof editingId !== 'undefined') ? editingId : null;
         if (!dstId) return;
-        // 等 renderTable(RAF) 渲染出编辑行后再写值 + 高亮
+        // 等弹窗编辑表单渲染后再写值 + 高亮
         setTimeout(function () {
             applyCopyFillToForm(src, dstId);
             markCopyFilled(dstId);
-            var el = safeGetElementById('photo-row-' + dstId);
-            if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e2) { /* 忽略 */ } }
+            // ★2026-09-04 编辑在居中弹窗：无需滚动表格，聚焦名称输入框即可
+            var nameEl = safeGetElementById('edit-name-' + dstId);
+            if (nameEl && nameEl.focus) { try { nameEl.focus(); } catch (e2) { /* 忽略 */ } }
         }, 120);
     } catch (e) { /* 静默 */ }
 }
@@ -3426,110 +3454,23 @@ function renderPlannedTripsTable() {
                     (trip.__count ? '<span class="year-group-count">' + trip.__count + ' 次</span>' : '') +
                     '</div></td></tr>';
             }
-            if (plannedEditingId === trip.id) {
-                return `
-                    <tr class="border-b border-gray-200">
-                        <td class="p-2" data-label="名称">
-                            <div class="input-with-search">
-                                <input type="text" 
-                                       id="edit-planned-name-${trip.id}" 
-                                       value="${escapeHtml(trip.name)}" 
-                                       data-testid="edit-planned-name-${trip.id}"
-                                       class="edit-input input-glow"
-                                       placeholder="输入名称"
-                                       autocomplete="off"
-                                       autocorrect="off"
-                                       autocapitalize="off"
-                                       spellcheck="false"
-                                       inputmode="text"
-                                       enterkeyhint="next">
-                            </div>
-                        </td>
-                        <td class="p-2" data-label="海拔">
-                            <input type="number" 
-                                   id="edit-planned-elevation-${trip.id}" 
-                                   value="${trip.elevation}" 
-                                   data-testid="edit-planned-elevation-${trip.id}"
-                                   class="edit-input input-glow"
-                                   min="0"
-                                   placeholder="海拔"
-                                   inputmode="numeric"
-                                   pattern="[0-9]*"
-                                   enterkeyhint="next">
-                        </td>
-                        <td class="p-2" data-label="难度">
-                            <!-- ★2026-09-04 难度改玻璃弹窗（同记录页，替换原生 select）；字色深浅双适配 -->
-                            <input type="text"
-                                   id="edit-planned-difficulty-${trip.id}"
-                                   data-testid="edit-planned-difficulty-${trip.id}"
-                                   value="${trip.difficulty || 3}"
-                                   class="edit-input input-glow difficulty-color"
-                                   data-diff="${trip.difficulty || 3}"
-                                   readonly
-                                   style="cursor:pointer;font-weight:600;--dfc-light:${getDifficultyColor(trip.difficulty || 3)};--dfc-dark:${getDifficultyColorDark(trip.difficulty || 3)};"
-                                   onclick="openDifficultyPicker('edit-planned-difficulty-${trip.id}')"
-                                   title="点击选择难度"
-                                   enterkeyhint="done">
-                        </td>
-                        <td class="p-2" data-label="记录时间">
-                            <!-- ★2026-09-01 自定义日期时间选择器（同记录页，替换原生 picker） -->
-                            <input type="text" 
-                                   id="edit-planned-created-at-${trip.id}" 
-                                   value="${formatDateTimeLocal(trip.createdAt)}" 
-                                   data-testid="edit-planned-created-at-${trip.id}"
-                                   class="edit-input input-glow"
-                                   readonly
-                                   style="cursor:pointer;font-weight:400;"
-                                   onclick="openDateTimePicker(this.id, this.value)"
-                                   enterkeyhint="done"
-                                   title="点击选择日期时间">
-                        </td>
-                        <td class="p-2 text-center" data-label="操作">
-                            <div class="edit-action-btns">
-                                <button id="save-planned-btn-${trip.id}" 
-                                        data-testid="save-planned-button-${trip.id}"
-                                        class="ripple-effect btn-click-effect check-go-btn"
-                                        style="padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">
-                                    保存
-                                </button>
-                                <button id="cancel-planned-btn-${trip.id}" 
-                                        data-testid="cancel-planned-button-${trip.id}"
-                                        class="ripple-effect btn-click-effect confirm-btn-cancel"
-                                        style="${plannedCancelStyle}">
-                                    取消
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            } else {
-                // ★2026-08-27 入场动画只首次播（后续刷新/编辑/翻页不重播）
-                const rowAnimCls = plannedRowsAnimated ? '' : 'table-row-animate ';
-                const rowDelayStyle = plannedRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
-                return `
-                    <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle}">
-                        <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
+            // ★2026-09-04 阅读态 v2：计划列表瘦身——只显示 名称 + 操作（完成/删除），海拔/难度/时间等收进详情弹窗
+            const rowAnimCls2 = plannedRowsAnimated ? '' : 'table-row-animate ';
+            const rowDelayStyle2 = plannedRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
+            return `
+                <tr class="table-row-advanced ${rowAnimCls2}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle2}">
+                    <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
+                        <span class="inline-flex items-center gap-1.5" style="max-width:100%;">
                             ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
-                            ${escapeHtml(trip.name)}
-                        </td>
-                        <td class="p-2 text-white/80 text-base font-medium" data-label="海拔">
-                            ${trip.elevation}
-                        </td>
-                        <td class="p-2" data-label="难度">
-                            <span class="difficulty-badge difficulty-badge-advanced px-2 py-1 rounded text-white text-sm font-medium"
-                                  style="background: ${getDifficultyGlass(trip.difficulty)}; border-color: ${getDifficultyBorder(trip.difficulty)};">
-                                ${getDifficultyText(trip.difficulty)}
-                            </span>
-                        </td>
-                        <td class="p-2 text-white/60 text-sm" data-label="记录时间">
-                            ${formatDateTime(trip.createdAt)}
-                        </td>
-                        <td class="p-2 text-center" data-label="操作">
-                            ${plannedBatchMode ? '' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:6px;" title="标记为已完成"><span class="material-icons" style="font-size:18px;">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
-                        </td>
-                    </tr>
-                `;
-            }
+                        <span class="rd-name-main">${escapeHtml(trip.name)}</span>
+                    </span>
+                </td>
+                <td class="rd-time-cell" data-label="计划时间">${formatDateTime(trip.createdAt)}</td>
+                <td class="p-2 text-center" data-label="操作">
+                        ${plannedBatchMode ? '' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="标记为已完成"><span class="material-icons" style="font-size:18px;">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                    </td>
+                </tr>
+            `;
         }).join('');
         
         if (tbody) safeSetElementContent('plannedTripsTable', tableContent);
@@ -3574,51 +3515,136 @@ function attachPlannedTripsEventListeners() {
     updatePlannedBatchBar(); // 渲染后同步工具栏状态（跨页勾选保留）
     
     sortedTrips.forEach(trip => {
-        if (plannedEditingId === trip.id) {
-            const saveBtn = safeGetElementById(`save-planned-btn-${trip.id}`);
-            const cancelBtn = safeGetElementById(`cancel-planned-btn-${trip.id}`);
-            
-            if (saveBtn) {
-                saveBtn.addEventListener('click', () => savePlannedTrip(trip.id));
-            }
-            
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', () => cancelPlannedEdit());
-            }
-        } else {
-            const row = safeGetElementById(`planned-row-${trip.id}`);
-            const deleteBtn = safeGetElementById(`delete-planned-btn-${trip.id}`);
-            
-            if (row) {
-                row.addEventListener('click', (e) => {
-                    if (e.target.closest('button') || e.target.classList.contains('planned-batch-check')) {
-                        return;
-                    }
-                    // ★2026-08-27 批量模式：点击行切换勾选
-                    if (plannedBatchMode) {
-                        togglePlannedBatchSelect(trip.id, null);
-                        return;
-                    }
-                    startPlannedEdit(trip.id);
-                });
-            }
-            
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => showDeletePlannedTripConfirmModal(trip.id, trip.name));
-            }
-            
-            const completeBtn = safeGetElementById(`complete-planned-btn-${trip.id}`);
-            if (completeBtn) {
-                completeBtn.addEventListener('click', () => showConfirmCompleteModal(trip.id, trip.name));
-            }
+        const row = safeGetElementById(`planned-row-${trip.id}`);
+        const deleteBtn = safeGetElementById(`delete-planned-btn-${trip.id}`);
+        
+        if (row) {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.classList.contains('planned-batch-check')) {
+                    return;
+                }
+                // ★2026-08-27 批量模式：点击行切换勾选
+                if (plannedBatchMode) {
+                    togglePlannedBatchSelect(trip.id, null);
+                    return;
+                }
+                // ★2026-09-04 阅读态 v2：点行打开计划详情弹窗
+                openPlannedDetailModal(trip.id);
+            });
+        }
+        
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => showDeletePlannedTripConfirmModal(trip.id, trip.name));
+        }
+        
+        const completeBtn = safeGetElementById(`complete-planned-btn-${trip.id}`);
+        if (completeBtn) {
+            completeBtn.addEventListener('click', () => showConfirmCompleteModal(trip.id, trip.name));
         }
     });
 }
 
+// ===== ★2026-09-04 计划详情弹窗（阅读态 v2 同构：点行看详情，弹窗内编辑）=====
+var plannedDetailModalEl = null;
+function closePlannedDetailModal() {
+    if (plannedDetailModalEl && plannedDetailModalEl.parentNode) {
+        try { plannedDetailModalEl.parentNode.removeChild(plannedDetailModalEl); } catch (e) { /* 忽略 */ }
+    }
+    plannedDetailModalEl = null;
+    if (typeof plannedEditingId !== 'undefined') plannedEditingId = null;
+}
+// 计划阅读态 body（计划字段少：名称/难度/海拔/计划日期）
+function plannedViewBodyHTML(t) {
+    var dColor = rdDifficultyColor(Number(t.difficulty));
+    var diffName = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' }[Number(t.difficulty)] || '中等';
+    var elTxt = (Number(t.elevation) || 0) ? t.elevation + 'm' : '—';
+    return '' +
+        '<div style="display:flex;align-items:baseline;gap:8px;margin:2px 0 6px;">' +
+        '<span class="rd-name" style="font-size:20px;font-weight:700;color:#1e293b;line-height:1.35;">' + escapeHtml(t.name) + '</span>' +
+        '<span class="rd-no" style="font-size:11px;color:#52606f;flex-shrink:0;">计划 ' + fmtYMD(t.createdAt) + '</span></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">' +
+        '<span class="rd-chip" style="font-size:11px;padding:2px 10px;border-radius:99px;color:' + dColor + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + t.difficulty + ' 级 · ' + diffName + '</span>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">目标海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">难度</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + t.difficulty + ' 级</div></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+        '<button id="pd-edit-btn" class="check-go-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑计划</button>' +
+        '<button id="pd-complete-btn" class="check-go-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;background:rgba(22,163,74,0.16);border:1px solid rgba(22,163,74,0.5);color:#15803d;" onclick="showConfirmCompleteModal(\'' + t.id + '\',\'' + escapeHtml(t.name).replace(/'/g, "\\'") + '\')">完成了 ✓</button>' +
+        '</div>';
+}
+// 计划编辑态 body（id 沿用 edit-planned-*，保存/取消复用 savePlannedTrip/cancelPlannedEdit）
+function plannedEditBodyHTML(t) {
+    var pCancel = (document.body.classList.contains('dark-mode'))
+        ? 'padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;'
+        : 'padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;';
+    return '' +
+        '<div style="display:flex;flex-direction:column;gap:10px;">' +
+        '<input type="text" id="edit-planned-name-' + t.id + '" value="' + escapeHtml(t.name) + '" data-testid="edit-planned-name-' + t.id + '" class="edit-input input-glow" placeholder="输入名称" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="next">' +
+        '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
+        '<div style="display:flex;gap:8px;">' +
+        '<input type="number" id="edit-planned-elevation-' + t.id + '" value="' + (t.elevation || 0) + '" data-testid="edit-planned-elevation-' + t.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
+        '<input type="text" id="edit-planned-difficulty-' + t.id + '" data-testid="edit-planned-difficulty-' + t.id + '" value="' + (t.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (t.difficulty || 3) + '" readonly style="flex:0 0 84px;cursor:pointer;font-weight:600;--dfc-light:' + getDifficultyColor(t.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(t.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-planned-difficulty-' + t.id + '\')" title="点击选择难度" enterkeyhint="done">' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;margin-top:2px;">' +
+        '<button id="cancel-planned-btn-' + t.id + '" data-testid="cancel-planned-button-' + t.id + '" class="ripple-effect btn-click-effect confirm-btn-cancel" style="' + pCancel + '">取消</button>' +
+        '<button id="save-planned-btn-' + t.id + '" data-testid="save-planned-button-' + t.id + '" class="ripple-effect btn-click-effect check-go-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
+        '</div>' +
+        '</div>';
+}
+function openPlannedDetailModal(id, startMode) {
+    try {
+        if (typeof closeOpenModals === 'function') closeOpenModals();
+        closePlannedDetailModal();
+        var t = (plannedTrips || []).find(function (x) { return x.id === id; });
+        if (!t) return;
+        var isEdit = (startMode === 'edit');
+        plannedEditingId = isEdit ? id : null;
+        var modal = document.createElement('div');
+        modal.className = 'record-detail-modal modal-backdrop-animate'; // 独立层，子弹窗可叠加
+        plannedDetailModalEl = modal;
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width:420px;width:calc(100vw - 44px);box-sizing:border-box;max-height:86vh;overflow-y:auto;border-radius:20px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
+            '<span class="material-icons" style="color:#4f46e5;">' + (isEdit ? 'edit_note' : 'hiking') + '</span>' +
+            '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (isEdit ? '编辑计划' : '计划详情') + '</span>' +
+            '<button id="pd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
+            '</div><div id="pd-body" style="margin-top:8px;"></div></div>';
+        document.body.appendChild(modal);
+        var bodyEl = modal.querySelector('#pd-body');
+        bodyEl.innerHTML = isEdit ? plannedEditBodyHTML(t) : plannedViewBodyHTML(t);
+        bindPlannedDetailEvents(modal, id, t, isEdit);
+        modal.addEventListener('click', function (e) { if (e.target === modal) { closePlannedDetailModal(); renderPlannedTripsTable(); } });
+    } catch (e) { /* 忽略 */ }
+}
+function bindPlannedDetailEvents(modal, id, t, isEdit) {
+    var closeBtn = modal.querySelector('#pd-close');
+    if (closeBtn) closeBtn.addEventListener('click', function () { closePlannedDetailModal(); renderPlannedTripsTable(); });
+    if (!isEdit) {
+        var edBtn = modal.querySelector('#pd-edit-btn');
+        if (edBtn) edBtn.addEventListener('click', function () {
+            plannedEditingId = id;
+            var tt = modal.querySelector('.rd-tt'); if (tt) tt.textContent = '编辑计划';
+            var ic = modal.querySelector('.material-icons'); if (ic) ic.textContent = 'edit_note';
+            modal.querySelector('#pd-body').innerHTML = plannedEditBodyHTML(t);
+            bindPlannedEditForm(modal, id);
+        });
+        return;
+    }
+    bindPlannedEditForm(modal, id);
+}
+function bindPlannedEditForm(modal, id) {
+    var saveBtn = modal.querySelector('#save-planned-btn-' + id);
+    if (saveBtn) saveBtn.addEventListener('click', function () { savePlannedTrip(id); });
+    var cancelBtn = modal.querySelector('#cancel-planned-btn-' + id);
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { cancelPlannedEdit(); });
+}
+
 function startPlannedEdit(id) {
+    // ★2026-09-04 计划编辑搬进详情弹窗（列表瘦身为只读入口）
     plannedEditingId = id;
-    renderPlannedTripsTable();
-    // 2026-08-11 用户要求：点击可编辑栏不直接弹输入法——不再自动聚焦输入框
+    openPlannedDetailModal(id, 'edit');
 }
 
 function cancelPlannedEdit() {
@@ -3629,6 +3655,7 @@ function cancelPlannedEdit() {
     }
     plannedEditingId = null;
     renderPlannedTripsTable();
+    if (plannedDetailModalEl) closePlannedDetailModal();
 }
 
 function savePlannedTrip(id) {
@@ -3671,6 +3698,7 @@ function savePlannedTrip(id) {
     plannedEditingId = null;
     savePlannedTripsToStorage();
     renderPlannedTripsTable();
+    if (plannedDetailModalEl) closePlannedDetailModal();
 }
 
 function addNewPlannedTrip() {
@@ -3687,6 +3715,8 @@ function addNewPlannedTrip() {
     plannedPage = 1; // ★2026-08-26 新增计划回到第一页
     plannedEditingId = newTrip.id;
     renderPlannedTripsTable();
+    // ★2026-09-04 阅读态 v2：新建后直接打开编辑弹窗
+    openPlannedDetailModal(newTrip.id, 'edit');
 }
 
 function showConfirmCompleteModal(tripId, tripName) {

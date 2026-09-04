@@ -1,3 +1,36 @@
+// ★2026-09-04 首次引导横幅：新装用户（无任何记录）首次打开 App 时，概览页顶部出现一次欢迎卡；
+//   点「记下第一座山」直达添加流程，或点 ✕ 关闭；看过一次后不再打扰（老用户/有记录永不显示）
+var welcomeBannerShown = false;
+function maybeShowWelcomeBanner() {
+    try {
+        if (welcomeBannerShown) return;
+        welcomeBannerShown = true;
+        var banner = document.getElementById('welcomeBanner');
+        if (!banner) return;
+        // 已有记录（老用户/用过的）或已关过：不显示
+        var hasRecords = (typeof records !== 'undefined' && records && records.length > 0);
+        var seen = AppStore.getItem('welcome_seen_v1');
+        if (hasRecords || seen === true) { banner.style.display = 'none'; return; }
+        banner.style.display = 'block';
+        var goBtn = document.getElementById('welcomeGoBtn');
+        var closeBtn = document.getElementById('welcomeClose');
+        var dismiss = function () {
+            AppStore.setItem('welcome_seen_v1', true);
+            banner.style.display = 'none';
+        };
+        if (closeBtn) closeBtn.addEventListener('click', dismiss);
+        if (goBtn) goBtn.addEventListener('click', function () {
+            dismiss();
+            try { switchTab('records'); } catch (e) { /* 切页失败不影响 */ }
+            // 零记录场景：走完整添加流程（自动降级为直接新建空白）
+            setTimeout(function () {
+                var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
+                if (h) h();
+            }, 350);
+        });
+    } catch (e) { /* 引导失败绝不影响启动 */ }
+}
+
 async function init() {
     if (isInitialized) {
         return;
@@ -128,6 +161,8 @@ async function init() {
         
         // ★2026-08-21 v1.1.1.5 启动优化：启动只渲染当前概览页，记录/计划表格延迟到切 tab 时渲染
         updateStatistics();
+        // ★2026-09-04 首次引导横幅：仅新装用户（零记录 + 从未看过）显示一次，不影响老用户
+        maybeShowWelcomeBanner();
         
         // ★2026-08-27 启动并行：计划 + 同步配置/状态并行加载（原串行 await，省一次 IndexedDB 往返，启动更快）
         await Promise.all([
@@ -153,6 +188,14 @@ async function init() {
                     try { switchTab('plans'); } catch (e) { /* 跳转失败不影响 */ }
                 } else if (notifyObj && notifyObj.navigate === 'settings') {
                     try { switchTab('settings'); } catch (e) { /* 跳转失败不影响 */ }
+                } else if (notifyObj && notifyObj.navigate === 'quickadd') {
+                    // ★2026-09-04 桌面快捷方式「记一笔」：切记录 tab 后直接打开添加流程
+                    try {
+                        switchTab('records');
+                        setTimeout(function () {
+                            if (typeof handleAddRecordFlow === 'function') handleAddRecordFlow();
+                        }, 350); // 等表格/页面就绪再弹添加（无历史记录时自动降级为直接新建）
+                    } catch (e) { /* 失败不影响启动 */ }
                 }
             } catch (e) { /* 消费失败不影响启动 */ }
         }

@@ -1,14 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-04（v1.1.9.0 / vc220）
+> 最后更新：2026-09-04（v1.1.9.1 / vc221）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
-- **正式版 v1.1.9.0**（versionCode 220，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.9.0 更新：难度选择玻璃弹窗（五档色点+档名，替代原生下拉）+ 难度数字深浅双色（浅 600/深 400 亮档，复制/选择即时同步）+ 死代码清理（fitSelectWidth/fitEditSelects）
+- **正式版 v1.1.9.1**（versionCode 221，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.9.1 更新：记录/计划列表瘦身两列+居中详情弹窗（点行看日记、弹窗内编辑）+ 照片上限 24（分批压图）+ 首次引导横幅 + 桌面快捷方式「记一笔」+ 表格布局修复（fixed→auto 名称列消失）+ 弹窗文字深浅提亮 + 时间列 14px
 - v1.1.8.8 更新：概览统计主次分离（4 主卡 + 平均海拔/平均难度/平均用时矮副卡、总爬升并入热力图底部汇总）+ 徒步足迹热力图前置难度分布上 + 年月单框弹窗选择（替代双下拉、仅记录月可选）+ 年回入口入热力图卡右上 + 设置页数据管理 i 弹窗重排 + 括号文案删除
 - v1.1.8.7 更新：山册「照片回忆」横排带（展开某山看全部照片/点照进灯箱/收起单行化/无照片山不显示）+ 同步健康行融合进自动同步卡（i 图标删除、蓝/绿/黄/红状态、未配置点击直达配置）+ 照片占用挪杂项 + 全 App 滚动条玻璃化 + 同步状态弹窗虚线加深
 - v1.1.8.6 更新：年度回顾「一年小结」文案活泼化随机（趋势分池开场/收尾，数据准确）+ 用户文本 XSS 转义加固（年度之最/山册一起走过/热力图详情/最常去等 5 处）+ 死类清理
@@ -197,6 +197,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
+- v1.1.9.1（vc221）：**阅读态 v2（行内编辑表格退役→列表瘦身名称+操作+时间三列、点行 .record-detail-modal 居中详情弹窗(独立 class 非 confirm-modal 便于子选择器叠层)、弹窗内编辑 id 体系全保留复用、引导文案适配）+ 照片 9→24(MAX_RECORD_PHOTOS+分批压缩)+首次引导横幅(welcomeBanner)+桌面快捷方式(shortcuts.xml+quickadd 分支)+表格布局修复(fixed→auto)+弹窗文字深浅提亮(rd-* 全 !important+52606f/a3b1c6)+时间列 14px**（详见 Release）
 - v1.1.9.0（vc220）：**难度玻璃弹窗 openDifficultyPicker（df-grid 五档色点+档名，记录/计划通用）+ 难度框 .difficulty-color 深浅双色变量（--dfc-light 600 档/--dfc-dark 400 档，压过 .dark-mode .edit-input 白字）+ dfOk/复制填充 setProperty 同步 + getDifficultyColorDark 新增 + fitSelectWidth/fitEditSelects 死码删除**（详见 Release）
 - v1.1.8.10（vc219）：**山册双列名册（.mb-row 每 2 山一组 + 卡头圆章序号按首登先后 + 右/下缘海拔书脊色带五档 + 展开=卡头不动抽屉整行下拉 + 长山名两行）+ 概览统计卡大小调和（主卡 padding 13 / 矮卡 11）+ 难度分布图整卡删除（HTML/JS/CSS/测试全清）**（详见 Release）
 - v1.1.8.9（vc218）：**＋添加 v3（新建空白独立行 apNew + 「或者」ap-seg + 下拉只做历史复制单选 apOk「填充」确认 + .hcm-dot 圆点）+ 选中态玻璃化收尾（年月 hmyp 已完成、dtp 日期格/mwp 心情格实心转玻璃、全 App 无纯色选中）+ 弹窗可读性提升（浅 #94a3b8→#52606f、深 #64748b/#94a3b8→#a3b1c6、虚线 sync-config 0.07→0.45、ap-seg 加深）**（详见 Release）

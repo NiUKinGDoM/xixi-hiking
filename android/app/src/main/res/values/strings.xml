@@ -4,4 +4,7 @@
     <string name="title_activity_main">徒步小记</string>
     <string name="package_name">com.xixi.hiking</string>
     <string name="custom_url_scheme">com.xixi.hiking</string>
+    <!-- ★2026-09-04 桌面快捷方式「记一笔」标签（AAPT 中文字面量 incompatible → 走资源引用） -->
+    <string name="shortcut_quick_add_short">记一笔</string>
+    <string name="shortcut_quick_add_long">记一笔徒步</string>
 </resources>

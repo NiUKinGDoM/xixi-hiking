@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ★2026-09-04 桌面快捷方式「记一笔」：长按 App 图标 → 直达添加记录（复用 navigate 透传通道，navigate=quickadd）
+     Android 7.1+ 支持；图标复用启动图标（不新增 drawable，避免 aapt/多密度资源风险） -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_add"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_quick_add_short"
+        android:shortcutLongLabel="@string/shortcut_quick_add_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.xixi.hiking"
+            android:targetClass="com.xixi.hiking.MainActivity">
+            <extra
+                android:name="navigate"
+                android:value="quickadd" />
+        </intent>
+    </shortcut>
+</shortcuts>
