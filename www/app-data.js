@@ -2089,7 +2089,7 @@ function renderHeatmap() {
         return s + (parseInt(el.getAttribute('data-count'), 10) || 0);
     }, 0);
     if (sumEl) {
-        // ★2026-09-03 底部汇总：去掉年月日期前缀（顶部选择器已显示年月），只留「徒步 N 次 · 累计爬升 Xm」（爬升与次数同口径 = 当前所选年月内的合计）
+        // ★2026-09-04 底部汇总：前缀 = 本月/所选年月（口径 = 当前所选年月内合计；爬升与次数同口径）
         let climbThis = 0;
         records.forEach(function (r) {
             if (!r.createdAt) return;
@@ -2098,7 +2098,10 @@ function renderHeatmap() {
                 climbThis += Number(r.elevation) || 0;
             }
         });
-        sumEl.textContent = '徒步 ' + total + ' 次' + (climbThis ? ' · 累计爬升 ' + Math.round(climbThis) + 'm' : '');
+        // ★2026-09-04 底部前缀：所选即本月 → 写「本月徒步 …」；历史月写「X年X月徒步 …」防歧义（用户要求加「本月」）
+        const _nowD = new Date();
+        const _mLabel = (year === _nowD.getFullYear() && month === _nowD.getMonth() + 1) ? '本月' : (year + '年' + month + '月');
+        sumEl.textContent = _mLabel + '徒步 ' + total + ' 次' + (climbThis ? ' · 累计爬升 ' + Math.round(climbThis) + 'm' : '');
     }
     cal.querySelectorAll('.hm-day:not(.empty)').forEach(function (el) {
         el.addEventListener('click', function () {
