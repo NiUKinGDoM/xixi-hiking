@@ -359,14 +359,11 @@ function renderTable() {
         return `
             <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="${rowDelayStyle}">
                 <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
-                    <span class="inline-flex items-center gap-1.5" style="max-width:100%;">
-                        ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
-                        <span class="rd-name-main">${escapeHtml(record.name)}</span>
-                    </span>
+                    <span class="rd-name-main">${escapeHtml(record.name)}</span>
                 </td>
                 <td class="rd-time-cell" data-label="记录时间">${formatDateTime(record.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                    ${batchMode ? '' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                 </td>
             </tr>
         `;
@@ -469,7 +466,7 @@ function recordEditBodyHTML(r) {
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
         '<input type="text" id="edit-mood-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + (r.mood || '') + '" placeholder="心情" readonly title="心情（可选）">' +
         '<input type="text" id="edit-weather-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + (r.weather || '') + '" placeholder="天气" readonly title="天气（可选）">' +
-        '<input type="text" id="edit-companions-' + r.id + '" placeholder="同行人" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + (r.companions || '') + '">' +
+        '<input type="text" id="edit-companions-' + r.id + '" placeholder="同行人" class="edit-input input-glow" style="flex:1;min-width:0;text-align:center;" value="' + escapeHtml(r.companions || '') + '">' +
         '</div>' +
         // 用时 + 里程 一行（★2026-09-04 均匀分布）
         '<div style="display:flex;gap:8px;align-items:center;">' +
@@ -1684,49 +1681,6 @@ async function saveAppTitle(title) {
 }
 
 // v1.4.12.10：区块标题统一弹窗编辑（统计/记录/计划/设置），与顶栏标题同一套交互
-function showSectionTitleModal(titleElementId, saveFn) {
-    closeOpenModals(); // ★2026-08-29 防重入
-    const titleEl = document.getElementById(titleElementId);
-    if (!titleEl) return;
-    const titleTextEl = titleEl.querySelector('.title-text');
-    const currentTitle = titleTextEl ? titleTextEl.textContent : '';
-    const modal = document.createElement('div');
-    modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
-            <div class="confirm-modal-title">
-                <span class="material-icons" style="color: #4f46e5;">edit</span>
-                编辑标题
-            </div>
-            <input type="text" id="sectionTitleEditInput" class="edit-input" style="width: 100%; margin: 14px 0 4px;" maxlength="20" placeholder="输入新标题">
-            <div class="confirm-modal-message" style="margin-top: 6px;">最多 20 个字符</div>
-            <div class="confirm-modal-buttons">
-                <button class="confirm-btn-cancel ripple-effect" id="section-title-cancel">取消</button>
-                <button class="confirm-btn-delete ripple-effect" id="section-title-save" style="background: #4f46e5; border-color: #4f46e5;">保存</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    const input = document.getElementById('sectionTitleEditInput');
-    input.value = currentTitle;
-    // 2026-08-11 用户要求：点击可编辑栏不直接弹输入法——不自动聚焦
-
-    const closeModal = () => { document.body.removeChild(modal); };
-
-    document.getElementById('section-title-cancel').addEventListener('click', closeModal);
-    document.getElementById('section-title-save').addEventListener('click', () => {
-        const newTitle = input.value.trim();
-        if (!newTitle) { showErrorMessage('标题不能为空'); return; }
-        if (titleTextEl) titleTextEl.textContent = newTitle;
-        try { saveFn(newTitle); } catch (e) { console.error('save section title failed:', e); }
-        closeModal();
-    });
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('section-title-save').click();
-        if (e.key === 'Escape') closeModal();
-    });
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-}
 
 /* 2026-08-11 数据管理说明弹窗（i 标识点击显示） */
 function showDataInfoModal() {
@@ -2307,9 +2261,7 @@ function applyPlansView() {
     // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换（帮新用户看懂当前视图与切换目标）
     var lab = safeGetElementById('plansViewToggleLabel');
     if (lab) lab.textContent = isCal ? '列表' : '日历';
-    var capIcon = safeGetElementById('plansViewCaptionIcon');
     var capTxt = safeGetElementById('plansViewCaptionText');
-    if (capIcon) capIcon.textContent = isCal ? 'calendar_month' : 'view_list';
     if (capTxt) capTxt.textContent = isCal ? '日历视图 · 哪天有行程一眼看清，点日期看当天安排' : '列表视图 · 全部计划按时间排列，点一行可查看';
     // ★2026-08-31 日历视图隐藏「批量管理」和「添加」按钮（切换按钮固定最右不动）；列表视图恢复
     //   ★08-31 去掉淡入淡出动画（用户反馈卡顿），直接显隐最干净
@@ -2986,9 +2938,7 @@ function applyRecordsView() {
     // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换
     var labR = safeGetElementById('recordsViewToggleLabel');
     if (labR) labR.textContent = isMb ? '列表' : '山册';
-    var capIconR = safeGetElementById('recordsViewCaptionIcon');
     var capTxtR = safeGetElementById('recordsViewCaptionText');
-    if (capIconR) capIconR.textContent = isMb ? 'landscape' : 'view_list';
     if (capTxtR) capTxtR.textContent = isMb ? '山册视图 · 按山峰汇总成册，一座山一张卡片' : '列表视图 · 全部记录按时间排列，点一行可查看';
     var btn = safeGetElementById('recordsViewToggleBtn');
     if (btn) btn.title = isMb ? '切回记录列表' : '查看我的山册';
@@ -3113,54 +3063,6 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
     var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + '</div>';
     return { head: head, drawer: drawer };
 }
-// 从山册记录定位到列表并直接打开该条编辑
-// ★2026-09-03 修复三个跳转 bug：
-//   ① 照片不显示——原实现漏了 editingPhotoIds 同步（photoThumbsHTML 用全局 editingPhotoIds 渲染，不是 record.photos），
-//      editingPhotoIds 停留上次取消编辑后的 [] → 照片区渲染成空加号框；现与 startEdit 一致先同步照片列表
-//   ② 错页——原用 records 存储顺序 findIndex 算页码，但渲染走 getSortedRecords()（默认 createdAt 倒序 + 年份分组），
-//      只要任一条记录改过日期/时间（编辑行可改）存储序就≠时间序 → 跳错页/找不到；现按渲染同一序计算
-//   ③ 看不见——切回列表后视口停在原滚动位置（山册可能滚到底），编辑行不在屏内像没跳转；现自动滚动定位到该条
-function openRecordById(id) {
-    try {
-        if (typeof records === 'undefined' || !records || !records.length) return;
-        // 按渲染同序（排序 + 搜索过滤后）定位
-        var list = (typeof getSortedRecords === 'function') ? getSortedRecords() : records;
-        var idx = list.findIndex(function (r) { return r.id === id; });
-        // 目标被搜索词滤掉（山册搜索可命中同伴/备注，列表过滤只看名称）：清空搜索词让该条可见（山册能看到的一定存在）
-        if (idx < 0 && (typeof searchQuery === 'string' && searchQuery.trim())) {
-            searchQuery = '';
-            var gsInp = safeGetElementById('globalSearchInput');
-            if (gsInp) gsInp.value = '';
-            var gsClr = safeGetElementById('globalSearchClear');
-            if (gsClr) gsClr.style.display = 'none';
-            list = (typeof getSortedRecords === 'function') ? getSortedRecords() : records;
-            idx = list.findIndex(function (r) { return r.id === id; });
-        }
-        if (idx < 0) return; // 记录已不存在
-        recordPage = Math.floor(idx / RECORD_PAGE_SIZE) + 1;
-        if (typeof batchMode !== 'undefined' && batchMode) batchMode = false;
-        if (typeof batchSelected !== 'undefined' && batchSelected && typeof batchSelected.clear === 'function') batchSelected.clear();
-        recordsViewMode = 'list';
-        try { localStorage.setItem('records_view_mode', 'list'); } catch (e) { /* 忽略 */ }
-        applyRecordsView(); // 内部 renderTable() 渲染瘦身列表
-        // ★2026-09-04 阅读态 v2：renderTable 走 requestAnimationFrame 异步渲染，轮询等行出现后滚动到中央，
-        //   然后打开居中详情弹窗（原「直接编辑行」已由弹窗编辑取代）
-        var tries = 0;
-        var scrollTimer = setInterval(function () {
-            tries++;
-            var el = safeGetElementById('row-' + id);
-            if (el && el.scrollIntoView) {
-                clearInterval(scrollTimer);
-                try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e2) { /* 忽略 */ }
-                setTimeout(function () { openRecordDetailModal(id, 'edit'); }, 120); // 滚动后再弹，视觉顺滑
-            } else if (tries > 10) {
-                clearInterval(scrollTimer);
-                setTimeout(function () { openRecordDetailModal(id, 'edit'); }, 60);
-            }
-        }, 100);
-    } catch (e) { /* 静默 */ }
-}
-
 
 // ★2026-09-03 P0 从历史记录复制（方案定稿：点「＋添加」先弹选择卡；行内不再有复制条）：
 // 可复制的历史记录 = 有名字的记录
@@ -3487,14 +3389,11 @@ function renderPlannedTripsTable() {
             return `
                 <tr class="table-row-advanced ${rowAnimCls2}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle2}">
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
-                        <span class="inline-flex items-center gap-1.5" style="max-width:100%;">
-                            ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' style="width:16px;height:16px;flex-shrink:0;vertical-align:middle;accent-color:#b91c1c;">' : ''}
                         <span class="rd-name-main">${escapeHtml(trip.name)}</span>
-                    </span>
                 </td>
                 <td class="rd-time-cell" data-label="计划时间">${formatDateTime(trip.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                        ${plannedBatchMode ? '' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="标记为已完成"><span class="material-icons" style="font-size:18px;">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                        ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="标记为已完成"><span class="material-icons" style="font-size:18px;">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                     </td>
                 </tr>
             `;
@@ -3669,11 +3568,6 @@ function bindPlannedEditForm(modal, id) {
     if (cancelBtn) cancelBtn.addEventListener('click', function () { cancelPlannedEdit(); });
 }
 
-function startPlannedEdit(id) {
-    // ★2026-09-04 计划编辑搬进详情弹窗（列表瘦身为只读入口）
-    plannedEditingId = id;
-    openPlannedDetailModal(id, 'edit');
-}
 
 function cancelPlannedEdit() {
     const trip = plannedTrips.find(t => t.id === plannedEditingId);
