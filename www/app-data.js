@@ -482,7 +482,7 @@ function recordEditBodyHTML(r) {
         // 日期时间（★2026-09-04 移至末位：时/分/里程下方整行）
         '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         // 照片区（层叠卡 + 灯箱管理）
-        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span class="rd-ph-lab" style="font-size:12px;color:#52606f;margin-right:4px;">照片</span>' +
+        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="display:flex;flex-direction:column;align-items:flex-start;margin-right:4px;"><span class="rd-ph-lab" style="font-size:12px;color:#52606f;line-height:1.3;">照片</span><span class="rd-ph-hint">最多 24 张</span></span>' +
         '<div id="photo-thumbs-' + r.id + '" style="display:flex;align-items:center;">' + photoThumbsHTML(editingPhotoIds, r.id) + '</div>' +
         '</div>' +
         // 操作按钮
@@ -512,7 +512,7 @@ function openRecordDetailModal(id, startMode) {
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#4f46e5;">' + (detailModalMode === 'edit' ? 'edit_note' : 'landscape') + '</span>' +
             '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (detailModalMode === 'edit' ? '编辑记录' : '记录详情') + '</span>' +
-            '<button id="rd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
+            (detailModalMode === 'edit' ? '' : '<button id="rd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>') +
             '</div><div id="rd-body" style="margin-top:8px;"></div></div>';
         modal.innerHTML = modalInner;
         document.body.appendChild(modal);
@@ -3536,7 +3536,7 @@ function openPlannedDetailModal(id, startMode) {
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#4f46e5;">' + (isEdit ? 'edit_note' : 'hiking') + '</span>' +
             '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (isEdit ? '编辑计划' : '计划详情') + '</span>' +
-            '<button id="pd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
+            (isEdit ? '' : '<button id="pd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>') +
             '</div><div id="pd-body" style="margin-top:8px;"></div></div>';
         document.body.appendChild(modal);
         var bodyEl = modal.querySelector('#pd-body');
@@ -3716,15 +3716,16 @@ function markPlannedComplete(tripId, tripName) {
     renderTable();
     renderPlannedTripsTable();
     
-    // ★2026-08-31 跳到记录页并进入行内编辑（名字/难度/海拔已预填，补完即保存）
+    // ★2026-09-04 顺序改版（用户要求：别两弹窗叠一起）：先切到记录页只弹「完成！庆祝卡」，
+    //   点「继续补全」才打开该条记录的编辑弹窗（名字/难度/海拔已预填，补心情/天气/照片即保存）
     if (typeof window.switchTab === 'function') window.switchTab('records');
-    startEdit(newRecord.id);
-    // ★2026-08-31 计划完成庆祝：小卡片 + 彩屑动画（浮在编辑页上方，点掉继续补全）
-    showPlanCompleteCelebration(trip.name);
+    showPlanCompleteCelebration(trip.name, function () {
+        try { startEdit(newRecord.id); } catch (e) { /* 庆祝卡已关仍打不开编辑则忽略 */ }
+    });
 }
 
 // ★2026-08-31 计划完成庆祝卡片：彩屑 + 弹入卡片 + 「继续补全」；轻量粒子（≤24），播完自动清理
-function showPlanCompleteCelebration(tripName) {
+function showPlanCompleteCelebration(tripName, onContinue) {   // ★2026-09-04 加 onContinue：点「继续补全」触发（计划完成补记录用）
     try {
         // ★五项优化⑤防重入：连续完成计划时移除上一个庆祝弹层
         var old = document.getElementById('celebrateOverlay');
@@ -3767,7 +3768,11 @@ function showPlanCompleteCelebration(tripName) {
         var escHandler = function (e) { if (e.key === 'Escape') close(); };
         document.addEventListener('keydown', escHandler);
         var okBtn = document.getElementById('celebrateOkBtn');
-        if (okBtn) okBtn.addEventListener('click', close);
+        if (okBtn) okBtn.addEventListener('click', function () {
+            close();
+            // ★2026-09-04 点「继续补全」→ 才进入编辑补全流程（Esc/点遮罩关闭则不进入，记录已保存不影响）
+            if (typeof onContinue === 'function') { try { onContinue(); } catch (e2) { /* 忽略 */ } }
+        });
         overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
     } catch (e) { /* 庆祝失败不影响主流程 */ }
 }
