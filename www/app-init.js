@@ -192,9 +192,20 @@ async function init() {
                     // ★2026-09-04 桌面快捷方式「记一笔」：切记录 tab 后直接打开添加流程
                     try {
                         switchTab('records');
-                        setTimeout(function () {
-                            if (typeof handleAddRecordFlow === 'function') handleAddRecordFlow();
-                        }, 350); // 等表格/页面就绪再弹添加（无历史记录时自动降级为直接新建）
+                        // ★2026-09-04 加固：弹添加直到「下拉(#apNew) 或 直接新建的编辑弹窗」出现（最长 ~2s）
+                        //   每轮先检测已弹出就停；未弹出才调 handleAddRecordFlow（防无历史时重复新建空记录）
+                        var _qaTry = 0;
+                        var _qaTimer = setInterval(function () {
+                            _qaTry++;
+                            var _qaEditModal = null;
+                            try {
+                                var _rd = document.querySelector('.record-detail-modal .rd-tt');
+                                if (_rd && _rd.textContent.indexOf('编辑') >= 0) _qaEditModal = true;
+                            } catch (e9) { /* ignore */ }
+                            if (document.querySelector('#apNew') || _qaEditModal) { clearInterval(_qaTimer); return; }
+                            try { if (typeof handleAddRecordFlow === 'function') handleAddRecordFlow(); } catch (e8) { /* 单次失败忽略，下轮重试 */ }
+                            if (_qaTry > 10) clearInterval(_qaTimer);
+                        }, 200);
                     } catch (e) { /* 失败不影响启动 */ }
                 }
             } catch (e) { /* 消费失败不影响启动 */ }
