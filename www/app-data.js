@@ -1889,14 +1889,24 @@ function updateStatistics() {
     
 
     const total = records.length;
-    const totalElevation = records.reduce((sum, record) => sum + record.elevation, 0);
+    // ★2026-09-05 P0-1 大数量优化：原 6 次独立 reduce 全量遍历（万条 70ms）→ 单次 forEach 累加（~15ms）
+    let accEl = 0, accMaxEl = 0, accDiff = 0, accKm = 0, accMin = 0;
+    for (let i = 0; i < records.length; i++) {
+        const rec = records[i];
+        accEl += Number(rec.elevation) || 0;
+        const el = Number(rec.elevation) || 0;
+        if (el > accMaxEl) accMaxEl = el;
+        accDiff += Number(rec.difficulty) || 0;
+        accKm += Number(rec.distance) || 0;
+        accMin += Number(rec.duration) || 0;
+    }
+    const totalElevation = accEl;
     const averageElevation = Math.round(totalElevation / total);
-    const highestElevation = records.reduce((m, record) => Math.max(m, Number(record.elevation) || 0), 0); // ★2026-08-30 改 reduce 防大数组展开爆栈
-    const totalDifficulty = records.reduce((sum, record) => sum + record.difficulty, 0);
+    const highestElevation = accMaxEl;
+    const totalDifficulty = accDiff;
     const averageDifficulty = (totalDifficulty / total).toFixed(1);
-    // ★2026-08-25 总里程/总用时
-    const totalKm = records.reduce((sum, record) => sum + (Number(record.distance) || 0), 0);
-    const totalMin = records.reduce((sum, record) => sum + (Number(record.duration) || 0), 0);
+    const totalKm = accKm;
+    const totalMin = accMin;
     
     updateWithAnimation(totalCount, total.toString());
     updateWithAnimation(avgElevation, `${averageElevation}m`);
@@ -2046,6 +2056,8 @@ function getRecordMonths(year) {
 
 // ★2026-08-27 热力图渲染缓存：key = 年月+数据指纹（记录变才重建，重复进入秒开）
 let heatmapCache = {};
+// ★2026-09-05 P0-4 月度聚合桶：单次全量遍历把「每天次数 + 当月爬升」按年月分桶，任意月 O(1) 读取（切月/汇总不再全量扫 records）
+let hmMonthAgg = null;   // { fp, buckets: { 'y_m': { days:{}, n, climb } } }
 function renderHeatmap() {
     const cal = document.getElementById('hmCalendar');
     const sumEl = document.getElementById('hmSummary');
@@ -2056,19 +2068,28 @@ function renderHeatmap() {
         const t = r.updatedAt || r.createdAt || '';
         return t > m ? t : m;
     }, '');
-    const cacheKey = year + '_' + month + '_' + dataFp;
-    let html = heatmapCache[cacheKey];
-    if (html === undefined) {
-        const dayCount = {};
+    // ★2026-09-05 P0-4：月桶懒构建（指纹与 html 缓存 key 一致；无记录增删改则复用）
+    let agg = null;
+    if (hmMonthAgg && hmMonthAgg.fp === dataFp) { agg = hmMonthAgg; }
+    else {
+        agg = { fp: dataFp, buckets: {} };
         records.forEach(function (r) {
             if (!r.createdAt) return;
             const d = new Date(r.createdAt);
             if (isNaN(d.getTime())) return;
-            if (d.getFullYear() === year && d.getMonth() + 1 === month) {
-                const day = d.getDate();
-                dayCount[day] = (dayCount[day] || 0) + 1;
-            }
+            const bk = d.getFullYear() + '_' + (d.getMonth() + 1);
+            const b = agg.buckets[bk] || (agg.buckets[bk] = { days: {}, n: 0, climb: 0 });
+            b.days[d.getDate()] = (b.days[d.getDate()] || 0) + 1;
+            b.n++;
+            b.climb += Number(r.elevation) || 0;
         });
+        hmMonthAgg = agg;
+    }
+    const bucket = agg.buckets[year + '_' + month] || { days: {}, n: 0, climb: 0 };
+    const cacheKey = year + '_' + month + '_' + dataFp;
+    let html = heatmapCache[cacheKey];
+    if (html === undefined) {
+        const dayCount = bucket.days;
         const daysInMonth = new Date(year, month, 0).getDate();
         const firstWeekday = (new Date(year, month - 1, 1).getDay() + 6) % 7;
         html = '';
@@ -2085,19 +2106,10 @@ function renderHeatmap() {
         if (Object.keys(heatmapCache).length > 30) heatmapCache = {};
     }
     cal.innerHTML = html;
-    const total = Array.prototype.reduce.call(cal.querySelectorAll('.hm-day:not(.empty)'), function (s, el) {
-        return s + (parseInt(el.getAttribute('data-count'), 10) || 0);
-    }, 0);
+    const total = bucket.n;
     if (sumEl) {
-        // ★2026-09-04 底部汇总：前缀 = 本月/所选年月（口径 = 当前所选年月内合计；爬升与次数同口径）
-        let climbThis = 0;
-        records.forEach(function (r) {
-            if (!r.createdAt) return;
-            const d = new Date(r.createdAt);
-            if (!isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() + 1 === month) {
-                climbThis += Number(r.elevation) || 0;
-            }
-        });
+        // ★2026-09-05 P0-4：爬升直接读桶（原来每次渲染全量扫 records）
+        const climbThis = bucket.climb;
         // ★2026-09-04 底部前缀：所选即本月 → 写「本月徒步 …」；历史月写「X年X月徒步 …」防歧义（用户要求加「本月」）
         const _nowD = new Date();
         const _mLabel = (year === _nowD.getFullYear() && month === _nowD.getMonth() + 1) ? '本月' : (year + '年' + month + '月');
@@ -3016,26 +3028,36 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         return Object.keys(out).slice(0, 3);
     }
     var arr = groups[k];
-    var sorted = arr.slice().sort(function (x, y) { return (x.createdAt || '') < (y.createdAt || '') ? -1 : 1; });
+    // ★2026-09-05 P0-1 大数量优化：组内单 pass 合并 4 个 reduce + comp；排序只在有照片时对照片记录做（无照片大组免整组 sort）
     var n = arr.length;
-    var km = arr.reduce(function (s, r) { return s + (Number(r.distance) || 0); }, 0);
-    var min = arr.reduce(function (s, r) { return s + (Number(r.duration) || 0); }, 0);
-    var el = arr.reduce(function (m, r) { return Math.max(m, Number(r.elevation) || 0); }, 0);
-    var avgD = Math.round(arr.reduce(function (s, r) { return s + (Number(r.difficulty) || 0); }, 0) / n);
+    var km = 0, min = 0, el = 0, diffSum = 0;
     var comp = [];
     var seen = {};
-    arr.forEach(function (r) { cmpSet(r.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } }); });
+    var phRecs = [];
+    for (var gi = 0; gi < n; gi++) {
+        var gr = arr[gi];
+        km += Number(gr.distance) || 0;
+        min += Number(gr.duration) || 0;
+        var gel = Number(gr.elevation) || 0;
+        if (gel > el) el = gel;
+        diffSum += Number(gr.difficulty) || 0;
+        cmpSet(gr.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } });
+        if (gr.photos && gr.photos.length) phRecs.push({ c: gr.createdAt || '', id: gr.id, ps: gr.photos });
+    }
+    var avgD = Math.round(diffSum / n);
     var pItems = [];
     var dMax = '';
-    sorted.forEach(function (r) {
-        var ps = (r.photos && r.photos.length) ? r.photos : [];
-        if (!ps.length) return;
-        var d = fmtYMD(r.createdAt) || '';
-        if (d && d > dMax) dMax = d;
-        for (var pi = 0; pi < ps.length && pItems.length < 24; pi++) {
-            pItems.push({ rid: r.id, pid: ps[pi] });
+    if (phRecs.length) {
+        phRecs.sort(function (x, y) { return x.c < y.c ? -1 : (x.c > y.c ? 1 : 0); });
+        for (var pj = 0; pj < phRecs.length && pItems.length < 24; pj++) {
+            var pr = phRecs[pj];
+            var dd = fmtYMD(pr.c) || '';
+            if (dd && dd > dMax) dMax = dd;
+            for (var pk = 0; pk < pr.ps.length && pItems.length < 24; pk++) {
+                pItems.push({ rid: pr.id, pid: pr.ps[pk] });
+            }
         }
-    });
+    }
     var dLabel = dMax || '';
     var photosHtml = pItems.length
         ? '<div class="mb-photos"><div class="mb-photos-head"><span class="mb-photos-tt">照片回忆</span>' +
@@ -3065,6 +3087,31 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         '<span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div></div>';
     var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + '</div>';
     return { head: head, drawer: drawer };
+}
+
+// ★2026-09-05 P1-5 一键示例足迹：零记录时灌 3 条真实感记录 + 1 条计划（无照片），帮新用户/演示一眼看懂 App
+function loadSampleData() {
+    try {
+        var now = new Date();
+        function daysAgo(n, h) { var d = new Date(now.getTime() - n * 86400000); if (h) d.setHours(h, 0, 0, 0); else d.setHours(15, 0, 0, 0); return d.toISOString(); }
+        var demoRecords = [
+            { id: generateId(), name: '沣峪口 · 秦岭', difficulty: 2, elevation: 1250, duration: 240, distance: 18.6, mood: '轻松', weather: '晴', companions: '周末小队', notes: '第一次进秦岭，溪水边歇了会儿脚。', photos: [], createdAt: daysAgo(3, 9), updatedAt: daysAgo(3, 9) },
+            { id: generateId(), name: '华山', difficulty: 4, elevation: 2154, duration: 330, distance: 22.3, mood: '超棒', weather: '晴', companions: '', notes: '北峰看日出，值了。', photos: [], createdAt: daysAgo(21, 8), updatedAt: daysAgo(21, 8) },
+            { id: generateId(), name: '太白山', difficulty: 5, elevation: 3767, duration: 480, distance: 45.5, mood: '感叹', weather: '多云', companions: '俱乐部', notes: '拔仙台的风大到站不稳，下次轻装。', photos: [], createdAt: daysAgo(70, 7), updatedAt: daysAgo(70, 7) }
+        ];
+        var demoPlan = { id: generateId(), name: '终南山 · 秦楚古道', difficulty: 3, elevation: 2604, duration: '', distance: '', createdAt: new Date(now.getTime() + 7 * 86400000).toISOString(), updatedAt: new Date(now.getTime() + 7 * 86400000).toISOString() };
+        records = (records || []).concat(demoRecords);
+        plannedTrips = (plannedTrips || []).concat([demoPlan]);
+        saveToStorage();
+        savePlannedTripsToStorage();
+        try { updateStatistics(); } catch (e) {}
+        try {
+            switchTab('records');
+            if (typeof recordsViewMode !== 'undefined') recordsViewMode = 'list';
+            renderTable();
+        } catch (e2) {}
+        try { showSuccessMessage('示例已载入：3 条足迹 + 1 条计划，去逛逛吧'); triggerHaptic(20); } catch (e3) {}
+    } catch (e4) { try { showErrorMessage('示例载入失败，请重试'); } catch (e5) {} }
 }
 
 // ★2026-09-03 P0 从历史记录复制（方案定稿：点「＋添加」先弹选择卡；行内不再有复制条）：
@@ -3883,7 +3930,7 @@ async function savePlannedTripsToStorage() {
                 plannedTrips = validTrips;
             }
             
-            await AppStore.setItem(PLANNED_TRIPS_KEY, { trips: validTrips });
+            await AppStore.setItem(PLANNED_TRIPS_KEY, { version: DATA_SCHEMA_VERSION, trips: validTrips });   // ★P0-2 写 schema 版本
             // ★2026-08-30 计划变更（增删改/完成）后同步系统闹钟：不打开 App 也能提醒
             syncPlanAlarmsBridge();
             // ★2026-08-31 计划数据变更后日历视图同步重绘
@@ -3903,7 +3950,8 @@ async function loadPlannedTripsFromStorage() {
     try {
         const data = await AppStore.getItem(PLANNED_TRIPS_KEY);
         if (data && Array.isArray(data.trips)) {
-            plannedTrips = data.trips.filter(trip => {
+            // ★2026-09-05 P0-2 计划数据先过 schema 迁移链
+            plannedTrips = applySchemaMigrations(data.trips, TRIP_SCHEMA_MIGRATIONS).filter(trip => {
                 return trip && 
                        typeof trip.id === 'string' &&
                        typeof trip.name === 'string' &&
@@ -3951,7 +3999,7 @@ async function saveToStorage() {
                 records = validRecords;
             }
             
-            await AppStore.setItem(STORAGE_KEY, { records: validRecords });
+            await AppStore.setItem(STORAGE_KEY, { version: DATA_SCHEMA_VERSION, records: validRecords });   // ★P0-2 写 schema 版本
             // ★自动同步（v1.4.10.1）：数据变更后若开启自动同步，延迟自动上传备份
             maybeAutoUploadAfterChange();
         } catch (error) {

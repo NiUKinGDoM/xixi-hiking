@@ -1,6 +1,12 @@
 // ★2026-09-04 首次引导横幅：新装用户（无任何记录）首次打开 App 时，概览页顶部出现一次欢迎卡；
 //   点「记下第一座山」直达添加流程，或点 ✕ 关闭；看过一次后不再打扰（老用户/有记录永不显示）
 var welcomeBannerShown = false;
+// ★2026-09-05 P1-6 三步引导卡内容：icon / 标题 / 说明 / 主按钮文案 / 动作
+var WELCOME_STEPS = [
+    { icon: 'landscape', title: '记下每次出发', sub: '去「记录」写第一座山：名字、海拔、难度、用时，想拍的照片都放进来。', btn: '记下第一座山', act: 'add' },
+    { icon: 'collections_bookmark', title: '脚印自动收进山册', sub: '去的每一座山都会在「山册」里按山汇成卡片，翻册子一样看回忆。', btn: '去看看山册', act: 'mountain' },
+    { icon: 'calendar_month', title: '想去的山先列计划', sub: '把下一个山头写进「计划」，到日子提醒你出发，完成后一键补成记录。', btn: '去计划页看看', act: 'plans' }
+];
 function maybeShowWelcomeBanner() {
     try {
         if (welcomeBannerShown) return;
@@ -14,20 +20,67 @@ function maybeShowWelcomeBanner() {
         banner.style.display = 'block';
         var goBtn = document.getElementById('welcomeGoBtn');
         var closeBtn = document.getElementById('welcomeClose');
+        var demoBtn = document.getElementById('welcomeDemoBtn');
+        var nextBtn = document.getElementById('wbNext');
+        var iconEl = document.getElementById('wbIcon');
+        var titleEl = document.getElementById('wbTitle');
+        var subEl = document.getElementById('wbSub');
+        var dotsEl = document.getElementById('wbDots');
+        var step = 0;
         var dismiss = function () {
             AppStore.setItem('welcome_seen_v1', true);
             banner.style.display = 'none';
         };
-        if (closeBtn) closeBtn.addEventListener('click', dismiss);
-        if (goBtn) goBtn.addEventListener('click', function () {
+        var renderStep = function (i) {
+            var st = WELCOME_STEPS[i];
+            iconEl.textContent = st.icon;
+            titleEl.textContent = st.title;
+            subEl.textContent = st.sub;
+            goBtn.textContent = st.btn;
+            // 圆点
+            dotsEl.innerHTML = '';
+            for (var d = 0; d < WELCOME_STEPS.length; d++) {
+                var dot = document.createElement('span');
+                dot.style.cssText = 'width:6px;height:6px;border-radius:99px;background:' + (d === i ? '#6366f1' : 'rgba(148,163,184,0.5)') + ';transition:background .15s;cursor:pointer;';
+                (function (di) { dot.addEventListener('click', function () { step = di; renderStep(step); }); })(d);
+                dotsEl.appendChild(dot);
+            }
+            nextBtn.style.visibility = i < WELCOME_STEPS.length - 1 ? 'visible' : 'hidden';
+        };
+        var doAction = function (act) {
             dismiss();
-            try { switchTab('records'); } catch (e) { /* 切页失败不影响 */ }
-            // 零记录场景：走完整添加流程（自动降级为直接新建空白）
-            setTimeout(function () {
-                var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
-                if (h) h();
-            }, 350);
+            if (act === 'add') {
+                try { switchTab('records'); } catch (e) { /* ignore */ }
+                setTimeout(function () {
+                    var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
+                    if (h) h();
+                }, 350);
+            } else if (act === 'mountain') {
+                try {
+                    if (typeof recordsViewMode !== 'undefined') recordsViewMode = 'mountain';
+                    switchTab('records');
+                    if (typeof applyRecordsView === 'function') { try { applyRecordsView(); } catch (e2) { /* ignore */ } }
+                } catch (e3) { try { switchTab('records'); } catch (e4) {} }
+            } else if (act === 'plans') {
+                try { switchTab('plans'); } catch (e5) { /* ignore */ }
+            }
+        };
+        if (closeBtn) closeBtn.addEventListener('click', dismiss);
+        if (nextBtn) nextBtn.addEventListener('click', function () {
+            if (step < WELCOME_STEPS.length - 1) { step++; renderStep(step); }
         });
+        if (goBtn) goBtn.addEventListener('click', function () {
+            if (step < WELCOME_STEPS.length - 1) { step++; renderStep(step); }
+            else doAction(WELCOME_STEPS[step].act);
+        });
+        if (demoBtn) demoBtn.addEventListener('click', function () {
+            // P1-5：一键示例（仅零记录场景出现）
+            dismiss();
+            if (typeof loadSampleData === 'function') {
+                try { loadSampleData(); } catch (e6) { /* 示例失败不影响 */ }
+            }
+        });
+        renderStep(0);
     } catch (e) { /* 引导失败绝不影响启动 */ }
 }
 
@@ -59,7 +112,8 @@ async function init() {
         ]);
         
         if (storageData.status === 'fulfilled' && storageData.value && Array.isArray(storageData.value.records)) {
-            records = storageData.value.records.filter(record => {
+            // ★2026-09-05 P0-2 记录数据先过 schema 迁移链（老数据 v0 自动透传）
+            records = applySchemaMigrations(storageData.value.records, RECORD_SCHEMA_MIGRATIONS).filter(record => {
                 return record && 
                        typeof record.id === 'string' &&
                        typeof record.name === 'string' &&
@@ -163,6 +217,8 @@ async function init() {
         updateStatistics();
         // ★2026-09-04 首次引导横幅：仅新装用户（零记录 + 从未看过）显示一次，不影响老用户
         maybeShowWelcomeBanner();
+        // ★2026-09-05 P1-7 本地每周自动备份检查（App 且有数据才触发，不阻塞启动）
+        setTimeout(function () { try { if (typeof autoLocalBackupIfDue === 'function') autoLocalBackupIfDue(); } catch (e) { /* ignore */ } }, 1500);
         
         // ★2026-08-27 启动并行：计划 + 同步配置/状态并行加载（原串行 await，省一次 IndexedDB 往返，启动更快）
         await Promise.all([
