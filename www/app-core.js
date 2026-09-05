@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.9.7': '## v1.1.9.7 更新内容\\n\\n**看得更清楚**\\n- 设置里新增「显示大小」：标准 / 大 / 特大三档，界面整体放大，不费眼\\n- 记录详情弹窗加了「小日记」：每次徒步随手写几行，翻记录时那些心情都在\\n\\n**找得到·不丢数据**\\n- 搜索现在连小日记、心情、天气、同行人一起搜，只记得片段也能找到那条\\n- 设置新增「抹掉所有足迹」：一键清空记录/照片/计划，双重确认防手滑（云端备份不受影响）\\n\\n**计划有人提醒**\\n- 过期没去的计划会标「已过期 N 天」，打开 App 弹一次可顺延一周\\n\\n**其它贴心小改**\\n- 备份里导出弹窗的手动备份按钮移除，改为自动备份说明（每周自动进行）\\n- 新手引导扩成 5 步，带你看懂记录/山册/计划/概览/备份\\n- 视图说明小灰字点一下就能收起来\\n- 回忆册支持打印导出成 PDF\\n\\nMade by XiXi 💛',
     'v1.1.9.6': '## v1.1.9.6 更新内容\\n\\n**更快更稳**\\n- 大数量优化：统计和山册改单遍计算，记录再多也不卡（万条记录统计约 0.02 秒）\\n- 热力图月度数据预聚合，翻月/切日期秒开\\n\\n**数据更放心**\\n- 数据加载带版本迁移机制，以后升级数据结构自动平滑过渡\\n- 设置里「照片占用」新增孤立照片扫描，一键清理不再占空间\\n- 本地每周自动备份：App 启动检查，满 7 天自动存一份到系统下载目录，坚果云之外多一层保险\\n\\n**新朋友更友好**\\n- 首次引导升级三步卡：写记录 → 看山册 → 列计划，一步步带你看懂\\n- 零记录时可点「先看看示例」，一键载入几条真实感足迹先逛起来\\n\\n**细节打磨**\\n- 清理废弃样式与代码、修复深色模式引导卡文字、备份失败会自动重试\\n\\nMade by XiXi 💛',
     'v1.1.9.5': '## v1.1.9.5 更新内容\n\n**更统一的按钮**\n- 徒步足迹的「年月」和「回顾」按钮统一成同款玻璃按钮，与「日历/列表」切换钮一套框\n- 清理了配套的废弃样式\n\n**热力图一眼看懂**\n- 热力图下方汇总加上前缀：看本月显示「本月徒步 N 次 · 累计爬升 Xm」，翻历史月份自动变成「X年X月徒步 …」，不会指错月\n\nMade by XiXi 💛',
     'v1.1.9.4': '## v1.1.9.4 更新内容\n\n**按钮与弹窗更顺手**\n- 徒步足迹的「回顾」按钮带上了文字，不再是个谜之图标\n- 有「取消」按钮的弹窗，右上角的 ✕ 都去掉了：编辑时按底部取消即可，不怕误触\n- 编辑弹窗「照片」下面注明上限：最多 24 张\n\n**计划完成更顺**\n- 勾「完成」先弹祝贺卡，点「继续补全」才进入编辑——不再两个弹窗叠一起\n\nMade by XiXi 💛',
@@ -467,7 +468,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.9.6';
+var APP_VERSION = '1.1.9.7';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -489,6 +490,41 @@ var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
 const SHOW_FPS_KEY = 'hiking_show_fps';
 let showFps = true;
+// ★2026-09-05 P0-① 全局显示大小（字号三档）：1 / 1.12 / 1.25，zoom 全量缩放（iOS Safari 网页退 html font-size）
+const FONT_SCALE_KEY = 'hiking_font_scale';
+let fontScale = 1;
+function applyFontScale() {
+    try {
+        var root = document.documentElement;
+        if (!root) return;
+        var ua = navigator.userAgent || '';
+        var isSafariWeb = /(iPhone|iPad|iPod|Macintosh)/.test(ua) && !window.chrome;
+        if (isSafariWeb) root.style.fontSize = Math.round(16 * fontScale) + 'px';
+        else root.style.zoom = String(fontScale === 1 ? '' : fontScale) || '1';
+    } catch (e) { /* 缩放失败不影响 */ }
+}
+function loadFontScale() {
+    try {
+        var v = parseFloat(AppStore.getItem(FONT_SCALE_KEY));
+        fontScale = (v === 1.12 || v === 1.25) ? v : 1;
+    } catch (e) { fontScale = 1; }
+    applyFontScale();
+}
+function setFontScale(v) {
+    fontScale = (v === 1.12 || v === 1.25) ? v : 1;
+    try { AppStore.setItem(FONT_SCALE_KEY, fontScale); } catch (e) { /* 忽略 */ }
+    applyFontScale();
+    try { markFontScaleActive(); } catch (e2) { /* 忽略 */ }
+}
+function markFontScaleActive() {
+    var grp = document.getElementById('fontScaleGroup');
+    if (!grp) return;
+    var btns = grp.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+        var fv = parseFloat(btns[i].getAttribute('data-fs')) || 1;
+        if (fv === fontScale) btns[i].classList.add('active'); else btns[i].classList.remove('active');
+    }
+}
 const HAPTIC_KEY = 'hiking_haptic'; // ★2026-08-21 v1.1.1.1 震动反馈开关
 let hapticEnabled = true; // 默认开（用户指定）
 // ★主题三态（v1.4.10.2）：'auto' 跟随系统 / 'light' 白天 / 'dark' 夜间

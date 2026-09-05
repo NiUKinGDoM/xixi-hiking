@@ -1126,8 +1126,12 @@ function buildBackupHTMLString(payload) {
             '</div>';
     }).join('');
     var dataJson = JSON.stringify(payload).replace(/<\/script/g, '<\\/script');
+    // ★2026-09-05 P1-⑧ 回忆册 → PDF：内嵌打印样式（A4 分页友好、照片不溢出、隐藏顶部提示条），浏览器 Ctrl+P / 手机「打印」→ 另存为 PDF 即成册
+    var printCss = 'body{font-family:"SimSun","Songti SC",serif;max-width:720px;margin:0 auto;padding:20px 16px;background:#f8fafc;color:#1e293b;}h1{text-align:center;margin-bottom:4px;}p.sub{text-align:center;color:#64748b;font-size:14px;}h2{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-top:28px;}footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:40px;}.tipbar{background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca;border-radius:10px;padding:8px 12px;font-size:13px;text-align:center;margin-bottom:16px;}';
+    printCss += '@media print{.tipbar{display:none!important;}body{background:#ffffff;padding:0;max-width:none;}div{border-color:#e2e8f0!important;break-inside:avoid;page-break-inside:avoid;}img{max-width:120px!important;}h2{break-after:avoid;page-break-after:avoid;}}';
     return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>' + escTitle + ' · 完整备份</title>' +
-        '<style>body{font-family:"SimSun",serif;max-width:720px;margin:0 auto;padding:20px 16px;background:#f8fafc;color:#1e293b;}h1{text-align:center;margin-bottom:4px;}p.sub{text-align:center;color:#64748b;font-size:14px;}h2{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-top:28px;}footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:40px;}</style></head><body>' +
+        '<style>' + printCss + '</style></head><body>' +
+        '<div class="tipbar">📄 想存成 PDF？按 Ctrl+P（手机：浏览器菜单「打印」），目标选「另存为 PDF」即可成册保存</div>' +
         '<h1>🥾 ' + escTitle + '</h1><p class="sub">完整备份 · 共 ' + (payload.records || []).length + ' 条徒步记录 · ' + (payload.plannedTrips || []).length + ' 条计划 · 导出于 ' + new Date(payload.exportedAt || Date.now()).toLocaleString() + '</p>' +
         '<h2>📝 徒步记录</h2>' + (recCards || '<p style="color:#94a3b8;">暂无记录</p>') +
         '<h2>🗓️ 计划徒步</h2>' + (planCards || '<p style="color:#94a3b8;">暂无计划</p>') +
@@ -1709,11 +1713,14 @@ function showExportModal() {
                         <span class="material-icons text-xl">bug_report</span>
                         <span>导出诊断报告</span>
                     </button>
-                    <!-- ★2026-09-05 P1-7 本地立即备份（存到系统下载目录；网页版提示用 App） -->
-                    <button id="localBackupBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
-                        <span class="material-icons text-xl">save_alt</span>
-                        <span>立即本地备份（每周自动）</span>
-                    </button>
+                </div>
+                <!-- ★2026-09-05 用户要求：删「立即本地备份」手动按钮（自动备份已够），改说明行告知自动备份存在 -->
+                <div style="display:flex;align-items:flex-start;gap:6px;margin-top:10px;padding:0 2px;">
+                    <span class="material-icons" style="font-size:15px;color:#64748b;flex-shrink:0;margin-top:1px;">schedule</span>
+                    <div style="font-size:11px;color:#64748b;line-height:1.6;">
+                        本地自动备份已开启：每满 7 天，App 会自动存一份纯数据备份到系统「下载」目录
+                        <span style="opacity:0.75;">（无需手动操作；手机空间不足/网页版不自动备份）</span>
+                    </div>
                 </div>
                 <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
                     取消
@@ -1753,19 +1760,6 @@ function showExportModal() {
     exportDiagBtn.addEventListener('click', () => {
         closeModal();
         exportDiagnostics();
-    });
-    // ★2026-09-05 P1-7 立即本地备份
-    const localBackupBtn = document.getElementById('localBackupBtn');
-    if (localBackupBtn) localBackupBtn.addEventListener('click', () => {
-        closeModal();
-        if (!window.XixiFileBridge || typeof window.XixiFileBridge.saveBase64 !== 'function') {
-            showErrorMessage('本地备份只在 App 内可用（网页版请用「导出」下载文件）');
-            return;
-        }
-        // ★2026-09-05 优化⑤：成功后才记 last（与自动路径一致，失败不吞自动备份窗口）
-        performBackupExport(false).then(function () {
-            try { AppStore.setItem('hiking_local_backup_at', Date.now()); } catch (e) { /* 忽略 */ }
-        }).catch(() => {});
     });
 }
 

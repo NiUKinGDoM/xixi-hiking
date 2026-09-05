@@ -3,8 +3,13 @@ function getSortedRecords() {
     var src = records;
     if (typeof searchQuery === 'string' && searchQuery.trim() && currentTabId === 'records') {
         var q = searchQuery.trim().toLowerCase();
+        // ★2026-09-05 P0-② 全文搜索：山名 + 小日记(notes) + 心情/天气/同行人（记得内容搜不到山名也能找到）
         src = records.filter(function (r) {
-            return (r.name || '').toLowerCase().indexOf(q) >= 0;
+            return (r.name || '').toLowerCase().indexOf(q) >= 0 ||
+                (r.notes || '').toLowerCase().indexOf(q) >= 0 ||
+                (r.mood || '').toLowerCase().indexOf(q) >= 0 ||
+                (r.weather || '').toLowerCase().indexOf(q) >= 0 ||
+                (r.companions || '').toLowerCase().indexOf(q) >= 0;
         });
     }
     if (!currentSort.field) {
@@ -445,6 +450,8 @@ function recordViewBodyHTML(r) {
         '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">用时</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + durTxt + '</div></div>' +
         '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">同行人</div><div style="font-size:13px;font-weight:700;color:#1e293b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + mateTxt + '</div></div>' +
         '</div>' +
+        // ★2026-09-05 小日记：记录弹窗里的回忆段落（编辑时写的 notes；有内容才展示）
+        (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons" style="font-size:14px;color:#64748b;">edit_note</span><span style="font-size:11px;color:#64748b;letter-spacing:0.3px;">小日记</span></div><div style="font-size:13px;color:#334155;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
         '<button id="rd-edit-btn" class="check-go-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
 }
 
@@ -481,6 +488,9 @@ function recordEditBodyHTML(r) {
         '</div>' +
         // 日期时间（★2026-09-04 移至末位：时/分/里程下方整行）
         '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
+        // ★2026-09-05 小日记：编辑时可写（notes 字段，textarea 玻璃同 edit-input；dark 由 .dark-mode .edit-input 覆盖）
+        '<div style="display:flex;flex-direction:column;gap:6px;"><div style="display:flex;align-items:center;gap:4px;"><span class="material-icons" style="font-size:14px;color:#64748b;">edit_note</span><span class="rd-ph-lab" style="font-size:12px;color:#52606f;">小日记（可选）</span></div>' +
+        '<textarea id="edit-notes-' + r.id + '" class="edit-input input-glow" rows="3" maxlength="2000" placeholder="写点这天的见闻、心情、路上故事…（保存后显示在记录里）" style="width:100%;box-sizing:border-box;resize:none;border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.7;min-height:66px;font-family:inherit;">' + escapeHtml(r.notes || '') + '</textarea></div>' +
         // 照片区（层叠卡 + 灯箱管理）
         '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="display:flex;flex-direction:column;align-items:flex-start;margin-right:4px;"><span class="rd-ph-lab" style="font-size:12px;color:#52606f;line-height:1.3;">照片</span><span class="rd-ph-hint">最多 24 张</span></span>' +
         '<div id="photo-thumbs-' + r.id + '" style="display:flex;align-items:center;">' + photoThumbsHTML(editingPhotoIds, r.id) + '</div>' +
@@ -1566,6 +1576,12 @@ function saveRecord(id) {
     if (moodInput) record.mood = moodInput.value.trim() || '';   // ★五项优化⑤：与 weather 一致 trim（防意外空格）
     if (weatherInput) record.weather = weatherInput.value.trim();
     if (companionsInput) record.companions = companionsInput.value.trim();
+    // ★2026-09-05 小日记（notes）：空则删键保持干净（老记录无 notes 不占存储）
+    const notesInput = document.getElementById(`edit-notes-${id}`);
+    if (notesInput) {
+        const nn = notesInput.value.replace(/^\s+|\s+$/g, '');
+        if (nn) record.notes = nn; else delete record.notes;
+    }
 
     // ★2026-09-01 里程/用时（可选）：distance=km 数字（保留两位小数），duration=分钟（时/分双框换算）
     const distanceInput = document.getElementById(`edit-distance-${id}`);
@@ -2276,8 +2292,10 @@ function applyPlansView() {
     // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换（帮新用户看懂当前视图与切换目标）
     var lab = safeGetElementById('plansViewToggleLabel');
     if (lab) lab.textContent = isCal ? '列表' : '日历';
+    var capEl = safeGetElementById('plansViewCaption');
     var capTxt = safeGetElementById('plansViewCaptionText');
     if (capTxt) capTxt.textContent = isCal ? '日历视图 · 哪天有行程一眼看清，点日期看当天安排' : '列表视图 · 全部计划按时间排列，点一行可查看';
+    if (capEl) capEl.style.display = '';   // ★2026-09-05 切视图时恢复被收起说明
     // ★2026-08-31 日历视图隐藏「批量管理」和「添加」按钮（切换按钮固定最右不动）；列表视图恢复
     //   ★08-31 去掉淡入淡出动画（用户反馈卡顿），直接显隐最干净
     var batchBtn = safeGetElementById('plannedBatchModeBtn');
@@ -2953,8 +2971,10 @@ function applyRecordsView() {
     // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换
     var labR = safeGetElementById('recordsViewToggleLabel');
     if (labR) labR.textContent = isMb ? '列表' : '山册';
+    var capElR = safeGetElementById('recordsViewCaption');
     var capTxtR = safeGetElementById('recordsViewCaptionText');
     if (capTxtR) capTxtR.textContent = isMb ? '山册视图 · 按山峰汇总成册，一座山一张卡片' : '列表视图 · 全部记录按时间排列，点一行可查看';
+    if (capElR) capElR.style.display = '';   // ★2026-09-05 切视图时恢复被收起说明
     var btn = safeGetElementById('recordsViewToggleBtn');
     if (btn) btn.title = isMb ? '切回记录列表' : '查看我的山册';
     // ★2026-09-03 搜索框提示随视图切换（山册 = 搜山名）
@@ -3089,6 +3109,60 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
     return { head: head, drawer: drawer };
 }
 
+// ★2026-09-05 P0-③ 抹掉所有足迹：双重确认 → 清 records/plannedTrips/全部照片 + 引导与提醒标记 → reload 全新开始
+function confirmWipeAllData() {
+    try {
+        var nRec = (records || []).length, nPl = (plannedTrips || []).length;
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">delete_forever</span>抹掉所有足迹？</div>' +
+            '<div class="confirm-modal-message" style="line-height:1.7;">将删除 <b>' + nRec + ' 条记录、' + nPl + ' 个计划</b> 和 <b>全部照片</b>，<b>不可恢复</b>。<br>建议先点「导出数据」留一份备份。</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="wipe-cancel1">取消</button>' +
+            '<button class="check-go-btn ripple-effect" id="wipe-next1">继续</button></div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('wipe-cancel1').addEventListener('click', function () { document.body.removeChild(modal); });
+        document.getElementById('wipe-next1').addEventListener('click', function () {
+            document.body.removeChild(modal);
+            wipeConfirmSecond();
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    } catch (e) { /* 忽略 */ }
+}
+function wipeConfirmSecond() {
+    try {
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>最后确认</div>' +
+            '<div class="confirm-modal-message" style="line-height:1.7;">这一步会<b>永久删除全部徒步数据与照片</b>，任何云端备份都不受影响（坚果云里的旧备份还在，需要时仍可恢复）。确定要抹掉吗？</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="wipe-cancel2">返回</button>' +
+            '<button class="check-go-btn ripple-effect" id="wipe-go2" style="font-weight:700;">彻底抹掉</button></div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('wipe-cancel2').addEventListener('click', function () { document.body.removeChild(modal); });
+        document.getElementById('wipe-go2').addEventListener('click', function () {
+            document.body.removeChild(modal);
+            try { wipeAllDataExecute(); } catch (e2) { /* 忽略 */ }
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    } catch (e) { /* 忽略 */ }
+}
+function wipeAllDataExecute() {
+    records = [];
+    plannedTrips = [];
+    try { saveToStorage(); } catch (e) { /* 忽略 */ }
+    try { savePlannedTripsToStorage(); } catch (e2) { /* 忽略 */ }
+    // records 已空 → 全部照片成孤儿，一次清库（photoCollectOrphans 删除全部）
+    try { photoCollectOrphans().catch(function () { /* 照片清理失败不强求 */ }); } catch (e3) { /* 忽略 */ }
+    // 引导/提醒/备份时间等本地标记也清（抹掉=全新开始，5 步引导会再次出现）
+    ['welcome_seen_v1', 'hiking_overdue_remind_date', 'hiking_overdue_care_date', 'hiking_local_backup_at'].forEach(function (k) {
+        try { AppStore.removeItem(k); } catch (e4) { /* 忽略 */ }
+    });
+    try { showSuccessMessage('已抹掉所有足迹，欢迎重新开始'); } catch (e5) { /* 忽略 */ }
+    setTimeout(function () { try { location.reload(); } catch (e6) { /* 忽略 */ } }, 600);
+}
 // ★2026-09-05 P1-5 一键示例足迹：零记录时灌 3 条真实感记录 + 1 条计划（无照片），帮新用户/演示一眼看懂 App
 function loadSampleData() {
     try {
@@ -3269,6 +3343,53 @@ function markCopyFilled(id) {
 }
 
 // ★2026-08-25 计划日期提醒：启动时检查未完成计划
+// ★2026-09-05 P1-⑦ 计划过期关怀（应用内一次弹窗）：过期未完成计划 → 顺延一周 / 去处理 / 忽略；一天一次
+function maybeShowOverdueCare() {
+    try {
+        if (typeof plannedTrips === 'undefined' || !plannedTrips || !plannedTrips.length) return;
+        var now = new Date();
+        var todayStr = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+        if (AppStore.getItem('hiking_overdue_care_date') === todayStr) return;
+        var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        var overdue = plannedTrips.filter(function (t) {
+            if (!t.createdAt) return false;
+            var d = new Date(t.createdAt);
+            if (isNaN(d.getTime())) return false;
+            var d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            return Math.round((d0 - t0) / 86400000) < 0;
+        });
+        if (!overdue.length) return;
+        try { AppStore.setItem('hiking_overdue_care_date', todayStr); } catch (e0) { /* 忽略 */ }
+        var label = overdue.slice(0, 3).map(function (t) { return t.name; }).join('、') + (overdue.length > 3 ? ' 等 ' + overdue.length + ' 个' : '');
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
+            '<div class="confirm-modal-message" style="line-height:1.7;">到日子没去的：<b>' + escapeHtml(label) + '</b>。<br>可以顺手顺延一周，或去计划页处理。</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="oc-ignore">忽略</button>' +
+            '<button class="check-go-btn ripple-effect" id="oc-shift">顺延一周</button>' +
+            '<button class="check-go-btn ripple-effect" id="oc-go" style="font-weight:700;">去处理</button></div></div>';
+        document.body.appendChild(modal);
+        var closeCare = function () { try { if (modal.parentNode) document.body.removeChild(modal); } catch (e3) { /* 忽略 */ } };
+        document.getElementById('oc-ignore').addEventListener('click', closeCare);
+        document.getElementById('oc-shift').addEventListener('click', function () {
+            closeCare();
+            try {
+                overdue.forEach(function (t) { t.createdAt = new Date(new Date(t.createdAt).getTime() + 7 * 86400000).toISOString(); });
+                savePlannedTripsToStorage();
+                renderPlannedTripsTable();
+                showSuccessMessage('已把 ' + overdue.length + ' 个过期计划顺延一周');
+            } catch (e4) { /* 忽略 */ }
+        });
+        document.getElementById('oc-go').addEventListener('click', function () {
+            closeCare();
+            try { switchTab('plans'); } catch (e5) { /* 忽略 */ }
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeCare(); });
+    } catch (e6) { /* 关怀弹窗失败绝不影响 */ }
+}
+
 // ★2026-09-02 改：今天+未来 3 天照旧提醒；计划过期（最近 3 天内）独立提醒，同一天不重复（不再被今天计划盖住，也不轰炸）
 function checkPlannedTripReminders() {
     try {
@@ -3436,10 +3557,23 @@ function renderPlannedTripsTable() {
             // ★2026-09-04 阅读态 v2：计划列表瘦身——只显示 名称 + 操作（完成/删除），海拔/难度/时间等收进详情弹窗
             const rowAnimCls2 = plannedRowsAnimated ? '' : 'table-row-animate ';
             const rowDelayStyle2 = plannedRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
+            // ★2026-09-05 P1-⑦ 过期标注：计划日早于今天 → 名称旁「已过期 N 天」红标（未完成计划可见，提示去顺延/删除）
+            let _ovBadge = '';
+            try {
+                if (trip.createdAt) {
+                    const _dd = new Date(trip.createdAt);
+                    if (!isNaN(_dd.getTime())) {
+                        const _now0 = new Date(); const _t0 = new Date(_now0.getFullYear(), _now0.getMonth(), _now0.getDate()).getTime();
+                        const _d0 = new Date(_dd.getFullYear(), _dd.getMonth(), _dd.getDate()).getTime();
+                        const _diff = Math.round((_d0 - _t0) / 86400000);
+                        if (_diff < 0) _ovBadge = '<span class="pl-overdue">已过期 ' + Math.abs(_diff) + ' 天</span>';
+                    }
+                }
+            } catch (e7) { _ovBadge = ''; }
             return `
                 <tr class="table-row-advanced ${rowAnimCls2}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle2}">
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
-                        <span class="rd-name-main">${escapeHtml(trip.name)}</span>
+                        <span class="rd-name-main">${escapeHtml(trip.name)}</span>${_ovBadge}
                 </td>
                 <td class="rd-time-cell" data-label="计划时间">${formatDateTime(trip.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">

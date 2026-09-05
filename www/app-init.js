@@ -2,10 +2,13 @@
 //   点「记下第一座山」直达添加流程，或点 ✕ 关闭；看过一次后不再打扰（老用户/有记录永不显示）
 var welcomeBannerShown = false;
 // ★2026-09-05 P1-6 三步引导卡内容：icon / 标题 / 说明 / 主按钮文案 / 动作
+// ★2026-09-05 v1.1.9.7 新手引导全面版（用户要求更全面）：3 步 → 5 步覆盖 记录/山册/计划/概览/数据安全
 var WELCOME_STEPS = [
-    { icon: 'landscape', title: '记下每次出发', sub: '去「记录」写第一座山：名字、海拔、难度、用时，想拍的照片都放进来。', btn: '记下第一座山', act: 'add' },
-    { icon: 'collections_bookmark', title: '脚印自动收进山册', sub: '去的每一座山都会在「山册」里按山汇成卡片，翻册子一样看回忆。', btn: '去看看山册', act: 'mountain' },
-    { icon: 'calendar_month', title: '想去的山先列计划', sub: '把下一个山头写进「计划」，到日子提醒你出发，完成后一键补成记录。', btn: '去计划页看看', act: 'plans' }
+    { icon: 'landscape', title: '记下每次出发', sub: '去「记录」写第一座山：名字、海拔、难度、用时、心情天气，照片最多放 24 张。', btn: '记下第一座山', act: 'add' },
+    { icon: 'collections_bookmark', title: '脚印自动收进山册', sub: '同一座山去几次都会自动汇成一张山卡：次数、里程、照片回忆带，像翻相册一样看足迹。', btn: '去看看山册', act: 'mountain' },
+    { icon: 'calendar_month', title: '想去的山先列计划', sub: '把下一个山头写进「计划」，日历上哪天有行程一眼看清；到日子提醒，完成后一键补成记录。', btn: '去计划页看看', act: 'plans' },
+    { icon: 'insights', title: '统计和回忆都在概览', sub: '回到「概览」看统计卡、年度足迹热力图，热力图还能一键生成分享卡片发给朋友。', btn: '回概览看看', act: 'overview' },
+    { icon: 'security', title: '数据永远有备份', sub: '「设置」里可同步到坚果云、导出压缩包；App 还会每周自动备份一份，换机不怕丢。', btn: '去设置看看', act: 'settings' }
 ];
 function maybeShowWelcomeBanner() {
     try {
@@ -63,6 +66,12 @@ function maybeShowWelcomeBanner() {
                 } catch (e3) { try { switchTab('records'); } catch (e4) {} }
             } else if (act === 'plans') {
                 try { switchTab('plans'); } catch (e5) { /* ignore */ }
+            } else if (act === 'overview') {
+                // ★2026-09-05 引导第 4 步：回概览看统计/热力图/回顾（switchTab 内部会触发概览渲染）
+                try { switchTab('overview'); } catch (e6) { /* ignore */ }
+            } else if (act === 'settings') {
+                // ★2026-09-05 引导第 5 步：去设置页看同步/备份
+                try { switchTab('settings'); } catch (e7) { /* ignore */ }
             }
         };
         if (closeBtn) closeBtn.addEventListener('click', dismiss);
@@ -141,6 +150,7 @@ async function init() {
         }
         themeMode = (loadedTheme === 'light' || loadedTheme === 'dark' || loadedTheme === 'auto') ? loadedTheme : 'auto';
         applyThemeMode();
+        loadFontScale();   // ★2026-09-05 P0-① 显示大小：应用保存的字号档（缩放作用于 documentElement）
         
         if (titleData.status === 'fulfilled' && titleData.value && typeof titleData.value.title === 'string') {
             const titleElement = document.getElementById('appTitle');
@@ -215,10 +225,26 @@ async function init() {
         
         // ★2026-08-21 v1.1.1.5 启动优化：启动只渲染当前概览页，记录/计划表格延迟到切 tab 时渲染
         updateStatistics();
+                // ★2026-09-05 提示灵活化：视图说明灰字单击即收起（收起的是该视图这条；切换视图 apply 时自动恢复显示）
+        document.addEventListener('click', function (ev) {
+            try {
+                var cap = ev.target && ev.target.closest ? ev.target.closest('.view-caption') : null;
+                if (cap) cap.style.display = 'none';
+            } catch (e) { /* 忽略 */ }
+        });
         // ★2026-09-04 首次引导横幅：仅新装用户（零记录 + 从未看过）显示一次，不影响老用户
         maybeShowWelcomeBanner();
         // ★2026-09-05 P1-7 本地每周自动备份检查（App 且有数据才触发，不阻塞启动）
         setTimeout(function () { try { if (typeof autoLocalBackupIfDue === 'function') autoLocalBackupIfDue(); } catch (e) { /* ignore */ } }, 1500);
+        // ★2026-09-05 P1-⑦ 计划过期关怀：数据渲染后一次性弹窗（引导卡显示中则等下次启动，避免叠窗）
+        setTimeout(function () {
+            try {
+                if (typeof maybeShowOverdueCare !== 'function') return;
+                var wb = document.getElementById('welcomeBanner');
+                if (wb && wb.style.display === 'block') return;
+                maybeShowOverdueCare();
+            } catch (e8) { /* 忽略 */ }
+        }, 2600);
         
         // ★2026-08-27 启动并行：计划 + 同步配置/状态并行加载（原串行 await，省一次 IndexedDB 往返，启动更快）
         await Promise.all([
@@ -461,6 +487,17 @@ function setupEventListeners() {
             showFps = fpsToggle.checked;
             try {
                 await AppStore.setItem(SHOW_FPS_KEY, { showFps });
+    // ★2026-09-05 P0-① 显示大小档位切换（标准/大/特大）
+    const fsGrp = document.getElementById('fontScaleGroup');
+    if (fsGrp && !fsGrp._fsBound) {
+        fsGrp._fsBound = true;
+        fsGrp.addEventListener('click', function (ev) {
+            const fsBtn = ev.target && ev.target.closest ? ev.target.closest('button[data-fs]') : null;
+            if (!fsBtn) return;
+            try { setFontScale(parseFloat(fsBtn.getAttribute('data-fs')) || 1); triggerHaptic(10); } catch (e) { /* 忽略 */ }
+        });
+        try { markFontScaleActive(); } catch (e2) { /* 忽略 */ }
+    }
             } catch (e) {
                 console.error('保存帧率开关失败:', e);
             }
