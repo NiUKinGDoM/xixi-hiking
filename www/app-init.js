@@ -1,97 +1,77 @@
-// ★2026-09-04 首次引导横幅：新装用户（无任何记录）首次打开 App 时，概览页顶部出现一次欢迎卡；
-//   点「记下第一座山」直达添加流程，或点 ✕ 关闭；看过一次后不再打扰（老用户/有记录永不显示）
+// ★2026-09-06 分页新手引导（用户定稿 v2）：哪一页讲哪一件事——概览/记录/计划/设置各一张小引导卡，
+//   点卡内按钮只做动作并跳转（绝不自动关闭引导），唯一关闭途径 = 右上 ✕；✕ 过后才永不再现（即使写了记录也不自动消失）
 var welcomeBannerShown = false;
-// ★2026-09-05 P1-6 三步引导卡内容：icon / 标题 / 说明 / 主按钮文案 / 动作
-// ★2026-09-05 v1.1.9.7 新手引导全面版（用户要求更全面）：3 步 → 5 步覆盖 记录/山册/计划/概览/数据安全
-var WELCOME_STEPS = [
-    { icon: 'landscape', title: '记下每次出发', sub: '去「记录」写第一座山：名字、海拔、难度、用时、心情天气，照片最多放 24 张。', btn: '记下第一座山', act: 'add' },
-    { icon: 'collections_bookmark', title: '脚印自动收进山册', sub: '同一座山去几次都会自动汇成一张山卡：次数、里程、照片回忆带，像翻相册一样看足迹。', btn: '去看看山册', act: 'mountain' },
-    { icon: 'calendar_month', title: '想去的山先列计划', sub: '把下一个山头写进「计划」，日历上哪天有行程一眼看清；到日子提醒，完成后一键补成记录。', btn: '去计划页看看', act: 'plans' },
-    { icon: 'insights', title: '统计和回忆都在概览', sub: '回到「概览」看统计卡、年度足迹热力图，热力图还能一键生成分享卡片发给朋友。', btn: '回概览看看', act: 'overview' },
-    { icon: 'security', title: '数据永远有备份', sub: '「设置」里可同步到坚果云、导出压缩包；App 还会每周自动备份一份，换机不怕丢。', btn: '去设置看看', act: 'settings' }
-];
-function maybeShowWelcomeBanner() {
-    try {
-        if (welcomeBannerShown) return;
-        welcomeBannerShown = true;
-        var banner = document.getElementById('welcomeBanner');
-        if (!banner) return;
-        // 已有记录（老用户/用过的）或已关过：不显示
-        var hasRecords = (typeof records !== 'undefined' && records && records.length > 0);
-        var seen = AppStore.getItem('welcome_seen_v1');
-        if (hasRecords || seen === true) { banner.style.display = 'none'; return; }
-        banner.style.display = 'block';
-        var goBtn = document.getElementById('welcomeGoBtn');
-        var closeBtn = document.getElementById('welcomeClose');
-        var demoBtn = document.getElementById('welcomeDemoBtn');
-        var nextBtn = document.getElementById('wbNext');
-        var iconEl = document.getElementById('wbIcon');
-        var titleEl = document.getElementById('wbTitle');
-        var subEl = document.getElementById('wbSub');
-        var dotsEl = document.getElementById('wbDots');
-        var step = 0;
-        var dismiss = function () {
-            AppStore.setItem('welcome_seen_v1', true);
-            banner.style.display = 'none';
-        };
-        var renderStep = function (i) {
-            var st = WELCOME_STEPS[i];
-            iconEl.textContent = st.icon;
-            titleEl.textContent = st.title;
-            subEl.textContent = st.sub;
-            goBtn.textContent = st.btn;
-            // 圆点
-            dotsEl.innerHTML = '';
-            for (var d = 0; d < WELCOME_STEPS.length; d++) {
-                var dot = document.createElement('span');
-                dot.style.cssText = 'width:6px;height:6px;border-radius:99px;background:' + (d === i ? '#6366f1' : 'rgba(148,163,184,0.5)') + ';transition:background .15s;cursor:pointer;';
-                (function (di) { dot.addEventListener('click', function () { step = di; renderStep(step); }); })(d);
-                dotsEl.appendChild(dot);
-            }
-            nextBtn.style.visibility = i < WELCOME_STEPS.length - 1 ? 'visible' : 'hidden';
-        };
-        var doAction = function (act) {
-            dismiss();
-            if (act === 'add') {
-                try { switchTab('records'); } catch (e) { /* ignore */ }
-                setTimeout(function () {
-                    var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
-                    if (h) h();
-                }, 350);
-            } else if (act === 'mountain') {
-                try {
-                    if (typeof recordsViewMode !== 'undefined') recordsViewMode = 'mountain';
-                    switchTab('records');
-                    if (typeof applyRecordsView === 'function') { try { applyRecordsView(); } catch (e2) { /* ignore */ } }
-                } catch (e3) { try { switchTab('records'); } catch (e4) {} }
-            } else if (act === 'plans') {
-                try { switchTab('plans'); } catch (e5) { /* ignore */ }
-            } else if (act === 'overview') {
-                // ★2026-09-05 引导第 4 步：回概览看统计/热力图/回顾（switchTab 内部会触发概览渲染）
-                try { switchTab('overview'); } catch (e6) { /* ignore */ }
-            } else if (act === 'settings') {
-                // ★2026-09-05 引导第 5 步：去设置页看同步/备份
-                try { switchTab('settings'); } catch (e7) { /* ignore */ }
-            }
-        };
-        if (closeBtn) closeBtn.addEventListener('click', dismiss);
-        if (nextBtn) nextBtn.addEventListener('click', function () {
-            if (step < WELCOME_STEPS.length - 1) { step++; renderStep(step); }
-        });
-        if (goBtn) goBtn.addEventListener('click', function () {
-            if (step < WELCOME_STEPS.length - 1) { step++; renderStep(step); }
-            else doAction(WELCOME_STEPS[step].act);
-        });
-        if (demoBtn) demoBtn.addEventListener('click', function () {
-            // P1-5：一键示例（仅零记录场景出现）
-            dismiss();
-            if (typeof loadSampleData === 'function') {
-                try { loadSampleData(); } catch (e6) { /* 示例失败不影响 */ }
-            }
-        });
-        renderStep(0);
-    } catch (e) { /* 引导失败绝不影响启动 */ }
+var GUIDE_CARDS = ['welcomeBanner', 'guideRecords', 'guidePlans', 'guideSettings'];
+
+function tabGuidesEnabled() {
+    return !welcomeBannerShown;   // 仅 ✕ 关闭后不再显示；开始记录/跳转都不自动关闭
 }
+function currentGuideCardId() {
+    var tab = (typeof currentTabId !== 'undefined') ? currentTabId : 'overview';
+    var map = { overview: 'welcomeBanner', records: 'guideRecords', plans: 'guidePlans', settings: 'guideSettings' };
+    var id = map[tab] || 'welcomeBanner';
+    // 记录页在山册视图时不弹「记一笔」卡（切回列表再出现）
+    if (id === 'guideRecords' && typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') return null;
+    return id;
+}
+function showTabGuides() {
+    try {
+        var want = tabGuidesEnabled() ? currentGuideCardId() : null;
+        for (var i = 0; i < GUIDE_CARDS.length; i++) {
+            var el = document.getElementById(GUIDE_CARDS[i]);
+            if (el) el.style.display = (GUIDE_CARDS[i] === want) ? 'block' : 'none';
+        }
+    } catch (e) { /* 引导绝不影响主流程 */ }
+}
+function dismissAllGuides() {
+    welcomeBannerShown = true;
+    try { AppStore.setItem('welcome_seen_v1', true); } catch (e) { /* 忽略 */ }
+    showTabGuides();
+}
+function bindTabGuides() {
+    try {
+        // ✕ 关闭（唯一关闭途径，通用委托）
+        document.addEventListener('click', function (ev) {
+            var c = ev.target && ev.target.closest ? ev.target.closest('.wb-guide-close') : null;
+            if (c) dismissAllGuides();
+        });
+        // 概览卡：去记录页写第一笔 / 先看看示例
+        var go = document.getElementById('welcomeGoBtn');
+        if (go) go.addEventListener('click', function () {
+            try { switchTab('records'); showTabGuides(); } catch (e) { /* 忽略 */ }
+            setTimeout(function () {
+                var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
+                if (h) h();
+            }, 350);
+        });
+        var demo = document.getElementById('welcomeDemoBtn');
+        if (demo) demo.addEventListener('click', function () {
+            if (typeof loadSampleData === 'function') { try { loadSampleData(); } catch (e) { /* 忽略 */ } }
+            showTabGuides();
+        });
+        // 记录卡：记下第一笔 / 去山册看看（均不关闭引导）
+        var rg = document.getElementById('rGoBtn');
+        if (rg) rg.addEventListener('click', function () {
+            var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
+            if (h) { try { h(); } catch (e) { /* 忽略 */ } }
+        });
+        var rm = document.getElementById('rMbBtn');
+        if (rm) rm.addEventListener('click', function () {
+            try { if (typeof recordsViewMode !== 'undefined') recordsViewMode = 'mountain'; if (typeof applyRecordsView === 'function') applyRecordsView(); showTabGuides(); } catch (e) { /* 忽略 */ }
+        });
+        // 计划卡：添加一条计划（触发标题行「＋」按钮同一流程）
+        var pg = document.getElementById('pGoBtn');
+        if (pg) pg.addEventListener('click', function () {
+            try { var addBtn = document.getElementById('addPlannedTripBtn'); if (addBtn) addBtn.click(); } catch (e) { /* 忽略 */ }
+        });
+        // 设置卡：去看看导出
+        var sg = document.getElementById('sGoBtn');
+        if (sg) sg.addEventListener('click', function () {
+            try { if (typeof showExportModal === 'function') showExportModal(); else if (typeof openExportModal === 'function') openExportModal(); } catch (e) { /* 忽略 */ }
+        });
+    } catch (e2) { /* 忽略 */ }
+}
+
 
 async function init() {
     if (isInitialized) {
@@ -150,7 +130,6 @@ async function init() {
         }
         themeMode = (loadedTheme === 'light' || loadedTheme === 'dark' || loadedTheme === 'auto') ? loadedTheme : 'auto';
         applyThemeMode();
-        loadFontScale();   // ★2026-09-05 P0-① 显示大小：应用保存的字号档（缩放作用于 documentElement）
         
         if (titleData.status === 'fulfilled' && titleData.value && typeof titleData.value.title === 'string') {
             const titleElement = document.getElementById('appTitle');
@@ -232,8 +211,10 @@ async function init() {
                 if (cap) cap.style.display = 'none';
             } catch (e) { /* 忽略 */ }
         });
-        // ★2026-09-04 首次引导横幅：仅新装用户（零记录 + 从未看过）显示一次，不影响老用户
-        maybeShowWelcomeBanner();
+        // ★2026-09-06 分页引导：绑定 + 按当前 tab 显示对应卡；先恢复上次 ✕ 状态（已关过 = 本会话不再显示）
+        try { if (AppStore.getItem('welcome_seen_v1') === true) welcomeBannerShown = true; } catch (eS) { /* 忽略 */ }
+        bindTabGuides();
+        showTabGuides();
         // ★2026-09-05 P1-7 本地每周自动备份检查（App 且有数据才触发，不阻塞启动）
         setTimeout(function () { try { if (typeof autoLocalBackupIfDue === 'function') autoLocalBackupIfDue(); } catch (e) { /* ignore */ } }, 1500);
         // ★2026-09-05 P1-⑦ 计划过期关怀：数据渲染后一次性弹窗（引导卡显示中则等下次启动，避免叠窗）
@@ -487,17 +468,7 @@ function setupEventListeners() {
             showFps = fpsToggle.checked;
             try {
                 await AppStore.setItem(SHOW_FPS_KEY, { showFps });
-    // ★2026-09-05 P0-① 显示大小档位切换（标准/大/特大）
-    const fsGrp = document.getElementById('fontScaleGroup');
-    if (fsGrp && !fsGrp._fsBound) {
-        fsGrp._fsBound = true;
-        fsGrp.addEventListener('click', function (ev) {
-            const fsBtn = ev.target && ev.target.closest ? ev.target.closest('button[data-fs]') : null;
-            if (!fsBtn) return;
-            try { setFontScale(parseFloat(fsBtn.getAttribute('data-fs')) || 1); triggerHaptic(10); } catch (e) { /* 忽略 */ }
-        });
-        try { markFontScaleActive(); } catch (e2) { /* 忽略 */ }
-    }
+
             } catch (e) {
                 console.error('保存帧率开关失败:', e);
             }
@@ -697,6 +668,8 @@ function setupEventListeners() {
             }
         }
         currentTabId = tabId;
+        // ★2026-09-06 分页引导：切 tab 后显示该页引导卡（零记录新用户；无则全隐藏）
+        try { if (typeof showTabGuides === 'function') showTabGuides(); } catch (e9) { /* 忽略 */ }
     }
     // ★2026-08-31 暴露全局：计划完成补记录（app-data.js markPlannedComplete）需跨文件调用切页
     window.switchTab = switchTab;

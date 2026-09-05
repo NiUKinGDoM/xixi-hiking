@@ -1714,14 +1714,7 @@ function showExportModal() {
                         <span>导出诊断报告</span>
                     </button>
                 </div>
-                <!-- ★2026-09-05 用户要求：删「立即本地备份」手动按钮（自动备份已够），改说明行告知自动备份存在 -->
-                <div style="display:flex;align-items:flex-start;gap:6px;margin-top:10px;padding:0 2px;">
-                    <span class="material-icons" style="font-size:15px;color:#64748b;flex-shrink:0;margin-top:1px;">schedule</span>
-                    <div style="font-size:11px;color:#64748b;line-height:1.6;">
-                        本地自动备份已开启：每满 7 天，App 会自动存一份纯数据备份到系统「下载」目录
-                        <span style="opacity:0.75;">（无需手动操作；手机空间不足/网页版不自动备份）</span>
-                    </div>
-                </div>
+                <!-- ★2026-09-06 说明移入「数据管理」标题旁 i 弹窗（用户要求：弹窗只留操作，说明收进数据管理说明） -->
                 <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
                     取消
                 </button>

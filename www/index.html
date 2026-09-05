@@ -409,6 +409,13 @@
         .dark-mode .edit-input:focus {
             border-color: rgba(59, 130, 246, 0.5) !important;
         }
+        /* ★2026-09-06 修复：用时/里程复合框外层白盒在深色弹窗里刺眼 —— 盒子底色随 .edit-input 深灰化（输入框 transparent 被 dark !important 覆盖后同底成一体圆角块） */
+        body.dark-mode .edit-merge-box {
+            background: rgba(55, 65, 81, 0.9) !important;
+            border-color: rgba(75, 85, 99, 0.5) !important;
+        }
+        .edit-input::placeholder { color: #94a3b8; opacity: 1; }
+        body.dark-mode .edit-input::placeholder { color: #94a3b8; opacity: 1; }   /* ★2026-09-06 深色占位提亮（时/分/里程空框占位字可见） */
         
         .dark-mode .confirm-modal-content {
             background: rgba(16, 26, 48, 0.32) !important;   /* ★五项优化①：同 glass-modal 深色 */
@@ -1622,6 +1629,17 @@
         body.dark-mode #welcomeBanner {
             background: rgba(15, 23, 42, calc(var(--glass-alpha) * 0.6));
         }
+        body.dark-mode .wb-guide {
+            background: rgba(15, 23, 42, calc(var(--glass-alpha) * 0.6)) !important;
+        }
+        body.dark-mode .wb-guide .wb-title {
+            color: #e5e7eb !important;
+        }
+        body.dark-mode .wb-guide .wb-sub {
+            color: #a3b1c6 !important;
+        }
+        body.dark-mode .wb-guide .wb-guide-close { color: #a3b1c6 !important; }
+        body.dark-mode .wb-guide .wb-guide-close .material-icons { color: #a3b1c6; }
         body.dark-mode #welcomeBanner .wb-title {
             color: #e5e7eb !important;   /* ★2026-09-05 优化①：inline #334155 会压过无 important 的覆盖 → dark 下标题实为深色看不清，补 !important */
         }
@@ -2980,17 +2998,6 @@
             transition: opacity 0.15s ease;
         }
         .view-caption:active { opacity: 0.55; }
-        /* ★2026-09-05 P0-① 显示大小档位按钮选中态（indigo 高亮） */
-        .fs-btn.active {
-            background: rgba(99, 102, 241, 0.14) !important;
-            border-color: rgba(99, 102, 241, 0.65) !important;
-            color: #4f46e5 !important;
-        }
-        body.dark-mode .fs-btn.active {
-            background: rgba(99, 102, 241, 0.22) !important;
-            border-color: rgba(129, 140, 248, 0.6) !important;
-            color: #a5b4fc !important;
-        }
         body.dark-mode .view-caption {
             color: #a3b1c6;            /* ★2026-09-04 dark 同 rd-met 标签提亮色 */
         }
@@ -5635,25 +5642,18 @@
             
             <div id="tab-overview" class="tab-page">
             <!-- ★2026-09-05 首次引导（三步卡 P1-6）：仅「新装 + 零记录 + 未看过」出现一次；三步 = 写记录/看山册/看计划日历，点圆点或「下一条」切换，✕ 关闭后不再打扰 -->
-            <div id="welcomeBanner" class="glass-panel" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:16px 16px 14px;">
-                <div style="display:flex;align-items:flex-start;gap:12px;">
-                    <span class="material-icons wb-ic" id="wbIcon" style="font-size:26px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">landscape</span>
+            <div id="welcomeBanner" class="glass-panel" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:16px 16px 14px;"><div style="display:flex;align-items:flex-start;gap:11px;">
+                    <span class="material-icons wb-ic" style="font-size:24px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">insights</span>
                     <div style="flex:1;min-width:0;">
-                        <div class="wb-title" id="wbTitle" style="font-size:15px;font-weight:600;color:#334155;line-height:1.4;">欢迎来到你的徒步小记</div>
-                        <div class="wb-sub" id="wbSub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">从第一座山开始，攒一本自己的山册。<br>拍下的照片、吹过的风，都替你记着。<br>以后点任意一条记录，就能翻到那天的故事。</div>
+                        <div class="wb-title" id="wbTitle" style="font-size:14px;font-weight:600;color:#334155;line-height:1.4;">这里住着你所有的脚印</div>
+                        <div class="wb-sub" id="wbSub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">上方是统计卡和徒步年资，下面每个月一张热力图——<b>每一格都代表一次出发</b>，点开能翻出那天的记录，还能生成分享卡发给朋友。</div>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
-                            <button id="welcomeGoBtn" class="check-go-btn ripple-effect" type="button" style="padding:7px 18px;border-radius:12px;font-size:13px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">
-                                记下第一座山
-                            </button>
-                            <!-- ★2026-09-05 优化①：下划线链接 → indigo 轻玻璃次级钮（同 syncDemo 体系，去全局唯一下划线突兀） -->
+                            <button id="welcomeGoBtn" class="check-go-btn ripple-effect" type="button" style="padding:7px 16px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">去记录页，写下第一笔</button>
                             <button id="welcomeDemoBtn" type="button" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);color:#4f46e5;cursor:pointer;font-size:12px;font-weight:600;padding:5px 10px;border-radius:8px;line-height:1.4;">先看看示例</button>
                         </div>
-                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;" id="wbStepRow">
-                            <div id="wbDots" style="display:flex;gap:5px;"></div>
-                            <button id="wbNext" type="button" style="background:transparent;border:none;color:#64748b;cursor:pointer;font-size:12px;font-weight:600;padding:3px 2px;">下一条 ›</button>
-                        </div>
+                        <div style="font-size:10px;color:#94a3b8;margin-top:8px;">每条引导都会在你真正开始记录后自动消失；右上 ✕ 可随时关掉</div>
                     </div>
-                    <button id="welcomeClose" type="button" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px;font-size:18px;line-height:1;flex-shrink:0;" title="知道了" aria-label="关闭欢迎提示">
+                <button id="welcomeClose" type="button" class="wb-guide-close" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px;font-size:18px;line-height:1;flex-shrink:0;" title="知道了" aria-label="关闭欢迎提示">
                         <span class="material-icons" style="font-size:18px;">close</span>
                     </button>
                 </div>
@@ -5775,6 +5775,22 @@
                 <!-- ★2026-09-04 视图小标题说明：告诉新用户当前是什么视图、能干什么（随模式切文案） -->
                 <!-- ★2026-09-04 视图小标题说明：纯文字不带 icon（用户要求） -->
                 <div class="view-caption" id="recordsViewCaption" data-testid="records-view-caption" title="点一下收起这条说明（切换视图后重新出现）"><span id="recordsViewCaptionText">列表视图 · 全部记录按时间排列，点一行可查看</span></div>
+
+                <!-- ★2026-09-06 记录页引导（分页提示：记录页讲「记一笔」，仅零记录新用户显示，✕ 才关闭） -->
+                <div id="guideRecords" class="glass-panel wb-guide" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:13px 14px;">
+                    <div style="display:flex;align-items:flex-start;gap:11px;">
+                        <span class="material-icons wb-ic" style="font-size:24px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">landscape</span>
+                        <div style="flex:1;min-width:0;">
+                            <div class="wb-title" style="font-size:14px;font-weight:600;color:#334155;line-height:1.4;">从这里开始你的第一座山</div>
+                            <div class="wb-sub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">点「＋」添加：名字、海拔、难度、照片都能记，还能写几行小日记。同一座山去过几次，会自动收进右下角的<b>山册</b>。</div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;">
+                                <button id="rGoBtn" class="check-go-btn ripple-effect" type="button" style="padding:7px 16px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">记下第一笔</button>
+                                <button id="rMbBtn" type="button" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);color:#4f46e5;cursor:pointer;font-size:12px;font-weight:600;padding:5px 10px;border-radius:8px;line-height:1.4;">去山册看看</button>
+                            </div>
+                        </div>
+                        <button type="button" class="wb-guide-close" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px;font-size:18px;line-height:1;flex-shrink:0;" title="知道了" aria-label="关闭提示"><span class="material-icons" style="font-size:18px;">close</span></button>
+                    </div>
+                </div>
                 
                 <!-- ★2026-09-02 山册视图（与列表视图切换，默认隐藏） -->
                 <div id="mountainBookView" style="display:none;"></div>
@@ -5853,6 +5869,21 @@
                 <!-- ★2026-09-04 视图小标题说明（随模式切文案） -->
                 <!-- ★2026-09-04 视图小标题说明：纯文字不带 icon（用户要求） -->
                 <div class="view-caption" id="plansViewCaption" data-testid="plans-view-caption" title="点一下收起这条说明（切换视图后重新出现）"><span id="plansViewCaptionText">日历视图 · 哪天有行程一眼看清，点日期看详情</span></div>
+
+                <!-- ★2026-09-06 计划页引导 -->
+                <div id="guidePlans" class="glass-panel wb-guide" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:13px 14px;">
+                    <div style="display:flex;align-items:flex-start;gap:11px;">
+                        <span class="material-icons wb-ic" style="font-size:24px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">calendar_month</span>
+                        <div style="flex:1;min-width:0;">
+                            <div class="wb-title" style="font-size:14px;font-weight:600;color:#334155;line-height:1.4;">想去的山，先写进计划</div>
+                            <div class="wb-sub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">把下一个山头定好日子，日历上哪天有行程一眼看清；到点会提醒你出发，完成时一键补成正式记录。</div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;">
+                                <button id="pGoBtn" class="check-go-btn ripple-effect" type="button" style="padding:7px 16px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">添加一条计划</button>
+                            </div>
+                        </div>
+                        <button type="button" class="wb-guide-close" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px;font-size:18px;line-height:1;flex-shrink:0;" title="知道了" aria-label="关闭提示"><span class="material-icons" style="font-size:18px;">close</span></button>
+                    </div>
+                </div>
                 
                 <!-- ★2026-08-31 日历视图（与列表视图切换，默认隐藏） -->
                 <div id="plannedCalendarView" style="display:none;"></div>
@@ -5905,6 +5936,21 @@
 
             <!-- 设置模块 -->
             <div id="tab-settings" class="tab-page" style="display: none;">
+
+                <!-- ★2026-09-06 设置页引导 -->
+                <div id="guideSettings" class="glass-panel wb-guide" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:13px 14px;">
+                    <div style="display:flex;align-items:flex-start;gap:11px;">
+                        <span class="material-icons wb-ic" style="font-size:24px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">security</span>
+                        <div style="flex:1;min-width:0;">
+                            <div class="wb-title" style="font-size:14px;font-weight:600;color:#334155;line-height:1.4;">数据都替你备份好了</div>
+                            <div class="wb-sub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">这里可以同步到坚果云、每周自动备份一份到手机、导出压缩包——换手机也不怕丢。</div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;">
+                                <button id="sGoBtn" class="check-go-btn ripple-effect" type="button" style="padding:7px 16px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">去看看导出</button>
+                            </div>
+                        </div>
+                        <button type="button" class="wb-guide-close" style="background:transparent;border:none;color:#64748b;cursor:pointer;padding:2px;font-size:18px;line-height:1;flex-shrink:0;" title="知道了" aria-label="关闭提示"><span class="material-icons" style="font-size:18px;">close</span></button>
+                    </div>
+                </div>
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <h2 id="settingsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors" data-testid="settings-title">
                     <span class="material-icons text-blue-300 text-xl">settings</span>
@@ -6027,19 +6073,6 @@
                             <span class="switch-slider"></span>
                         </label>
                     </div>
-                    <!-- ★2026-09-05 P0-① 显示大小（全局字号三档：标准/大/特大，zoom 全量缩放） -->
-                    <div class="settings-item" style="border-radius: 12px;">
-                        <div class="settings-item-icon"><span class="material-icons" style="font-size: 20px;">text_fields</span></div>
-                        <div class="settings-item-text">
-                            <div class="settings-item-title">显示大小</div>
-                            <div class="settings-item-desc">界面文字整体放大，看久了不费眼</div>
-                            <div id="fontScaleGroup" data-testid="font-scale-group" style="display:flex;gap:6px;margin-top:8px;">
-                                <button type="button" data-fs="1" class="ripple-effect glass-btn corner-glow fs-btn" style="flex:1;padding:6px 0;border-radius:8px;font-size:12px;font-weight:600;">标准</button>
-                                <button type="button" data-fs="1.12" class="ripple-effect glass-btn corner-glow fs-btn" style="flex:1;padding:6px 0;border-radius:8px;font-size:12px;font-weight:600;">大</button>
-                                <button type="button" data-fs="1.25" class="ripple-effect glass-btn corner-glow fs-btn" style="flex:1;padding:6px 0;border-radius:8px;font-size:12px;font-weight:600;">特大</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- 杂项（2026-08-11：与外观框对调位置） -->
@@ -6121,7 +6154,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.9.7</div>
+                        <div class="about-version">版本 1.1.9.8</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

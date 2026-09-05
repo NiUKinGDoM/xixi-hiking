@@ -477,12 +477,12 @@ function recordEditBodyHTML(r) {
         '</div>' +
         // 用时 + 里程 一行（★2026-09-04 均匀分布）
         '<div style="display:flex;gap:8px;align-items:center;">' +
-        '<div style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 6px;">' +
+        '<div class="edit-merge-box" style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 6px;">' +
         '<input type="number" id="edit-duration-h-' + r.id + '" placeholder="时" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.duration ? Math.floor(Number(r.duration) / 60) : '') + '" min="0" max="23" step="1" inputmode="numeric" title="小时">' +
         '<span class="edit-unit">时</span>' +
         '<input type="number" id="edit-duration-m-' + r.id + '" placeholder="分" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.duration ? Number(r.duration) % 60 : '') + '" min="0" max="59" step="1" inputmode="numeric" title="分钟">' +
         '<span class="edit-unit">分</span></div>' +
-        '<div style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 8px;">' +
+        '<div class="edit-merge-box" style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 8px;">' +
         '<input type="number" id="edit-distance-' + r.id + '" placeholder="里程" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.distance || '') + '" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">' +
         '<span class="edit-unit">km</span></div>' +
         '</div>' +
@@ -1726,6 +1726,12 @@ function showDataInfoModal() {
                     <div style="min-width:0;"><div class="dmi-title">自动同步</div>
                     <div class="dmi-body">开启后数据变更自动上传云端备份，本机数据多一层保险。</div></div>
                 </div>
+                <!-- ★2026-09-06 由导出弹窗迁入（用户要求：说明统一收进数据管理 i）：本地自动备份说明 -->
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">schedule</span>
+                    <div style="min-width:0;"><div class="dmi-title">本地自动备份</div>
+                    <div class="dmi-body">每满 7 天，App 会自动存一份纯数据备份到系统「下载」目录，无需手动操作（手机空间不足或网页版不自动备份）。</div></div>
+                </div>
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-cancel ripple-effect" id="data-info-close">知道了</button>
@@ -2290,6 +2296,7 @@ function applyPlansView() {
     calView.style.display = isCal ? '' : 'none';
     if (icon) icon.textContent = isCal ? 'view_list' : 'calendar_month';
     // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换（帮新用户看懂当前视图与切换目标）
+    try { if (typeof window.showTabGuides === 'function') window.showTabGuides(); } catch (eg2) { /* 忽略 */ }
     var lab = safeGetElementById('plansViewToggleLabel');
     if (lab) lab.textContent = isCal ? '列表' : '日历';
     var capEl = safeGetElementById('plansViewCaption');
@@ -2969,6 +2976,7 @@ function applyRecordsView() {
         try { if (typeof renderTable === 'function') renderTable(); } catch (e) { /* 渲染异常不影响切换 */ }
     }
     // ★2026-09-04 按钮文字 + 视图说明小标题随模式切换
+    try { if (typeof window.showTabGuides === 'function') window.showTabGuides(); } catch (eg1) { /* 忽略 */ }
     var labR = safeGetElementById('recordsViewToggleLabel');
     if (labR) labR.textContent = isMb ? '列表' : '山册';
     var capElR = safeGetElementById('recordsViewCaption');
@@ -3363,25 +3371,17 @@ function maybeShowOverdueCare() {
         var label = overdue.slice(0, 3).map(function (t) { return t.name; }).join('、') + (overdue.length > 3 ? ' 等 ' + overdue.length + ' 个' : '');
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
+        // ★2026-09-06 定稿：只留「去处理 / 忽略」两按钮横排各半宽（顺延入口删除，过期计划改日期/删除都在计划页）；字 13px 不折行
         modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
-            '<div class="confirm-modal-title"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
-            '<div class="confirm-modal-message" style="line-height:1.7;">到日子没去的：<b>' + escapeHtml(label) + '</b>。<br>可以顺手顺延一周，或去计划页处理。</div>' +
-            '<div class="confirm-modal-buttons">' +
-            '<button class="confirm-btn-cancel ripple-effect" id="oc-ignore">忽略</button>' +
-            '<button class="check-go-btn ripple-effect" id="oc-shift">顺延一周</button>' +
-            '<button class="check-go-btn ripple-effect" id="oc-go" style="font-weight:700;">去处理</button></div></div>';
+            '<div class="confirm-modal-title" style="font-size:15px;"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
+            '<div class="confirm-modal-message" style="line-height:1.7;font-size:13px;">到日子没去的：<b>' + escapeHtml(label) + '</b>。<br>去计划页改个日期或删掉吧。</div>' +
+            '<div style="display:flex;gap:8px;margin-top:16px;">' +
+            '<button class="check-go-btn ripple-effect" id="oc-go" style="flex:1;padding:10px 0;border-radius:10px;font-size:13px;font-weight:600;">去处理</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" id="oc-ignore" style="flex:1;padding:10px 0;border-radius:10px;font-size:13px;">忽略</button></div></div>';
         document.body.appendChild(modal);
         var closeCare = function () { try { if (modal.parentNode) document.body.removeChild(modal); } catch (e3) { /* 忽略 */ } };
         document.getElementById('oc-ignore').addEventListener('click', closeCare);
-        document.getElementById('oc-shift').addEventListener('click', function () {
-            closeCare();
-            try {
-                overdue.forEach(function (t) { t.createdAt = new Date(new Date(t.createdAt).getTime() + 7 * 86400000).toISOString(); });
-                savePlannedTripsToStorage();
-                renderPlannedTripsTable();
-                showSuccessMessage('已把 ' + overdue.length + ' 个过期计划顺延一周');
-            } catch (e4) { /* 忽略 */ }
-        });
+        // ★2026-09-06 顺延一键已删（用户定稿只留两按钮）：去处理 = 跳计划页自行改期/删除
         document.getElementById('oc-go').addEventListener('click', function () {
             closeCare();
             try { switchTab('plans'); } catch (e5) { /* 忽略 */ }
