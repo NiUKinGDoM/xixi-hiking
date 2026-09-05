@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-06（v1.1.9.10 / vc230）
+> 最后更新：2026-09-06（v1.1.10.0 / vc231）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.0**（versionCode 231，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.0 更新（★9.x.10 满段进位 1.1.10.0）：App 桌面图标（launcher legacy PNG 5 密度 ×2）图案中心放大 30%（PIL 中心 1/1.3 crop→LANCZOS 放大，图案边缘盒仅中心 50% 已验证不裁切；包内 5 密度像素比对确认）；build.gradle vc231
 - **正式版 v1.1.9.10**（versionCode 230，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.9.10 更新（保存铁律 + 视觉细节）：★保存铁律——记录/计划编辑弹窗 edit 态无 ✕（防误关）；取消按钮走 cancelEdit/cancelPlannedEdit；★修复编辑态点空白(backdrop)关闭不清理草稿 → edit 态 backdrop=等同取消（丢弃改动/删空草稿/照片孤儿回收）；概览统计单位全部小字化（.stat-unit 13px/600/opacity.8 与「次」同规格：总记录次/总里程km/最高海拔m/平均海拔m/平均难度级(空态隐藏 avgDifficultyMiniU)/总用时与平均用时 h·m 由 durationHTML 渲染，数字本体 span 动画保留）；about 主 logo 🏔️ 54→60px（用户定稿）；test.js 114、P0P3 168
 - **正式版 v1.1.9.9**（versionCode 229，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -210,6 +212,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
+- v1.1.10.0（vc231）：**桌面 App 图标图案放大 30%（launcher PNG 中心放大）**（详见 Release）
 - v1.1.9.10（vc230）：**保存铁律 + 概览单位小字化(stat-unit) + about logo 60px**（详见 Release）
 - v1.1.9.9（vc229）：**概览单位(次/级) + 小日记字色提亮 + i 弹窗间距 + 引导 ✕ 逐卡独立 + 引导按钮统一尺寸**（详见 Release）
 - v1.1.9.8（vc228）：**更新日志分行 + 过期弹窗两按钮(去处理/忽略) + 字号功能删 + 引导 4 卡仅 ✕ 关闭 + 深色用时里程框 + 导出说明迁 i + 引导按钮逐按钮直达**（详见 Release）
