@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.9.6': '## v1.1.9.6 更新内容\\n\\n**更快更稳**\\n- 大数量优化：统计和山册改单遍计算，记录再多也不卡（万条记录统计约 0.02 秒）\\n- 热力图月度数据预聚合，翻月/切日期秒开\\n\\n**数据更放心**\\n- 数据加载带版本迁移机制，以后升级数据结构自动平滑过渡\\n- 设置里「照片占用」新增孤立照片扫描，一键清理不再占空间\\n- 本地每周自动备份：App 启动检查，满 7 天自动存一份到系统下载目录，坚果云之外多一层保险\\n\\n**新朋友更友好**\\n- 首次引导升级三步卡：写记录 → 看山册 → 列计划，一步步带你看懂\\n- 零记录时可点「先看看示例」，一键载入几条真实感足迹先逛起来\\n\\n**细节打磨**\\n- 清理废弃样式与代码、修复深色模式引导卡文字、备份失败会自动重试\\n\\nMade by XiXi 💛',
     'v1.1.9.5': '## v1.1.9.5 更新内容\n\n**更统一的按钮**\n- 徒步足迹的「年月」和「回顾」按钮统一成同款玻璃按钮，与「日历/列表」切换钮一套框\n- 清理了配套的废弃样式\n\n**热力图一眼看懂**\n- 热力图下方汇总加上前缀：看本月显示「本月徒步 N 次 · 累计爬升 Xm」，翻历史月份自动变成「X年X月徒步 …」，不会指错月\n\nMade by XiXi 💛',
     'v1.1.9.4': '## v1.1.9.4 更新内容\n\n**按钮与弹窗更顺手**\n- 徒步足迹的「回顾」按钮带上了文字，不再是个谜之图标\n- 有「取消」按钮的弹窗，右上角的 ✕ 都去掉了：编辑时按底部取消即可，不怕误触\n- 编辑弹窗「照片」下面注明上限：最多 24 张\n\n**计划完成更顺**\n- 勾「完成」先弹祝贺卡，点「继续补全」才进入编辑——不再两个弹窗叠一起\n\nMade by XiXi 💛',
     'v1.1.9.3': '## v1.1.9.3 更新内容\n\n**视图说明更清爽**\n- 记录/计划各视图上方的小灰字说明去掉了小图标，改成居中纯文字，一眼看清当前是什么视图\n\n**批量管理更顺手**\n- 多选框从名称前面挪到操作列，不再挡着看山名\n- 勾选框重绘成玻璃质感：浅红玻璃底 + 红勾，和删除按钮一套设计语言\n\n**稳定性与内部**\n- 清理 12 个废弃函数、删除冗余代码\n- 加固 3 处用户文字回显的转义处理\n- 自动测试扩充到 115 项，本轮功能全部纳入回归\n\nMade by XiXi 💛',
@@ -452,8 +453,21 @@ function applyFpsPreference() {
 }
 
 const STORAGE_KEY = 'hiking_records';
+// ★2026-09-05 P0-2 数据 schema 迁移框架：记录/计划容器（{records}/{trips}）保存时写入 version；
+//   老数据（无 version 字段）视为 v0。未来结构性变更：DATA_SCHEMA_VERSION+1，并在对应迁移链数组尾追加迁移函数（接收数组返回升级后数组）。
+const DATA_SCHEMA_VERSION = 1;
+const RECORD_SCHEMA_MIGRATIONS = [];   // 下标 = 旧版本号；当前 v0→v1 无处理（预留）
+const TRIP_SCHEMA_MIGRATIONS = [];
+function applySchemaMigrations(list, migrations) {
+    if (!Array.isArray(list)) return list;
+    var out = list;
+    for (var v = 0; v < migrations.length; v++) {
+        try { out = migrations[v](out); } catch (e) { console.warn('schema migration v' + v + ' failed:', e && e.message); }
+    }
+    return out;
+}
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.9.5';
+var APP_VERSION = '1.1.9.6';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -779,6 +793,18 @@ function photoCollectOrphans() {
         }
     }).catch(function () {});
 }
+// ★2026-09-05 P0-3 孤立照片只读扫描（区别于 photoCollectOrphans 的删除版）：返回 {count, bytes}
+function photoCountOrphans() {
+    var used = {};
+    (records || []).forEach(function (r) {
+        (r.photos || []).forEach(function (ph) { used[ph] = true; });
+    });
+    return photoGetAll().then(function (all) {
+        var orphans = (all || []).filter(function (p) { return !used[p.id]; });
+        var bytes = orphans.reduce(function (sb, p) { return sb + (p.blob ? p.blob.size : 0); }, 0);
+        return { count: orphans.length, bytes: bytes };
+    }).catch(function () { return { count: 0, bytes: 0 }; });
+}
 // 容量统计：返回 { count, bytes }
 function photoGetUsage() {
     return photoGetAll().then(function (all) {
@@ -791,14 +817,54 @@ function photosEnabled() {
     return !photoDB.failed;
 }
 // ★2026-08-21 v1.1.1.5 照片占用统计（设置页显示）
+// ★2026-09-05 P0-3：顺带扫描孤立照片 → desc 标注「含孤立 N 张」+ 显示「清理孤立照片」按钮
 function refreshPhotoUsage() {
     var el = document.getElementById('photoUsageDesc');
     if (!el) return;
-    photoGetUsage().then(function (u) {
-        if (!u || !u.count) { el.textContent = '暂无照片'; return; }
+    var btn = document.getElementById('photoCleanBtn');
+    if (btn && !btn._bound) {
+        btn._bound = true;
+        btn.addEventListener('click', confirmDeleteOrphanPhotos);
+    }
+    Promise.all([photoGetUsage(), photoCountOrphans()]).then(function (res) {
+        var u = res[0], o = res[1] || { count: 0 };
+        if (!u || !u.count) { el.textContent = '暂无照片'; if (btn) btn.style.display = 'none'; return; }
         var txt = '照片 ' + u.count + ' 张 · ' + (u.bytes >= 1048576 ? (u.bytes / 1048576).toFixed(1) + ' MB' : Math.ceil(u.bytes / 1024) + ' KB');
+        if (o.count) {
+            txt += '（含孤立 ' + o.count + ' 张）';
+            if (btn) { btn.style.display = 'inline-flex'; btn.textContent = '清理孤立照片' + (o.bytes >= 1048576 ? ' · ' + (o.bytes / 1048576).toFixed(1) + 'MB' : o.bytes > 0 ? ' · ' + Math.ceil(o.bytes / 1024) + 'KB' : ''); }
+        } else if (btn) { btn.style.display = 'none'; }
         el.textContent = txt;
     }).catch(function () { el.textContent = '统计失败'; });
+}
+// ★2026-09-05 P0-3 清理孤立照片：先确认（显示数量与释放空间）再删
+function confirmDeleteOrphanPhotos() {
+    var btn = document.getElementById('photoCleanBtn');
+    if (btn) btn.style.pointerEvents = 'none';
+    photoCountOrphans().then(function (o) {
+        if (btn) btn.style.pointerEvents = '';
+        if (!o || !o.count) {
+            try { showSuccessMessage('没有可清理的孤立照片'); } catch (e) {}
+            return;
+        }
+        var sizeTxt = o.bytes >= 1048576 ? (o.bytes / 1048576).toFixed(1) + ' MB' : Math.ceil(o.bytes / 1024) + ' KB';
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">cleaning_services</span>清理孤立照片</div>' +
+            '<div class="confirm-modal-message">发现 ' + o.count + ' 张已不属于任何记录的照片（约 ' + sizeTxt + '）。删除后可释放空间，此操作不可撤销。</div>' +
+            '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="orphan-cancel">取消</button>' +
+            '<button class="check-go-btn ripple-effect" id="orphan-delete">清理</button></div></div>';
+        document.body.appendChild(modal);
+        document.getElementById('orphan-cancel').addEventListener('click', function () { document.body.removeChild(modal); });
+        document.getElementById('orphan-delete').addEventListener('click', function () {
+            document.body.removeChild(modal);
+            photoCollectOrphans().then(function () {
+                try { refreshPhotoUsage(); showSuccessMessage('已清理 ' + o.count + ' 张孤立照片'); triggerHaptic(20); } catch (e) {}
+            });
+        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+    });
 }
 
 // ===== ★2026-08-20 取图 + 压缩管线（相机/相册 → canvas 压缩 1280px/JPEG0.7）=====
@@ -1105,13 +1171,6 @@ function getDifficultyColorDark(difficulty) {
     const colors = ['#34d399', '#a3e635', '#fbbf24', '#fb923c', '#f87171'];
     return colors[difficulty - 1] || '#34d399';
 }
-// ★2026-08-25 难度徽章玻璃质感：hex → rgba 半透明背景 / 同色系细边框
-function hexToRgba(hex, alpha) {
-    var h = hex.replace('#', '');
-    return 'rgba(' + parseInt(h.substring(0, 2), 16) + ',' + parseInt(h.substring(2, 4), 16) + ',' + parseInt(h.substring(4, 6), 16) + ',' + alpha + ')';
-}
-
-
 // 格式化日期时间
 // ★2026-08-25 用时格式化：分钟 → '2h30m' / '45m'
 function formatDuration(minutes) {

@@ -1709,6 +1709,11 @@ function showExportModal() {
                         <span class="material-icons text-xl">bug_report</span>
                         <span>导出诊断报告</span>
                     </button>
+                    <!-- ★2026-09-05 P1-7 本地立即备份（存到系统下载目录；网页版提示用 App） -->
+                    <button id="localBackupBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
+                        <span class="material-icons text-xl">save_alt</span>
+                        <span>立即本地备份（每周自动）</span>
+                    </button>
                 </div>
                 <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
                     取消
@@ -1749,6 +1754,42 @@ function showExportModal() {
         closeModal();
         exportDiagnostics();
     });
+    // ★2026-09-05 P1-7 立即本地备份
+    const localBackupBtn = document.getElementById('localBackupBtn');
+    if (localBackupBtn) localBackupBtn.addEventListener('click', () => {
+        closeModal();
+        if (!window.XixiFileBridge || typeof window.XixiFileBridge.saveBase64 !== 'function') {
+            showErrorMessage('本地备份只在 App 内可用（网页版请用「导出」下载文件）');
+            return;
+        }
+        // ★2026-09-05 优化⑤：成功后才记 last（与自动路径一致，失败不吞自动备份窗口）
+        performBackupExport(false).then(function () {
+            try { AppStore.setItem('hiking_local_backup_at', Date.now()); } catch (e) { /* 忽略 */ }
+        }).catch(() => {});
+    });
+}
+
+// ★2026-09-05 P1-7 本地每周自动备份兜底：仅 App（XixiFileBridge）且数据非空时，距上次 >=7 天自动存一份纯数据备份到系统下载目录；
+//   （records/plannedTrips 有内容才备；成功走通知栏提示，失败静默等下次；网页版无桥自动跳过）
+function autoLocalBackupIfDue() {
+    try {
+        if (!window.XixiFileBridge || typeof window.XixiFileBridge.saveBase64 !== 'function') return;
+        var hasData = (typeof records !== 'undefined' && records && records.length > 0) ||
+                      (typeof plannedTrips !== 'undefined' && plannedTrips && plannedTrips.length > 0);
+        if (!hasData) return;
+        var last = AppStore.getItem('hiking_local_backup_at');
+        if (typeof last === 'number' && Date.now() - last < 7 * 86400000) return;
+        // ★2026-09-05 优化⑤：last 记录移到成功回调——原实现导出前先记，失败也算完成 → 实际 7 天后才重试；
+        //   现失败不记 last，下次启动继续试，直到成功才刷新「距上次备份」时间
+        performBackupExport(false).then(function () {
+            try { AppStore.setItem('hiking_local_backup_at', Date.now()); } catch (e0) { /* 记录失败下次再备 */ }
+            try {
+                if (typeof showSystemNotification === 'function') {
+                    showSystemNotification('本地自动备份完成', '数据已存入系统「下载」目录，7 天内不再重复');
+                }
+            } catch (e2) { /* 通知失败不影响 */ }
+        }).catch(function () { /* 失败不记 last，等下次启动重试 */ });
+    } catch (e3) { /* 自动备份绝不影响启动 */ }
 }
 
 // ★2026-08-20 导出备份（★2026-08-25 完整备份改 zip 压缩包：照片二进制省 33%；纯数据仍 HTML）
