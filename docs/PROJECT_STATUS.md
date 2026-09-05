@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-06（v1.1.9.8 / vc228）
+> 最后更新：2026-09-06（v1.1.9.9 / vc229）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.9.9**（versionCode 229，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.9.9 更新（装机二次反馈 + 概览细节）：引导 ✕ 逐卡独立（dismissGuide/guideSeen 每卡 hiking_guide_seen_ 键 + 老 welcome_seen_v1 兼容全 seen/loadGuideSeenState 重启恢复/resetGuideSeen 钩子）+ 引导次按钮统一同尺寸 guide-sub-btn（7px16px/fs13/r12 + dark 通用规则）+ 概览「总记录数」加单位次（HTML span 数字动画不吞单位）+「平均难度」加单位级（'级' 拼接）+ 小日记 view 卡字色提深（图标/标签 #52606f、正文 #1e293b + jd-lab/jd-body dark #a3b1c6/#e5e7eb）+ 数据管理 i 弹窗内容按钮间距 2→16px；test.js 107、P0P3 158
 - **正式版 v1.1.9.8**（versionCode 228，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.9.8 更新（装机反馈三波定稿）：更新日志字面 \n 修复整行重建（js_esc 干净换行）+ 字号三档功能删除（zoom 真机无效）+ 新手引导分页 4 卡（welcomeBanner 概览/guideRecords/Plans/Settings，哪页讲哪页）+ **仅 ✕ 关闭**（点按钮跳转/有记录/载示例均不自关，tabGuidesEnabled=!welcomeBannerShown，重启 seen 恢复）+ 引导按钮逐按钮直达（P0P3 全真点验证）+ 概览卡 ✕ 补 wb-guide-close class（原委托关不掉）+ 计划过期关怀定稿两按钮「去处理/忽略」横排（顺延一键删）+ 深色模式用时/里程复合框 edit-merge-box dark 化 + 输入框 placeholder 深色提亮 + 导出弹窗自动备份说明迁入数据管理 i 弹窗（showDataInfoModal 第 4 条目）；test.js 99、P0P3 156
 - **正式版 v1.1.9.7**（versionCode 227，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -206,6 +208,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
+- v1.1.9.9（vc229）：**概览单位(次/级) + 小日记字色提亮 + i 弹窗间距 + 引导 ✕ 逐卡独立 + 引导按钮统一尺寸**（详见 Release）
 - v1.1.9.8（vc228）：**更新日志分行 + 过期弹窗两按钮(去处理/忽略) + 字号功能删 + 引导 4 卡仅 ✕ 关闭 + 深色用时里程框 + 导出说明迁 i + 引导按钮逐按钮直达**（详见 Release）
 - v1.1.9.7（vc227）：**字号三档 + 全文搜索 + 抹掉数据 + 小日记 + 计划过期关怀 + 5步引导 + 回忆册PDF + 视图说明可收起 + 手动备份按钮移除**（详见 Release）
 - v1.1.9.6（vc226）：**P0 性能/schema/照片GC/月桶 + P1 示例/三步引导/每周备份 + 五项优化（样式统一+死码+备份时序）**（详见 Release）
