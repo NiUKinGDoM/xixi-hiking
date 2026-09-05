@@ -1,11 +1,24 @@
-// ★2026-09-06 分页新手引导（用户定稿 v2）：哪一页讲哪一件事——概览/记录/计划/设置各一张小引导卡，
-//   点卡内按钮只做动作并跳转（绝不自动关闭引导），唯一关闭途径 = 右上 ✕；✕ 过后才永不再现（即使写了记录也不自动消失）
-var welcomeBannerShown = false;
+// ★2026-09-06 分页新手引导（用户定稿 v3）：哪一页讲哪一件事——概览/记录/计划/设置各一张小引导卡，
+//   点卡内按钮只做动作并跳转（绝不自动关闭引导）；右上 ✕ 只关闭【当前页面】这一张卡，其它页卡照常——每卡独立记忆（互不影响）
 var GUIDE_CARDS = ['welcomeBanner', 'guideRecords', 'guidePlans', 'guideSettings'];
+var guideSeen = {};              // ★v3 每卡独立关闭状态：{ 卡id: true }
+var welcomeBannerShown = false;  // 兼容占位（旧引用），实际逻辑由 guideSeen 取代
 
-function tabGuidesEnabled() {
-    return !welcomeBannerShown;   // 仅 ✕ 关闭后不再显示；开始记录/跳转都不自动关闭
+function loadGuideSeenState() {
+    try {
+        var i, k;
+        // v1.1.9.8 及以前是「整体 ✕」（welcome_seen_v1）→ 老用户已关过视为四卡全 seen
+        if (AppStore.getItem('welcome_seen_v1') === true) {
+            for (i = 0; i < GUIDE_CARDS.length; i++) guideSeen[GUIDE_CARDS[i]] = true;
+            return;
+        }
+        for (i = 0; i < GUIDE_CARDS.length; i++) {
+            k = 'hiking_guide_seen_' + GUIDE_CARDS[i];
+            if (AppStore.getItem(k) === true) guideSeen[GUIDE_CARDS[i]] = true;
+        }
+    } catch (e) { /* 忽略 */ }
 }
+function resetGuideSeen() { guideSeen = {}; }   // 测试/调试：清空全部卡的已关状态
 function currentGuideCardId() {
     var tab = (typeof currentTabId !== 'undefined') ? currentTabId : 'overview';
     var map = { overview: 'welcomeBanner', records: 'guideRecords', plans: 'guidePlans', settings: 'guideSettings' };
@@ -16,24 +29,29 @@ function currentGuideCardId() {
 }
 function showTabGuides() {
     try {
-        var want = tabGuidesEnabled() ? currentGuideCardId() : null;
+        var want = currentGuideCardId();
         for (var i = 0; i < GUIDE_CARDS.length; i++) {
-            var el = document.getElementById(GUIDE_CARDS[i]);
-            if (el) el.style.display = (GUIDE_CARDS[i] === want) ? 'block' : 'none';
+            var id = GUIDE_CARDS[i], el = document.getElementById(id);
+            if (!el) continue;
+            // 只显示「当前页对应且该卡未 ✕」的卡
+            el.style.display = (id === want && !guideSeen[id]) ? 'block' : 'none';
         }
     } catch (e) { /* 引导绝不影响主流程 */ }
 }
-function dismissAllGuides() {
-    welcomeBannerShown = true;
-    try { AppStore.setItem('welcome_seen_v1', true); } catch (e) { /* 忽略 */ }
-    showTabGuides();
+function dismissGuide(cardId) {
+    if (!cardId || guideSeen[cardId]) return;
+    guideSeen[cardId] = true;
+    try { AppStore.setItem('hiking_guide_seen_' + cardId, true); } catch (e) { /* 忽略 */ }
+    showTabGuides();   // 只隐藏本卡（其它卡未 seen，切页后照常显示）
 }
 function bindTabGuides() {
     try {
-        // ✕ 关闭（唯一关闭途径，通用委托）
+        // ✕ 关闭：定位点击的 ✕ 属于哪张卡，只关那一张（v3 用户要求：不能一关全关）
         document.addEventListener('click', function (ev) {
             var c = ev.target && ev.target.closest ? ev.target.closest('.wb-guide-close') : null;
-            if (c) dismissAllGuides();
+            if (!c) return;
+            var card = c.closest ? c.closest('#welcomeBanner,#guideRecords,#guidePlans,#guideSettings') : null;
+            dismissGuide(card ? card.id : null);
         });
         // 概览卡：去记录页写第一笔 / 先看看示例
         var go = document.getElementById('welcomeGoBtn');
@@ -211,8 +229,8 @@ async function init() {
                 if (cap) cap.style.display = 'none';
             } catch (e) { /* 忽略 */ }
         });
-        // ★2026-09-06 分页引导：绑定 + 按当前 tab 显示对应卡；先恢复上次 ✕ 状态（已关过 = 本会话不再显示）
-        try { if (AppStore.getItem('welcome_seen_v1') === true) welcomeBannerShown = true; } catch (eS) { /* 忽略 */ }
+        // ★2026-09-06 分页引导 v3：恢复每卡独立 ✕ 状态（老版整体 seen 兼容四卡全关）→ 绑定 → 显示当前页卡
+        try { loadGuideSeenState(); } catch (eS) { /* 忽略 */ }
         bindTabGuides();
         showTabGuides();
         // ★2026-09-05 P1-7 本地每周自动备份检查（App 且有数据才触发，不阻塞启动）

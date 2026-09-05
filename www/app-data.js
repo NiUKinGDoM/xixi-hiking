@@ -451,7 +451,8 @@ function recordViewBodyHTML(r) {
         '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">同行人</div><div style="font-size:13px;font-weight:700;color:#1e293b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + mateTxt + '</div></div>' +
         '</div>' +
         // ★2026-09-05 小日记：记录弹窗里的回忆段落（编辑时写的 notes；有内容才展示）
-        (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons" style="font-size:14px;color:#64748b;">edit_note</span><span style="font-size:11px;color:#64748b;letter-spacing:0.3px;">小日记</span></div><div style="font-size:13px;color:#334155;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
+        // ★2026-09-06 小日记字色提亮：标签/图标加深至 #52606f（原 #64748b 偏浅）、正文加深 #1e293b；dark 由 .jd-lab/.jd-body CSS 覆盖
+        (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons jd-ic" style="font-size:14px;color:#52606f;">edit_note</span><span class="jd-lab" style="font-size:12px;color:#52606f;letter-spacing:0.3px;">小日记</span></div><div class="jd-body" style="font-size:13px;color:#1e293b;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
         '<button id="rd-edit-btn" class="check-go-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
 }
 
@@ -1709,7 +1710,7 @@ function showDataInfoModal() {
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
             </div>
-            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:2px;">
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:16px;">   <!-- ★2026-09-06 内容与按钮间距拉开（原 2px 贴太近） -->
                 <!-- ★2026-09-03 排版统一：大段文字改分组条目（小图标+标题+12px 说明，深浅色自适应 dmi-* 类） -->
                 <div class="dmi-group">
                     <span class="material-icons dmi-ic">inventory_2</span>
@@ -1934,7 +1935,7 @@ function updateStatistics() {
     updateWithAnimation(avgElevation, `${averageElevation}m`);
     updateWithAnimation(maxElevation, `${highestElevation}m`);
     // ★2026-09-03 A 布局：矮副卡 平均难度/平均用时（原总爬升卡精简移除，累计爬升回到热力图底部汇总行）
-    updateWithAnimation(avgDifficultyMini, averageDifficulty);
+    updateWithAnimation(avgDifficultyMini, averageDifficulty + '级');   // ★2026-09-06 平均难度加单位「级」
     const avgMin = total ? Math.round(totalMin / total) : 0;
     updateWithAnimation(avgDurationMini, avgMin ? (formatDuration(avgMin) || '0h') : '0h');
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
