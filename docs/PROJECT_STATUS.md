@@ -1,13 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-04（v1.1.9.5 / vc225）
+> 最后更新：2026-09-05（v1.1.9.6 / vc226）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
-- **正式版 v1.1.9.5**（versionCode 225，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- **正式版 v1.1.9.6**（versionCode 226，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.9.6 更新（P0+P1 七项 + 五项优化）：①万条渲染加固（统计 6 reduce→单 pass 23ms、山册组内单 pass 40ms）+ schema 迁移框架（DATA_SCHEMA_VERSION=1+双迁移链 applySchemaMigrations）+ 照片孤立扫描清理入口（photoCountOrphans+设置页按钮）+ 热力图月桶 hmMonthAgg 切月 O(1)；②P1：一键示例 loadSampleData + 三步引导卡 WELCOME_STEPS + 本地每周自动备份 autoLocalBackupIfDue；③五项优化：photoCleanBtn 语义色浅红玻璃/示例钮去下划线/dark 引导卡 !important 修复/hexToRgba 死函数+5 处死 CSS 清理/自动+手动备份「成功后才记 last」时序修复；test.js 77 项、P0P3 120 项
 - v1.1.9.5 更新：热力图年月框+年回入口按钮统一「日历/列表」同款 glass-btn（.hm-ym-btn 死 CSS 清理）+ 热力图底部汇总加前缀（本月徒步…/X年X月徒步…防歧义，P0P3 断言升级）
 - v1.1.9.4 更新：热力图年回入口按钮带文字「回顾」（icon+label 12px 600）+ 计划完成顺序化（markPlannedComplete 先弹庆祝卡、showPlanCompleteCelebration 加 onContinue 回调，点「继续补全」才 startEdit 开编辑弹窗，Esc/遮罩跳过不影响已存记录）+ 记录/计划编辑弹窗右上 ✕ 编辑态隐藏（view 态保留，全 App 带取消按钮的弹窗无右上叉）+ 编辑弹窗照片标签下竖排小注「最多 24 张」（.rd-ph-hint 10px）
 - v1.1.9.3 更新：视图说明灰字去 icon 改居中纯文字（色对齐体系 #52606f/#a3b1c6）+ 批量多选框从名称列移到操作列（18px 居中）+ 多选框弃 accent 深红改玻璃自绘（appearance:none：未选白玻璃灰蓝边/选中浅红玻璃红勾，dark 对应暗玻璃亮勾）+ 死码清理（12 个零引用死函数 -153 行）+ 编辑弹窗 3 处 value 补 escapeHtml + 自动测试 P0P3 沉淀 99→115 项 + README 5 处过时修订 & GitHub 全文档同步（docs/PROJECT_STATUS、清 3 个误入 py）
@@ -201,7 +202,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
-- v1.1.9.5（vc225）：**年月/回顾按钮统一 glass-btn + 热力图本月前缀**（详见 Release）
+- v1.1.9.6（vc226）：**P0 性能/schema/照片GC/月桶 + P1 示例/三步引导/每周备份 + 五项优化（样式统一+死码+备份时序）**（详见 Release）\n- v1.1.9.5（vc225）：**年月/回顾按钮统一 glass-btn + 热力图本月前缀**（详见 Release）
 - v1.1.9.4（vc224）：**年回按钮带字 + 计划完成先祝贺后编辑 + 编辑态去右上叉 + 照片 24 张注明**（详见 Release）
 - v1.1.9.3（vc223）：**视图说明纯文字居中 + 批量多选移操作列玻璃化 + 死码清理（12 函数）+ 转义加固 + 测试 115 + 文档全面同步（含 GH docs/ 清杂项）**（详见 Release）
 - v1.1.9.2（vc222）：**弹窗照片修复+横滑照片墙+徽章日期可读+快捷方式加固+编辑布局重排（diffLabel/1:1 均分/日期换位）+视图说明（按钮文字+view-caption）**（详见 Release）
