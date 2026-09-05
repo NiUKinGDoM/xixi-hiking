@@ -538,8 +538,12 @@ function openRecordDetailModal(id, startMode) {
         bindRecordDetailEvents(modal, id, r);
         // ★2026-09-04 修复：详情弹窗照片不显示——view 照片墙/编辑 thumbs 的 img 全靠 loadPhotoThumbs 异步填 src，打开后必须触发
         try { loadPhotoThumbs(id); } catch (e) { /* 忽略 */ }
-        // 点遮罩关闭（与 confirm-modal 一致）
-        modal.addEventListener('click', function (e) { if (e.target === modal) { closeRecordDetailModal(); renderTable(); } });
+        // ★2026-09-06 保存铁律：编辑态点空白关闭 = 等同取消（丢弃改动、删未存草稿，绝不保存）；阅读态点空白只是关详情
+        modal.addEventListener('click', function (e) {
+            if (e.target !== modal) return;
+            if (detailModalMode === 'edit') { try { cancelEdit(); } catch (eC) { /* 兜底 */ } return; }
+            closeRecordDetailModal(); renderTable();
+        });
     } catch (e) { /* 打开失败不影响 */ }
 }
 
@@ -1899,14 +1903,16 @@ function updateStatistics() {
         }
     };
     
+    // ★2026-09-06 单位全部独立小字（.stat-unit 与「次」同规格）：JS 只写数字本体；空态难度隐藏「级」单位
     if (records.length === 0) {
         if (totalCount) totalCount.textContent = '0';
-        if (avgElevation) avgElevation.textContent = '0m';
-        if (maxElevation) maxElevation.textContent = '0m';
-        if (avgDifficultyMini) avgDifficultyMini.textContent = '—';
-        if (avgDurationMini) avgDurationMini.textContent = '—';
-        if (totalDistance) totalDistance.textContent = '0 km';
-        if (totalDuration) totalDuration.textContent = '0h';
+        if (avgElevation) avgElevation.textContent = '0';
+        if (maxElevation) maxElevation.textContent = '0';
+        if (avgDifficultyMini) { avgDifficultyMini.textContent = '—'; }
+        var dU0 = safeGetElementById('avgDifficultyMiniU'); if (dU0) dU0.style.display = 'none';
+        if (avgDurationMini) avgDurationMini.innerHTML = '—';
+        if (totalDistance) totalDistance.textContent = '0';
+        if (totalDuration) totalDuration.innerHTML = '0<span class="stat-unit">h</span>';
         return;
     }
     
@@ -1931,16 +1937,26 @@ function updateStatistics() {
     const totalKm = accKm;
     const totalMin = accMin;
     
+    // ★2026-09-06 单位小字化：数字本体更新（单位静态在 HTML .stat-unit）；时长渲染 h/m 单位也小字
+    var durationHTML = function (min) {
+        var mm = Math.round(Number(min) || 0);
+        if (!mm || mm <= 0) return '0<span class="stat-unit">h</span>';
+        var hh = Math.floor(mm / 60), rr = mm % 60;
+        if (hh && rr) return hh + '<span class="stat-unit">h</span>&nbsp;' + rr + '<span class="stat-unit">m</span>';
+        if (hh) return hh + '<span class="stat-unit">h</span>';
+        return rr + '<span class="stat-unit">m</span>';
+    };
     updateWithAnimation(totalCount, total.toString());
-    updateWithAnimation(avgElevation, `${averageElevation}m`);
-    updateWithAnimation(maxElevation, `${highestElevation}m`);
+    updateWithAnimation(avgElevation, averageElevation);
+    updateWithAnimation(maxElevation, highestElevation);
+    var dU1 = safeGetElementById('avgDifficultyMiniU'); if (dU1) dU1.style.display = '';
     // ★2026-09-03 A 布局：矮副卡 平均难度/平均用时（原总爬升卡精简移除，累计爬升回到热力图底部汇总行）
-    updateWithAnimation(avgDifficultyMini, averageDifficulty + '级');   // ★2026-09-06 平均难度加单位「级」
+    updateWithAnimation(avgDifficultyMini, averageDifficulty);
     const avgMin = total ? Math.round(totalMin / total) : 0;
-    updateWithAnimation(avgDurationMini, avgMin ? (formatDuration(avgMin) || '0h') : '0h');
+    if (avgDurationMini) avgDurationMini.innerHTML = avgMin ? durationHTML(avgMin) : '—';
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
-    updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(2) + ' km' : '0 km'); // ★2026-09-01 里程两位小数
-    updateWithAnimation(totalDuration, totalMin ? (formatDuration(totalMin) || '0h') : '0h');
+    updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(2) : '0'); // ★2026-09-01 里程两位小数
+    if (totalDuration) totalDuration.innerHTML = durationHTML(totalMin);
     renderHeatmap(); // v1.0.7.7 切到概览刷新热力图
 }
 
@@ -3727,7 +3743,12 @@ function openPlannedDetailModal(id, startMode) {
         var bodyEl = modal.querySelector('#pd-body');
         bodyEl.innerHTML = isEdit ? plannedEditBodyHTML(t) : plannedViewBodyHTML(t);
         bindPlannedDetailEvents(modal, id, t, isEdit);
-        modal.addEventListener('click', function (e) { if (e.target === modal) { closePlannedDetailModal(); renderPlannedTripsTable(); } });
+        // ★2026-09-06 保存铁律：计划编辑态点空白关闭 = 等同取消（丢弃改动、删未存草稿）；阅读态只是关详情
+        modal.addEventListener('click', function (e) {
+            if (e.target !== modal) return;
+            if (isEdit) { try { cancelPlannedEdit(); } catch (eC) { /* 兜底 */ } return; }
+            closePlannedDetailModal(); renderPlannedTripsTable();
+        });
     } catch (e) { /* 忽略 */ }
 }
 function bindPlannedDetailEvents(modal, id, t, isEdit) {
