@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-06（v1.1.9.7 / vc227）
+> 最后更新：2026-09-06（v1.1.9.8 / vc228）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.9.8**（versionCode 228，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.9.8 更新（装机反馈三波定稿）：更新日志字面 \n 修复整行重建（js_esc 干净换行）+ 字号三档功能删除（zoom 真机无效）+ 新手引导分页 4 卡（welcomeBanner 概览/guideRecords/Plans/Settings，哪页讲哪页）+ **仅 ✕ 关闭**（点按钮跳转/有记录/载示例均不自关，tabGuidesEnabled=!welcomeBannerShown，重启 seen 恢复）+ 引导按钮逐按钮直达（P0P3 全真点验证）+ 概览卡 ✕ 补 wb-guide-close class（原委托关不掉）+ 计划过期关怀定稿两按钮「去处理/忽略」横排（顺延一键删）+ 深色模式用时/里程复合框 edit-merge-box dark 化 + 输入框 placeholder 深色提亮 + 导出弹窗自动备份说明迁入数据管理 i 弹窗（showDataInfoModal 第 4 条目）；test.js 99、P0P3 156
 - **正式版 v1.1.9.7**（versionCode 227，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.9.7 更新：显示大小三档（zoom 全量缩放、iOS 退 html font-size）+ 全文搜索（notes/心情/天气/同行人）+ 抹掉所有足迹（双重确认含照片、云端备份不受影响、清引导/提醒标记 reload 全新开始）+ 记录弹窗小日记 notes（edit textarea/view 卡片，空删键）+ 计划过期关怀（列表 .pl-overdue 红标 + maybeShowOverdueCare 顺延一周/去处理/忽略，每日一次）+ 新手引导 3→5 步（概览/数据安全）+ 视图 caption 单击收起/切视图恢复 + 回忆册打印 PDF 样式 + 导出弹窗手动备份按钮移除改自动备份说明；test.js 89、P0P3 140
 - **正式版 v1.1.9.6**（versionCode 226，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -204,6 +206,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
+- v1.1.9.8（vc228）：**更新日志分行 + 过期弹窗两按钮(去处理/忽略) + 字号功能删 + 引导 4 卡仅 ✕ 关闭 + 深色用时里程框 + 导出说明迁 i + 引导按钮逐按钮直达**（详见 Release）
 - v1.1.9.7（vc227）：**字号三档 + 全文搜索 + 抹掉数据 + 小日记 + 计划过期关怀 + 5步引导 + 回忆册PDF + 视图说明可收起 + 手动备份按钮移除**（详见 Release）
 - v1.1.9.6（vc226）：**P0 性能/schema/照片GC/月桶 + P1 示例/三步引导/每周备份 + 五项优化（样式统一+死码+备份时序）**（详见 Release）
 - v1.1.9.5（vc225）：**年月/回顾按钮统一 glass-btn + 热力图本月前缀**（详见 Release）
