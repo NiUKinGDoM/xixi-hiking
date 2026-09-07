@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-07（v1.1.10.1 / vc232）
+> 最后更新：2026-09-07（v1.1.10.2 / vc233）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.2**（versionCode 233，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.2 更新（照片占用弹窗定稿批）：★真机排版修复根因=content 缺样式锚点 id=puModal（CSS 全挂）→ 统计卡/容量条/警示样式改全 JS 内联（IS_DARK 分支色板，零 CSS 依赖）+ 弹窗加大 392px（数字 28px）+ ★TOP10 榜单按用户要求移除（computePhotoTopRecords/死 CSS 全清）+ 底部双钮（知道了灰蓝 confirm-btn-cancel / 优化 check-go 红纯文字去图标，超限文案变去清理，动作=confirmDeleteOrphanPhotos 有孤立先确认-显示张数空间-记录照片不受影响，无孤立俏皮 toast 随机五连）+ 行内快捷 photoCleanBtn 删除（入口统一，desc 保留「含孤立 N 张，点开可优化」）+ 真机加固（整函数 try 兜错/委托绑定/幂等防双开）；BUILTIN 新增 10.2；test.js 129、P0P3 191
 - **正式版 v1.1.10.1**（versionCode 232，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.1 更新：★P0 照片库上限（体检建议落地）——设置「照片占用」行可点开详情弹窗（confirm-modal 体系：统计卡 pu-card 数字大单位小/容量条 pu-meter 300MB 满格超限红/超限浅红警示 pu-warn/最占空间 TOP10 排行 pu-tr 点击跳记录 view 真实跳转/第一行恒红 rank1/底部单 check-go 主钮常态「知道了」超限变「去清理」走孤立清理）+ PHOTO_LIMIT_BYTES 300MB + computePhotoTopRecords 纯函数（孤儿不计排行）+ 更新日志三版弹窗标题去版本号（本次徽章仅 j===0，上两次无标签）+ BUILTIN 新增 10.1；test.js 125、P0P3 188
 - **正式版 v1.1.10.0**（versionCode 231，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -214,7 +216,7 @@
 
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
 
-- v1.1.10.1（vc232）：**照片占用详情(300MB 警示+TOP 排行跳转+去清理) + 更新日志三版仅本次徽章**（详见 Release）\n- v1.1.10.0（vc231）：**桌面 App 图标图案放大 30%（launcher PNG 中心放大）**（详见 Release）
+- v1.1.10.2（vc233）：**照片占用弹窗定稿(内联样式修真机/去 TOP 榜/加大/优化按钮+俏皮 toast/行内钮删/加固)**（详见 Release）\n- v1.1.10.1（vc232）：**照片占用详情(300MB 警示+TOP 排行跳转+去清理) + 更新日志三版仅本次徽章**（详见 Release）\n- v1.1.10.0（vc231）：**桌面 App 图标图案放大 30%（launcher PNG 中心放大）**（详见 Release）
 - v1.1.9.10（vc230）：**保存铁律 + 概览单位小字化(stat-unit) + about logo 60px**（详见 Release）
 - v1.1.9.9（vc229）：**概览单位(次/级) + 小日记字色提亮 + i 弹窗间距 + 引导 ✕ 逐卡独立 + 引导按钮统一尺寸**（详见 Release）
 - v1.1.9.8（vc228）：**更新日志分行 + 过期弹窗两按钮(去处理/忽略) + 字号功能删 + 引导 4 卡仅 ✕ 关闭 + 深色用时里程框 + 导出说明迁 i + 引导按钮逐按钮直达**（详见 Release）
