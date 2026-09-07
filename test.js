@@ -96,6 +96,191 @@ try {
     h1 && h2 ? ok(`index.html 版本显示同步 (${vn})`) : bad('index.html 版本未同步!');
 } catch (e) { bad('版本检查失败: ' + e.message); }
 
+// 5b. schema 迁移框架（P0-2）
+console.log('-- 5b. schema 迁移框架 --');
+try {
+    const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    cj.includes('const DATA_SCHEMA_VERSION = 1') ? ok('DATA_SCHEMA_VERSION=1 已定义') : bad('DATA_SCHEMA_VERSION 缺失!');
+    cj.includes('RECORD_SCHEMA_MIGRATIONS = []') && cj.includes('TRIP_SCHEMA_MIGRATIONS = []') ? ok('迁移链数组已注册') : bad('迁移链缺失!');
+    cj.includes('function applySchemaMigrations') ? ok('迁移执行器存在') : bad('applySchemaMigrations 缺失!');
+    dj.includes('applySchemaMigrations(data.trips, TRIP_SCHEMA_MIGRATIONS)') ? ok('计划加载接入迁移') : bad('计划迁移未接入!');
+    dj.includes('version: DATA_SCHEMA_VERSION, records') ? ok('记录保存写 version') : bad('记录保存未写 version!');
+    dj.includes('version: DATA_SCHEMA_VERSION, trips') ? ok('计划保存写 version') : bad('计划保存未写 version!');
+    ij.includes('applySchemaMigrations(storageData.value.records, RECORD_SCHEMA_MIGRATIONS)') ? ok('记录加载接入迁移') : bad('记录迁移未接入!');
+} catch (e) { bad('schema 检查失败: ' + e.message); }
+
+// 5c. 照片 GC（P0-3）
+console.log('-- 5c. 照片 GC --');
+try {
+    const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    cj.includes('function photoCountOrphans') ? ok('photoCountOrphans 只读扫描存在') : bad('photoCountOrphans 缺失!');
+    cj.includes('function confirmDeleteOrphanPhotos') ? ok('清理确认入口存在') : bad('confirmDeleteOrphanPhotos 缺失!');
+    cj.includes("Promise.all([photoGetUsage(), photoCountOrphans()])") ? ok('占用统计联动孤立扫描') : bad('refreshPhotoUsage 未联动!');
+    !ih.includes('photoCleanBtn') && !cj.includes('photoCleanBtn') ? ok('行内快捷清理按钮已删(入口统一弹窗优化)') : bad('photoCleanBtn 残留!');
+} catch (e) { bad('照片 GC 检查失败: ' + e.message); }
+
+// 5d. P1 体验项（P1-5 示例 / P1-6 三步引导 / P1-7 本地备份）
+console.log('-- 5d. P1 体验项 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    dj.includes('function loadSampleData') ? ok('loadSampleData 示例函数存在') : bad('loadSampleData 缺失!');
+    ij.includes('function showTabGuides') && ij.includes('GUIDE_CARDS') ? ok('分页引导逻辑在') : bad('showTabGuides 缺失!');
+    ih.includes('id="guideRecords"') && ih.includes('id="guidePlans"') && ih.includes('id="guideSettings"') && ih.includes('id="welcomeDemoBtn"') ? ok('四页引导卡 DOM 在位') : bad('引导卡 DOM 缺失!');
+    ih.includes('wb-guide-close') && ij.includes('function dismissGuide(cardId)') ? ok('引导 ✕ 逐卡关闭机制在') : bad('✕ 关闭缺失!');
+    sj.includes('function autoLocalBackupIfDue') ? ok('每周自动备份函数存在') : bad('autoLocalBackupIfDue 缺失!');
+    !sj.includes('localBackupBtn') ? ok('手动「立即本地备份」按钮已移除（用户要求）') : bad('localBackupBtn 残留!');
+    sj.includes('localBackupBtn') === false && dj.includes('每满 7 天') ? ok('自动备份说明已迁入数据管理 i 弹窗') : bad('自动备份说明缺失!');
+    ij.includes("autoLocalBackupIfDue") ? ok('启动已挂自动备份钩子') : bad('启动钩子缺失!');
+} catch (e) { bad('P1 检查失败: ' + e.message); }
+
+// 5e. v1.1.9.7 新功能源码断言（字号/全文搜索/抹掉数据/过期关怀/回忆册PDF/小日记）
+console.log('-- 5e. v1.1.9.7 新功能 --');
+try {
+    const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    dj.includes("(r.notes || '').toLowerCase().indexOf(q)") && dj.includes("(r.mood || '')") ? ok('搜索扩展小日记/心情等字段') : bad('全文搜索缺失!');
+    dj.includes('function confirmWipeAllData') && dj.includes('function wipeAllDataExecute') ? ok('抹掉数据双重确认存在') : bad('wipe 函数缺失!');
+    ih.includes('id="wipeAllBtn"') ? ok('设置页抹掉按钮在位') : bad('wipeAllBtn 缺失!');
+    dj.includes('function maybeShowOverdueCare') ? ok('计划过期关怀函数存在') : bad('maybeShowOverdueCare 缺失!');
+    dj.includes('edit-notes-') && dj.includes('小日记') ? ok('记录弹窗小日记(textarea/view)在位') : bad('小日记缺失!');
+    dj.includes('id="edit-notes-') || dj.includes("`edit-notes-${id}`") ? ok('小日记保存回写接入') : bad('notes 保存缺失!');
+    sj.includes('@media print') && sj.includes('另存为 PDF') ? ok('回忆册打印样式+PDF说明') : bad('回忆册打印缺失!');
+    ih.includes('.pl-overdue') ? ok('过期红标样式在位') : bad('pl-overdue 缺失!');
+    ij.includes('maybeShowOverdueCare') ? ok('启动挂过期关怀') : bad('关怀调用缺失!');
+} catch (e) { bad('5e 检查失败: ' + e.message); }
+
+// 5f. 2026-09-06 装机反馈第二波修复（深色用时里程框 / 导出说明迁 i / 引导 ✕ 四卡齐）
+console.log('-- 5f. 09-06 反馈修复 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    dj.includes('edit-merge-box') ? ok('用时/里程复合框带 edit-merge-box') : bad('edit-merge-box 缺失!');
+    ih.includes('body.dark-mode .edit-merge-box') && ih.includes('background: rgba(55, 65, 81, 0.9) !important;') ? ok('深色模式盒底深灰化规则在') : bad('dark edit-merge-box CSS 缺失!');
+    ih.includes('.edit-input::placeholder') && ih.includes('body.dark-mode .edit-input::placeholder') ? ok('输入框占位深色提亮规则在') : bad('placeholder dark 规则缺失!');
+    sj.includes('function showExportModal') && !/本地自动备份已开启/.test(sj) ? ok('导出弹窗内自动备份说明已移除') : bad('导出弹窗仍含说明!');
+    dj.includes('本地自动备份') && dj.includes('每满 7 天') && dj.includes('function showDataInfoModal') ? ok('i 弹窗含本地自动备份条目') : bad('i 弹窗缺备份条目!');
+    ih.includes('id="welcomeClose"') && ih.includes('class="wb-guide-close"') ? ok('概览引导卡 ✕ 带 wb-guide-close(委托可关)') : bad('welcomeClose 缺 wb-guide-close!');
+    ij.includes('bindTabGuides') && ij.includes('addNewPlannedTrip') ? ok('引导计划按钮可达计划添加') : bad('引导按钮代码缺失!');
+} catch (e) { bad('5f 检查失败: ' + e.message); }
+
+// 5g. 2026-09-06 定稿 v3（过期弹窗两按钮 / 引导每卡独立 ✕ + 重启恢复）
+console.log('-- 5g. 09-06 定稿v3 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    dj.includes('function maybeShowOverdueCare') && dj.includes('oc-go') && dj.includes('oc-ignore') && !dj.includes('oc-shift') ? ok('过期弹窗只留 去处理/忽略(顺延已删)') : bad('过期弹窗按钮不对!');
+    dj.includes('去计划页改个日期或删掉吧') ? ok('过期文案同步更新') : bad('过期文案未更新!');
+    ij.includes('function dismissGuide(cardId)') && ij.includes("'hiking_guide_seen_' + cardId") ? ok('引导 ✕ 逐卡独立(dismissGuide)') : bad('dismissGuide 缺失!');
+    ij.includes('guideSeen[id]') && ij.includes("(id === want && !guideSeen[id])") ? ok('显示判定=当前页且该卡未关') : bad('per-card 判定缺失!');
+    ij.includes('function loadGuideSeenState') && ij.includes("hiking_guide_seen_' + GUIDE_CARDS[i]") ? ok('重启逐卡 seen 恢复') : bad('loadGuideSeenState 缺失!');
+    ij.includes('function resetGuideSeen') ? ok('resetGuideSeen 测试钩子在') : bad('resetGuideSeen 缺失!');
+    ih.includes('class="guide-sub-btn"') && ih.includes('padding:7px 16px') && ih.includes('body.dark-mode .guide-sub-btn') ? ok('引导次按钮同尺寸+dark 适配') : bad('guide-sub-btn 缺失!');
+} catch (e) { bad('5g 检查失败: ' + e.message); }
+
+// 5h. 2026-09-06 概览单位 + 小日记字色 + i 弹窗间距（v1.1.9.9）
+console.log('-- 5h. 09-06 概览单位等 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    ih.includes('id="totalCount"') && ih.includes('次</span>') && ih.includes('total-count-value') ? ok('总记录数带「次」单位(HTML span)') : bad('总记录单位缺失!');
+    ih.includes('id="avgDifficultyMiniU"') && ih.includes('.stat-unit') && ih.includes('avgDifficultyMini') ? ok('平均难度级单位=stat-unit 小字') : bad('难度单位缺失!');
+    ih.includes('id="totalDistance"') && ih.includes('stat-unit">km') && ih.includes('id="maxElevation"') && ih.includes('stat-unit">m') ? ok('总里程km/最高海拔m 单位小字化') : bad('km/m 单位未拆!');
+    dj.includes('var durationHTML = function') && dj.includes('<span class=\"stat-unit\">h</span>') ? ok('时长 h/m 单位小字渲染函数在') : bad('durationHTML 缺失!');
+    ih.includes('.about-logo') && ih.includes('font-size: 60px') ? ok('App 主 logo 放大至 60px(用户定稿)') : bad('logo 未放大!');
+    dj.includes('jd-lab') && dj.includes('jd-body') && dj.includes('color:#52606f') ? ok('小日记 view 标签/正文加深') : bad('小日记色加深缺失!');
+    ih.includes('.record-detail-modal .jd-body') && ih.includes('body.dark-mode .record-detail-modal .jd-body { color: #e5e7eb !important; }') ? ok('小日记 dark 适配 CSS') : bad('jd dark CSS 缺失!');
+    dj.includes('margin-bottom:16px') && dj.includes('数据管理说明') ? ok('i 弹窗内容与按钮间距拉开(16px)') : bad('i 弹窗间距未改!');
+} catch (e) { bad('5h 检查失败: ' + e.message); }
+
+// 5i. 2026-09-06 保存铁律（只有点保存才算保存；取消/点空白关闭一律丢弃）
+console.log('-- 5i. 保存铁律 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    dj.includes('detailModalMode === \'edit\') { try { cancelEdit(); }') && dj.includes('保存铁律') ? ok('记录编辑弹窗点空白=取消(丢弃)') : bad('记录 backdrop 铁律缺失!');
+    dj.includes('if (isEdit) { try { cancelPlannedEdit(); }') ? ok('计划编辑弹窗点空白=取消(丢弃)') : bad('计划 backdrop 铁律缺失!');
+    dj.includes('function cancelEdit') && dj.includes("editingRecord.name === ''") ? ok('cancelEdit 删空草稿逻辑在') : bad('cancelEdit 缺失!');
+    dj.includes('function cancelPlannedEdit') && dj.includes('!trip.name') ? ok('cancelPlannedEdit 删空计划草稿逻辑在') : bad('cancelPlannedEdit 缺失!');
+} catch (e) { bad('5i 检查失败: ' + e.message); }
+
+// 5j. 2026-09-06 更新日志弹窗三版（标题无版本号 / 本次·上次·上上次 / dark 适配）
+console.log('-- 5j. 更新日志三版 --');
+try {
+    const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    cj.includes('history_edu</span>更新日志</div>') ? ok('更新日志标题去掉版本号') : bad('标题仍带版本号!');
+    cj.includes('j === 0') && cj.includes('本次更新') && !cj.includes('上次更新') ? ok('徽章仅本次(上次/上上次无标签)') : bad('徽章逻辑不对!');
+    cj.includes('parts.length < 3') ? ok('取最近三个版本逻辑在') : bad('三版截取缺失!');
+    cj.includes('var CL = {') && cj.includes('tagTx: IS_DARK') && cj.includes(">本次更新</span>") ? ok('更新日志颜色内联化(IS_DARK 分支)') : bad('changelog 内联色缺失!');
+    ih.includes('function showChangelogModal') || !ih.includes('#changelogBody .clb') ? ok('cl 依赖 CSS 已清(与照片弹窗同防真机失效)') : bad('cl CSS 残留!');
+    cj.includes('function showInfoMessage') ? ok('中性信息 toast(showInfoMessage)在') : bad('showInfoMessage 缺失!');
+    cj.includes('showInfoMessage(cleanMsgs') ? ok('俏皮话改中性 toast') : bad('俏皮话未用中性!');
+} catch (e) { bad('5j 检查失败: ' + e.message); }
+
+// 5l. 2026-09-07 P0 照片库上限（占用行开详情弹窗 / 300MB 警示 / TOP 排行）
+console.log('-- 5l. 照片库上限 --');
+try {
+    const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    cj.includes('PHOTO_LIMIT_BYTES = 300 * 1048576') ? ok('300MB 建议上限常量在') : bad('PHOTO_LIMIT_BYTES 缺失!');
+    cj.includes('function openPhotoUsageDetailModal') && cj.includes('id="puModal"') ? ok('详情弹窗含样式锚点 id=puModal') : bad('详情弹窗/id 缺失!');
+    !cj.includes('computePhotoTopRecords') && !cj.includes('pu-tr') && !cj.includes('最占空间的记录') ? ok('TOP10 排行已整体移除') : bad('TOP10 残留!');
+    cj.includes('IS_DARK') && cj.includes('border-radius:16px;padding:14px 16px') && cj.includes('font-size:28px;font-weight:800') && cj.includes("' + P.cardBg + '") ? ok('统计卡/容量条样式 JS 内联(真机 CSS 失效兜底)') : bad('内联样式缺失!');
+    cj.includes('warning_amber') && cj.includes('pu-warn') && cj.includes('超过建议的 300 MB') ? ok('超限警示内联渲染在位') : bad('警示缺失!');
+    cj.includes('function bindPhotoUsageRow') && cj.includes('_docBound') ? ok('行绑定+委托兜底在') : bad('绑定缺失!');
+    cj.includes('id="puOpt"') && cj.includes("'优化'") && cj.includes('id="puClose"') ? ok('底部双钮(知道了灰蓝+优化check-go红)在') : bad('双钮缺失!');
+    cj.includes('别点啦，这里没有缓存要清') && cj.includes('非要再点一下才放心吗') && cj.includes('Math.random() * cleanMsgs.length') ? ok('无缓存俏皮 toast 随机轮换在') : bad('俏皮 toast 缺失!');
+    ih.includes('id="photoUsageRow"') ? ok('设置行在位') : bad('行缺失!');
+    !ih.includes('#puModal') ? ok('失效 #puModal CSS 已清(样式全内联)') : bad('#puModal CSS 残留!');
+    ij.includes('bindPhotoUsageRow();') ? ok('init 已绑定照片占用行') : bad('init 绑定缺失!');
+} catch (e) { bad('5l 检查失败: ' + e.message); }
+
+// 5m. 2026-09-07 更新包直装（下载完退出后同版本再点 = 直接安装不重下）
+console.log('-- 5m. 更新直装 --');
+try {
+    const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+    const java = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
+    sj.includes("PENDING_APK_TAG_KEY = 'hiking_pending_apk_tag'") ? ok('待装版本记忆 key 在') : bad('记忆 key 缺失!');
+    sj.includes('hasLocalApkFor') && sj.includes('rememberLocalApkTag') && sj.includes('clearLocalApkTag') ? ok('直装记忆三函数在') : bad('记忆函数缺失!');
+    sj.includes("'立即安装'") && sj.includes('installLocalUpdate') && sj.includes('不用重新下载') ? ok('弹窗直装态(立即安装+提示)在') : bad('直装弹窗缺失!');
+    sj.includes("state === 'downloaded'") && sj.includes('rememberLocalApkTag') ? ok('下载完成记版本(直装依据)') : bad('downloaded 记忆缺失!');
+    sj.includes("state === 'no_local_apk'") && sj.includes('clearLocalApkTag') ? ok('本地包失效→清记+自动重下') : bad('no_local_apk 兜底缺失!');
+    java.includes('public void installDownloadedApk()') && java.includes('xixi_update.apk') && java.includes('no_local_apk') ? ok('原生直装桥(installDownloadedApk)在') : bad('原生直装桥缺失!');
+} catch (e) { bad('5m 检查失败: ' + e.message); }
+
+// 5n. ★2026-09-07 CSS 健康回归（误删事故防复发：曾删 cl 段连带吞掉按钮/toast 全量样式）
+console.log('-- 5n. CSS 健康 --');
+try {
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const styles = [...ih.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]);
+    const allBalanced = styles.every(st => {
+        // 容错计数：多余 } 忽略，结束深度必须 0（缺 } 必暴露）
+        let d = 0;
+        for (const ch of st) { if (ch === '{') d++; else if (ch === '}' && d > 0) d--; }
+        return d === 0 && st.split('{').length === st.split('}').length;
+    });
+    allBalanced ? ok('style 块花括号配平(容错仿真深度0)') : bad('style 括号不平衡! 按钮/toast 样式会崩!');
+    ih.includes('.confirm-btn-cancel {') && ih.includes('.confirm-btn-delete {') && ih.includes('.confirm-modal-buttons {') ? ok('confirm 按钮系 CSS 在(取消/操作/按钮区)') : bad('confirm 按钮 CSS 缺失!');
+    ih.includes('.toast-glass.success {') && ih.includes('.toast-glass.error {') && ih.includes('.toast-glass.info {') && ih.includes('.toast-glass.loading {') ? ok('toast 四态 CSS 在(success/error/info/loading)') : bad('toast CSS 缺失!');
+    ih.includes('.view-caption {') && ih.includes('.stat-card {') && ih.includes('.table-row-advanced {') && ih.includes('#photoUsageRow:active {') ? ok('弹窗/表行/占用行样式在') : bad('通用样式缺失!');
+    !ih.includes('#changelogBody') ? ok('cl 依赖 CSS 保持 0 残留') : bad('cl CSS 复现!');
+    const msgIdx = ih.indexOf('.confirm-modal-message {');
+    const puIdx = ih.indexOf('#photoUsageRow:active');
+    (msgIdx >= 0 && puIdx > msgIdx && ih.slice(msgIdx, puIdx).includes('}')) ? ok('.confirm-modal-message 规则已闭合') : bad('.confirm-modal-message 未闭合(历史坏块)!');
+} catch (e) { bad('5n 检查失败: ' + e.message); }
+
 // 6. 原生文件完整性
 console.log('-- 6. 原生层 --');
 try {

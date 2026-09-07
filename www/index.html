@@ -38,14 +38,13 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none; /* 禁长按图片弹"保存图片"菜单 */
+            transition: background-color 0.2s ease; /* 2026-08-10 切换提速+掉帧修复：去掉 color 过渡（全页文字同时过渡→WebView掉帧），文字瞬切；★2026-09-07 此声明曾被 08-30 改造误挤出 body 规则，现归位 */
         }
         /* ★2026-08-30 输入框/文本域/编辑区放行选择（输入文字不受影响，长按选择仅限这些元素）*/
         input, textarea, [contenteditable="true"] {
             -webkit-user-select: text;
             user-select: text;
             -webkit-touch-callout: default;
-        }
-            transition: background-color 0.2s ease; /* 2026-08-10 切换提速+掉帧修复：去掉 color 过渡（全页文字同时过渡→WebView掉帧），文字瞬切 */
         }
         
         /* 全局过渡变量 */
@@ -2343,9 +2342,7 @@
         
         /* ★2026-08-25 编辑行紧凑字段（.edit-mini）已废弃：恢复原 edit-input 尺寸（用户要求），相关 CSS 移除 */
         
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+        
         
         
         .sort-header {
@@ -2529,20 +2526,8 @@
         }
         .confirm-modal-message {
             color: #1f2937;  /* ★v1.1.2.8 浅色加深（原 #4b5563 偏淡） */
-        #photoUsageRow:active { background: rgba(100, 116, 139, 0.10); }
-
-        /* ★2026-09-06 更新日志弹窗（三版排版）深浅色适配 */
-        #changelogBody .clv { color: #1f2937; }
-        #changelogBody .clb { color: #334155; }
-        #changelogBody .cltag { color: #4f46e5; }
-        body.dark-mode #changelogBody .clv { color: #f1f5f9; }
-        body.dark-mode #changelogBody .clb { color: #cbd5e1; }
-        body.dark-mode #changelogBody .cltag { color: #a5b4fc; background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); }
-            margin-bottom: 16px;  /* 2026-08-11 紧凑：原 24px */
-            line-height: 1.4;  /* 2026-08-11 紧凑：原 1.5 */
-            font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
-            font-weight: 900;
         }
+        #photoUsageRow:active { background: rgba(100, 116, 139, 0.10); }
         .confirm-modal-buttons {
             display: flex;
             gap: 12px;
@@ -2900,6 +2885,18 @@
             border-color: rgba(74, 222, 128, 0.55);
             color: #bbf7d0;
         }
+        .toast-glass.info {
+            border-color: rgba(100, 116, 139, 0.4);
+        }
+        .toast-glass.info span {
+            color: #475569;
+        }
+        .toast-glass.info .material-icons { color: #64748b; }
+        body.dark-mode .toast-glass.info {
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+        body.dark-mode .toast-glass.info span { color: #cbd5e1; }
+        body.dark-mode .toast-glass.info .material-icons { color: #94a3b8; }
         body.dark-mode .toast-glass.error {
             background: rgba(70, 15, 20, 0.40);
             border-color: rgba(248, 113, 113, 0.6);
@@ -6176,7 +6173,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.1.10.2</div>
+                        <div class="about-version">版本 1.1.10.3</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

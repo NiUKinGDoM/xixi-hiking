@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.10.3': '## v1.1.10.3 更新内容\n\n**更新包下载一次就够**\n- 下载完退出安装界面后，再检查到同一版本：弹窗会提示「安装包已下载好」，点一下直接安装，不用重新下载\n- 万一安装包被系统清理了会自动重新下载，不会卡住\n\n**提示色更讲究**\n- 新增中性信息提示（灰蓝）——玩笑小话不再借用绿色成功提示，颜色各司其职\n\n**更新日志颜色真机加固**\n- 版本号/正文/顶部「新版本」徽章颜色改为内联写死，安卓上不会再出现颜色没生效的情况\n\n**列表更跟手**\n- 记录/计划行的入场动画延迟封顶 0.3 秒，几百条记录首屏也不再拖沓\n\n**修复一批弹窗样式**\n- 修复弹窗按钮与提示样式意外丢失的问题，顺带清理 3 处历史样式残留\n- 照片占用弹窗打开更快（读库次数减半）\n\nMade by XiXi 💛',
     'v1.1.10.2': '## v1.1.10.2 更新内容\n\n**照片占用看得明白**\n- 详情弹窗重新排版：大数字统计卡 + 绿色容量条（快满/超 300 MB 自动变红提醒），一眼知道照片占了多大地方\n- 去掉多余的「最占空间记录」榜单，弹窗干净利落\n\n**照片缓存随时可优化**\n- 弹窗底部新增「优化」按钮：只清理「不属于任何记录的缓存照片」，你记录里存的照片一张不动\n- 有缓存时先弹确认（显示几张、能省多少空间）再删；没缓存时会跟你开个小玩笑，点多少次都放心\n\n**细节顺手修**\n- 手机上点照片占用偶尔没反应 → 加了兼容加固\n- 行内旧的重复清理按钮移除，清理入口统一收进弹窗\n\nMade by XiXi 💛',
     'v1.1.10.1': '## v1.1.10.1 更新内容\n\n**照片心里有数**\n- 设置里「照片占用」点开能看到：一共占了多少空间、接近 300 MB 会提醒\n- 超过 300 MB 会提示你照片太多了，建议去记录里删掉几张\n- 超过后主按钮变「去清理」，一键扫掉游离的孤立照片\n\n**更新日志更好看**\n- 弹窗标题去掉版本号，只写「更新日志」\n- 一次展示最近三个版本：本次 / 上次 / 上上次，逐条分行，只看本次带标签\n\nMade by XiXi 💛',
     'v1.1.10.0': '## v1.1.10.0 更新内容\n\n**桌面上更好认**\n- App 图标图案整体放大了一圈，桌面上一眼就能找到\n\nMade by XiXi 💛',
@@ -114,15 +115,24 @@ function showChangelogModal() {
             parts.push({ ver: kk.replace('v', ''), isCur: kk === cur, body: body });
         }
         // ★2026-09-06 徽章只给「本次更新」；上次/上上次只显示版本号+内容（排版更素净）
+        // ★2026-09-07 颜色全部内联（同照片弹窗：动态弹窗依赖 #id CSS 在个别真机失效 → IS_DARK 分支直接内联，零 CSS 依赖）
+        var IS_DARK = typeof document.body !== 'undefined' && document.body.classList && document.body.classList.contains('dark-mode');
+        var CL = {
+            v: IS_DARK ? '#f1f5f9' : '#1f2937',
+            b: IS_DARK ? '#cbd5e1' : '#334155',
+            tagTx: IS_DARK ? '#a5b4fc' : '#4f46e5',
+            tagBg: IS_DARK ? 'rgba(99,102,241,0.22)' : 'rgba(99,102,241,0.12)',
+            tagBd: IS_DARK ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.35)'
+        };
         var html = '';
         for (var j = 0; j < parts.length; j++) {
             var pt = parts[j];
             var escB = String(pt.body).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            html += '<div class="cl-head" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
-                '<span class="clv" style="font-size:14px;font-weight:800;">' + pt.ver + '</span>' +
-                (j === 0 ? '<span class="cltag" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.35);">本次更新</span>' : '') + '</div>' +
-                '<div class="clb" style="font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escB + '</div>' +
-                (j < parts.length - 1 ? '<div class="cl-sep" style="height:1px;background:rgba(148,163,184,0.25);margin:14px 0;"></div>' : '');
+            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                '<span style="font-size:14px;font-weight:800;color:' + CL.v + ';">' + pt.ver + '</span>' +
+                (j === 0 ? '<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;color:' + CL.tagTx + ';background:' + CL.tagBg + ';border:1px solid ' + CL.tagBd + ';">本次更新</span>' : '') + '</div>' +
+                '<div style="font-size:13px;line-height:1.75;color:' + CL.b + ';white-space:pre-wrap;word-break:break-word;">' + escB + '</div>' +
+                (j < parts.length - 1 ? '<div style="height:1px;background:rgba(148,163,184,0.25);margin:14px 0;"></div>' : '');
         }
         if (el) el.innerHTML = html ? html : '<div style="color:#94a3b8;">暂无内置更新说明</div>';
     } catch (e2) {
@@ -495,7 +505,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.10.2';
+var APP_VERSION = '1.1.10.3';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -845,7 +855,7 @@ function photosEnabled() {
     return !photoDB.failed;
 }
 // ★2026-08-21 v1.1.1.5 照片占用统计（设置页显示）
-// ★2026-09-07 P0 照片库总占用上限：建议值 300MB，超过后照片占用详情弹窗出现浅红警示 + 最占空间记录 TOP 排行
+// ★2026-09-07 P0 照片库总占用上限：建议值 300MB，超过后照片占用详情弹窗出现浅红警示（TOP 排行已按用户要求移除）
 var PHOTO_LIMIT_BYTES = 300 * 1048576;
 
 // 字节 → {v:'382', u:'MB'} / {v:'840', u:'KB'}
@@ -860,7 +870,7 @@ function photoSizeText(bytes) {
 }
 function photoOverLimit(bytes) { return (Number(bytes) || 0) > PHOTO_LIMIT_BYTES; }
 
-// 打开「照片占用」详情弹窗（confirm-modal 体系）：统计卡+容量条+超限警示+最占空间记录排行
+// 打开「照片占用」详情弹窗（confirm-modal 体系）：统计卡+容量条+超限警示+优化按钮（样式全内联）
 // ★2026-09-07 按用户确认的 demo 形态实现：底部一条红玻璃主钮——常态「知道了」/ 超限变「去清理」；排行第一行恒红描边；文案语气对齐 demo
 function openPhotoUsageDetailModal() {
     try {
@@ -884,9 +894,10 @@ function openPhotoUsageDetailModal() {
     var optBtn = document.getElementById('puOpt');
     if (closeBtn) closeBtn.addEventListener('click', function () { document.body.removeChild(modal); });
 
-    Promise.all([photoGetAll().catch(function () { return []; }), photoCountOrphans().catch(function () { return { count: 0, bytes: 0 }; })])
+    // ★2026-09-07 仔细复查优化：只读一次照片库（原 getAll+countOrphans 双全量读；孤立数弹窗已不展示 → 去掉冗余二次读）
+    photoGetAll().catch(function () { return []; })
         .then(function (res) {
-            var all = res[0] || [], orphan = res[1] || { count: 0, bytes: 0 };
+            var all = res || [];
             var total = (all || []).reduce(function (ss, p) { return ss + (p && p.blob ? p.blob.size : 0); }, 0);
             var count = (all || []).length;
             var over = photoOverLimit(total);
@@ -981,7 +992,7 @@ function confirmDeleteOrphanPhotos() {
                 '好吧，那你点吧……真没有，改天再来看看',
                 '帮你查过啦：缓存照片 0 张，干干净净'
             ];
-            try { showSuccessMessage(cleanMsgs[Math.floor(Math.random() * cleanMsgs.length)]); } catch (e) {}
+            try { showInfoMessage(cleanMsgs[Math.floor(Math.random() * cleanMsgs.length)]); } catch (e) {}   // ★2026-09-07 中性 toast（非成败，用灰蓝信息色）
             return;
         }
         var sizeTxt = o.bytes >= 1048576 ? (o.bytes / 1048576).toFixed(1) + ' MB' : Math.ceil(o.bytes / 1024) + ' KB';
@@ -1145,6 +1156,34 @@ function showErrorMessage(message, duration) {
         setTimeout(() => {
             if (errorDiv.parentNode) errorDiv.remove();
         }, 300);
+    });
+}
+
+// ★2026-09-07 中性信息消息（俏皮提示/非成败的说明用；设计统一①：绿=成功 红=错误 灰蓝=中性信息）
+function showInfoMessage(message, duration) {
+    const existingInfo = document.querySelector('.info-message');
+    if (existingInfo) existingInfo.remove();
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'info-message toast-pop toast-glass info fixed z-[300] max-w-[90vw] text-sm px-5 py-3';
+    infoDiv.style.left = '50%';
+    infoDiv.style.bottom = '140px';
+    infoDiv.style.transform = 'translateX(-50%)';
+    infoDiv.innerHTML = `
+        <div class="flex items-center gap-2">
+            <span class="material-icons">info</span>
+            <span class="text-sm font-medium">${message}</span>
+        </div>
+    `;
+    document.body.appendChild(infoDiv);
+    setTimeout(() => {
+        if (document.body.contains(infoDiv)) {
+            infoDiv.classList.add('toast-fade-out');
+            setTimeout(() => { if (infoDiv.parentNode) infoDiv.remove(); }, 300);
+        }
+    }, duration || 1400);
+    infoDiv.addEventListener('click', () => {
+        infoDiv.classList.add('toast-fade-out');
+        setTimeout(() => { if (infoDiv.parentNode) infoDiv.remove(); }, 300);
     });
 }
 

@@ -360,7 +360,7 @@ function renderTable() {
         // ★2026-09-04 阅读态 v2：列表瘦身——只显示 名称 + 操作(删除)，海拔/难度/时间等全收进详情弹窗
         //   （行内编辑表格已废弃：编辑搬进居中详情弹窗，点行=看详情，弹窗内「编辑」才进编辑态）
         const rowAnimCls = recordsRowsAnimated ? '' : 'table-row-animate ';
-        const rowDelayStyle = recordsRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
+        const rowDelayStyle = recordsRowsAnimated ? '' : ('animation-delay: ' + (Math.min(idx, 6) * 0.05) + 's;');   // ★2026-09-07 限幅 0.3s：超 7 行后不再累加首屏延迟
         return `
             <tr class="table-row-advanced ${rowAnimCls}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="row-${record.id}" style="${rowDelayStyle}">
                 <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="name-cell-${record.id}">
@@ -3573,7 +3573,7 @@ function renderPlannedTripsTable() {
             }
             // ★2026-09-04 阅读态 v2：计划列表瘦身——只显示 名称 + 操作（完成/删除），海拔/难度/时间等收进详情弹窗
             const rowAnimCls2 = plannedRowsAnimated ? '' : 'table-row-animate ';
-            const rowDelayStyle2 = plannedRowsAnimated ? '' : ('animation-delay: ' + (idx * 0.05) + 's;');
+            const rowDelayStyle2 = plannedRowsAnimated ? '' : ('animation-delay: ' + (Math.min(idx, 6) * 0.05) + 's;');   // ★2026-09-07 限幅同记录表
             // ★2026-09-05 P1-⑦ 过期标注：计划日早于今天 → 名称旁「已过期 N 天」红标（未完成计划可见，提示去顺延/删除）
             let _ovBadge = '';
             try {

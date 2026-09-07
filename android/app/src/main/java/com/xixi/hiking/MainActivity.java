@@ -756,6 +756,23 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // ★2026-09-07 直接安装本地已下载包（用户退出安装弹窗后再点更新不必重下）：
+        // 复用 cache/downloads/xixi_update.apk（下载完成即存在）；不存在/过小 → no_local_apk 让 JS 兜底重新下载
+        @JavascriptInterface
+        public void installDownloadedApk() {
+            final java.io.File apk = new java.io.File(getCacheDir(), "downloads/xixi_update.apk");
+            if (!apk.exists() || apk.length() < 1024 * 1024) {
+                notifyJs("no_local_apk", "");
+                return;
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    installApk(apk);
+                }
+            });
+        }
+
         private void notifyJs(final String state, final String message) {
             runOnUiThread(new Runnable() {
                 @Override

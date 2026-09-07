@@ -58,6 +58,7 @@ function visible(id) { const el = document.getElementById(id); return el && getC
         window.eval(allJs + `
             window.__testSetRecords = function (arr) { records = arr; };
             window.__testSetPlanned = function (arr) { plannedTrips = arr; };
+            window.__testGetPlanned = function () { return plannedTrips; };
             window.__testSetSearch = function (q) { searchQuery = q; };
         `);
     } catch (e) {
@@ -132,6 +133,27 @@ function visible(id) { const el = document.getElementById(id); return el && getC
     await delay(30);
     assert('计划搜索过滤到 1 行', rowCount('plannedTripsTable') === 1, 'rows=' + rowCount('plannedTripsTable'));
     assert('计划徽标匹配数', text('plannedTotalBadge').indexOf('匹配 1 / 共 2 条') >= 0, text('plannedTotalBadge'));
+    // ★2026-09-04 计划阅读态 v2：清搜索 → 点行开详情弹窗 → 编辑 → 保存
+    window.__testSetSearch('');
+    window.renderPlannedTripsTable();
+    await delay(30);
+    const pRow = document.getElementById('planned-row-p1');
+    assert('计划行瘦身：含完成/删除钮无海拔列', !!pRow && !!document.getElementById('complete-planned-btn-p1') && !!document.getElementById('delete-planned-btn-p1') && !pRow.querySelector('td[data-label="海拔"]'));
+    if (pRow) pRow.click();
+    await delay(60);
+    const pdMdl = document.querySelector('.record-detail-modal');
+    assert('点计划行打开详情弹窗', !!pdMdl && pdMdl.textContent.indexOf('华山') >= 0 && pdMdl.textContent.indexOf('计划') >= 0);
+    const pdEditBtn = document.getElementById('pd-edit-btn');
+    if (pdEditBtn) pdEditBtn.click();
+    await delay(40);
+    const pNameIn = document.getElementById('edit-planned-name-p1');
+    assert('计划弹窗切编辑态', !!pNameIn && pNameIn.value === '华山');
+    if (pNameIn) pNameIn.value = '华山(计划改)';
+    const pSaveBtn = document.getElementById('save-planned-btn-p1');
+    if (pSaveBtn) pSaveBtn.click();
+    await delay(50);
+    const pSaved = window.__testGetPlanned ? window.__testGetPlanned().find(function (x) { return x.id === 'p1'; }) : null;
+    assert('计划弹窗保存生效且弹窗关', !!pSaved && pSaved.name === '华山(计划改)' && document.querySelectorAll('.record-detail-modal').length === 0);
 
     console.log('\n== 4. 键盘 offset（__onImeHeight 全链路）==');
     window.__onImeHeight(600); // 物理 px，jsdom DPR=1 → 600 → 60vh 上限截断

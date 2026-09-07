@@ -385,24 +385,47 @@ function autoCheckUpdateOnLaunch() {
 }
 
 // 新版本弹窗：版本号 + 更新内容 + 立即更新
+// ★2026-09-07 已下载待安装包的记忆 key（本地缓存 xixi_update.apk 对应版本 tag；同版本再点更新 → 直接安装不重下）
+const PENDING_APK_TAG_KEY = 'hiking_pending_apk_tag';
+function hasLocalApkFor(tag) {
+    try { return AppStore.getItem(PENDING_APK_TAG_KEY) === tag; } catch (e) { return false; }
+}
+function rememberLocalApkTag(tag) {
+    try { if (tag) AppStore.setItem(PENDING_APK_TAG_KEY, tag); } catch (e) { /* 忽略 */ }
+}
+function clearLocalApkTag() {
+    try { AppStore.removeItem(PENDING_APK_TAG_KEY); } catch (e) { /* 忽略 */ }
+}
+// 直接安装本地包（同版本已下载过）：原生无此能力或文件缺失 → 自动重下兜底
+function installLocalUpdate() {
+    if (!window.XixiFileBridge || typeof window.XixiFileBridge.installDownloadedApk !== 'function') {
+        startUpdate();   // 旧包无直装桥 → 走原下载安装
+        return;
+    }
+    try { window.XixiFileBridge.installDownloadedApk(); } catch (e) { startUpdate(); }
+}
+
 function showUpdateModal(info) {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     const bodyText = (info.body || '').slice(0, 400);
+    // ★2026-09-07 直装判定：本地已下载过且版本一致 → 不再重下，直接弹「立即安装」
+    const localReady = hasLocalApkFor('v' + info.tag);
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>发现新版本 v' + escapeHtml(info.tag) + '</div>' +
         '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;">' +
         '<div style="font-weight:600;margin-bottom:4px;">当前 v' + APP_VERSION + ' → 新 v' + escapeHtml(info.tag) + '</div>' +
+        (localReady ? '<div style="margin-bottom:6px;font-size:12px;color:#16a34a;background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.3);border-radius:10px;padding:7px 10px;">安装包已下载好，点下面按钮直接安装，不用重新下载</div>' : '') +
         (bodyText ? '<div style="white-space:pre-wrap;">' + escapeHtml(bodyText) + '</div>' : '') +   /* ★v1.1.2.9 更新内容跟随主题色（原固定灰蓝浅色偏淡/深色看不清） */
         '</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="updateLaterBtn">稍后</button>' +
-        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="updateNowBtn">立即更新</button></div></div>';
+        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="updateNowBtn">' + (localReady ? '立即安装' : '立即更新') + '</button></div></div>';
     document.body.appendChild(modal);
     document.getElementById('updateLaterBtn').addEventListener('click', function () { document.body.removeChild(modal); });
     document.getElementById('updateNowBtn').addEventListener('click', function () {
         document.body.removeChild(modal);
-        startUpdate();
+        if (localReady) installLocalUpdate(); else startUpdate();
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
@@ -446,6 +469,16 @@ window.XixiUpdaterCallback = function (state, message) {
             hideLoadingToast();
             showErrorMessage('首次更新需在系统设置中允许安装未知应用，开启后重新点击更新');
             if (desc) desc.textContent = '请允许安装未知应用后重试';
+        } else if (state === 'downloaded') {
+            // ★2026-09-07 下载完成 → 记下待装版本（本地 xixi_update.apk 就绪）；用户若退出安装界面，下次同版本检查可直装
+            try { if (pendingUpdate && pendingUpdate.tag) rememberLocalApkTag('v' + pendingUpdate.tag); } catch (eD) { /* 忽略 */ }
+        } else if (state === 'no_local_apk') {
+            // ★2026-09-07 本地包不存在/被系统清理 → 清记忆并自动重新下载（不死路）
+            hideLoadingToast();
+            clearLocalApkTag();
+            showErrorMessage('本地安装包已失效，正在重新下载');
+            setTimeout(function () { try { startUpdate(); } catch (e2) { /* 忽略 */ } }, 300);
+            if (desc) desc.textContent = '重新下载中…';
         } else if (state === 'installing') {
             hideLoadingToast();
             // ★2026-09-01 通知分级：下载完成 → 通知栏（用户可能切到别的应用等安装）
