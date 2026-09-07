@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.10.1': '## v1.1.10.1 更新内容\n\n**照片心里有数**\n- 设置里「照片占用」点开能看到：一共占了多少空间、接近 300 MB 会提醒\n- 超过 300 MB 自动列出「最占空间的记录」排行榜，点一行直接跳去删照片，清理有的放矢\n- 超过后主按钮变「去清理」，一键扫掉游离的孤立照片\n\n**更新日志更好看**\n- 弹窗标题去掉版本号，只写「更新日志」\n- 一次展示最近三个版本：本次 / 上次 / 上上次，逐条分行，只看本次带标签\n\nMade by XiXi 💛',
     'v1.1.10.0': '## v1.1.10.0 更新内容\n\n**桌面上更好认**\n- App 图标图案整体放大了一圈，桌面上一眼就能找到\n\nMade by XiXi 💛',
     'v1.1.9.10': '## v1.1.9.10 更新内容\n\n**更顺手**\n- 所有弹窗定了条规矩：只有点「保存」才算保存——取消、叉号、点空白关闭都只是放弃本次改动，不会偷偷存下半成品\n\n**看得更舒服**\n- 概览统计的单位统一变小（次 / km / m / 级 / h / min），数字大单位小，一眼分清\n- 关于页的主 logo 放大了一圈，更醒目\n\nMade by XiXi 💛',
     'v1.1.9.9': '## v1.1.9.9 更新内容\n\n**小细节更清楚**\n- 概览「总记录数」加上单位（次）、「平均难度」加上单位（级），一眼看懂\n- 记录弹窗里的「小日记」文字颜色加深，深浅色模式下都更清晰\n- 「数据管理」说明弹窗的内容和按钮拉开距离，不再挤在一起\n\n**引导更顺手**\n- 四张引导卡各自独立：每页右上 ✕ 只关当前页那张，其它页的不受影响\n- 引导按钮统一大小，整齐一排（主按钮实底、次按钮描边区分）\n\nMade by XiXi 💛',
@@ -90,20 +91,41 @@ function showChangelogModal() {
     closeOpenModals(); // ★2026-08-29 防重入
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:340px;">' +
-        '<div class="confirm-modal-title"><span class="material-icons" style="color:#667eea;">history_edu</span>更新日志 · v' + APP_VERSION + '</div>' +
-        '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap;" id="changelogBody">正在加载…</div>' +
+    // ★2026-09-06 标题去掉版本号；内容显示最近三个版本（本次/上次/上上次），本地内置不联网
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:360px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color:#667eea;">history_edu</span>更新日志</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:420px;overflow-y:auto;" id="changelogBody">正在加载…</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="changelogClose">关闭</button></div></div>';
     document.body.appendChild(modal);
     document.getElementById('changelogClose').addEventListener('click', function () { document.body.removeChild(modal); });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
     var el = document.getElementById('changelogBody');
-    // ★2026-08-31 纯本地内置（不联网）：有则显示，无则提示
-    var localBody = BUILTIN_CHANGELOG['v' + APP_VERSION];
-    if (localBody) {
-        if (el) el.textContent = localBody;
-    } else {
-        if (el) el.textContent = '该版本暂无内置更新说明';
+    try {
+        var keys = [];
+        for (var k in BUILTIN_CHANGELOG) { if (BUILTIN_CHANGELOG.hasOwnProperty(k)) keys.push(k); }
+        var cur = 'v' + APP_VERSION;
+        var start = keys.indexOf(cur);
+        if (start < 0) start = 0;
+        var parts = [];
+        for (var i = start; i < keys.length && parts.length < 3; i++) {
+            var kk = keys[i], body = BUILTIN_CHANGELOG[kk];
+            if (!body) continue;
+            parts.push({ ver: kk.replace('v', ''), isCur: kk === cur, body: body });
+        }
+        // ★2026-09-06 徽章只给「本次更新」；上次/上上次只显示版本号+内容（排版更素净）
+        var html = '';
+        for (var j = 0; j < parts.length; j++) {
+            var pt = parts[j];
+            var escB = String(pt.body).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += '<div class="cl-head" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                '<span class="clv" style="font-size:14px;font-weight:800;">' + pt.ver + '</span>' +
+                (j === 0 ? '<span class="cltag" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.35);">本次更新</span>' : '') + '</div>' +
+                '<div class="clb" style="font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escB + '</div>' +
+                (j < parts.length - 1 ? '<div class="cl-sep" style="height:1px;background:rgba(148,163,184,0.25);margin:14px 0;"></div>' : '');
+        }
+        if (el) el.innerHTML = html ? html : '<div style="color:#94a3b8;">暂无内置更新说明</div>';
+    } catch (e2) {
+        if (el) el.textContent = '更新日志加载失败';
     }
 }
 
@@ -472,7 +494,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.10.0';
+var APP_VERSION = '1.1.10.1';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -821,6 +843,142 @@ function photoGetUsage() {
 function photosEnabled() {
     return !photoDB.failed;
 }
+// ★2026-08-21 v1.1.1.5 照片占用统计（设置页显示）
+// ★2026-09-07 P0 照片库总占用上限：建议值 300MB，超过后照片占用详情弹窗出现浅红警示 + 最占空间记录 TOP 排行
+var PHOTO_LIMIT_BYTES = 300 * 1048576;
+
+// 字节 → {v:'382', u:'MB'} / {v:'840', u:'KB'}
+function photoSizeParts(bytes) {
+    bytes = Number(bytes) || 0;
+    if (bytes >= 1048576) return { v: (bytes / 1048576).toFixed(1), u: 'MB' };
+    return { v: String(Math.ceil(bytes / 1024)), u: 'KB' };
+}
+function photoSizeText(bytes) {
+    var p2 = photoSizeParts(bytes);
+    return p2.v + ' ' + p2.u;
+}
+function photoOverLimit(bytes) { return (Number(bytes) || 0) > PHOTO_LIMIT_BYTES; }
+
+// 纯函数：按记录聚合照片大小 → 降序 TOP（只统计记录 photos[] 里真实存在且有 blob 的；孤儿照片不计入任何记录排行但占总量）
+function computePhotoTopRecords(allPhotos, recs, limit) {
+    limit = limit || 10;
+    var sizeMap = {}, cntMap = {};
+    (allPhotos || []).forEach(function (p) {
+        if (!p || !p.id) return;
+        sizeMap[p.id] = (sizeMap[p.id] || 0) + (p.blob && p.blob.size ? p.blob.size : 0);
+        cntMap[p.id] = (cntMap[p.id] || 0) + 1;
+    });
+    var rows = [];
+    (recs || []).forEach(function (r) {
+        if (!r || !r.photos || !r.photos.length) return;
+        var bytes = 0, cnt = 0;
+        r.photos.forEach(function (pid) {
+            if (!sizeMap[pid]) return;   // 孤儿/缺失的照片不归属任何记录
+            bytes += sizeMap[pid]; cnt += cntMap[pid];
+        });
+        if (cnt > 0 && bytes > 0) rows.push({ id: r.id, name: r.name || '未命名', date: (r.createdAt || '').slice(0, 7), count: cnt, bytes: bytes });
+    });
+    rows.sort(function (a, b) { return b.bytes - a.bytes; });
+    return rows.slice(0, limit);
+}
+
+// 打开「照片占用」详情弹窗（confirm-modal 体系）：统计卡+容量条+超限警示+最占空间记录排行
+// ★2026-09-07 按用户确认的 demo 形态实现：底部一条红玻璃主钮——常态「知道了」/ 超限变「去清理」；排行第一行恒红描边；文案语气对齐 demo
+function openPhotoUsageDetailModal() {
+    var modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:340px;padding:16px 15px 14px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color:#667eea;">photo_library</span>照片占用</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:2px;">' +
+        '<div style="max-height:50vh;overflow-y:auto;padding-right:4px;" id="puScroll">' +
+        '<div style="font-size:12px;color:#64748b;padding:14px 2px;text-align:center;">统计中…</div></div></div>' +
+        '<div class="confirm-modal-buttons" style="margin-top:12px;">' +
+        '<button class="check-go-btn ripple-effect" type="button" id="puMain" style="width:100%;padding:10px 0;border-radius:10px;font-size:13.5px;font-weight:600;">知道了</button></div></div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+
+    var scrollEl = document.getElementById('puScroll');
+    // 主钮动作由 then 内按状态（超限/常态）统一 onelick 指定，这里不预绑（防双移除）
+    var mainBtn = document.getElementById('puMain');
+
+    Promise.all([photoGetAll().catch(function () { return []; }), photoCountOrphans().catch(function () { return { count: 0, bytes: 0 }; })])
+        .then(function (res) {
+            var all = res[0] || [], orphan = res[1] || { count: 0, bytes: 0 };
+            var total = (all || []).reduce(function (ss, p) { return ss + (p && p.blob ? p.blob.size : 0); }, 0);
+            var count = (all || []).length;
+            var over = photoOverLimit(total);
+            var sp = photoSizeParts(total);
+            var h = '';
+            // ① 统计卡（玻璃卡片：数字大单位小，对齐 .stat-unit 语言）
+            h += '<div class="pu-card"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">' +
+                '<span class="pu-num">' + sp.v + '<small> ' + sp.u + '</small></span>' +
+                '<span class="pu-sub">共 ' + count + ' 张</span></div>' +
+                '<div class="pu-meter' + (over ? ' over' : '') + '"><i style="width:' + Math.min(100, Math.round(total / PHOTO_LIMIT_BYTES * 100)) + '%;"></i></div>' +
+                '<div class="pu-tip">每张照片按原图画质存放（单条最多 24 张）。总量接近 300 MB 时会提醒你清理，并列出最占空间的记录。</div></div>';
+            // ② 超限警示（浅红玻璃，同过期/删除语义；未超限隐藏）
+            h += '<div class="pu-warn' + (over ? ' on' : '') + '"><span class="material-icons" style="font-size:15px;flex-shrink:0;margin-top:1px;">warning_amber</span>' +
+                '<span>照片已经占了 <b style="color:inherit;">' + photoSizeText(total) + '</b>，建议控制在 300 MB 以内。下面这些记录照片最多，点进去删几张就轻快了。</span></div>';
+            // ③ 最占空间的记录（排行行第一行恒红描边 → 点击跳转该记录）
+            h += '<div class="pu-lab">最占空间的记录<small>· 点一行跳去删照片</small></div>';
+            var rows = computePhotoTopRecords(all, (typeof records !== 'undefined' ? records : []), 10);
+            if (!rows.length) {
+                h += '<div class="pu-empty">' + (count ? '记录都还没带照片 —— 拍第一张就会出现在这里。' : '还没有照片 —— 拍第一张就会出现在这里。') + '</div>';
+            } else {
+                for (var k = 0; k < rows.length; k++) {
+                    var r2 = rows[k], pv = photoSizeParts(r2.bytes);
+                    h += '<div class="pu-tr' + (k === 0 ? ' rank1' : '') + '" data-puid="' + r2.id + '">' +
+                        '<div class="pu-thumb">' + escapeHtml(String(r2.name).charAt(0)) + '</div>' +
+                        '<div class="pu-mid"><div class="pu-tn">' + escapeHtml(r2.name) + '</div>' +
+                        '<div class="pu-ts">' + (r2.date || '') + ' · ' + r2.count + ' 张</div></div>' +
+                        '<div class="pu-tb">' + pv.v + '<small> ' + pv.u + '</small></div>' +
+                        '<div class="pu-go">›</div></div>';
+                }
+            }
+            if (scrollEl) scrollEl.innerHTML = h;
+            // ④ 底部红玻璃主钮（同 demo 单钮形态）：常态「知道了」关闭；超限变「去清理」→ 关弹窗走孤立照片清理流程（无孤立时系统会提示没有可清理的）
+            if (mainBtn) {
+                if (over) {
+                    mainBtn.innerHTML = '<span class="material-icons" style="font-size:16px;">cleaning_services</span>去清理';
+                    mainBtn.onclick = function () {
+                        document.body.removeChild(modal);
+                        setTimeout(function () { try { confirmDeleteOrphanPhotos(); } catch (eX) { /* 忽略 */ } }, 60);
+                    };
+                } else {
+                    mainBtn.innerHTML = '知道了';
+                    mainBtn.onclick = function () { document.body.removeChild(modal); };
+                }
+            }
+            // 排行行点击 → 关弹窗 → 跳记录 tab → 打开该记录（同 demo「跳到那条记录」语义，真实跳转）
+            var sc = document.getElementById('puScroll');
+            if (sc) sc.addEventListener('click', function (ev) {
+                var tr = ev.target && ev.target.closest ? ev.target.closest('.pu-tr') : null;
+                if (!tr || !tr.getAttribute('data-puid')) return;
+                var rid = tr.getAttribute('data-puid');
+                document.body.removeChild(modal);
+                setTimeout(function () {
+                    try {
+                        if (typeof window.switchTab === 'function') window.switchTab('records');
+                        setTimeout(function () { try { openRecordDetailModal(rid, 'view'); } catch (e2) { /* 记录可能被删 */ } }, 220);
+                    } catch (e3) { /* 忽略 */ }
+                }, 80);
+            });
+        })
+        .catch(function () {
+            if (scrollEl) scrollEl.innerHTML = '<div style="font-size:12px;color:#94a3b8;padding:14px 2px;text-align:center;">照片统计不可用（浏览器未支持本地照片库）</div>';
+        });
+}
+
+// 绑定设置页「照片占用」行 → 打开详情（行内清理钮点击不冒泡）
+function bindPhotoUsageRow() {
+    var row = document.getElementById('photoUsageRow');
+    if (!row || row._puBound) return;
+    row._puBound = true;
+    row.addEventListener('click', function (e) {
+        if (e.target && e.target.closest && e.target.closest('#photoCleanBtn')) return;   // 行内快捷清理钮：自己管自己
+        openPhotoUsageDetailModal();
+    });
+}
+
 // ★2026-08-21 v1.1.1.5 照片占用统计（设置页显示）
 // ★2026-09-05 P0-3：顺带扫描孤立照片 → desc 标注「含孤立 N 张」+ 显示「清理孤立照片」按钮
 function refreshPhotoUsage() {

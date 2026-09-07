@@ -353,6 +353,8 @@ function triggerHaptic(ms) {
 function setupEventListeners() {
     // ★2026-08-21 照片占用统计（设置页）
     refreshPhotoUsage();
+    // ★2026-09-07 P0 照片库上限：照片占用行 → 详情弹窗绑定
+    bindPhotoUsageRow();
     // ★2026-08-21 v1.1.1.1 震动反馈：全局点击委托——只对按钮/可点击控件短震，空白处不震
     const hapticClickHandler = function (e) {
         if (!hapticEnabled) return;
