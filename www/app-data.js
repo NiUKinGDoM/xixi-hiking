@@ -2489,6 +2489,23 @@ function renderPlannedCalendar() {
     }
 }
 
+// ★2026-09-07 计划相对今天状态徽章（列表行/日历整月/日历单日三处通用）：过期=红「已过期 N 天」、今天=靛蓝「今天」、明天=天蓝「明天」，后天起无徽章
+function planRelBadgeHtml(createdAt) {
+    try {
+        if (!createdAt) return '';
+        var dd = new Date(createdAt);
+        if (isNaN(dd.getTime())) return '';
+        var now0 = new Date();
+        var t0 = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+        var d0 = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()).getTime();
+        var diff = Math.round((d0 - t0) / 86400000);
+        if (diff < 0) return '<span class="pl-overdue">已过期 ' + Math.abs(diff) + ' 天</span>';
+        if (diff === 0) return '<span class="pl-today">今天</span>';
+        if (diff === 1) return '<span class="pl-tomorrow">明天</span>';
+    } catch (e9) { /* 忽略 */ }
+    return '';
+}
+
 // ★2026-08-31 整月明细：列出当月全部计划，按日期分组，每组前醒目标日期（用户选 B）
 function renderCalMonthDetail() {
     var box = safeGetElementById('calDayDetail');
@@ -2525,7 +2542,7 @@ function renderCalMonthDetail() {
                 : 'padding:6px 12px;border-radius:10px;font-size:12px;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:6px;' +
                 'background:' + (dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.5)') + ';border:0.5px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)') + ';">' +
-                '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(t.name) + '</div>' +
+                '<div style="min-width:0;"><div style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">' + escapeHtml(t.name) + '</span>' + planRelBadgeHtml(t.createdAt) + '</div>' +
                 '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0;">' +
                 '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>' +
@@ -2581,10 +2598,11 @@ function renderCalDayDetail(key) {
             : 'padding:6px 12px;border-radius:10px;font-size:12px;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
         html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:6px;' +
             'background:' + (dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.5)') + ';border:' + itemBorder + ';">' +
-            '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
-            (isMatch ? '<span style="color:' + accent + ';font-size:12px;">● </span>' : '') +
-            escapeHtml(t.name) +
-            (isMatch ? ' <span style="font-size:11px;color:' + accent + ';font-weight:400;">匹配</span>' : '') +
+            '<div style="min-width:0;"><div style="display:flex;align-items:center;gap:6px;min-width:0;">' +
+            (isMatch ? '<span style="color:' + accent + ';font-size:12px;flex-shrink:0;">● </span>' : '') +
+            '<span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">' + escapeHtml(t.name) + '</span>' +
+            (isMatch ? '<span style="font-size:11px;color:' + accent + ';font-weight:400;flex-shrink:0;">匹配</span>' : '') +
+            planRelBadgeHtml(t.createdAt) +
             '</div>' +
             '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
             '<div style="display:flex;gap:6px;flex-shrink:0;">' +
@@ -3574,19 +3592,8 @@ function renderPlannedTripsTable() {
             // ★2026-09-04 阅读态 v2：计划列表瘦身——只显示 名称 + 操作（完成/删除），海拔/难度/时间等收进详情弹窗
             const rowAnimCls2 = plannedRowsAnimated ? '' : 'table-row-animate ';
             const rowDelayStyle2 = plannedRowsAnimated ? '' : ('animation-delay: ' + (Math.min(idx, 6) * 0.05) + 's;');   // ★2026-09-07 限幅同记录表
-            // ★2026-09-05 P1-⑦ 过期标注：计划日早于今天 → 名称旁「已过期 N 天」红标（未完成计划可见，提示去顺延/删除）
-            let _ovBadge = '';
-            try {
-                if (trip.createdAt) {
-                    const _dd = new Date(trip.createdAt);
-                    if (!isNaN(_dd.getTime())) {
-                        const _now0 = new Date(); const _t0 = new Date(_now0.getFullYear(), _now0.getMonth(), _now0.getDate()).getTime();
-                        const _d0 = new Date(_dd.getFullYear(), _dd.getMonth(), _dd.getDate()).getTime();
-                        const _diff = Math.round((_d0 - _t0) / 86400000);
-                        if (_diff < 0) _ovBadge = '<span class="pl-overdue">已过期 ' + Math.abs(_diff) + ' 天</span>';
-                    }
-                }
-            } catch (e7) { _ovBadge = ''; }
+            // ★2026-09-07 状态徽章统一走 planRelBadgeHtml：过期红/今天靛蓝/明天天蓝（v1.1.9.5 起仅过期红标，今天/明天为本次扩展，与日历明细同款）
+            const _ovBadge = planRelBadgeHtml(trip.createdAt);
             return `
                 <tr class="table-row-advanced ${rowAnimCls2}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle2}">
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">

@@ -281,6 +281,20 @@ try {
     (msgIdx >= 0 && puIdx > msgIdx && ih.slice(msgIdx, puIdx).includes('}')) ? ok('.confirm-modal-message 规则已闭合') : bad('.confirm-modal-message 未闭合(历史坏块)!');
 } catch (e) { bad('5n 检查失败: ' + e.message); }
 
+// 5o. 2026-09-07 计划三态徽章（过期红/今天靛蓝/明天天蓝；列表+日历明细通用）
+console.log('-- 5o. 计划三态徽章 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    dj.includes('function planRelBadgeHtml') ? ok('通用徽章函数 planRelBadgeHtml 在') : bad('徽章函数缺失!');
+    dj.includes('class="pl-today"') && dj.includes('class="pl-tomorrow"') && dj.includes('class="pl-overdue"') ? ok('三态徽章 html 在(过期/今天/明天)') : bad('三态徽章缺失!');
+    dj.indexOf('planRelBadgeHtml(trip.createdAt)') > 0 ? ok('列表行已接三态徽章') : bad('列表未接!');
+    const m1 = dj.indexOf('planRelBadgeHtml(t.createdAt)');
+    const m2 = dj.lastIndexOf('planRelBadgeHtml(t.createdAt)');
+    m2 > m1 ? ok('日历明细双处接入(整月/单日)') : bad('日历接入不全!');
+    ih.includes('.pl-today {') && ih.includes('.pl-tomorrow {') && ih.includes('.dark-mode .pl-today') ? ok('pl-today/tomorrow CSS 在(含 dark)') : bad('徽章 CSS 缺失!');
+} catch (e) { bad('5o 检查失败: ' + e.message); }
+
 // 6. 原生文件完整性
 console.log('-- 6. 原生层 --');
 try {

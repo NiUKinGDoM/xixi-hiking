@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-07（v1.1.10.3 / vc234）
+> 最后更新：2026-09-07（v1.1.10.4 / vc235）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.4**（versionCode 235，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.4 更新（计划三态徽章）：通用函数 planRelBadgeHtml(createdAt) 三态——过期=「已过期 N 天」红（.pl-overdue 既有）/ 今天=「今天」靛蓝（.pl-today #4f46e5→dark #a5b4fc，与日历今天强调同系）/ 明天=「明天」天蓝（.pl-tomorrow #0369a1→dark #7dd3fc），后天起无标；接入三处：计划列表行（v1.1.9.5 起仅过期红标 → 统一函数，今天/明天扩展）+ 日历整月明细 renderCalMonthDetail + 日历单日明细 renderCalDayDetail（名称行改 flex：名称 ellipsis flex:1 + 徽章 flex-shrink:0；单日搜索 ●/匹配 标保留）；test.js 5o 6 条 → 149、P0P3 194（更新日志版本断言动态化后 bump 零破坏）；BUILTIN 新增 10.4
 - **正式版 v1.1.10.3**（versionCode 234，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.3 更新（★更新包直装 + 中性 toast + CSS 事故修复批）：**★直装不重下**——下载完成即记版本（PENDING_APK_TAG_KEY=hiking_pending_apk_tag），退出安装界面后再查同版本=弹绿提示「安装包已下载好」+主按钮变「立即安装」直装本地包（MainActivity 新增 installDownloadedApk 桥：cache/downloads/xixi_update.apk 存在且>1MB 直装/缺失 notifyJs no_local_apk → JS 清记+自动重下兜底；旧包无桥自动回退 startUpdate）+ **中性信息 toast**（showInfoMessage .toast-glass.info 灰蓝 info 图标，俏皮话五条改用中性色，绿/红/灰蓝三级齐）+ 更新日志弹窗颜色内联化（IS_DARK 分支 var CL 色板 v/b/tagTx/tagBg/tagBd 全内联，删 #changelogBody cl CSS 6 规则，防安卓 #id CSS 失效——cl CSS 原被 .confirm-modal-message 未闭合吞掉从未生效）+ 记录/计划行 stagger 动画延迟限幅（Math.min(idx,6)*0.05，首屏封顶 0.3s）+ README「🔒 隐私与数据说明」节 + 照片占用弹窗 IDB 双全量读→单读提速 + **★★CSS 误删事故修复**（上轮区间删 cl 误删 489 行通用按钮/toast CSS → 以 GH 副本 1.1.10.2 为基线构造完美版找回；顺带清 3 处历史坏块：body transition 归位（08-30 改造挤出）/ .confirm-modal-message 补 }（吞 cl 的元凶）/ 08-25 edit-mini 无头残渣）+ test.js 新增 5m（直装 6 条）+ 5n（CSS 健康 6 条：括号配平/按钮系/toast 四态/通用样式/cl 零残留/message 闭合）→ 144 项；P0P3 更新日志版本断言动态化（bump 后免手改）→ 194 项；BUILTIN 新增 10.3
 - **正式版 v1.1.10.2**（versionCode 233，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
