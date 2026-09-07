@@ -274,6 +274,8 @@ try {
     allBalanced ? ok('style 块花括号配平(容错仿真深度0)') : bad('style 括号不平衡! 按钮/toast 样式会崩!');
     ih.includes('.confirm-btn-cancel {') && ih.includes('.confirm-btn-delete {') && ih.includes('.confirm-modal-buttons {') ? ok('confirm 按钮系 CSS 在(取消/操作/按钮区)') : bad('confirm 按钮 CSS 缺失!');
     ih.includes('.toast-glass.success {') && ih.includes('.toast-glass.error {') && ih.includes('.toast-glass.info {') && ih.includes('.toast-glass.loading {') ? ok('toast 四态 CSS 在(success/error/info/loading)') : bad('toast CSS 缺失!');
+    const iInfo = ih.indexOf('.toast-glass.info {');
+    (iInfo >= 0 && ih.slice(iInfo, iInfo + 260).includes('background: rgba(226, 232, 240') && ih.slice(iInfo, iInfo + 260).includes('border: 1px solid rgba(100, 116, 139, 0.55)')) ? ok('info toast 玻璃底+边框(与绿/红同款配方)') : bad('info toast 无底无框!');
     ih.includes('.view-caption {') && ih.includes('.stat-card {') && ih.includes('.table-row-advanced {') && ih.includes('#photoUsageRow:active {') ? ok('弹窗/表行/占用行样式在') : bad('通用样式缺失!');
     !ih.includes('#changelogBody') ? ok('cl 依赖 CSS 保持 0 残留') : bad('cl CSS 复现!');
     const msgIdx = ih.indexOf('.confirm-modal-message {');

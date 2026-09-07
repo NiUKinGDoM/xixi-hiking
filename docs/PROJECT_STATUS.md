@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-07（v1.1.10.4 / vc235）
+> 最后更新：2026-09-07（v1.1.10.5 / vc236）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.5**（versionCode 236，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.5 更新（info toast 外观统一）：中性信息提示补成与 success/error/loading 同款配方——background rgba(226,232,240,0.40) + border 1px solid rgba(100,116,139,0.55) + 元素级 color #334155（原只 border-color：无 border-style/width 不显示边框且无底色 → 光杆灰字）；dark rgba(40,50,68,0.40)/rgba(148,163,184,0.45)/#e2e8f0；图标色 #64748b→#94a3b8；test.js 5n 补 info 底/边断言 → 150；BUILTIN 新增 10.5
 - **正式版 v1.1.10.4**（versionCode 235，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.4 更新（计划三态徽章）：通用函数 planRelBadgeHtml(createdAt) 三态——过期=「已过期 N 天」红（.pl-overdue 既有）/ 今天=「今天」靛蓝（.pl-today #4f46e5→dark #a5b4fc，与日历今天强调同系）/ 明天=「明天」天蓝（.pl-tomorrow #0369a1→dark #7dd3fc），后天起无标；接入三处：计划列表行（v1.1.9.5 起仅过期红标 → 统一函数，今天/明天扩展）+ 日历整月明细 renderCalMonthDetail + 日历单日明细 renderCalDayDetail（名称行改 flex：名称 ellipsis flex:1 + 徽章 flex-shrink:0；单日搜索 ●/匹配 标保留）；test.js 5o 6 条 → 149、P0P3 194（更新日志版本断言动态化后 bump 零破坏）；BUILTIN 新增 10.4
 - **正式版 v1.1.10.3**（versionCode 234，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
