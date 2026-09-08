@@ -24,9 +24,10 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
-    'v1.1.10.5': '## v1.1.10.5 更新内容\n\n**提示气泡外观统一**\n- 中性信息提示（灰蓝）补上玻璃底色和描边，和绿色成功/红色错误提示长成一个家族，不再孤零零只有一行字\n\nMade by XiXi 💛',
-    'v1.1.10.4': '## v1.1.10.4 更新内容\n\n**计划状态一眼看清**\n- 计划条新增三种状态小徽章：\"已过期 N 天\"（红）、\"今天\"（靛蓝）、\"明天\"（天蓝）\n- 日历视图（整月明细 + 单日明细）和计划列表都会显示，计划名过长时徽章不会被挤掉\n\nMade by XiXi 💛',
-    'v1.1.10.3': '## v1.1.10.3 更新内容\n\n**更新包下载一次就够**\n- 下载完退出安装界面后，再检查到同一版本：弹窗会提示「安装包已下载好」，点一下直接安装，不用重新下载\n- 万一安装包被系统清理了会自动重新下载，不会卡住\n\n**提示色更讲究**\n- 新增中性信息提示（灰蓝）——玩笑小话不再借用绿色成功提示，颜色各司其职\n\n**更新日志颜色真机加固**\n- 版本号/正文/顶部「新版本」徽章颜色改为内联写死，安卓上不会再出现颜色没生效的情况\n\n**列表更跟手**\n- 记录/计划行的入场动画延迟封顶 0.3 秒，几百条记录首屏也不再拖沓\n\n**修复一批弹窗样式**\n- 修复弹窗按钮与提示样式意外丢失的问题，顺带清理 3 处历史样式残留\n- 照片占用弹窗打开更快（读库次数减半）\n\nMade by XiXi 💛',
+    'v1.1.10.6': '【新增】\n- 隐私政策页：设置—关于应用里可查看「隐私与数据说明」——数据存在哪、云备份怎么用、各项权限用来干什么、崩溃报告是怎么回事，都讲得明明白白\n- 崩溃自动上报：App 运行异常时，会自动把崩溃报告（只有版本号和错误信息，不含你的记录与照片）经你配置的坚果云上传一次，一天最多一次\n- 崩溃日志本地持久保存：重启 App 也不会丢，可随诊断信息一起导出\n\n【修复】\n- 「查看更新日志」按钮精简为「更新日志」\n\nMade by XiXi 💛',
+    'v1.1.10.5': '【修复】\n- 中性信息提示（灰蓝）原来只有一行字，没有底色和边框，现在补上玻璃底色和描边，和绿色成功/红色错误提示长成一个家族\n\nMade by XiXi 💛',
+    'v1.1.10.4': '【新增】\n- 计划条新增三种状态小徽章：「已过期 N 天」（红）、「今天」（靛蓝）、「明天」（天蓝）\n- 日历视图（整月明细 + 单日明细）和计划列表都会显示，计划名过长时徽章不会被挤掉\n\nMade by XiXi 💛',
+    'v1.1.10.3': '【新增】\n- 更新包下载一次就够：下载完退出安装界面后，再检查到同一版本，弹窗会提示「安装包已下载好」，点一下直接安装，不用重新下载；万一安装包被系统清理了会自动重新下载\n- 中性信息提示（灰蓝）——玩笑小话不再借用绿色成功提示，颜色各司其职\n- 版本号/正文/顶部「新版本」徽章颜色改为内联写死，安卓上不会再出现颜色没生效的情况\n\n【修复】\n- 弹窗按钮与提示样式意外丢失的问题，顺带清理 3 处历史样式残留\n\n【优化】\n- 记录/计划行的入场动画延迟封顶 0.3 秒，几百条记录首屏不再拖沓\n- 照片占用弹窗打开更快（读库次数减半）\n\nMade by XiXi 💛',
     'v1.1.10.2': '## v1.1.10.2 更新内容\n\n**照片占用看得明白**\n- 详情弹窗重新排版：大数字统计卡 + 绿色容量条（快满/超 300 MB 自动变红提醒），一眼知道照片占了多大地方\n- 去掉多余的「最占空间记录」榜单，弹窗干净利落\n\n**照片缓存随时可优化**\n- 弹窗底部新增「优化」按钮：只清理「不属于任何记录的缓存照片」，你记录里存的照片一张不动\n- 有缓存时先弹确认（显示几张、能省多少空间）再删；没缓存时会跟你开个小玩笑，点多少次都放心\n\n**细节顺手修**\n- 手机上点照片占用偶尔没反应 → 加了兼容加固\n- 行内旧的重复清理按钮移除，清理入口统一收进弹窗\n\nMade by XiXi 💛',
     'v1.1.10.1': '## v1.1.10.1 更新内容\n\n**照片心里有数**\n- 设置里「照片占用」点开能看到：一共占了多少空间、接近 300 MB 会提醒\n- 超过 300 MB 会提示你照片太多了，建议去记录里删掉几张\n- 超过后主按钮变「去清理」，一键扫掉游离的孤立照片\n\n**更新日志更好看**\n- 弹窗标题去掉版本号，只写「更新日志」\n- 一次展示最近三个版本：本次 / 上次 / 上上次，逐条分行，只看本次带标签\n\nMade by XiXi 💛',
     'v1.1.10.0': '## v1.1.10.0 更新内容\n\n**桌面上更好认**\n- App 图标图案整体放大了一圈，桌面上一眼就能找到\n\nMade by XiXi 💛',
@@ -158,11 +159,38 @@ window.__diagLogs = [];
     var oe = console.error, ow = console.warn;
     console.error = function () { push('ERROR', arguments); return oe.apply(console, arguments); };
     console.warn = function () { push('WARN', arguments); return ow.apply(console, arguments); };
+    var CRASH_Q_KEY = 'hiking_crash_queue';
+    function persistCrashEntry(msg) {
+        try {
+            if (!msg) return;
+            var q = [];
+            var raw = null;
+            try { raw = window.localStorage.getItem(CRASH_Q_KEY); } catch (e) { raw = null; }
+            if (raw) { try { q = JSON.parse(raw) || []; } catch (e2) { q = []; } }
+            if (!Array.isArray(q)) q = [];
+            var last = q[q.length - 1];
+            if (last && last.msg === msg && (Date.now() - (last.ts || 0)) < 60000) return;
+            q.push({ ts: Date.now(), t: new Date().toLocaleString(), msg: String(msg).slice(0, 500) });
+            if (q.length > 20) q.shift();
+            try { window.localStorage.setItem(CRASH_Q_KEY, JSON.stringify(q)); } catch (e3) { /* 忽略 */ }
+        } catch (e4) { /* 忽略 */ }
+    }
+    window.__getCrashQueue = function () {
+        try {
+            var raw = window.localStorage.getItem(CRASH_Q_KEY);
+            return raw ? (JSON.parse(raw) || []) : [];
+        } catch (e) { return []; }
+    };
+    window.__clearCrashQueue = function () {
+        try { window.localStorage.removeItem(CRASH_Q_KEY); } catch (e) { /* 忽略 */ }
+    };
     window.addEventListener('error', function (e) {
         push('ERROR', [e && e.message, e && e.filename + ':' + e.lineno]);
+        persistCrashEntry((e && e.message ? e.message : 'unknown error') + ' @ ' + (e && e.filename ? e.filename : '?') + ':' + (e && e.lineno != null ? e.lineno : '?'));
     });
     window.addEventListener('unhandledrejection', function (e) {
         push('ERROR', ['unhandledrejection', e && e.reason && e.reason.message]);
+        persistCrashEntry('unhandledrejection: ' + (e && e.reason && e.reason.message ? e.reason.message : 'unknown'));
     });
 })();
 // ★2026-08-21 导出诊断信息（版本/数据量/错误日志 → txt）
@@ -173,7 +201,9 @@ function exportDiagnostics() {
         + '记录数: ' + (typeof records !== 'undefined' ? records.length : '?')
         + ' | 计划数: ' + (typeof plannedTrips !== 'undefined' ? plannedTrips.length : '?') + '\n';
     function save(text) {
-        var full = base + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---\n' + ((window.__diagLogs || []).join('\n') || '无');
+        var crashQ = (typeof window.__getCrashQueue === 'function') ? window.__getCrashQueue() : [];
+        var full = base + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---\n' + ((window.__diagLogs || []).join('\n') || '无')
+            + '\n\n--- 崩溃记录（持久，' + crashQ.length + ' 条，重启不丢）---\n' + (crashQ.length ? crashQ.map(function (c) { return c.t + ' ' + c.msg; }).join('\n') : '无');
         try {
             if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
                 // ★2026-08-21 v1.1.1.9 加成功/失败提示（原来静默导出，用户以为没反应）
@@ -507,7 +537,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.10.5';
+var APP_VERSION = '1.1.10.6';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {

@@ -297,6 +297,28 @@ try {
     ih.includes('.pl-today {') && ih.includes('.pl-tomorrow {') && ih.includes('.dark-mode .pl-today') ? ok('pl-today/tomorrow CSS 在(含 dark)') : bad('徽章 CSS 缺失!');
 } catch (e) { bad('5o 检查失败: ' + e.message); }
 
+// 5p. 2026-09-08 崩溃采集/上报 + 隐私政策（设计语言内）
+console.log('-- 5p. 崩溃上报与隐私 --');
+try {
+    const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+    const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+    const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const java = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
+    cj.includes('hiking_crash_queue') && cj.includes('persistCrashEntry') ? ok('JS 崩溃持久队列(重启不丢)在') : bad('崩溃队列缺失!');
+    cj.includes('__getCrashQueue') && cj.includes('__clearCrashQueue') ? ok('队列读写接口在') : bad('队列接口缺失!');
+    cj.includes('崩溃记录（持久') ? ok('导出诊断含持久崩溃队列') : bad('导出未含队列!');
+    sj.includes('function buildCrashReport') && sj.includes('function maybeUploadCrashReport') ? ok('崩溃报告构建+自动上报函数在') : bad('上报函数缺失!');
+    sj.includes("getNativeCrashLog") && sj.includes("'xixi_crash_'") && sj.includes('当日已上报') ? ok('上报含原生日志+当日一次限制') : bad('上报细节缺失!');
+    ij.includes('maybeUploadCrashReport();') ? ok('启动自动上报调用在') : bad('启动调用缺失!');
+    java.includes('public String getNativeCrashLog()') && java.includes('public void clearNativeCrashLog()') && java.includes('readCrashLogText') ? ok('原生崩溃读/清桥在') : bad('原生桥缺失!');
+    ih.includes('id="privacyPolicyBtn"') && ih.includes('隐私政策') ? ok('关于卡隐私政策入口在') : bad('隐私入口缺失!');
+    dj.includes('function showPrivacyPolicyModal') && dj.includes('dmi-group') ? ok('隐私弹窗(玻璃条目式)在') : bad('隐私弹窗缺失!');
+    dj.includes('id="privacy-close"') && dj.includes('联网行为') ? ok('隐私含联网披露(崩溃上报)') : bad('隐私联网说明缺失!');
+    dj.includes('通知与提醒权限') && dj.includes('你的数据你做主') && dj.includes('有问题反馈给 XiXi') ? ok('隐私权限说明/数据自主/联系行在') : bad('隐私补充条目缺失!');
+} catch (e) { bad('5p 检查失败: ' + e.message); }
+
 // 6. 原生文件完整性
 console.log('-- 6. 原生层 --');
 try {

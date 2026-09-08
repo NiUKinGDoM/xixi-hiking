@@ -385,6 +385,61 @@ function autoCheckUpdateOnLaunch() {
 }
 
 // 新版本弹窗：版本号 + 更新内容 + 立即更新
+// ★2026-09-08 崩溃报告构建（仅版本/时间/错误信息，绝不含记录与照片）：JS 持久队列 + 原生崩溃日志
+function buildCrashReport() {
+    var parts = [];
+    try {
+        var q = (typeof window.__getCrashQueue === 'function') ? window.__getCrashQueue() : [];
+        if (q && q.length) {
+            parts.push('=== JS 崩溃记录（' + q.length + ' 条）===');
+            q.forEach(function (c) { parts.push((c && c.t ? c.t : '?') + ' | ' + (c && c.msg ? c.msg : '')); });
+        }
+    } catch (e) { /* 忽略 */ }
+    try {
+        if (window.XixiFileBridge && typeof window.XixiFileBridge.getNativeCrashLog === 'function') {
+            var nlog = window.XixiFileBridge.getNativeCrashLog();
+            if (nlog) { parts.push('=== 原生崩溃记录 ==='); parts.push(String(nlog)); }
+        }
+    } catch (e2) { /* 忽略 */ }
+    if (!parts.length) return '';
+    var head = 'XiXiの徒步小记 崩溃报告\n版本: ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?')
+        + '\n时间: ' + new Date().toLocaleString()
+        + '\n设备: ' + String(navigator.userAgent || '?').slice(0, 120) + '\n\n';
+    return head + parts.join('\n\n');
+}
+
+// ★2026-09-08 崩溃自动上报：仅 App 内 + 已配 WebDAV + 有待报崩溃 + 当日未上报 → PUT 到坚果云 xixi-hiking/；成功清队列记当日；失败静默下轮再试
+function maybeUploadCrashReport() {
+    try {
+        var hasAsyncBridge = window.XixiFileBridge && typeof window.XixiFileBridge.webdavRequestAsync === 'function';
+        var hasSyncBridge = window.XixiFileBridge && typeof window.XixiFileBridge.webdavRequest === 'function';
+        if (!hasAsyncBridge && !hasSyncBridge) return;   // 网页版不上报
+        if (!syncConfig || !syncConfig.server || !syncConfig.username || !syncConfig.password) return;   // 未配云
+        var report = buildCrashReport();
+        if (!report) return;
+        var today = new Date().toISOString().slice(0, 10);
+        var lastUp = '';
+        try { lastUp = AppStore.getItem('hiking_crash_uploaded') || ''; } catch (e) { lastUp = ''; }
+        if (lastUp === today) return;   // 当日已上报
+        var d = new Date();
+        var p2 = function (n) { return String(n).padStart(2, '0'); };
+        var url = buildSyncFileUrl('xixi_crash_' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + '_' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()) + '.txt');
+        if (!url) return;
+        Promise.resolve(ensureSyncParentDirs(url)).then(function () {
+            return webdavRequest(url, 'PUT', utf8ToBase64(report));
+        }).then(function (res) {
+            if (res && res.status >= 200 && res.status < 300) {
+                try {
+                    if (typeof window.__clearCrashQueue === 'function') window.__clearCrashQueue();
+                    if (window.XixiFileBridge && typeof window.XixiFileBridge.clearNativeCrashLog === 'function') window.XixiFileBridge.clearNativeCrashLog();
+                    AppStore.setItem('hiking_crash_uploaded', today);
+                } catch (e3) { /* 忽略 */ }
+                if (typeof showInfoMessage === 'function') showInfoMessage('已自动上报一次崩溃报告');
+            }
+        }).catch(function () { /* 静默：网络/目录失败下轮再试 */ });
+    } catch (e5) { /* 上报异常不影响启动 */ }
+}
+
 // ★2026-09-07 已下载待安装包的记忆 key（本地缓存 xixi_update.apk 对应版本 tag；同版本再点更新 → 直接安装不重下）
 const PENDING_APK_TAG_KEY = 'hiking_pending_apk_tag';
 function hasLocalApkFor(tag) {

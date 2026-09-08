@@ -756,6 +756,17 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // ★2026-09-08 崩溃上报桥：读原生崩溃日志（无则空串）；上报成功后由 JS 调 clearNativeCrashLog 清除
+        @JavascriptInterface
+        public String getNativeCrashLog() {
+            return MainActivity.this.readCrashLogText();
+        }
+
+        @JavascriptInterface
+        public void clearNativeCrashLog() {
+            MainActivity.this.clearCrashLogFile();
+        }
+
         // ★2026-09-07 直接安装本地已下载包（用户退出安装弹窗后再点更新不必重下）：
         // 复用 cache/downloads/xixi_update.apk（下载完成即存在）；不存在/过小 → no_local_apk 让 JS 兜底重新下载
         @JavascriptInterface
@@ -992,6 +1003,35 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             Log.e(TAG, "Failed to write crash log", e);
         }
+    }
+
+    // ★2026-09-08 崩溃上报：读外部私有崩溃日志（xixi_crash.log，JS 启动上报用；上限 60KB）
+    private String readCrashLogText() {
+        try {
+            File dir = getExternalFilesDir(null);
+            File f = new File(dir == null ? getFilesDir() : dir, CRASH_LOG_NAME);
+            if (!f.exists() || f.length() == 0) return "";
+            byte[] buf = new byte[(int) Math.min(f.length(), 61440)];
+            java.io.FileInputStream in = new java.io.FileInputStream(f);
+            int off = 0;
+            while (off < buf.length) {
+                int n = in.read(buf, off, buf.length - off);
+                if (n < 0) break;
+                off += n;
+            }
+            in.close();
+            return new String(buf, 0, off, "UTF-8");
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private void clearCrashLogFile() {
+        try {
+            File dir = getExternalFilesDir(null);
+            File f = new File(dir == null ? getFilesDir() : dir, CRASH_LOG_NAME);
+            if (f.exists()) f.delete();
+        } catch (Exception e) { /* 忽略 */ }
     }
 
     // ★2026-08-27 渐进增强：返回键先问 JS 是否有关弹窗（有则关，无则防误退）

@@ -403,6 +403,13 @@ function setupEventListeners() {
     if (changelogBtn) {
         changelogBtn.addEventListener('click', showChangelogModal);
     }
+    // ★2026-09-08 关于页：隐私政策弹窗
+    const privacyPolicyBtn = document.getElementById('privacyPolicyBtn');
+    if (privacyPolicyBtn) {
+        privacyPolicyBtn.addEventListener('click', function () {
+            if (typeof showPrivacyPolicyModal === 'function') showPrivacyPolicyModal();
+        });
+    }
     // ★2026-08-27 关于页：GitHub 图标 → 外部浏览器打开仓库（原生拦截 http/https 跳转）
     const githubBtn = document.getElementById('githubBtn');
     if (githubBtn) {
@@ -812,6 +819,8 @@ if (document.readyState === 'loading') {
             });
             // ★2026-08-19 打开应用自动检测更新（有网大弹窗/没网小提示+恢复重试）
             setTimeout(autoCheckUpdateOnLaunch, 800);
+            // ★2026-09-08 崩溃自动上报（App 内已配 WebDAV 时；无崩溃/当日已上报则跳过）
+            setTimeout(function () { if (typeof maybeUploadCrashReport === 'function') maybeUploadCrashReport(); }, 2500);
         }, 100);
     });
 } else {

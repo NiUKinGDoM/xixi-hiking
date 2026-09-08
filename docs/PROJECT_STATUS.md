@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-07（v1.1.10.5 / vc236）
+> 最后更新：2026-09-08（v1.1.10.6 / vc237）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.6**（versionCode 237，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.6 更新（四件套 + 日志文案定稿）：**隐私政策页**（关于卡双钮 + showPrivacyPolicyModal 玻璃弹窗 dmi 条目 10 条：数据存哪/云备份/本地备份/照片清理/抹掉足迹/联网行为(含崩溃上报披露)/权限用途两条/数据自主/更新与联系）+ **崩溃日志采集**（app-core hiking_crash_queue 持久队列 20 条重启不丢并入诊断导出；MainActivity readCrashLogText/clearCrashLogFile + JsFileBridge getNativeCrashLog/clearNativeCrashLog 桥）+ **崩溃自动上报**（buildCrashReport+maybeUploadCrashReport：App 内+已配 WebDAV 时启动自动 PUT xixi_crash_*.txt 当日一次成功清队列，失败静默）+ E2E 真实渲染回归工具（e2e/：playwright-core+系统 Edge，9 屏基线像素差 ≤0.5%）+ 「查看更新日志」→「更新日志」；★更新日志小标题格式定稿：`**修复**`→`【修复】`，10.5/10.4/10.3 三条 BUILTIN 文案改【新增】【修复】【优化】并去 `## vX 更新内容` 首行（Release body 同步 PATCH）；test.js 5p → 161；BUILTIN 新增 10.6
 - **正式版 v1.1.10.5**（versionCode 236，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.5 更新（info toast 外观统一）：中性信息提示补成与 success/error/loading 同款配方——background rgba(226,232,240,0.40) + border 1px solid rgba(100,116,139,0.55) + 元素级 color #334155（原只 border-color：无 border-style/width 不显示边框且无底色 → 光杆灰字）；dark rgba(40,50,68,0.40)/rgba(148,163,184,0.45)/#e2e8f0；图标色 #64748b→#94a3b8；test.js 5n 补 info 底/边断言 → 150；BUILTIN 新增 10.5
 - **正式版 v1.1.10.4**（versionCode 235，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里

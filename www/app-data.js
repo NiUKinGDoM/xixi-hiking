@@ -1750,6 +1750,81 @@ function showDataInfoModal() {
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 }
 
+// ★2026-09-08 隐私政策弹窗（关于卡「隐私政策」入口；README 隐私段整理成一屏，dmi-* 条目排版复用深浅自适应；含崩溃上报联网说明）
+function showPrivacyPolicyModal() {
+    closeOpenModals();
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">security</span>
+                隐私与数据说明
+            </div>
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">storage</span>
+                    <div style="min-width:0;"><div class="dmi-title">数据存在哪</div>
+                    <div class="dmi-body">记录与设置存手机本地（网页版存浏览器本地）；照片原图存本地照片库。App 不收集、不上传任何使用数据——无账号、无统计、无广告。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">cloud_done</span>
+                    <div style="min-width:0;"><div class="dmi-title">云备份（可选）</div>
+                    <div class="dmi-body">只有你在设置里主动配置坚果云 WebDAV 后，数据才会同步到<b>你自己的</b>坚果云账号（全程 HTTPS）；账号与密码只存在本机。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">schedule</span>
+                    <div style="min-width:0;"><div class="dmi-title">本地自动备份</div>
+                    <div class="dmi-body">App 端每满 7 天自动存一份纯数据备份到手机「下载」目录（网页版不自动备份），无需手动操作。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">photo_library</span>
+                    <div style="min-width:0;"><div class="dmi-title">照片清理</div>
+                    <div class="dmi-body">「照片占用」里的「优化」只删除不属于任何记录的孤立/缓存照片，你记录里的照片一张不受影响。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">delete_forever</span>
+                    <div style="min-width:0;"><div class="dmi-title">抹掉所有足迹</div>
+                    <div class="dmi-body">可一键清空全部本地数据（云端旧备份不受影响，需自行删除）。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">wifi</span>
+                    <div style="min-width:0;"><div class="dmi-title">联网行为</div>
+                    <div class="dmi-body">①「检查更新」会请求 GitHub Releases 查最新版本（国内访问慢属正常网络现象）；②若 App 运行异常，会自动把崩溃报告（仅版本号、出错信息与时间，绝不含记录与照片）经你配置的坚果云上传一次。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">notifications_active</span>
+                    <div style="min-width:0;"><div class="dmi-title">通知与提醒权限</div>
+                    <div class="dmi-body">通知：计划提醒、备份提醒（可在系统设置里关）；精确闹钟：计划当天早上提醒，系统会单独询问一次；开机启动：重启手机后自动恢复你的计划闹钟。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">settings_applications</span>
+                    <div style="min-width:0;"><div class="dmi-title">其它权限</div>
+                    <div class="dmi-body">安装应用：「检查更新」下载新版后帮你完成安装；震动：点按时轻微反馈；旧版安卓存储写入：备份文件存入「下载」目录。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">file_download</span>
+                    <div style="min-width:0;"><div class="dmi-title">你的数据你做主</div>
+                    <div class="dmi-body">随时可「导出完整备份」带走全部记录与照片；抹掉本地后云端旧备份仍在，可到坚果云网页或 App 里手动删除；想彻底退出：先导出备份 → 删除云端 → 抹掉本地 → 卸载即可。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">support_agent</span>
+                    <div style="min-width:0;"><div class="dmi-title">更新与联系</div>
+                    <div class="dmi-body">本政策随版本更新，最新内容见本页。有问题反馈给 XiXi。</div></div>
+                </div>
+            </div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn-cancel ripple-effect" id="privacy-close">知道了</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const closeBtn = document.getElementById('privacy-close');
+    const closeModal = function () { if (modal.parentNode) document.body.removeChild(modal); };
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+}
+
 function showDeleteConfirmModal(recordId, recordName) {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
