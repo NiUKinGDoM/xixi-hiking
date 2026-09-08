@@ -756,6 +756,45 @@ public class MainActivity extends BridgeActivity {
             }
         }
 
+        // ★2026-09-08 保存二维码到系统相册（支持作者收款码）：Android 10+ MediaStore 免权限；<29 走公开 Pictures 目录
+        @JavascriptInterface
+        public boolean saveQrToGallery(String base64) {
+            try {
+                if (base64 == null || base64.isEmpty()) return false;
+                byte[] img = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+                String name = "xixi_support_" + System.currentTimeMillis() + ".jpg";
+                if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    android.content.ContentValues cv = new android.content.ContentValues();
+                    cv.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name);
+                    cv.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                    cv.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES);
+                    android.net.Uri uri = getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+                    if (uri == null) return false;
+                    java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                    if (os == null) return false;
+                    os.write(img);
+                    os.close();
+                    return true;
+                } else {
+                    java.io.File dir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES);
+                    if (dir == null) return false;
+                    if (!dir.exists() && !dir.mkdirs()) return false;
+                    java.io.File f = new java.io.File(dir, name);
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(f);
+                    fos.write(img);
+                    fos.close();
+                    try {
+                        sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                                android.net.Uri.fromFile(f)));
+                    } catch (Exception e) { /* 扫描广播失败不致命 */ }
+                    return true;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "saveQrToGallery failed", e);
+                return false;
+            }
+        }
+
         // ★2026-09-08 崩溃上报桥：读原生崩溃日志（无则空串）；上报成功后由 JS 调 clearNativeCrashLog 清除
         @JavascriptInterface
         public String getNativeCrashLog() {

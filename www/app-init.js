@@ -403,6 +403,13 @@ function setupEventListeners() {
     if (changelogBtn) {
         changelogBtn.addEventListener('click', showChangelogModal);
     }
+    // ★2026-09-08 关于页：支持作者弹窗
+    const supportAuthorBtn = document.getElementById('supportAuthorBtn');
+    if (supportAuthorBtn) {
+        supportAuthorBtn.addEventListener('click', function () {
+            if (typeof showSupportModal === 'function') showSupportModal();
+        });
+    }
     // ★2026-09-08 关于页：隐私政策弹窗
     const privacyPolicyBtn = document.getElementById('privacyPolicyBtn');
     if (privacyPolicyBtn) {

@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-08（v1.1.10.6 / vc237）
+> 最后更新：2026-09-08（v1.1.10.7 / vc238）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.7**（versionCode 238，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.7 更新（支持作者）：关于卡三钮（更新日志/隐私政策/支持作者 check-go 浅红）→ showSupportModal 两步弹窗（标题纯文字无图标：step1 说明+微信(绿)/支付宝(蓝)双渠道按钮 → step2 白卡收款码大图 + 返回/保存二维码 + 「保存到相册后扫一扫选图」小字）；微信/支付宝收款码 base64 内联 app-data 顶（SUPPORT_QR_WECHAT/ALIPAY，PIL 800 宽 q85 压缩共 +250KB）；saveSupportQr：MainActivity saveQrToGallery 桥（Android10+ MediaStore Pictures 免权限 / <29 公开目录+广播）+ 网页 a[download] 降级；五项优化（标题图标去心形统一入口/无用变量清/临时文件清/test 断言随改）；test.js 5p → 166；BUILTIN 新增 10.7
 - **正式版 v1.1.10.6**（versionCode 237，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.6 更新（四件套 + 日志文案定稿）：**隐私政策页**（关于卡双钮 + showPrivacyPolicyModal 玻璃弹窗 dmi 条目 10 条：数据存哪/云备份/本地备份/照片清理/抹掉足迹/联网行为(含崩溃上报披露)/权限用途两条/数据自主/更新与联系）+ **崩溃日志采集**（app-core hiking_crash_queue 持久队列 20 条重启不丢并入诊断导出；MainActivity readCrashLogText/clearCrashLogFile + JsFileBridge getNativeCrashLog/clearNativeCrashLog 桥）+ **崩溃自动上报**（buildCrashReport+maybeUploadCrashReport：App 内+已配 WebDAV 时启动自动 PUT xixi_crash_*.txt 当日一次成功清队列，失败静默）+ E2E 真实渲染回归工具（e2e/：playwright-core+系统 Edge，9 屏基线像素差 ≤0.5%）+ 「查看更新日志」→「更新日志」；★更新日志小标题格式定稿：`**修复**`→`【修复】`，10.5/10.4/10.3 三条 BUILTIN 文案改【新增】【修复】【优化】并去 `## vX 更新内容` 首行（Release body 同步 PATCH）；test.js 5p → 161；BUILTIN 新增 10.6
 - **正式版 v1.1.10.5**（versionCode 236，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里

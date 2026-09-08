@@ -317,6 +317,11 @@ try {
     dj.includes('function showPrivacyPolicyModal') && dj.includes('dmi-group') ? ok('隐私弹窗(玻璃条目式)在') : bad('隐私弹窗缺失!');
     dj.includes('id="privacy-close"') && dj.includes('联网行为') ? ok('隐私含联网披露(崩溃上报)') : bad('隐私联网说明缺失!');
     dj.includes('通知与提醒权限') && dj.includes('你的数据你做主') && dj.includes('有问题反馈给 XiXi') ? ok('隐私权限说明/数据自主/联系行在') : bad('隐私补充条目缺失!');
+    dj.includes('function showSupportModal') && dj.includes('function saveSupportQr') && dj.includes('SUPPORT_QR_WECHAT') && dj.includes('SUPPORT_QR_ALIPAY') ? ok('支持作者弹窗+双码内联在') : bad('支持作者缺失!');
+    ih.includes('id="supportAuthorBtn"') && ih.includes('支持作者') ? ok('关于卡支持作者入口(浅红 check-go)在') : bad('支持作者入口缺失!');
+    java.includes('saveQrToGallery') ? ok('原生保存相册桥在(MediaStore)') : bad('保存桥缺失!');
+    dj.includes('>微信</button>') && dj.includes('>支付宝</button>') && !dj.includes('6.66 元') && !dj.includes('金额随意') ? ok('双渠道按钮(微信/支付宝)+无金额胶囊') : bad('渠道按钮/金额异常!');
+    dj.includes('保存二维码到相册后') ? ok('保存相册说明小字在') : bad('说明缺失!');
 } catch (e) { bad('5p 检查失败: ' + e.message); }
 
 // 6. 原生文件完整性
