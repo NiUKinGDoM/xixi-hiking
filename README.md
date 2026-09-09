@@ -1,129 +1,75 @@
 # 🏔️ XiXiの徒步小记
 
-一款由 **XiXi** 亲手制作的徒步日记软件：记录每一次徒步、登山的足迹与照片，统计里程与难度，规划下一次出发。
+一款由 **XiXi** 亲手制作的徒步日记软件：记录每一次徒步与登山的足迹、照片与感想，统计里程难度，规划下一次出发。
 
 **Made by XiXi 💛**
 
-> 📜 完整版本演进史见 [CHANGELOG.md](CHANGELOG.md)
+---
 
-## 功能
+## 🌐 在线体验
 
-- 📊 **概览**：统计主卡 4 张（次数/总里程/总用时/最高海拔）+ 矮副卡（平均海拔/平均难度/平均用时）、**徒步年资**（徒步第 N 天 · 从 X年X月X日 出发）、**年度足迹热力图** + 累计爬升（v1.1.8.8 难度分布柱状图已移除、热力图前置，年回入口并入热力图卡）、**年度回顾**（指标 + 月度柱状 + 年度之最，**「和去年比」**开关：去年划线值 + 增幅 + 一年小结）
-- 🔍 **搜索**：顶部搜索框（记录/计划通用，提示词按页切换）、关键词实时匹配、**显示匹配数量**；日历视图下搜索用于定位匹配计划
-- 📝 **记录**：徒步记录增删改、难度 1-5 级（玻璃徽章）、**详情弹窗小日记**（编辑时随手写见闻，保存后展示在记录里）、默认按时间排序、**列表按年份分组**（年份标题行）、**心情/天气统一玻璃弹窗选择**（网格点选/预选高亮/可清空）、**自定义日期时间选择弹窗**（玻璃日历网格 + 时/分步进器长按加速）、**列表/山册双视图**（按山聚合卡片：次数/里程/时长/常伴 + 照片回忆横排带；v1.1.8.9 起添加改**下拉式**：顶部「新建空白记录」独立一行，下拉选最近记录点底部「填充」才带出，防误建）、**点行开详情弹窗**（阅读态 v2：一行只看名称，点行居中弹卡片看照片/指标/难度心情天气，编辑也在弹窗内完成，v1.1.9.1）
-- 📷 **照片**：每条记录最多 24 张（canvas 分批压缩 1280px/JPEG0.7，IndexedDB 存储）、**详情弹窗横向滑动照片墙**（92px 缩略图一排可左右滑，点开灯箱全屏看大图）、**灯箱查看/缩放/保存/翻页 + 编辑弹窗内添加/删除**
-- 📅 **计划**：计划徒步管理、难度选择、完成标记、**过期关怀**（过期计划列表标「已过期 N 天」，启动弹一次：去处理 / 忽略）、**列表/日历双视图**（默认日历，切换按钮固定最右）、**日历整月明细**（每条标日期，点日期聚焦 + 「整月」按钮，二次点击 tab 回当天）、列表按年份分组、**完成 → 自动进入记录编辑补全**（预填名字/难度/海拔）+ **庆祝卡片**（400 粒彩屑）、**启动提醒 + 每天 08:00 系统通知栏**（不打开 App 也能收到，**手机重启自动恢复**）
-- 📳 **震动反馈**：点击按钮短震（设置可开关，默认开，强度跟随系统）
-- 🖼️ **分享卡**：热力图详情一键生成（外置背景图 share-bg.jpg + 白渐变遮罩 + 艺术字，含海拔/难度/心情/天气/同行人）
-- ⚙️ **设置**：
-  - **完整备份**（**.zip 压缩包**：记录 + 计划 + 照片二进制 + 回忆册.html；回忆册用浏览器打开「打印→另存为 PDF」可导出成册）/ **纯数据备份**（不含照片）
-  - **导出诊断报告**（版本/数据量/错误日志，问题排查用）
-  - **WebDAV 数据同步**（坚果云）：上传 .zip 备份/下载恢复（兼容旧 HTML）/管理云端备份、自动同步开关、**自动保留最近 2 份**、**密码加密存储**
-  - **应用内检查更新**（GitHub Release + 国内镜像）：确认弹窗 → 检查 → 立即更新；**更新日志纯本地内置（断网可看）**
-  - **通知分级**：计划提醒/备份提醒（>7 天未同步）/自动同步完成/失败/更新下载完成 → **通知栏**；**通知权限未开启时设置页显示「点击去开启」引导**
-  - 主题（跟随系统/浅色/深色）、震动开关、**照片占用详情**（大数字统计卡 + 300MB 容量条 + 超限警示 +「优化」一键清缓存照片——只删不属于任何记录的孤立照片，记录照片零影响，无缓存时俏皮提示）
-  - **抹掉所有足迹**（危险操作）：记录/计划/照片一键全清，双重确认 + 云端备份不受影响
-  - **本地每周自动备份**（P1-7，App 内）：启动自动检查，距上次 ≥7 天且数据非空即自动存一份纯数据备份到系统「下载」目录（自动进行无需手动，成功走通知栏）；导出弹窗内有一行说明告知此功能
-  - **只有顶栏标题可编辑**（统计概览/难度分布/徒步足迹/计划/记录/设置标题已锁定）
-- 🔍 **全文搜索**：搜索不止山名——小日记、心情、天气、同行人都能搜到（记得内容找不到山名也行）
-- 🚀 **新用户友好**（P1-5/6）：首启**三步引导卡**（写记录 → 看山册 → 计划日历），零记录时可**一键载入示例**（3 条足迹 + 1 条计划）先看懂 App 能干嘛
-- 🔒 **数据可靠与性能**（P0-2/4）：数据加载带 **schema 版本迁移链**（老数据自动透传升级）；热力图**月度预聚合桶** + 统计/山册单遍聚合（万条记录下统计 ~20ms / 山册 ~30ms / 切月 O(1)）
-- 🎨 **液态玻璃 UI**：底栏悬浮导航 4 tab、统一圆角/色系/字体（SimSun 手写风）、全组件统一透明玻璃配方（底栏/弹窗/toast）、**操作按钮统一浅红玻璃**（检查/立即更新/删除/确认完成/分享）
-- 🛡️ **安全（v1.1.10.8 起）**：安装包签名自校验（防重打包）、打包 JS 混淆、核心资源完整性校验、系统备份关闭——修改版会被拦截/提示
+**网页版**（iOS / 桌面浏览器直接可用，推荐"添加到主屏幕"当 App 用）：
 
-🔄 **当前版本**：v1.1.10.8（vc239 · 2026-09-09）
+👉 **https://xixi-hiking.pages.dev**
 
-## 🔒 隐私与数据说明
-- **数据存在哪**：徒步记录与设置存手机本地（网页版存在浏览器本地）；照片原图存本地照片库（IndexedDB），**App 不收集、不上传任何使用数据**，无账号、无统计、无广告
-- **云备份（可选）**：只有你在设置里主动配置坚果云 WebDAV 后，数据才会同步到**你自己的**坚果云账号（走 HTTPS）；账号与密码只存在本机
-- **本地自动备份**：App 端每满 7 天自动存一份纯数据备份到手机「下载」目录（网页版不自动备份）
-- **照片清理**：「照片占用」里的「优化」只删除"不属于任何记录的孤立/缓存照片"，记录里的照片不受影响；「抹掉所有足迹」可一键清空全部本地数据（云端旧备份不受影响）
-- **唯一联网行为**：内置「检查更新」会请求 GitHub Releases 查最新版本（国内访问慢属正常网络现象）
+- Cloudflare Pages 全球 CDN，域名长期稳定
+- 数据存在你自己的浏览器本地，不上传任何第三方
+- Android 请下载 APK（见下方 Release）
 
-## 技术栈
+## ✨ 功能一览
 
-- **Capacitor 6.2.1** + Android WebView
-- HTML/CSS（`www/index.html`）+ 主 JS 拆 4 外部文件（★2026-08-30 方案A：`www/app-core.js` 工具/数据声明 / `app-data.js` 记录计划渲染 / `app-sync.js` WebDAV 备份 / `app-init.js` 启动）
-- **原生桥**：OkHttp 3.14.9（WebDAV，PROPFIND/MKCOL 等任意方法）+ 文件保存 + 震动（跟随系统强度）+ **系统通知**（showNotification，计划提醒走通知栏）
-- 最低支持 Android 7（minSdk 22），target/compileSdk 36（Android 16）
-- 数据存储：localStorage（记录/计划/设置）+ IndexedDB（照片）
+| 板块 | 能力 |
+|---|---|
+| 📊 概览 | 统计主卡（次数/里程/用时/最高海拔）+ 年资 + 年度足迹热力图 + 年度回顾（含"和去年比"） |
+| 📝 记录 | 增删改、难度 1-5、小日记、心情/天气、照片（最多 24 张/条）、按年份分组、列表/山册双视图、点行弹窗阅读与编辑 |
+| 📷 照片 | 本地压缩存储（IndexedDB）、详情横滑照片墙、全屏灯箱缩放/保存 |
+| 📅 计划 | 列表/日历双视图、三态徽章（过期/今天/明天）、完成自动转记录+庆祝、每天 08:00 通知提醒 |
+| 🔍 搜索 | 山名 + 小日记 + 心情/天气/同行人全文搜索，计划日历定位 |
+| 🖼️ 分享 | 一键生成分享卡（海拔/难度/心情/天气/同行人） |
+| ⚙️ 设置 | 完整备份 zip / 纯数据备份 / WebDAV 坚果云同步（自动保留 2 份）/ 导出诊断 / 检查更新（内置离线更新日志）/ 深色模式 / 震动开关 / 照片占用优化 / 抹掉足迹 |
+| 🛡️ 安全 | 安装包签名自校验（防重打包）+ 打包代码混淆 + 资源完整性校验 + 系统备份关闭（v1.1.10.8 起） |
 
-## 目录结构
+## 🔒 隐私承诺
 
-```
-hiking-app3/
-├── www/                    # 前端源码（HTML/CSS + 4 个外部 JS）
-│   ├── index.html          # HTML+CSS+引脚本（约 4800 行）
-│   ├── app-core.js         # 工具/常量/主题/存储/toast/通知
-│   ├── app-data.js         # 记录/计划/搜索/照片/灯箱/统计/热力图
-│   ├── app-sync.js         # 同步/WebDAV/备份/导入导出/更新检查
-│   ├── app-init.js         # init/事件绑定/启动
-│   ├── sw.js               # 网页版离线缓存（CACHE v4 含 index.html + 4 JS + share-bg.jpg）
-│   └── share-bg.jpg        # 分享卡背景图（外置，发版要同步）
-├── android/                # Android 工程
-│   └── app/
-│       ├── src/main/java/com/xixi/hiking/MainActivity.java  # 原生桥（WebDAV/文件/震动/通知）
-│       ├── src/main/AndroidManifest.xml    # 权限（INTERNET/VIBRATE/POST_NOTIFICATIONS 等）
-│       ├── src/main/assets/public/  # 打包进 APK（index.html + 4 个 app-*.js + share-bg.jpg + sw.js，改完要全同步，漏 JS 会白屏）
-│       ├── proguard-rules.pro    # R8 规则（★JS 桥类名禁 allowobfuscation）
-│       └── build.gradle          # 版本号（用 bump.js 改，勿手改）
-├── bump.js                  # 版本号递增脚本（build.gradle + app-core.js APP_VERSION + index.html 版本显示）
-├── prev-snapshot.js         # 发布前回滚点快照（www 7 文件+原生 → backups/prev-<版本>/，事故可整体还原）
-├── test.js                  # 自动测试①（改完必跑：语法/关键函数/死代码/结构/版本/数据层/schema/照片GC/P1体验/新功能源码 129 项）
-├── test-ui.js               # 自动测试②（jsdom UI 渲染测试 30 项：记录/计划渲染搜索分页徽标空态/键盘跟随/批量/弹窗防重入/转义）
-└── _test_p0p3.js            # 自动测试③（jsdom 集成链路 191 项：…详情照片横滑/编辑布局顺序/批量勾选/分页引导逐按钮直达/小日记/全文搜索/抹掉数据/过期关怀/回忆册打印/照片占用弹窗/双钮优化/俏皮 toast/数据管理 i 弹窗等，发布前必跑）
-```
+- 记录与照片**只存本机**（网页版存浏览器本地），无账号、无统计、无广告
+- 唯一可选的联网：你主动配置的 **坚果云 WebDAV**（数据同步到你自己的账号）+ 「检查更新」查版本
+- 完整说明见 App 内「设置 → 关于应用 → 隐私政策」
 
-## 开发流程
+## 📱 下载 Android 版
+
+GitHub Releases 获取最新 APK：https://github.com/NiUKinGDoM/xixi-hiking/releases
+
+（App 内置"检查更新"，装好后可直接在应用内升级，支持直装免重下）
+
+## 🔧 技术概览
+
+- **Capacitor 6**（Android WebView）+ 原生桥（WebDAV OkHttp / 文件 / 震动 / 通知）
+- 前端：`www/index.html` + 4 个外部 JS（core 工具 / data 数据 / sync 同步 / init 启动）+ sw.js 离线缓存
+- 存储：localStorage（记录/计划/设置）+ IndexedDB（照片）；最低 Android 7，targetSdk 36
+- 发布：GitHub Release 分发 APK + Cloudflare Pages 自动发布网页版（push 即部署）
+
+## 🧑‍💻 开发者入口
+
+> 完整交接手册（版本规则/发布流程/踩坑经验）见 **`docs/PROJECT_STATUS.md`**；演进史见 **CHANGELOG.md**；历史变更与决策见 `.workbuddy/memory/` 日志
 
 ```bash
-# 1. 改 www/（index.html + app-core/app-data/app-sync/app-init.js，★2026-08-30 方案A 拆分）
-# 2. 自动测试（语法 + 关键函数 + 死代码残留 + HTML 结构 + 版本同步 + 数据层逻辑）
-node test.js
-# 2b. UI 层测试（jsdom 渲染真实 DOM，发布前必跑；依赖隔离 workspace 的 jsdom，绝对路径 require）
-node test-ui.js
-# 3. 版本号递增（vc+1 + 版本名自动进位；build.gradle + app-core.js APP_VERSION + index.html 版本显示）
-node bump.js
-# 4. 同步到 assets（★7 个文件必须全同步：index.html + 4 JS + share-bg.jpg + sw.js，漏 JS 白屏）
-cp www/index.html www/app-core.js www/app-data.js www/app-sync.js www/app-init.js android/app/src/main/assets/public/
-cp www/share-bg.jpg www/sw.js android/app/src/main/assets/public/
-# 5. 构建 Release（R8 混淆 + 资源压缩 + 签名）
-cd android && ./gradlew assembleRelease
+# 快速自检三连（改完代码必跑）
+node test.js          # 语法/数据层/结构/版本 断言
+node test-ui.js       # jsdom UI 渲染
+node _test_p0p3.js    # 集成链路（发布前必跑）
+
+# 发版（详见交接手册，勿跳步）
+node prev-snapshot.js && node bump.js   # 回滚点 + 版本递增
+node tools/security.js obf <assets> <assets> && node tools/security.js hash <assets>  # 安全两步
 ```
 
-> ★**五项优化约定（2026-08-23 起，每次更新必做）**：①设计统一性（颜色/字体/圆角/间距/按钮）②底层代码清理（不动功能）③流畅度帧率（保留动效只优化）④**文档更新（README/CHANGELOG/PROJECT_STATUS 随版本同步）**⑤**查 bug（扫描潜在问题点：死代码/残留样式/逻辑漏洞）**——完成后汇报
+版本号规则：`vc → 1.x.x.x`，每段 0~10 满十进位，用 `node bump.js` 一键同步（勿手改）；已发布版本号不可复用。
 
-产物：`android/app/build/outputs/apk/release/app-release.apk`
+## ⚠️ 签名
 
-## 📌 版本号规则
+- 签名密钥（debug.keystore）**不入库**，本地备份在 `backups/android-signing/`
+- APK 签名 SHA-256：`9396fee4…`（保持同一签名才能覆盖安装不丢数据；更换密钥须同步 App 内签名白名单）
 
-- **versionName = 按 versionCode 数出的 `1.x.x.x`**：每段 0~10 共 11 个值，满 10 进位
-- 公式：索引 = vc−1；第二段=(索引//121)%11；第三段=(索引//11)%11；第四段=索引%11
-- 对照：vc99=1.0.8.10、vc100=1.0.9.0、vc122=1.1.0.0、vc131=1.1.0.9
-- ⚠️ **历史说明**：v1.1.1.0~1.1.1.4（vc132~136）为错位命名（比公式 +1，v1.1.1.0 发布时 D4=10 误算为 0），已发布固定；当前序列由 bump.js 基于当前名递增，不再用公式反推
-- ⚠️ bump 必须同步四处：build.gradle（versionCode + versionName）+ index.html（`APP_VERSION` 全局变量 + 版本显示），用 `node bump.js` 一键完成
-- ⚠️ **已发布的版本号不可复用**（App 内检查更新按 versionCode 判定）
+---
 
-## 🚀 发布流程（按序执行）
-
-> 🌐 **网页版正式通道（2026-09-09）**：https://xixi-hiking.pages.dev —— Cloudflare Pages + GitHub Git 集成，**push master 即自动部署**（Root=www），iOS/朋友长期用此域名（不会漂移）；workbuddy_sites 临时链接仅作发版前验收预览
-
-1. **网页先行（用户验收）**：部署 `hiking-app3/www` 网页版 → **用户看网页版确认「同步」后**才 bump/构建/发布
-2. **发布链**：回滚点快照（prev-snapshot.js）→ `node bump.js` → 三自检（test/test-ui/_test_p0p3）→ 同步 assets+temp → 构建 Release（R8 + 签名）→ push GitHub master → 建 Release 挂 APK（body 只写更新 + `Made by XiXi 💛`）
-3. **本地不留 APK**（★2026-09-03 起）：Release 上传 + 下载验证（md5/PK）通过后本地 APK 即删除，历史版本从 Release assets 取
-
-> ⚠️ 应用内更新前提：仓库 **public**；Release body 只写更新内容 + `Made by XiXi 💛`（不写签名描述段）
-
-## 构建要点（踩坑记录）
-
-- **桌面路径构建会文件锁** → 先复制到 `%TEMP%\hiking-build` 再构建
-- **WebDAV 必须 OkHttp**（HttpURLConnection 反射在 Android 9+ 被 hidden API 拦截）
-- **R8 keep 规则**：JS 桥 `MainActivity$JsFileBridge` 禁 `allowobfuscation`
-- **WebView 兼容（★2026-09-01 用户澄清）**：用户设备 WebView 为跟随系统自动更新的**新版**（Chrome 内核），`inset`/`aspect-ratio` 等现代 CSS 属性可用；仅面向旧 Android（5-7）的兜底习惯保留，不再假设设备旧
-- GitHub 更新流程：**clone 远程 → 覆盖文件 → 提交推送**（勿 git init 重建）
-
-## 签名与安全
-
-- ⚠️ **签名密钥（debug.keystore）绝不在本仓库**——本地备份在 `backups/android-signing/`
-- APK 签名 SHA-256：`9396fee4e13f3fd1f939d66820d0ca623187be62234fcfcc621577b63ccf8899`（保持签名 → 覆盖安装数据不丢）
-- 坚果云账号/密码是用户隐私，不入库
+**Made by XiXi 💛**
