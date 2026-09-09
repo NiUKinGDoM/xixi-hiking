@@ -65,11 +65,7 @@ node tools/security.js obf <assets> <assets> && node tools/security.js hash <ass
 
 版本号规则：`vc → 1.x.x.x`，每段 0~10 满十进位，用 `node bump.js` 一键同步（勿手改）；已发布版本号不可复用。
 
-## ⚠️ 签名
-
-- 签名密钥（debug.keystore）**不入库**，本地备份在 `backups/android-signing/`
-- APK 签名 SHA-256：`9396fee4…`（保持同一签名才能覆盖安装不丢数据；更换密钥须同步 App 内签名白名单）
-
+> 🛡️ **正版提示**：请从上方 Release 下载并覆盖安装，勿安装来路不明的安装包（App 内置签名校验，非官方包会被拦截）。所有正式版使用同一签名，覆盖安装不会丢数据。
 ---
 
 **Made by XiXi 💛**
