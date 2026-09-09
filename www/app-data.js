@@ -1755,6 +1755,48 @@ function showDataInfoModal() {
 }
 
 // ★2026-09-08 隐私政策弹窗（关于卡「隐私政策」入口；README 隐私段整理成一屏，dmi-* 条目排版复用深浅自适应；含崩溃上报联网说明）
+// ★2026-09-09 免责声明：记录工具定位 + 户外安全提示（不引导野山/风险自担）
+function showDisclaimerModal() {
+    closeOpenModals();
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML = `
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">
+            <div class="confirm-modal-title">
+                <span class="material-icons" style="color: #4f46e5;">hiking</span>
+                免责声明
+            </div>
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">hiking</span>
+                    <div style="min-width:0;"><div class="dmi-title">记录工具，不是领队</div>
+                    <div class="dmi-body">本应用只帮你记录徒步足迹与心情，不提供路线规划、探路、向导或任何户外安全指导——它不是领队，也不是救生员。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">signpost</span>
+                    <div style="min-width:0;"><div class="dmi-title">请走正规路线</div>
+                    <div class="dmi-body">本应用不引导、也不建议前往未开发的野山、保护区或禁止进入的区域。出行请选择正规开放路线，遵守当地规定。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">wb_sunny</span>
+                    <div style="min-width:0;"><div class="dmi-title">出发前做好准备</div>
+                    <div class="dmi-body">先看天气预报与封山公告，结伴而行，带足水、照明与充电宝；不逞强、不走夜路，量力而行，安全永远是第一位的。</div></div>
+                </div>
+                <div class="dmi-group">
+                    <span class="material-icons dmi-ic">warning</span>
+                    <div style="min-width:0;"><div class="dmi-title">风险自担</div>
+                    <div class="dmi-body">户外活动存在固有风险。记录中的海拔、难度等数据由你自行填写，仅作个人参考，并非专业测量。使用本应用即表示你理解并自行承担相应责任。</div></div>
+                </div>
+            </div>
+            <div class="confirm-modal-buttons">
+                <button id="disclaimer-close" class="ripple-effect confirm-btn-cancel">知道了</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#disclaimer-close').addEventListener('click', function () { if (modal.parentNode) document.body.removeChild(modal); });
+    modal.addEventListener('click', function (e) { if (e.target === modal && modal.parentNode) document.body.removeChild(modal); });
+}
+
 function showPrivacyPolicyModal() {
     closeOpenModals();
     const modal = document.createElement('div');

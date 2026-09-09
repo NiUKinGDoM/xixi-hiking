@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-09（v1.1.10.8 / vc239）
+> 最后更新：2026-09-09（v1.1.10.9 / vc240）
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 https://xixi-hiking.pages.dev**（**已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）
 > ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）
@@ -11,8 +11,8 @@
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
-- **▶待发 v1.1.10.8（vc239）**：安全纵深三件套（签名自校验防重打包 / 打包副本 JS 混淆 / ResGuard 资源软校验）+ allowBackup=false；发布流程已含「同步后 obf 混淆 temp + hash 生成 ResGuard」两步；配套工具 tools/security.js（obf/hash）、e2e 混淆版基线（E2E_ROOT+E2E_BASELINE=baseline-obf）；test 171
-- **★2026-09-08 安全设计总览（新模型必读）**：①**签名自校验**=硬拦截（MainActivity.onCreate 最先 verifyInstalledSignature，SIGN_EXPECT_SHA=当前 debug.keystore 9396fee4…；⚠换签名密钥必须同步改常量否则正式包被自己拒用；失败弹「安装包校验失败」finish）②**JS 混淆**=打 APK 的 temp assets/public 副本经 javascript-obfuscator（tools/security.js obf），www 源与测试永远明文（混淆只入 APK）③**资源软校验**=tools/security.js hash <混淆目录> 生成 ResGuard.java（index.html+4JS 的 SHA-256）→ verifyAssetsIntegrity 启动比对，异常仅弹「资源校验提示」不退出（防 hash 更新遗漏误伤）④**allowBackup=false**（防 adb/系统备份拖走记录照片）。已知坑：gradle 增量构建不感知 assets 内容变化→构建前若刚混淆过加 `--rerun-tasks`；E2E 验证混淆版用 E2E_ROOT=混淆目录 E2E_BASELINE=baseline-obf
+- **正式版 v1.1.10.9**（versionCode 240，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.9 更新（免责声明 + 内部清理）：关于卡四钮两行（隐私政策/更新日志、免责声明/支持作者，padding 14+flex 纵向 gap8）→ showDisclaimerModal（confirm 玻璃弹窗 dmi 4 条：记录工具不是领队/请走正规路线(不引导野山)/出发前准备/风险自担，hiking 图标 + 知道了灰蓝）；**修复 www/index.html 被外部编辑器注入 424 处 data-page-node-id 冗余属性**（内容零影响但破坏 stat-unit 断言，正则剥净 CRLF 保持）；test 174/30/194；BUILTIN 新增 10.9
 - **正式版 v1.1.10.8**（versionCode 239，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.8 更新（安全纵深三件套）：①MainActivity.onCreate 签名自校验 verifyInstalledSignature（SIGN_EXPECT_SHA=debug.keystore 9396fee4…，失败弹「安装包校验失败」退出；⚠换签名密钥必同步改常量）②打包 JS 混淆（tools/security.js obf 混淆 temp assets/public 4 业务 JS 才入包，www 源明文；发布流程加安全两步）③资源软校验（tools/security.js hash 生成 ResGuard.java 5 文件 SHA-256 → verifyAssetsIntegrity 启动比对不符弹提示）+ Manifest allowBackup/fullBackupContent=false；工具链 tools/security.js（obf/hash，NODE_PATH 指向隔离 node workspace）；test 171/30/194；BUILTIN 新增 10.8
 - **正式版 v1.1.10.7**（versionCode 238，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里

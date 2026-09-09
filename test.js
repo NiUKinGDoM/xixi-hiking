@@ -317,12 +317,29 @@ try {
     dj.includes('function showPrivacyPolicyModal') && dj.includes('dmi-group') ? ok('隐私弹窗(玻璃条目式)在') : bad('隐私弹窗缺失!');
     dj.includes('id="privacy-close"') && dj.includes('联网行为') ? ok('隐私含联网披露(崩溃上报)') : bad('隐私联网说明缺失!');
     dj.includes('通知与提醒权限') && dj.includes('你的数据你做主') && dj.includes('有问题反馈给 XiXi') ? ok('隐私权限说明/数据自主/联系行在') : bad('隐私补充条目缺失!');
+    dj.includes('function showDisclaimerModal') && dj.includes('免责声明') && dj.includes('野山') && dj.includes('风险自担') && dj.includes('不是领队') ? ok('免责声明弹窗+户外安全条目在(野山/风险自担)') : bad('免责声明缺失!');
+    ih.includes('id="disclaimerBtn"') && ih.includes('>免责声明<') ? ok('关于卡免责声明入口在') : bad('免责声明入口缺失!');
+    ij.includes("disclaimerBtn") && ij.includes('showDisclaimerModal') ? ok('app-init 免责声明绑定在') : bad('免责声明绑定缺失!');
     dj.includes('function showSupportModal') && dj.includes('function saveSupportQr') && dj.includes('SUPPORT_QR_WECHAT') && dj.includes('SUPPORT_QR_ALIPAY') ? ok('支持作者弹窗+双码内联在') : bad('支持作者缺失!');
     ih.includes('id="supportAuthorBtn"') && ih.includes('支持作者') ? ok('关于卡支持作者入口(浅红 check-go)在') : bad('支持作者入口缺失!');
     java.includes('saveQrToGallery') ? ok('原生保存相册桥在(MediaStore)') : bad('保存桥缺失!');
     dj.includes('>微信</button>') && dj.includes('>支付宝</button>') && !dj.includes('6.66 元') && !dj.includes('金额随意') ? ok('双渠道按钮(微信/支付宝)+无金额胶囊') : bad('渠道按钮/金额异常!');
     dj.includes('保存二维码到相册后') ? ok('保存相册说明小字在') : bad('说明缺失!');
 } catch (e) { bad('5p 检查失败: ' + e.message); }
+
+// 5q. 2026-09-08 安全纵深（防重打包/资源校验/备份关闭/混淆工具链）
+console.log('-- 5q. 安全纵深 --');
+try {
+    const java = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
+    const man = fs.readFileSync(path.join(__dirname, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+    const rg = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/ResGuard.java'), 'utf8');
+    const sec = fs.readFileSync(path.join(__dirname, 'tools/security.js'), 'utf8');
+    java.includes('verifyInstalledSignature') && java.includes('SIGN_EXPECT_SHA') && java.includes('sha256Hex') ? ok('防重打包签名自校验在') : bad('签名校验缺失!');
+    man.includes('allowBackup="false"') && man.includes('fullBackupContent="false"') ? ok('系统备份已关闭(数据防拖库)') : bad('allowBackup 未关!');
+    java.includes('verifyAssetsIntegrity') && rg.includes('HASHES') && rg.split('"index.html"').length === 2 ? ok('资源完整性校验+ResGuard 清单在') : bad('资源校验缺失!');
+    java.includes('安装包校验失败') && java.includes('资源校验提示') ? ok('篡改提示对话框文案在') : bad('提示缺失!');
+    sec.includes('javascript-obfuscator') && sec.includes("cmd === 'obf'") && sec.includes("cmd === 'hash'") ? ok('安全工具链(obf/hash)在') : bad('工具链缺失!');
+} catch (e) { bad('5q 检查失败: ' + e.message); }
 
 // 6. 原生文件完整性
 console.log('-- 6. 原生层 --');

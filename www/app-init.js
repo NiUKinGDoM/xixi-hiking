@@ -410,6 +410,13 @@ function setupEventListeners() {
             if (typeof showSupportModal === 'function') showSupportModal();
         });
     }
+    // ★2026-09-09 关于页：免责声明弹窗
+    const disclaimerBtn = document.getElementById('disclaimerBtn');
+    if (disclaimerBtn) {
+        disclaimerBtn.addEventListener('click', function () {
+            if (typeof showDisclaimerModal === 'function') showDisclaimerModal();
+        });
+    }
     // ★2026-09-08 关于页：隐私政策弹窗
     const privacyPolicyBtn = document.getElementById('privacyPolicyBtn');
     if (privacyPolicyBtn) {
