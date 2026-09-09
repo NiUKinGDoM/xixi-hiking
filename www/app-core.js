@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.1.10.10': '【新增】\n- 回忆册日记排版：完整备份里的「回忆册.html」改成日记样式——日期大字、山名、难度五档圆点、心情天气同行、小日记全文、照片墙，用浏览器 Ctrl+P 存成 PDF，更像一本徒步日记\n- 导出诊断包含全部记录明细：每条记录完整列出（含小日记、心情、天气、同行人），核对与存档都方便\n\n【优化】\n- 关于页按钮重新排两行（隐私政策·免责声明 / 支持作者·更新日志），更整齐\n\nMade by XiXi 💛',
     'v1.1.10.9': '【新增】\n- 免责声明：设置—关于应用可查看——本应用只是徒步记录工具，不引导、不建议前往未开发的野山，出行请走正规路线、量力而行、风险自担\n\n【优化】\n- 关于页按钮排成两行（隐私政策 / 更新日志、免责声明 / 支持作者），更整齐\n\nMade by XiXi 💛',
     'v1.1.10.8': '【新增】\n- 安装包安全加固：官方安装包加签名校验与代码混淆，被改动或重打包的安装包会被拦截并提示，用得更安心\n\n【优化】\n- 关闭系统自动备份：记录与照片不再被系统备份带走（App 内导出 / 坚果云备份不受影响）\n\nMade by XiXi 💛',
     'v1.1.10.7': '【新增】\n- 支持作者：设置—关于应用里点「支持作者」，可以请 XiXi 喝杯奶茶（微信 / 支付宝，纯自愿，不付费也有全部功能）\n\nMade by XiXi 💛',
@@ -203,9 +204,57 @@ function exportDiagnostics() {
         + '导出时间: ' + new Date().toLocaleString() + '\n'
         + '记录数: ' + (typeof records !== 'undefined' ? records.length : '?')
         + ' | 计划数: ' + (typeof plannedTrips !== 'undefined' ? plannedTrips.length : '?') + '\n';
+    function pad2n(x) { x = String(x); return x.length < 2 ? '0' + x : x; }
+    function fmtDayX(ts) { if (!ts) return '?'; try { var d = new Date(ts); return d.getFullYear() + '-' + pad2n(d.getMonth() + 1) + '-' + pad2n(d.getDate()); } catch (e) { return String(ts); } }
+    // ★2026-09-09 记录明细（含小日记等全部字段；诊断导出要看全数据）
+    function buildRecordsDetail() {
+        var NL = String.fromCharCode(10);
+        var out = [];
+        try {
+            var arr = (typeof records !== 'undefined' && records) ? records.slice() : [];
+            arr.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+            if (!arr.length) out.push('（暂无记录）');
+            arr.forEach(function (r, i) {
+                if (!r) return;
+                var h = [];
+                h.push('[' + (i + 1) + '] ' + (r.name || '未命名') + (r.createdAt ? '  ' + fmtDayX(r.createdAt) : ''));
+                if (r.elevation) h.push('海拔 ' + r.elevation + 'm');
+                if (r.distance) h.push('里程 ' + r.distance + 'km');
+                if (r.duration) h.push('用时 ' + r.duration);
+                if (r.difficulty != null && r.difficulty !== '') h.push('难度 ' + r.difficulty + '/5');
+                if (r.mood) h.push('心情 ' + r.mood);
+                if (r.weather) h.push('天气 ' + r.weather);
+                if (r.companions && r.companions.length) h.push('同行 ' + (Array.isArray(r.companions) ? r.companions.join('、') : r.companions));
+                h.push('照片 ' + ((r.photos && r.photos.length) || 0) + ' 张');
+                out.push(h.join(' | '));
+                if (r.notes && String(r.notes).trim()) out.push('    小日记: ' + String(r.notes).trim());
+                out.push('');
+            });
+        } catch (e) { out.push('（记录明细解析异常: ' + (e && e.message ? e.message : e) + '）'); }
+        return out.join(NL);
+    }
+    // ★2026-09-09 计划明细
+    function buildPlansDetail() {
+        var NL = String.fromCharCode(10);
+        var out = [];
+        try {
+            var arr = (typeof plannedTrips !== 'undefined' && plannedTrips) ? plannedTrips.slice() : [];
+            if (!arr.length) out.push('（暂无计划）');
+            arr.forEach(function (t, i) {
+                if (!t) return;
+                var h = [];
+                h.push('[' + (i + 1) + '] ' + (t.name || '未命名') + (t.createdAt ? '  创建 ' + fmtDayX(t.createdAt) : ''));
+                if (t.difficulty != null && t.difficulty !== '') h.push('难度 ' + t.difficulty + '/5');
+                if (t.elevation) h.push('海拔 ' + t.elevation + 'm');
+                if (t.done) h.push('已完成');
+                out.push(h.join(' | '));
+            });
+        } catch (e) { out.push('（计划明细解析异常）'); }
+        return out.join(NL);
+    }
     function save(text) {
         var crashQ = (typeof window.__getCrashQueue === 'function') ? window.__getCrashQueue() : [];
-        var full = base + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---\n' + ((window.__diagLogs || []).join('\n') || '无')
+        var full = base + '--- 记录明细（' + (typeof records !== 'undefined' && records ? records.length : 0) + ' 条，含小日记/心情/天气/同行人等全部内容）---' + String.fromCharCode(10) + buildRecordsDetail() + String.fromCharCode(10) + String.fromCharCode(10) + '--- 计划明细（' + (typeof plannedTrips !== 'undefined' && plannedTrips ? plannedTrips.length : 0) + ' 条）---' + String.fromCharCode(10) + buildPlansDetail() + String.fromCharCode(10) + String.fromCharCode(10) + '--- 错误日志（最近 ' + (window.__diagLogs || []).length + ' 条）---' + String.fromCharCode(10) + ((window.__diagLogs || []).join(String.fromCharCode(10)) || '无')
             + '\n\n--- 崩溃记录（持久，' + crashQ.length + ' 条，重启不丢）---\n' + (crashQ.length ? crashQ.map(function (c) { return c.t + ' ' + c.msg; }).join('\n') : '无');
         try {
             if (window.XixiFileBridge && typeof window.XixiFileBridge.saveBase64 === 'function') {
@@ -540,7 +589,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.1.10.9';
+var APP_VERSION = '1.1.10.10';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {

@@ -1193,36 +1193,82 @@ function buildBackupHTMLString(payload) {
     var appTitle = (appTitleEl && appTitleEl.textContent && appTitleEl.textContent.trim()) || 'XiXiの徒步小记';
     var escTitle = esc(appTitle);
     var photos = payload.photos || {};
+    function pad2h(x) { x = String(x); return x.length < 2 ? '0' + x : x; }
+    function diffDots(n) { var h = ''; n = (n === undefined || n === null || n === '') ? 0 : Number(n); for (var k = 1; k <= 5; k++) { h += '<i' + (k <= n ? ' class="on"' : '') + '></i>'; } return h; }
+    function fmtDtCN(ts) { try { var d = new Date(ts); if (isNaN(d.getTime())) return ''; var wd = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]; return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 · 周' + wd; } catch (e) { return ''; } }
+    function dayMarkCN(ts) { try { var d = new Date(ts); return pad2h(d.getMonth() + 1) + '.' + pad2h(d.getDate()); } catch (e) { return ''; } }
     var recCards = (payload.records || []).map(function (r) {
         var imgs = (r.photos || []).map(function (pid) {
             var d = photos[pid];
-            return d ? '<img src="' + d + '" style="max-width:140px;max-height:140px;border-radius:8px;margin:4px;vertical-align:top;">' : '';
+            return d ? '<img src="' + d + '" alt="">' : '';
         }).join('');
-        return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin:12px 0;background:#ffffff;">' +
-            '<h3 style="margin:0 0 6px;color:#1e293b;">' + esc(r.name || '未命名') + '</h3>' +
-            '<!-- ★2026-08-25 回忆册补里程/用时（难度·海拔·里程·用时·时间） -->' +
-            '<div style="color:#64748b;font-size:13px;">难度 ' + esc(r.difficulty !== undefined ? r.difficulty : '-') + ' 级 · 海拔 ' + esc(r.elevation || 0) + ' m' + (r.distance ? ' · 里程 ' + esc(r.distance) + ' km' : '') + (r.duration ? ' · 用时 ' + esc(formatDuration(r.duration)) : '') + ' · ' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : '') + '</div>' +
-            '<!-- 2026-08-21 v1.1.2.0 备份回忆册：补心情/天气/同行人 -->' +
-            ((r.mood || r.weather || r.companions) ? '<div style="color:#475569;font-size:13px;margin-top:4px;">' + (r.mood ? '心情 ' + esc(r.mood) + '　' : '') + (r.weather ? '天气 ' + esc(r.weather) + '　' : '') + (r.companions ? '同行 ' + esc(r.companions) : '') + '</div>' : '') +
-            (imgs ? '<div style="margin-top:8px;">' + imgs + '</div>' : '') +
+        var metaBits = [];
+        if (r.mood) metaBits.push('心情 ' + esc(r.mood));
+        if (r.weather) metaBits.push('天气 ' + esc(r.weather));
+        var comp = Array.isArray(r.companions) ? r.companions.join('、') : (r.companions || '');
+        if (comp) metaBits.push('同行 ' + esc(comp));
+        var metaLine = metaBits.length ? metaBits.join(' · ') : '';
+        var dtTxt = r.createdAt ? fmtDtCN(r.createdAt) : '';
+        var dayTxt = r.createdAt ? dayMarkCN(r.createdAt) : '';
+        var facts = [];
+        facts.push('难度 <b>' + esc(r.difficulty !== undefined && r.difficulty !== '' ? r.difficulty : '-') + '</b> 级<span class="diff5">' + diffDots(r.difficulty) + '</span>');
+        if (r.elevation) facts.push('海拔 <b>' + esc(r.elevation) + '</b> m');
+        if (r.distance) facts.push('里程 <b>' + esc(r.distance) + '</b> km');
+        if (r.duration) facts.push('用时 <b>' + esc(formatDuration(r.duration)) + '</b>');
+        var note = (r.notes && String(r.notes).trim()) ? '<div class="diary"><span class="lab">小日记</span>' + esc(String(r.notes).trim()) + '</div>' : '';
+        var longCls = (r.notes && String(r.notes).length > 60) ? ' entry-long' : '';
+        return '<div class="entry' + longCls + '">' +
+            '<div class="entry-head">' +
+            '<div class="entry-date">' + (dayTxt ? '<span class="day">' + dayTxt + '</span>' : '') + '<span class="meta">' + dtTxt + (metaLine ? ' · ' + metaLine : '') + '</span></div>' +
+            '<div class="entry-name">' + esc(r.name || '未命名') + '</div>' +
+            '<div class="facts">' + facts.join('<span class="gap"></span>') + '</div>' +
+            '</div>' +
+            note +
+            (imgs ? '<div class="photos">' + imgs + '</div>' : '') +
             '</div>';
     }).join('');
     var planCards = (payload.plannedTrips || []).map(function (t) {
-        return '<div style="border:1px dashed #cbd5e1;border-radius:12px;padding:12px;margin:10px 0;background:#f1f5f9;">' +
-            '<h4 style="margin:0 0 4px;color:#334155;">' + esc(t.name || '未命名') + '</h4>' +
-            '<div style="color:#64748b;font-size:13px;">难度 ' + esc(t.difficulty !== undefined ? t.difficulty : '-') + ' 级 · ' + esc(t.createdAt || '') + '</div>' +
-            '</div>';
+        return '<div class="plan"><b>' + esc(t.name || '未命名') + '</b>' +
+            ' —— 难度 ' + esc(t.difficulty !== undefined && t.difficulty !== '' ? t.difficulty : '-') + ' 级' +
+            (t.createdAt ? ' · ' + fmtDtCN(t.createdAt) : '') + '</div>';
     }).join('');
     var dataJson = JSON.stringify(payload).replace(/<\/script/g, '<\\/script');
-    // ★2026-09-05 P1-⑧ 回忆册 → PDF：内嵌打印样式（A4 分页友好、照片不溢出、隐藏顶部提示条），浏览器 Ctrl+P / 手机「打印」→ 另存为 PDF 即成册
-    var printCss = 'body{font-family:"SimSun","Songti SC",serif;max-width:720px;margin:0 auto;padding:20px 16px;background:#f8fafc;color:#1e293b;}h1{text-align:center;margin-bottom:4px;}p.sub{text-align:center;color:#64748b;font-size:14px;}h2{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-top:28px;}footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:40px;}.tipbar{background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca;border-radius:10px;padding:8px 12px;font-size:13px;text-align:center;margin-bottom:16px;}';
-    printCss += '@media print{.tipbar{display:none!important;}body{background:#ffffff;padding:0;max-width:none;}div{border-color:#e2e8f0!important;break-inside:avoid;page-break-inside:avoid;}img{max-width:120px!important;}h2{break-after:avoid;page-break-after:avoid;}}';
+    // ★2026-09-09 回忆册 → PDF：日记样式（纸感排版 + 小日记正文 + A4 分页友好），浏览器 Ctrl+P → 另存为 PDF 即成册
+    var printCss = `
+body{font-family:"SimSun","Songti SC","STSong",serif;background:#f5f1e8;margin:0 auto;padding:30px 14px 56px;max-width:780px;color:#292524;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+h1{margin:6px 0 2px;font-size:26px;text-align:center;letter-spacing:2px;color:#1c1917;}
+p.sub{margin:0 0 24px;text-align:center;color:#a8a29e;font-size:13px;}
+.tipbar{background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca;border-radius:10px;padding:8px 12px;font-size:13px;text-align:center;margin-bottom:20px;}
+h2{font-size:17px;color:#44403c;margin:34px 0 14px;}
+h2 .t{display:inline-block;border-bottom:2px solid #d97706;padding-bottom:3px;letter-spacing:1px;}
+.entry{margin:0 0 28px;padding-bottom:24px;border-bottom:1px dashed #ddd3bd;}
+.entry:last-of-type{border-bottom:none;}
+.entry-head{break-inside:avoid;page-break-inside:avoid;page-break-after:avoid;}
+.entry-date{display:flex;align-items:baseline;gap:10px;margin-bottom:3px;flex-wrap:wrap;}
+.entry-date .day{font-size:26px;font-weight:700;color:#b45309;line-height:1;}
+.entry-date .meta{font-size:13px;color:#a8a29e;}
+.entry-name{margin:2px 0 7px;font-size:21px;color:#1c1917;letter-spacing:.5px;}
+.facts{display:flex;flex-wrap:wrap;font-size:13px;color:#57534e;margin-bottom:9px;}
+.facts .gap{display:inline-block;width:2px;margin:0 12px;color:transparent;}
+.facts b{font-weight:700;color:#44403c;}
+.diff5{display:inline-block;margin-left:8px;}
+.diff5 i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;background:#e7e0d0;}
+.diff5 i.on{background:#d97706;}
+.diary{background:#fdf6e3;border-left:3px solid #e7c98a;border-radius:0 10px 10px 0;padding:9px 13px;margin:2px 0 12px;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word;color:#44403c;break-inside:avoid;page-break-inside:avoid;}
+.diary .lab{color:#b45309;font-weight:700;margin-right:6px;}
+.photos{margin-top:6px;line-height:0;}
+.photos img{display:inline-block;width:104px;height:104px;object-fit:cover;border-radius:8px;margin:0 6px 6px 0;vertical-align:top;}
+.plan{border-left:3px solid #cbd5e1;padding:7px 0 7px 12px;margin:8px 0;font-size:14px;color:#57534e;break-inside:avoid;page-break-inside:avoid;}
+.plan b{color:#292524;}
+footer{text-align:center;color:#a8a29e;font-size:12px;margin-top:34px;}
+@page{size:A4;margin:14mm 13mm;}
+@media print{.tipbar{display:none!important;}body{background:#fff;padding:0;max-width:none;}.entry{break-inside:avoid-page;page-break-inside:avoid;}.entry-long{break-inside:auto;page-break-inside:auto;}.photos{break-inside:avoid;page-break-inside:avoid;}img{width:82px!important;height:82px!important;}h1{margin-top:4mm;}}`;
     return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>' + escTitle + ' · 完整备份</title>' +
         '<style>' + printCss + '</style></head><body>' +
         '<div class="tipbar">📄 想存成 PDF？按 Ctrl+P（手机：浏览器菜单「打印」），目标选「另存为 PDF」即可成册保存</div>' +
         '<h1>🥾 ' + escTitle + '</h1><p class="sub">完整备份 · 共 ' + (payload.records || []).length + ' 条徒步记录 · ' + (payload.plannedTrips || []).length + ' 条计划 · 导出于 ' + new Date(payload.exportedAt || Date.now()).toLocaleString() + '</p>' +
-        '<h2>📝 徒步记录</h2>' + (recCards || '<p style="color:#94a3b8;">暂无记录</p>') +
-        '<h2>🗓️ 计划徒步</h2>' + (planCards || '<p style="color:#94a3b8;">暂无计划</p>') +
+        '<h2><span class="t">徒步记录</span></h2>' + (recCards || '<p style="color:#94a3b8;">暂无记录</p>') +
+        '<h2><span class="t">计划徒步</span></h2>' + (planCards || '<p style="color:#94a3b8;">暂无计划</p>') +
         '<footer>Made by XiXi 💛 · 此文件可在 App 内导入恢复</footer>' +
         '<script id="backup-data" type="application/json">' + dataJson + '</' + 'script>' +
         '</body></html>';

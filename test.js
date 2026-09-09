@@ -317,6 +317,7 @@ try {
     dj.includes('function showPrivacyPolicyModal') && dj.includes('dmi-group') ? ok('隐私弹窗(玻璃条目式)在') : bad('隐私弹窗缺失!');
     dj.includes('id="privacy-close"') && dj.includes('联网行为') ? ok('隐私含联网披露(崩溃上报)') : bad('隐私联网说明缺失!');
     dj.includes('通知与提醒权限') && dj.includes('你的数据你做主') && dj.includes('有问题反馈给 XiXi') ? ok('隐私权限说明/数据自主/联系行在') : bad('隐私补充条目缺失!');
+    cj.includes('function buildRecordsDetail') && cj.includes('小日记: ') && cj.includes('function buildPlansDetail') && cj.includes('记录明细（') ? ok('导出诊断含记录/计划明细(小日记全文)') : bad('导出明细缺失!');
     dj.includes('function showDisclaimerModal') && dj.includes('免责声明') && dj.includes('野山') && dj.includes('风险自担') && dj.includes('不是领队') ? ok('免责声明弹窗+户外安全条目在(野山/风险自担)') : bad('免责声明缺失!');
     ih.includes('id="disclaimerBtn"') && ih.includes('>免责声明<') ? ok('关于卡免责声明入口在') : bad('免责声明入口缺失!');
     ij.includes("disclaimerBtn") && ij.includes('showDisclaimerModal') ? ok('app-init 免责声明绑定在') : bad('免责声明绑定缺失!');
