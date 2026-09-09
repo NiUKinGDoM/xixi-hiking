@@ -38,6 +38,44 @@ import java.util.Locale;
 
 public class MainActivity extends BridgeActivity {
 
+    // ★2026-09-08 防重打包：官方签名指纹白名单（当前=debug.keystore SHA256）
+    // ⚠ 更换签名密钥时：把新证书 SHA-256 更新到此处，否则正式包会被自己拒之门外
+    private static final String SIGN_EXPECT_SHA = "9396fee4e13f3fd1f939d66820d0ca623187be62234fcfcc621577b63ccf8899";
+
+    private boolean verifyInstalledSignature() {
+        try {
+            android.content.pm.Signature[] sigs = null;
+            android.content.pm.PackageInfo info;
+            if (android.os.Build.VERSION.SDK_INT >= 28) {
+                info = getPackageManager().getPackageInfo(getPackageName(),
+                        android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES);
+                if (info.signingInfo != null) sigs = info.signingInfo.getApkContentsSigners();
+            } else {
+                info = getPackageManager().getPackageInfo(getPackageName(),
+                        android.content.pm.PackageManager.GET_SIGNATURES);
+                sigs = info.signatures;
+            }
+            if (sigs == null || sigs.length == 0) return false;
+            String sha = sha256Hex(sigs[0].toByteArray());
+            return SIGN_EXPECT_SHA.equalsIgnoreCase(sha);
+        } catch (Exception e) {
+            Log.e(TAG, "signature verify failed", e);
+            return false;
+        }
+    }
+
+    private static String sha256Hex(byte[] data) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] d = md.digest(data);
+            StringBuilder sb = new StringBuilder();
+            for (byte b : d) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     private static final String TAG = "XiXiHiking";
     private static final String CRASH_LOG_NAME = "xixi_crash.log";
 
@@ -51,6 +89,23 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // ★2026-09-08 防重打包：启动即校验安装包签名。重打包必须重新签名（签名指纹不一致）→ 直接拒用退出，
+        // 挡住换皮/捆绑重分发。注意：更换签名密钥时必须同步更新 SIGN_EXPECT_SHA（见 PROJECT_STATUS）
+        if (!verifyInstalledSignature()) {
+            try {
+                android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this);
+                b.setTitle("安装包校验失败");
+                b.setMessage("当前安装包的签名与官方版本不一致，可能已被篡改或重新打包。\n\n为保护你的数据安全，应用已停止运行。请卸载后从官方渠道重新安装。");
+                b.setCancelable(false);
+                b.setPositiveButton("知道了", (dialog, which) -> finish());
+                b.setOnDismissListener(d -> finish());
+                b.show();
+            } catch (Exception e) {
+                Log.e(TAG, "sig dialog failed", e);
+            }
+            finish();
+            return;
+        }
         // 安装并立即关闭系统 SplashScreen（Android 12+ 强制 splash，不安装就关不掉）
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> false);
@@ -162,6 +217,9 @@ public class MainActivity extends BridgeActivity {
 
         // ★2026-08-27 键盘覆盖式弹出（adjustNothing）+ 搜索框精确跟随：原生监听 IME insets 实时通知 JS
         setupImeListener();
+
+        // ★2026-09-08 资源完整性软校验（纵深：签名校验后再核对核心资源哈希；异常仅提示不退出防误伤）
+        try { verifyAssetsIntegrity(); } catch (Exception e) { Log.e(TAG, "integrity check failed: " + e.getMessage()); }
 
         // 立即尝试设置下载监听和 JS 桥（WebView 可能已可用）
         if (bridge != null && bridge.getWebView() != null) {
@@ -1042,6 +1100,35 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             Log.e(TAG, "Failed to write crash log", e);
         }
+    }
+
+    // ★2026-09-08 资源完整性软校验：核心资源哈希与 ResGuard（tools/security.js hash 生成）比对，不一致仅提示
+    private void verifyAssetsIntegrity() {
+        try {
+            String bad = null;
+            for (String[] pair : ResGuard.HASHES) {
+                java.io.InputStream in = getAssets().open("public/" + pair[0]);
+                java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+                in.close();
+                if (!pair[1].equalsIgnoreCase(sha256Hex(bos.toByteArray()))) { bad = pair[0]; break; }
+            }
+            if (bad != null) showTamperWarn(bad);
+        } catch (Exception e) {
+            Log.e(TAG, "integrity check error: " + e.getMessage());
+        }
+    }
+
+    private void showTamperWarn(String file) {
+        try {
+            android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this);
+            b.setTitle("资源校验提示");
+            b.setMessage("检测到资源文件（" + file + "）与官方版本不一致，安装包可能被修改。\n\n为安全起见，请勿在此安装包中输入或导入重要数据，建议卸载后从官方渠道重新安装。");
+            b.setPositiveButton("知道了", null);
+            b.show();
+        } catch (Exception e) { /* 提示失败不影响使用 */ }
     }
 
     // ★2026-09-08 崩溃上报：读外部私有崩溃日志（xixi_crash.log，JS 启动上报用；上限 60KB）

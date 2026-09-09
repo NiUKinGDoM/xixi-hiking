@@ -1,12 +1,14 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-08（v1.1.10.7 / vc238）
+> 最后更新：2026-09-09（v1.1.10.8 / vc239）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.1.10.8**（versionCode 239，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.1.10.8 更新（安全纵深三件套）：①MainActivity.onCreate 签名自校验 verifyInstalledSignature（SIGN_EXPECT_SHA=debug.keystore 9396fee4…，失败弹「安装包校验失败」退出；⚠换签名密钥必同步改常量）②打包 JS 混淆（tools/security.js obf 混淆 temp assets/public 4 业务 JS 才入包，www 源明文；发布流程加安全两步）③资源软校验（tools/security.js hash 生成 ResGuard.java 5 文件 SHA-256 → verifyAssetsIntegrity 启动比对不符弹提示）+ Manifest allowBackup/fullBackupContent=false；工具链 tools/security.js（obf/hash，NODE_PATH 指向隔离 node workspace）；test 171/30/194；BUILTIN 新增 10.8
 - **正式版 v1.1.10.7**（versionCode 238，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.7 更新（支持作者）：关于卡三钮（更新日志/隐私政策/支持作者 check-go 浅红）→ showSupportModal 两步弹窗（标题纯文字无图标：step1 说明+微信(绿)/支付宝(蓝)双渠道按钮 → step2 白卡收款码大图 + 返回/保存二维码 + 「保存到相册后扫一扫选图」小字）；微信/支付宝收款码 base64 内联 app-data 顶（SUPPORT_QR_WECHAT/ALIPAY，PIL 800 宽 q85 压缩共 +250KB）；saveSupportQr：MainActivity saveQrToGallery 桥（Android10+ MediaStore Pictures 免权限 / <29 公开目录+广播）+ 网页 a[download] 降级；五项优化（标题图标去心形统一入口/无用变量清/临时文件清/test 断言随改）；test.js 5p → 166；BUILTIN 新增 10.7
 - **正式版 v1.1.10.6**（versionCode 237，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
