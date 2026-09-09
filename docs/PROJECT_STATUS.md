@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-09（v1.1.10.10 / vc241）
+> 最后更新：2026-09-09（v1.2.0.0 / vc242）
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 https://xixi-hiking.pages.dev**（**已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）
 > ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）
@@ -11,6 +11,8 @@
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **正式版 v1.2.0.0**（versionCode 242，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.0 更新（★满十进位：1.1.10.10 → 1.2.0.0，段规则 bump.js 自动）：**导出诊断恢复精简**（回滚 10.10 误加的记录/计划明细：诊断=排障文件不含业务数据；helpers buildRecordsDetail/buildPlansDetail 删除，save 头行修复）；回忆册日记样式/按钮换序维持 10.10 状态；test 174/30/194；BUILTIN 新增 v1.2.0.0【修复】
 - **正式版 v1.1.10.10**（versionCode 241，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.10 更新（回忆册日记样式 + 导出明细 + 按钮换序）：**回忆册.html 日记排版**（buildBackupHTMLString 重构：纸感底+SimSun+日期大字标+中文日期周+心情天气同行 meta+山名大标题+难度五档圆点 diff5+小日记全文便签黄块 pre-wrap+照片墙 104px 打印 82px+entry-long 长文跨页不切断+@page A4 14/13mm+h2 .t 下划线+plan 虚线列表；注释 P1-⑧ 9-05 版废弃）+ **导出诊断全量明细**（buildRecordsDetail/buildPlansDetail：每条记录含小日记/心情/天气/同行人/照片数 createdAt 倒序；helpers 为函数内局部）；关于页按钮两行=隐私政策·免责声明 / 支持作者·更新日志；test 175/30/194；BUILTIN 新增 10.10
 - **正式版 v1.1.10.9**（versionCode 240，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
