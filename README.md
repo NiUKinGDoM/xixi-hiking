@@ -106,6 +106,8 @@ cd android && ./gradlew assembleRelease
 
 ## 🚀 发布流程（按序执行）
 
+> 🌐 **网页版正式通道（2026-09-09）**：https://xixi-hiking.pages.dev —— Cloudflare Pages + GitHub Git 集成，**push master 即自动部署**（Root=www），iOS/朋友长期用此域名（不会漂移）；workbuddy_sites 临时链接仅作发版前验收预览
+
 1. **网页先行（用户验收）**：部署 `hiking-app3/www` 网页版 → **用户看网页版确认「同步」后**才 bump/构建/发布
 2. **发布链**：回滚点快照（prev-snapshot.js）→ `node bump.js` → 三自检（test/test-ui/_test_p0p3）→ 同步 assets+temp → 构建 Release（R8 + 签名）→ push GitHub master → 建 Release 挂 APK（body 只写更新 + `Made by XiXi 💛`）
 3. **本地不留 APK**（★2026-09-03 起）：Release 上传 + 下载验证（md5/PK）通过后本地 APK 即删除，历史版本从 Release assets 取
