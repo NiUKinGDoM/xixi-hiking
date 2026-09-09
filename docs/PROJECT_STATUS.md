@@ -2,11 +2,17 @@
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
 > 最后更新：2026-09-09（v1.1.10.8 / vc239）
+> ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 https://xixi-hiking.pages.dev**（**已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）
+> （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）
+> ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）
+> ★2026-09-08 防重打包已内置（MainActivity.verifyInstalledSignature 启动签名自校验，SIGN_EXPECT_SHA 白名单=debug.keystore 9396fee4…；**更换签名密钥必须同步更新该常量**，否则正式包会被自己拒用；校验失败弹「安装包校验失败」并退出）
 
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 当前版本状态（2026-09-03）
+- **▶待发 v1.1.10.8（vc239）**：安全纵深三件套（签名自校验防重打包 / 打包副本 JS 混淆 / ResGuard 资源软校验）+ allowBackup=false；发布流程已含「同步后 obf 混淆 temp + hash 生成 ResGuard」两步；配套工具 tools/security.js（obf/hash）、e2e 混淆版基线（E2E_ROOT+E2E_BASELINE=baseline-obf）；test 171
+- **★2026-09-08 安全设计总览（新模型必读）**：①**签名自校验**=硬拦截（MainActivity.onCreate 最先 verifyInstalledSignature，SIGN_EXPECT_SHA=当前 debug.keystore 9396fee4…；⚠换签名密钥必须同步改常量否则正式包被自己拒用；失败弹「安装包校验失败」finish）②**JS 混淆**=打 APK 的 temp assets/public 副本经 javascript-obfuscator（tools/security.js obf），www 源与测试永远明文（混淆只入 APK）③**资源软校验**=tools/security.js hash <混淆目录> 生成 ResGuard.java（index.html+4JS 的 SHA-256）→ verifyAssetsIntegrity 启动比对，异常仅弹「资源校验提示」不退出（防 hash 更新遗漏误伤）④**allowBackup=false**（防 adb/系统备份拖走记录照片）。已知坑：gradle 增量构建不感知 assets 内容变化→构建前若刚混淆过加 `--rerun-tasks`；E2E 验证混淆版用 E2E_ROOT=混淆目录 E2E_BASELINE=baseline-obf
 - **正式版 v1.1.10.8**（versionCode 239，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.8 更新（安全纵深三件套）：①MainActivity.onCreate 签名自校验 verifyInstalledSignature（SIGN_EXPECT_SHA=debug.keystore 9396fee4…，失败弹「安装包校验失败」退出；⚠换签名密钥必同步改常量）②打包 JS 混淆（tools/security.js obf 混淆 temp assets/public 4 业务 JS 才入包，www 源明文；发布流程加安全两步）③资源软校验（tools/security.js hash 生成 ResGuard.java 5 文件 SHA-256 → verifyAssetsIntegrity 启动比对不符弹提示）+ Manifest allowBackup/fullBackupContent=false；工具链 tools/security.js（obf/hash，NODE_PATH 指向隔离 node workspace）；test 171/30/194；BUILTIN 新增 10.8
 - **正式版 v1.1.10.7**（versionCode 238，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -89,7 +95,7 @@
    - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-12）
-2. **★发布流程**：①部署 www → 网页确认 → ②**★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点**（backups/prev-<版本>/ 存 www 7 文件+build.gradle+MainActivity+Manifest，事故可整体还原；v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp → gradle 构建 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
+2. **★发布流程**：①部署 www → 网页确认 → ②**★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点**（backups/prev-<版本>/ 存 www 7 文件+build.gradle+MainActivity+Manifest，事故可整体还原；v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp（★2026-09-08 起加**安全两步**：`tools/security.js obf <temp assets/public> <同目录>` 就地混淆 4 业务 JS，再 `tools/security.js hash <temp assets/public>` 重生成 ResGuard.java 并 cp 到 temp + MainActivity + AndroidManifest；www 源与测试永远明文，ResGuard=APK 内混淆版哈希）→ gradle 构建（assets 内容变化 gradle 增量常不感知，有疑加 `--rerun-tasks`） → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload
@@ -105,7 +111,9 @@
 13. **玻璃统一配方（2026-08-23 定稿）**：透明 0.08 + blur(2px) saturate(150%) + 白边 0.5 + 双层浮动阴影；**禁止加**光泽带/折射渐变/角部反光/内光晕/四角光斑（都被用户否决过）；toast 浅色同色系底边
 14. **★CSS 特异性坑（2026-09-01 v1.1.7.6）**：`confirm-btn-cancel` 自带 `padding:8px 16px + font-size:16px + font-weight:900`，会**压过 Tailwind 的 `px-2 py-1 text-xs`**（类内联顺序/优先级高于工具类）→ 编辑行保存/取消按钮**一律用内联样式硬锁定**：`padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;font-weight:600;display:inline-flex;align-items:center;justify-content:center`（`check-go-btn` 无自带尺寸，取消按钮就是被 confirm-btn-cancel 撑大才不统一的）
 15. **★年份分组预处理模式（v1.1.7.5 记录页 / v1.1.7.6 计划页）**：**不直接改 map 模板**；先预处理数组插入 `{__year,__count}` 标记项，map 回调开头识别 `__year` 返回年份行（`year-group-row`/`year-group-head`），组内保持原排序，条数用预处理全年统计（跨页准确）；⚠️**模板字符串在 `push(` 换行上下文有 ASI 坑**（报 `missing ) after argument list`）——别把 `return \`...\`` 模板改成 `push(\``，恢复 map 原结构即好
-16. **★死 CSS 清理方法论（2026-09-01）**：先 grep 确认类名无任何 HTML/JS 元素引用再删；**Tailwind 编译产物段（3498+ 行）不可删**，只删自定义覆盖段；`replace_all` 批量替换后必须复查选择器列表（教训：`.btn-click-effect, .edit-input, .sort-header-planned` 被误改成 `.sort-header, .sort-header` 重复，手动清理）
+16. **★死 CSS 清理方法论（2026-09-01）**
+17. **★更新日志小标题格式（2026-09-08 用户定稿）**：文案里的小标题写法 = `**修复**` 改 `【修复】`（**方括号【】包住分类词**），如【新增】【修复】【优化】【其他】；只改文字、别动渲染（用户三次叫停粗框/加粗/剥星号改造，全部已回滚）；10.3~10.5 历史文案保持原样
+：先 grep 确认类名无任何 HTML/JS 元素引用再删；**Tailwind 编译产物段（3498+ 行）不可删**，只删自定义覆盖段；`replace_all` 批量替换后必须复查选择器列表（教训：`.btn-click-effect, .edit-input, .sort-header-planned` 被误改成 `.sort-header, .sort-header` 重复，手动清理）
 
 ## ★应用内更新机制（v1.0.8.7 实现）
 - 原生桥 `checkUpdate()`（GET api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/latest 匿名）+ `downloadAndInstall(apkUrl, mirrorUrl)`（OkHttp → FileProvider → 系统安装器）
@@ -142,7 +150,7 @@
 - `backups/hiking-app3-vX.Y.Z/`：完整源码备份；`backups/android-signing/`：签名（绝不上传）
 - **★2026-09-03 起本地不留 APK**：APK 归档只发 GitHub Release（云端即备份）；上传+下载验证通过后**删除本地 APK**（项目根 + 原 apk-history 已清空退役）；**★删除一律走回收站（Windows 回收站 API），禁止永久删除**（历史版本可随时从 Release assets 恢复，v1.0.10.4 起云端全量覆盖）
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
-- CloudStudio 网页：https://e7f39d534e2e4958b7844f37fca23f6e.gz4.agentos-app.net
+- **网页版正式通道：https://xixi-hiking.pages.dev**（Cloudflare Pages + GitHub Git 集成，push master 自动部署，Root=www，长期稳定）｜发版前验收预览用 workbuddy_sites_deploy 临时链接（会漂移，仅临时）
 
 ## 近期版本要点（v1.1.0.7 ~ v1.1.8.5）
 - v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
@@ -244,7 +252,12 @@
 - v1.1.8.9（vc218）：**＋添加 v3（新建空白独立行 apNew + 「或者」ap-seg + 下拉只做历史复制单选 apOk「填充」确认 + .hcm-dot 圆点）+ 选中态玻璃化收尾（年月 hmyp 已完成、dtp 日期格/mwp 心情格实心转玻璃、全 App 无纯色选中）+ 弹窗可读性提升（浅 #94a3b8→#52606f、深 #64748b/#94a3b8→#a3b1c6、虚线 sync-config 0.07→0.45、ap-seg 加深）**（详见 Release）
 - v1.1.8.8（vc217）：**概览布局重构（统计主次分离 4 主卡+平均海拔/难度/用时矮副卡 .ov-mini、徒步足迹热力图前置难度分布上 ensureOverviewLayout、年回入口收进热力图卡右上改图标钮）+ 热力图年月单框弹窗（删双下拉、openHmYmPicker 年份 chips+12 月格仅记录月可点、底部汇总去日期留 次数·累计爬升）+ 设置页数据管理 i 弹窗分组重排 + 括号文案删除 + 累计爬升回热力图汇总不丢数据**（详见 Release）
 - v1.1.8.7（vc216）：**山册照片回忆（展开顶部横排看该山全部照片、点照进灯箱、标题日期=最近一次记录日期、收起单行化、统计收进展开）+ 同步健康行融合进自动同步卡（i 图标删除去重、busy/error/天龄三态、未配置点击直达配置、照片占用挪杂项第一行）+ 全 App 滚动条玻璃化（含弹窗 6px 细条）+ 同步状态弹窗虚线加深 + 工程治理（prev-snapshot.js 回滚点/五对策）**（详见 Release）
-## 待办/新功能方案（2026-09-01 更新）
+## 待办/新功能方案（2026-09-08 更新）
+- ✅ **隐私政策页**（v1.1.10.6 待发）：关于卡「隐私政策」入口 → showPrivacyPolicyModal（confirm 玻璃弹窗 dmi-* 条目排版，README 隐私段整理 + 崩溃上报联网披露）
+- ✅ **崩溃日志自动采集+上报**（v1.1.10.6 待发）：JS 持久队列 hiking_crash_queue（20 条/同错 1 分钟去重/重启不丢/并入导出诊断）+ 原生 xixi_crash.log 读取桥 getNativeCrashLog/clearNativeCrashLog；App 启动有 WebDAV 时自动 PUT xixi_crash_*.txt（仅版本/错误/时间，当日一次，成功清队列）
+- ✅ **真实渲染回归 E2E**（e2e/ 2026-09-08）：playwright-core + 系统 Edge 免下载；自起 127.0.0.1:8123 静态服务；核心链路（概览/计划日历/记录+示例/隐私弹窗深浅）+ 截图像素差视觉回归（阈值 0.5%，基线 e2e/shots/baseline/）+ JS 错误监听；node e2e/run.js（--update 刷基线）；真机 UI 自动化待 USB 设备接 Appium（脚本可复用链路）
+- ⚠️ 待办区原内容（2026-09-01）
+
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
 - ✅ **记录/计划本地搜索**（v1.1.5.4~v1.1.6.4 完成：名称包含匹配 + 输入法协作 + 轮询根治 + 计划页优化）
 - ✅ **UI 层自动化测试**（test-ui.js 26 项 jsdom 渲染测试，发布双保险）
