@@ -47,6 +47,17 @@ node tools/ghsync.js -m "release: vX (vcN)" --push
 
 # ⑦ 代码审计（死类 / 死 CSS / 残留 / 重复 id / 外部 CDN 依赖）——「四项优化」①⑤自动化
 node tools/audit.js
+# ⑧ 发布编排（一条命令串起全流程，任一步失败即停）
+node tools/ship.js prepare --builtin <BUILTIN文案> --doc <文档条目文案>   # 核对→快照→bump→BUILTIN→文档→自检→审计→构建→APK验证
+node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同步push→建Release+上传+下载验证→校验 pages.dev
+
+# ⑨ 发布子工具（可单独用）
+node tools/builtin.js <版本> <文案文件>        # BUILTIN 更新日志注入（读真实换行、内部转字面 
+，防坑；幂等）
+node tools/builtin.js --check                  # 检查当前 APP_VERSION 是否已有 BUILTIN 条目
+node tools/docrelease.js <版本> <vc> <文案>    # 发布文档三处同步（PROJECT_STATUS 双端 + CHANGELOG，幂等）
+node tools/verify-apk.js                       # APK 全面验证（版本/签名/混淆/资源/ResGuard；混淆口径已修正）
+node tools/ghrelease.js <tag> <Release文案>    # 建 Release + 裸二进制上传 + 下载校验 md5/PK + 清理本地 APK
 
 # ⑧ 断网可用性实测（模拟徒步野外无信号）
 node e2e/inspect.js --file tools/snippets/offline-check.js --offline
@@ -73,6 +84,7 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 - **新工具 `tools/checkall.js`**（2026-09-10）：一条命令跑全部自检（test + test-ui + P0P3 + E2E）并汇总/打印失败明细；`--fast`/`--no-e2e`/`--only=e2e`；任一套失败退出码 1（可直接当发布门禁）
 - **新工具 `tools/ghsync.js` + `tools/ghtoken.py`**（2026-09-10）：GH 副本同步一条龙——www/assets/docs/tools/e2e 整目录同步（新增文件自动带上，不再漏）+ 关键文件 diff 核对 + 自动纠正 git 身份 + git add/commit + `--push`（token 由 ghtoken.py 从凭据管理器读）；`--dry-run` 只看不写。**替代每轮手写「逐文件 cp + 循环 diff + commit + push」**
 - **新工具 `tools/audit.js`**（2026-09-10）：代码审计——A Tailwind 任意值类是否编译 / B 类名是否有 CSS 定义 / C 死 CSS / D 残留物 / E 重复 id / **F 外部依赖（离线自足，出现任何 http(s) 外链即 fail）**。**★定位：静态存在性 ≠ 实际生效**（自定义 CSS 常兜底），A/B/C 只作信号；**D/E/F 为确定性检查＝门禁**（退出码 1）。判定 bug 必须用 `e2e/inspect.js` 实测 computed 值
+- **新工具 `tools/builtin.js` / `tools/docrelease.js` / `tools/verify-apk.js` / `tools/ghrelease.js` / `tools/ship.js`**（2026-09-10）：把每次发版要手写的 7 个一次性脚本固化成常驻工具——**BUILTIN 注入**（读真实换行文案、内部转字面 `\n`，根治 JSON 转义坑，含幂等+语法校验+失败还原）/ **发布文档三处同步**（双端+CHANGELOG，幂等）/ **APK 全面验证**（口径修正：混淆文件只做结构检查，JS 字符串断言走 www 源文件）/ **Release 一条龙**（建+上传+下载校验+清本地 APK）/ **ship 编排**（prepare 9 步、publish 3 步，任一步失败即停）
 - **`e2e/inspect.js --offline`**（2026-09-10）：阻断一切外部域名请求 → 模拟「徒步野外无信号」；配套巡检片段 `tools/snippets/offline-check.js`（图标字体 / 关键布局 / 四类 toast / 页面错误）。用法：`node e2e/inspect.js --file tools/snippets/offline-check.js --offline`
 - **同步清单升级为「整目录同步」**：`tools/`（*.js/*.py）、`e2e/`（*.js，排除 shots 截图）、`docs/`（*.md）自动全量带上 → 根治「新工具/新文档漏同步」
 - **★离线自足（2026-09-10）**：图标字体 + Tailwind 运行时全部本地化（详见关键约定 18）；**新增静态资源三处同步**（sw CORE_ASSETS + ResGuard HASH_FILES + `inspect --offline` 实测）；`tools/audit.js` 新增 **F 段外部依赖门禁**；`e2e/inspect.js` 新增 **`--offline`**（模拟断网）+ 巡检片段 `tools/snippets/offline-check.js`
