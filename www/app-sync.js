@@ -315,7 +315,7 @@ function checkForUpdate() {
     }
     // App 判定：有下载桥（无桥 = 网页版）
     if (!window.XixiFileBridge || typeof window.XixiFileBridge.downloadAndInstall !== 'function') {
-        showErrorMessage('网页版无需更新（请使用安装版）');
+        showInfoMessage('网页版无需更新（请使用安装版）');
         return;
     }
     updaterBusy = true;
@@ -492,7 +492,7 @@ function startUpdate() {
         return;
     }
     if (!window.XixiFileBridge || typeof window.XixiFileBridge.downloadAndInstall !== 'function') {
-        showErrorMessage('当前环境不支持应用内更新');
+        showInfoMessage('当前环境不支持应用内更新');
         return;
     }
     const mirrorUrl = UPDATE_MIRROR_PREFIX + pendingUpdate.apkUrl.replace(/^https?:\/\//, '');
@@ -531,7 +531,7 @@ window.XixiUpdaterCallback = function (state, message) {
             // ★2026-09-07 本地包不存在/被系统清理 → 清记忆并自动重新下载（不死路）
             hideLoadingToast();
             clearLocalApkTag();
-            showErrorMessage('本地安装包已失效，正在重新下载');
+            showInfoMessage('本地安装包已失效，正在重新下载');
             setTimeout(function () { try { startUpdate(); } catch (e2) { /* 忽略 */ } }, 300);
             if (desc) desc.textContent = '重新下载中…';
         } else if (state === 'installing') {
@@ -553,8 +553,8 @@ let loadingToastEl = null;
 function showLoadingToast(message) {
     hideLoadingToast();
     const div = document.createElement('div');
-    div.style.cssText = 'position:fixed;left:50%;bottom:140px;transform:translateX(-50%);z-index:100;max-width:90vw;';
-    div.className = 'toast-glass px-5 py-3';
+    div.style.cssText = 'position:fixed;left:50%;bottom:140px;transform:translateX(-50%);z-index:300;max-width:90vw;padding:12px 20px;';
+    div.className = 'toast-pop toast-glass loading';   // ★2026-09-10 内联 padding（px-5 死类）；样式类名不再依赖 Tailwind   // ★2026-09-10 补 loading 变体类（原先漏加 → 底色透明看不出是提示）+ 层级 100→300
     div.innerHTML = '<div class="flex items-center gap-2"><span class="material-icons" style="animation:spin 1s linear infinite;">autorenew</span><span style="font-size:14px;">' + escapeHtml(message) + '</span></div>';
     document.body.appendChild(div);
     loadingToastEl = div;

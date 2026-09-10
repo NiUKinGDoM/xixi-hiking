@@ -12,7 +12,7 @@ const ROOT = path.resolve(__dirname, '..');
 const WWW = path.join(ROOT, 'www');
 const JAVA_DIR = path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking');
 const BUSINESS_JS = ['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'];
-const HASH_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'assets/support-qr-wechat.jpg', 'assets/support-qr-alipay.jpg'];
+const HASH_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'assets/support-qr-wechat.jpg', 'assets/support-qr-alipay.jpg', 'assets/fonts/material-icons.woff2', 'assets/vendor/tailwind4.1.13.js'];
 
 function obfuscate(code, name) {
   const JavaScriptObfuscator = require('javascript-obfuscator');

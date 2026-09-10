@@ -1177,7 +1177,7 @@ window.__handleSystemBack = function () {
 };
 // ★2026-08-27 防误退提示：用 App 玻璃 toast（与下载更新同款 toast-glass 体系），时长 2000ms
 window.__showBackHint = function () {
-    showSuccessMessage('再按一次退出徒步小记', 2000);
+    showInfoMessage('再按一次退出徒步小记', 2000);
 };
 // ★2026-08-25 灯箱主按钮统一入口：编辑模式=添加照片，查看模式=保存图片
 function lbPrimaryAction() {
@@ -1565,6 +1565,7 @@ function saveRecord(id) {
         return;
     }
     
+    nameInput.classList.remove('border-red-500');   // ★2026-09-10 校验通过清红边（原来只加不删）
     record.name = nameInput.value.trim();
     record.difficulty = parseInt(difficultyInput.value);
     record.elevation = Math.max(0, parseInt(elevationInput.value) || 0); // ★2026-08-29 与新增记录一致：负数防护
@@ -2881,7 +2882,7 @@ function initYearReview() {
             if (!yrCompareOn) {
                 var lastStats = calcYearStats(yearReviewYear - 1);
                 if (!lastStats.has) {
-                    if (typeof showErrorMessage === 'function') showErrorMessage((yearReviewYear - 1) + ' 年还没有记录，没法对比', 2200);
+                    if (typeof showInfoMessage === 'function') showInfoMessage((yearReviewYear - 1) + ' 年还没有记录，没法对比', 2200);
                     return;
                 }
             }

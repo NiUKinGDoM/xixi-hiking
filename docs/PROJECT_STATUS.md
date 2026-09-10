@@ -1,16 +1,67 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
-> **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-10（v1.2.0.1 / vc243）
-> ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 https://xixi-hiking.pages.dev**（**已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）
-> （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）
-> ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）
+> **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
+> 最后更新：2026-09-10（v1.2.0.2 / vc244）  
+> ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
+> （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
+> ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）  
 > ★2026-09-08 防重打包已内置（MainActivity.verifyInstalledSignature 启动签名自校验，SIGN_EXPECT_SHA 白名单=debug.keystore 9396fee4…；**更换签名密钥必须同步更新该常量**，否则正式包会被自己拒用；校验失败弹「安装包校验失败」并退出）
 
+## ⚡ 开工前 30 秒（新会话 / 换模型，必做，别跳）
+
+1. **读三份**：本文件 → `.workbuddy/memory/MEMORY.md` → `.workbuddy/memory/` 最新日期日志（别凭记忆开工，文档里踩过的坑不要再踩一遍）
+2. **核对版本三处一致**：`android/app/build.gradle` versionCode/Name ↔ `www/app-core.js` APP_VERSION ↔ `index.html` 关于页显示；再核远程 `releases/latest`（防并行会话/自动化抢先发布）
+3. **复述确认**：当前版本号 / 主工程路径 / 最近发版 / 发布流程顺序 → 说给用户听，一致才动手
+4. 只在用户说「**同步**」后才 bump/构建/push；改完 www **直接部署网页版**给用户先看（不用问）
+
+### 🧰 常用命令速查（本项目已机制化，别再临场写一次性脚本）
+
+```bash
+# 环境前置（每次 bash 会话）
+export NODE_PATH="C:/Users/NIU-XC/.workbuddy/binaries/node/workspace/node_modules"
+NODE="C:/Users/NIU-XC/.workbuddy/binaries/node/versions/22.22.2-2/node.exe"
+
+# ① 改代码：一律走补丁工具（禁 heredoc 拼含转义的 JS）
+node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一校验+写后语法校验+失败还原
+
+# ② 跑测试：一条命令跑全部（替代反复单跑）
+node tools/checkall.js            # test + test-ui + P0P3 + E2E 汇总
+node tools/checkall.js --fast     # 只跑前两套（秒级，改文档/小改后先跑它）
+node tools/checkall.js --no-e2e   # 跳 E2E
+
+# ③ 浏览器实测（替代每次新写 playwright 脚本）
+node e2e/inspect.js --inline "return typeof showInfoMessage"
+node e2e/inspect.js --file tools/snippets/x.js [--dark] [--shot x.png]
+
+# ④ 视觉回归 / 刷基线
+node e2e/run.js            # 24 项，像素差 ≤0.5%
+node e2e/run.js --update   # 界面确属预期变化时刷基线
+
+# ⑤ 发布构建：一条命令（同步9文件+assets → obf → hash → 原生文件 → gradle）
+node tools/release.js              # 全流程
+node tools/release.js --skip-build # 只做前四步
+
+# ⑥ GitHub 同步（副本+diff核对+commit[+push]）——替代手写逐文件 cp/循环 diff
+node tools/ghsync.js --dry-run      # 先看将同步什么 + diff 核对
+node tools/ghsync.js -m "release: vX (vcN)" --push
+
+# ⑦ 代码审计（死类 / 死 CSS / 残留 / 重复 id / 外部 CDN 依赖）——「四项优化」①⑤自动化
+node tools/audit.js
+
+# ⑧ 断网可用性实测（模拟徒步野外无信号）
+node e2e/inspect.js --file tools/snippets/offline-check.js --offline
+# 说明：A/B/C 是「信号」（静态查无 ≠ 不生效，自定义 CSS 可能兜底）→ 判定 bug 必须
+#   node e2e/inspect.js --inline "return getComputedStyle(...).xxx"  实测 computed 值
+```
+
+> ⚠️ 临时文件**一律用绝对路径**（沙箱下 /tmp 与 $TEMP 解析不稳定）；删样式类前先 grep 确认无引用（见关键约定 16）；**Tailwind 类是按需编译的，新工具类必须确认编译产物已有**（见关键约定 6，z-[300] 就是这么踩的）。
+
 ## 一句话
+
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
 ## 📌 2026-09-10 机制化升级（把历史踩坑转成自动检查/固定工具）
+
 - **收款码外置**：`www/assets/support-qr-wechat.jpg` + `support-qr-alipay.jpg`（原 base64 内联退役，app-data.js 513KB → 265KB）；已纳入 **ResGuard 哈希（7 项）**；saveSupportQr 支持外置 URL（fetch→base64→相册桥 / 网页直接下载）
 - **同步清单 7 → 9 文件**：原 7 文件 + `assets/support-qr-wechat.jpg` + `assets/support-qr-alipay.jpg`（assets/ 子目录随包）
 - **新工具 `tools/patch.js`**：JSON 补丁原子写入（解决 heredoc/Edit 转义层数坑；命中校验 + 写后语法校验 + 失败自动还原）
@@ -18,31 +69,70 @@
 - **test.js 新增 5r 机制化自检**（+3 条）：外部编辑器注入检测（data-page-node-id 等）/ 文档版本一致（PROJECT_STATUS 顶部 == APP_VERSION）/ MainActivity 花括号配平；另 +2 条收款码外置资源断言
 - **2026-09-10 补**：SW `CACHE_NAME` 升至 v18 并把 `assets/` 两收款码纳入 `CORE_ASSETS`（离线可看码；同时强制客户端旧壳失效）；`prev-snapshot.js` 快照纳入 assets（回退点完整）；支持作者保存按钮 iOS 网页降级（长按提示）
 - **真机自检清单 `docs/DEVICE-CHECKLIST.md`**：发版后照单点 16 项（含"收款码是你的码"与"诊断不含记录内容"两项钱/数据关键项）
+- **新工具 `e2e/inspect.js`**（2026-09-10）：常驻浏览器实测器——`--inline`/`--file`/stdin 传 JS 片段，自动起 8123 服务、自动上报页面 JS 错误（过滤 favicon 噪音）、`--dark`/`--shot`；**替代"每次排查新写一个一次性 playwright 脚本"**
+- **新工具 `tools/checkall.js`**（2026-09-10）：一条命令跑全部自检（test + test-ui + P0P3 + E2E）并汇总/打印失败明细；`--fast`/`--no-e2e`/`--only=e2e`；任一套失败退出码 1（可直接当发布门禁）
+- **新工具 `tools/ghsync.js` + `tools/ghtoken.py`**（2026-09-10）：GH 副本同步一条龙——www/assets/docs/tools/e2e 整目录同步（新增文件自动带上，不再漏）+ 关键文件 diff 核对 + 自动纠正 git 身份 + git add/commit + `--push`（token 由 ghtoken.py 从凭据管理器读）；`--dry-run` 只看不写。**替代每轮手写「逐文件 cp + 循环 diff + commit + push」**
+- **新工具 `tools/audit.js`**（2026-09-10）：代码审计——A Tailwind 任意值类是否编译 / B 类名是否有 CSS 定义 / C 死 CSS / D 残留物 / E 重复 id / **F 外部依赖（离线自足，出现任何 http(s) 外链即 fail）**。**★定位：静态存在性 ≠ 实际生效**（自定义 CSS 常兜底），A/B/C 只作信号；**D/E/F 为确定性检查＝门禁**（退出码 1）。判定 bug 必须用 `e2e/inspect.js` 实测 computed 值
+- **`e2e/inspect.js --offline`**（2026-09-10）：阻断一切外部域名请求 → 模拟「徒步野外无信号」；配套巡检片段 `tools/snippets/offline-check.js`（图标字体 / 关键布局 / 四类 toast / 页面错误）。用法：`node e2e/inspect.js --file tools/snippets/offline-check.js --offline`
+- **同步清单升级为「整目录同步」**：`tools/`（*.js/*.py）、`e2e/`（*.js，排除 shots 截图）、`docs/`（*.md）自动全量带上 → 根治「新工具/新文档漏同步」
+- **★离线自足（2026-09-10）**：图标字体 + Tailwind 运行时全部本地化（详见关键约定 18）；**新增静态资源三处同步**（sw CORE_ASSETS + ResGuard HASH_FILES + `inspect --offline` 实测）；`tools/audit.js` 新增 **F 段外部依赖门禁**；`e2e/inspect.js` 新增 **`--offline`**（模拟断网）+ 巡检片段 `tools/snippets/offline-check.js`
+
 
 ## 当前版本状态（2026-09-03）
 
+- **正式版 v1.2.0.2**（versionCode 244，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.2 更新（**离线自足** + 提示体系统一）：**彻底去外部 CDN 依赖**——图标字体本地化（`assets/fonts/material-icons.woff2` + `@font-face` 内联进 index.html；原阿里 CDN 断网致 163 处图标变英文单词）、Tailwind 运行时本地化（`assets/vendor/tailwind4.1.13.js`；原 CDN 断网致概览统计卡两列塌成一列）；**audit F 段门禁**（index.html 出现任何外链即判失败）+ favicon 声明（消除 /favicon.ico 404）+ **sw `CACHE_NAME` v18→v19、`CORE_ASSETS` 7→16 项**（字体/vendor/manifest/4 个 PWA 图标，逐项验证 200）+ **toast 四态修正**（loading 漏变体类致底色全透明 → 补类；三态 `z-[300]` 未编译 + loading 100 → 全部内联 300；`fixed` 误删致跑出视口 → 内联 position；补内联 padding 12px 20px） + **语义配色 5 处改中性**（网页版无需更新/环境不支持/包失效重下/再按一次退出/年份无记录）+ `border-red-500` 补 CSS 且校验通过后清除 + 统计卡 `items-baseline` 内联 + loading/info 拉同配方；ResGuard 7→9 项；test 195/30/194 + E2E 24/0
 - **正式版 v1.2.0.1**（versionCode 243，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版
 - v1.2.0.1 更新（机制化收尾 + iOS 适配）：**SW 离线收录收款码**（CACHE_NAME v17→v18，CORE_ASSETS 加 assets 两码 → 断网也能看码；版本化缓存顺带强制客户端刷新）；**iOS 网页降级**（saveSupportQr 加 isIOSWeb：Safari 不支持 a[download] → 提示「长按二维码图片即可保存到相册」）；**prev-snapshot.js 纳入 assets**（回退点不再缺码）；test.js 5r 机制断言 +2（SW 收录码 / iOS 降级）→ 181；BUILTIN 新增 v1.2.0.1【新增/修复/优化】
 - **正式版 v1.2.0.0**（versionCode 242，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.0 更新（★满十进位：1.1.10.10 → 1.2.0.0，段规则 bump.js 自动）：**导出诊断恢复精简**（回滚 10.10 误加的记录/计划明细：诊断=排障文件不含业务数据；helpers buildRecordsDetail/buildPlansDetail 删除，save 头行修复）；回忆册日记样式/按钮换序维持 10.10 状态；test 174/30/194；BUILTIN 新增 v1.2.0.0【修复】
 - **正式版 v1.1.10.10**（versionCode 241，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.10 更新（回忆册日记样式 + 导出明细 + 按钮换序）：**回忆册.html 日记排版**（buildBackupHTMLString 重构：纸感底+SimSun+日期大字标+中文日期周+心情天气同行 meta+山名大标题+难度五档圆点 diff5+小日记全文便签黄块 pre-wrap+照片墙 104px 打印 82px+entry-long 长文跨页不切断+@page A4 14/13mm+h2 .t 下划线+plan 虚线列表；注释 P1-⑧ 9-05 版废弃）+ **导出诊断全量明细**（buildRecordsDetail/buildPlansDetail：每条记录含小日记/心情/天气/同行人/照片数 createdAt 倒序；helpers 为函数内局部）；关于页按钮两行=隐私政策·免责声明 / 支持作者·更新日志；test 175/30/194；BUILTIN 新增 10.10
+- v1.1.10.10 更新（回忆册日记样式 + 导出明细 + 按钮换序）：**回忆册.html 日记排版**（buildBackupHTMLString 重构：纸感底+SimSun+日期大字标+中文日期周+心情天气同行 meta+山名大标题+难度五档圆点 diff5+小日记全文便签黄块 pre-wrap+照片墙 104px 打印 82px+entry-long 长文跨页不切断+@page A4 14/13mm+h2 .t 下划线+plan 虚线列表；
+  注释 P1-⑧ 9-05 版废弃）+ **导出诊断全量明细**（buildRecordsDetail/buildPlansDetail：每条记录含小日记/心情/天气/同行人/照片数 createdAt 倒序；
+  helpers 为函数内局部）；
+  关于页按钮两行=隐私政策·免责声明 / 支持作者·更新日志；
+  test 175/30/194；
+  BUILTIN 新增 10.10
 - **正式版 v1.1.10.9**（versionCode 240，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.9 更新（免责声明 + 内部清理）：关于卡四钮两行（隐私政策/更新日志、免责声明/支持作者，padding 14+flex 纵向 gap8）→ showDisclaimerModal（confirm 玻璃弹窗 dmi 4 条：记录工具不是领队/请走正规路线(不引导野山)/出发前准备/风险自担，hiking 图标 + 知道了灰蓝）；**修复 www/index.html 被外部编辑器注入 424 处 data-page-node-id 冗余属性**（内容零影响但破坏 stat-unit 断言，正则剥净 CRLF 保持）；test 174/30/194；BUILTIN 新增 10.9
 - **正式版 v1.1.10.8**（versionCode 239，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.8 更新（安全纵深三件套）：①MainActivity.onCreate 签名自校验 verifyInstalledSignature（SIGN_EXPECT_SHA=debug.keystore 9396fee4…，失败弹「安装包校验失败」退出；⚠换签名密钥必同步改常量）②打包 JS 混淆（tools/security.js obf 混淆 temp assets/public 4 业务 JS 才入包，www 源明文；发布流程加安全两步）③资源软校验（tools/security.js hash 生成 ResGuard.java 5 文件 SHA-256 → verifyAssetsIntegrity 启动比对不符弹提示）+ Manifest allowBackup/fullBackupContent=false；工具链 tools/security.js（obf/hash，NODE_PATH 指向隔离 node workspace）；test 171/30/194；BUILTIN 新增 10.8
+- v1.1.10.8 更新（安全纵深三件套）：①MainActivity.onCreate 签名自校验 verifyInstalledSignature（SIGN_EXPECT_SHA=debug.keystore 9396fee4…，失败弹「安装包校验失败」退出；
+  ⚠换签名密钥必同步改常量）②打包 JS 混淆（tools/security.js obf 混淆 temp assets/public 4 业务 JS 才入包，www 源明文；
+  发布流程加安全两步）③资源软校验（tools/security.js hash 生成 ResGuard.java 5 文件 SHA-256 → verifyAssetsIntegrity 启动比对不符弹提示）+ Manifest allowBackup/fullBackupContent=false；
+  工具链 tools/security.js（obf/hash，NODE_PATH 指向隔离 node workspace）；
+  test 171/30/194；
+  BUILTIN 新增 10.8
 - **正式版 v1.1.10.7**（versionCode 238，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.7 更新（支持作者）：关于卡三钮（更新日志/隐私政策/支持作者 check-go 浅红）→ showSupportModal 两步弹窗（标题纯文字无图标：step1 说明+微信(绿)/支付宝(蓝)双渠道按钮 → step2 白卡收款码大图 + 返回/保存二维码 + 「保存到相册后扫一扫选图」小字）；微信/支付宝收款码 base64 内联 app-data 顶（SUPPORT_QR_WECHAT/ALIPAY，PIL 800 宽 q85 压缩共 +250KB）；saveSupportQr：MainActivity saveQrToGallery 桥（Android10+ MediaStore Pictures 免权限 / <29 公开目录+广播）+ 网页 a[download] 降级；五项优化（标题图标去心形统一入口/无用变量清/临时文件清/test 断言随改）；test.js 5p → 166；BUILTIN 新增 10.7
+- v1.1.10.7 更新（支持作者）：关于卡三钮（更新日志/隐私政策/支持作者 check-go 浅红）→ showSupportModal 两步弹窗（标题纯文字无图标：step1 说明+微信(绿)/支付宝(蓝)双渠道按钮 → step2 白卡收款码大图 + 返回/保存二维码 + 「保存到相册后扫一扫选图」小字）；
+  微信/支付宝收款码 base64 内联 app-data 顶（SUPPORT_QR_WECHAT/ALIPAY，PIL 800 宽 q85 压缩共 +250KB）；
+  saveSupportQr：MainActivity saveQrToGallery 桥（Android10+ MediaStore Pictures 免权限 / <29 公开目录+广播）+ 网页 a[download] 降级；
+  五项优化（标题图标去心形统一入口/无用变量清/临时文件清/test 断言随改）；
+  test.js 5p → 166；
+  BUILTIN 新增 10.7
 - **正式版 v1.1.10.6**（versionCode 237，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.6 更新（四件套 + 日志文案定稿）：**隐私政策页**（关于卡双钮 + showPrivacyPolicyModal 玻璃弹窗 dmi 条目 10 条：数据存哪/云备份/本地备份/照片清理/抹掉足迹/联网行为(含崩溃上报披露)/权限用途两条/数据自主/更新与联系）+ **崩溃日志采集**（app-core hiking_crash_queue 持久队列 20 条重启不丢并入诊断导出；MainActivity readCrashLogText/clearCrashLogFile + JsFileBridge getNativeCrashLog/clearNativeCrashLog 桥）+ **崩溃自动上报**（buildCrashReport+maybeUploadCrashReport：App 内+已配 WebDAV 时启动自动 PUT xixi_crash_*.txt 当日一次成功清队列，失败静默）+ E2E 真实渲染回归工具（e2e/：playwright-core+系统 Edge，9 屏基线像素差 ≤0.5%）+ 「查看更新日志」→「更新日志」；★更新日志小标题格式定稿：`**修复**`→`【修复】`，10.5/10.4/10.3 三条 BUILTIN 文案改【新增】【修复】【优化】并去 `## vX 更新内容` 首行（Release body 同步 PATCH）；test.js 5p → 161；BUILTIN 新增 10.6
+- v1.1.10.6 更新（四件套 + 日志文案定稿）：**隐私政策页**（关于卡双钮 + showPrivacyPolicyModal 玻璃弹窗 dmi 条目 10 条：数据存哪/云备份/本地备份/照片清理/抹掉足迹/联网行为(含崩溃上报披露)/权限用途两条/数据自主/更新与联系）+ **崩溃日志采集**（app-core hiking_crash_queue 持久队列 20 条重启不丢并入诊断导出；
+  MainActivity readCrashLogText/clearCrashLogFile + JsFileBridge getNativeCrashLog/clearNativeCrashLog 桥）+ **崩溃自动上报**（buildCrashReport+maybeUploadCrashReport：App 内+已配 WebDAV 时启动自动 PUT xixi_crash\_*.txt 当日一次成功清队列，失败静默）+ E2E 真实渲染回归工具（e2e/：playwright-core+系统 Edge，9 屏基线像素差 ≤0.5%）+ 「查看更新日志」→「更新日志」；
+  ★更新日志小标题格式定稿：`**修复**`→`【修复】`，10.5/10.4/10.3 三条 BUILTIN 文案改【新增】【修复】【优化】并去 `## vX 更新内容` 首行（Release body 同步 PATCH）；
+  test.js 5p → 161；
+  BUILTIN 新增 10.6
 - **正式版 v1.1.10.5**（versionCode 236，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.5 更新（info toast 外观统一）：中性信息提示补成与 success/error/loading 同款配方——background rgba(226,232,240,0.40) + border 1px solid rgba(100,116,139,0.55) + 元素级 color #334155（原只 border-color：无 border-style/width 不显示边框且无底色 → 光杆灰字）；dark rgba(40,50,68,0.40)/rgba(148,163,184,0.45)/#e2e8f0；图标色 #64748b→#94a3b8；test.js 5n 补 info 底/边断言 → 150；BUILTIN 新增 10.5
 - **正式版 v1.1.10.4**（versionCode 235，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.4 更新（计划三态徽章）：通用函数 planRelBadgeHtml(createdAt) 三态——过期=「已过期 N 天」红（.pl-overdue 既有）/ 今天=「今天」靛蓝（.pl-today #4f46e5→dark #a5b4fc，与日历今天强调同系）/ 明天=「明天」天蓝（.pl-tomorrow #0369a1→dark #7dd3fc），后天起无标；接入三处：计划列表行（v1.1.9.5 起仅过期红标 → 统一函数，今天/明天扩展）+ 日历整月明细 renderCalMonthDetail + 日历单日明细 renderCalDayDetail（名称行改 flex：名称 ellipsis flex:1 + 徽章 flex-shrink:0；单日搜索 ●/匹配 标保留）；test.js 5o 6 条 → 149、P0P3 194（更新日志版本断言动态化后 bump 零破坏）；BUILTIN 新增 10.4
+- v1.1.10.4 更新（计划三态徽章）：通用函数 planRelBadgeHtml(createdAt) 三态——过期=「已过期 N 天」红（.pl-overdue 既有）/ 今天=「今天」靛蓝（.pl-today #4f46e5→dark #a5b4fc，与日历今天强调同系）/ 明天=「明天」天蓝（.pl-tomorrow #0369a1→dark #7dd3fc），后天起无标；
+  接入三处：计划列表行（v1.1.9.5 起仅过期红标 → 统一函数，今天/明天扩展）+ 日历整月明细 renderCalMonthDetail + 日历单日明细 renderCalDayDetail（名称行改 flex：名称 ellipsis flex:1 + 徽章 flex-shrink:0；
+  单日搜索 ●/匹配 标保留）；
+  test.js 5o 6 条 → 149、P0P3 194（更新日志版本断言动态化后 bump 零破坏）；
+  BUILTIN 新增 10.4
 - **正式版 v1.1.10.3**（versionCode 234，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.3 更新（★更新包直装 + 中性 toast + CSS 事故修复批）：**★直装不重下**——下载完成即记版本（PENDING_APK_TAG_KEY=hiking_pending_apk_tag），退出安装界面后再查同版本=弹绿提示「安装包已下载好」+主按钮变「立即安装」直装本地包（MainActivity 新增 installDownloadedApk 桥：cache/downloads/xixi_update.apk 存在且>1MB 直装/缺失 notifyJs no_local_apk → JS 清记+自动重下兜底；旧包无桥自动回退 startUpdate）+ **中性信息 toast**（showInfoMessage .toast-glass.info 灰蓝 info 图标，俏皮话五条改用中性色，绿/红/灰蓝三级齐）+ 更新日志弹窗颜色内联化（IS_DARK 分支 var CL 色板 v/b/tagTx/tagBg/tagBd 全内联，删 #changelogBody cl CSS 6 规则，防安卓 #id CSS 失效——cl CSS 原被 .confirm-modal-message 未闭合吞掉从未生效）+ 记录/计划行 stagger 动画延迟限幅（Math.min(idx,6)*0.05，首屏封顶 0.3s）+ README「🔒 隐私与数据说明」节 + 照片占用弹窗 IDB 双全量读→单读提速 + **★★CSS 误删事故修复**（上轮区间删 cl 误删 489 行通用按钮/toast CSS → 以 GH 副本 1.1.10.2 为基线构造完美版找回；顺带清 3 处历史坏块：body transition 归位（08-30 改造挤出）/ .confirm-modal-message 补 }（吞 cl 的元凶）/ 08-25 edit-mini 无头残渣）+ test.js 新增 5m（直装 6 条）+ 5n（CSS 健康 6 条：括号配平/按钮系/toast 四态/通用样式/cl 零残留/message 闭合）→ 144 项；P0P3 更新日志版本断言动态化（bump 后免手改）→ 194 项；BUILTIN 新增 10.3
+- v1.1.10.3 更新（★更新包直装 + 中性 toast + CSS 事故修复批）：**★直装不重下**——下载完成即记版本（PENDING_APK_TAG_KEY=hiking_pending_apk_tag），退出安装界面后再查同版本=弹绿提示「安装包已下载好」+主按钮变「立即安装」直装本地包（MainActivity 新增 installDownloadedApk 桥：cache/downloads/xixi_update.apk 存在且>1MB 直装/缺失 notifyJs no_local_apk → JS 清记+自动重下兜底；
+  旧包无桥自动回退 startUpdate）+ **中性信息 toast**（showInfoMessage .toast-glass.info 灰蓝 info 图标，俏皮话五条改用中性色，绿/红/灰蓝三级齐）+ 更新日志弹窗颜色内联化（IS_DARK 分支 var CL 色板 v/b/tagTx/tagBg/tagBd 全内联，删 #changelogBody cl CSS 6 规则，防安卓 #id CSS 失效——cl CSS 原被 .confirm-modal-message 未闭合吞掉从未生效）+ 记录/计划行 stagger 动画延迟限幅（Math.min(idx,6)*0.05，首屏封顶 0.3s）+ README「🔒 隐私与数据说明」节 + 照片占用弹窗 IDB 双全量读→单读提速 + **★★CSS 误删事故修复**（上轮区间删 cl 误删 489 行通用按钮/toast CSS → 以 GH 副本 1.1.10.2 为基线构造完美版找回；
+  顺带清 3 处历史坏块：body transition 归位（08-30 改造挤出）/ .confirm-modal-message 补 }（吞 cl 的元凶）/ 08-25 edit-mini 无头残渣）+ test.js 新增 5m（直装 6 条）+ 5n（CSS 健康 6 条：括号配平/按钮系/toast 四态/通用样式/cl 零残留/message 闭合）→ 144 项；
+  P0P3 更新日志版本断言动态化（bump 后免手改）→ 194 项；
+  BUILTIN 新增 10.3
 - **正式版 v1.1.10.2**（versionCode 233，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.10.2 更新（照片占用弹窗定稿批）：★真机排版修复根因=content 缺样式锚点 id=puModal（CSS 全挂）→ 统计卡/容量条/警示样式改全 JS 内联（IS_DARK 分支色板，零 CSS 依赖）+ 弹窗加大 392px（数字 28px）+ ★TOP10 榜单按用户要求移除（computePhotoTopRecords/死 CSS 全清）+ 底部双钮（知道了灰蓝 confirm-btn-cancel / 优化 check-go 红纯文字去图标，超限文案变去清理，动作=confirmDeleteOrphanPhotos 有孤立先确认-显示张数空间-记录照片不受影响，无孤立俏皮 toast 随机五连）+ 行内快捷 photoCleanBtn 删除（入口统一，desc 保留「含孤立 N 张，点开可优化」）+ 真机加固（整函数 try 兜错/委托绑定/幂等防双开）；BUILTIN 新增 10.2；test.js 129、P0P3 191
+- v1.1.10.2 更新（照片占用弹窗定稿批）：★真机排版修复根因=content 缺样式锚点 id=puModal（CSS 全挂）→ 统计卡/容量条/警示样式改全 JS 内联（IS_DARK 分支色板，零 CSS 依赖）+ 弹窗加大 392px（数字 28px）+ ★TOP10 榜单按用户要求移除（computePhotoTopRecords/死 CSS 全清）+ 底部双钮（知道了灰蓝 confirm-btn-cancel / 优化 check-go 红纯文字去图标，超限文案变去清理，动作=confirmDeleteOrphanPhotos 有孤立先确认-显示张数空间-记录照片不受影响，无孤立俏皮 toast 随机五连）+ 行内快捷 photoCleanBtn 删除（入口统一，desc 保留「含孤立 N 张，点开可优化」）+ 真机加固（整函数 try 兜错/委托绑定/幂等防双开）；
+  BUILTIN 新增 10.2；
+  test.js 129、P0P3 191
 - **正式版 v1.1.10.1**（versionCode 232，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.10.1 更新：★P0 照片库上限（体检建议落地）——设置「照片占用」行可点开详情弹窗（confirm-modal 体系：统计卡 pu-card 数字大单位小/容量条 pu-meter 300MB 满格超限红/超限浅红警示 pu-warn/最占空间 TOP10 排行 pu-tr 点击跳记录 view 真实跳转/第一行恒红 rank1/底部单 check-go 主钮常态「知道了」超限变「去清理」走孤立清理）+ PHOTO_LIMIT_BYTES 300MB + computePhotoTopRecords 纯函数（孤儿不计排行）+ 更新日志三版弹窗标题去版本号（本次徽章仅 j===0，上两次无标签）+ BUILTIN 新增 10.1；test.js 125、P0P3 188
 - **正式版 v1.1.10.0**（versionCode 231，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -52,11 +142,15 @@
 - **正式版 v1.1.9.9**（versionCode 229，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.9.9 更新（装机二次反馈 + 概览细节）：引导 ✕ 逐卡独立（dismissGuide/guideSeen 每卡 hiking_guide_seen_ 键 + 老 welcome_seen_v1 兼容全 seen/loadGuideSeenState 重启恢复/resetGuideSeen 钩子）+ 引导次按钮统一同尺寸 guide-sub-btn（7px16px/fs13/r12 + dark 通用规则）+ 概览「总记录数」加单位次（HTML span 数字动画不吞单位）+「平均难度」加单位级（'级' 拼接）+ 小日记 view 卡字色提深（图标/标签 #52606f、正文 #1e293b + jd-lab/jd-body dark #a3b1c6/#e5e7eb）+ 数据管理 i 弹窗内容按钮间距 2→16px；test.js 107、P0P3 158
 - **正式版 v1.1.9.8**（versionCode 228，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.9.8 更新（装机反馈三波定稿）：更新日志字面 \n 修复整行重建（js_esc 干净换行）+ 字号三档功能删除（zoom 真机无效）+ 新手引导分页 4 卡（welcomeBanner 概览/guideRecords/Plans/Settings，哪页讲哪页）+ **仅 ✕ 关闭**（点按钮跳转/有记录/载示例均不自关，tabGuidesEnabled=!welcomeBannerShown，重启 seen 恢复）+ 引导按钮逐按钮直达（P0P3 全真点验证）+ 概览卡 ✕ 补 wb-guide-close class（原委托关不掉）+ 计划过期关怀定稿两按钮「去处理/忽略」横排（顺延一键删）+ 深色模式用时/里程复合框 edit-merge-box dark 化 + 输入框 placeholder 深色提亮 + 导出弹窗自动备份说明迁入数据管理 i 弹窗（showDataInfoModal 第 4 条目）；test.js 99、P0P3 156
+- v1.1.9.8 更新（装机反馈三波定稿）：更新日志字面 \n 修复整行重建（js_esc 干净换行）+ 字号三档功能删除（zoom 真机无效）+ 新手引导分页 4 卡（welcomeBanner 概览/guideRecords/Plans/Settings，哪页讲哪页）+ **仅 ✕ 关闭**（点按钮跳转/有记录/载示例均不自关，tabGuidesEnabled=!welcomeBannerShown，重启 seen 恢复）+ 引导按钮逐按钮直达（P0P3 全真点验证）+ 概览卡 ✕ 补 wb-guide-close class（原委托关不掉）+ 计划过期关怀定稿两按钮「去处理/忽略」横排（顺延一键删）+ 深色模式用时/里程复合框 edit-merge-box dark 化 + 输入框 placeholder 深色提亮 + 导出弹窗自动备份说明迁入数据管理 i 弹窗（showDataInfoModal 第 4 条目）；
+  test.js 99、P0P3 156
 - **正式版 v1.1.9.7**（versionCode 227，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.1.9.7 更新：显示大小三档（zoom 全量缩放、iOS 退 html font-size）+ 全文搜索（notes/心情/天气/同行人）+ 抹掉所有足迹（双重确认含照片、云端备份不受影响、清引导/提醒标记 reload 全新开始）+ 记录弹窗小日记 notes（edit textarea/view 卡片，空删键）+ 计划过期关怀（列表 .pl-overdue 红标 + maybeShowOverdueCare 顺延一周/去处理/忽略，每日一次）+ 新手引导 3→5 步（概览/数据安全）+ 视图 caption 单击收起/切视图恢复 + 回忆册打印 PDF 样式 + 导出弹窗手动备份按钮移除改自动备份说明；test.js 89、P0P3 140
 - **正式版 v1.1.9.6**（versionCode 226，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.1.9.6 更新（P0+P1 七项 + 五项优化）：①万条渲染加固（统计 6 reduce→单 pass 23ms、山册组内单 pass 40ms）+ schema 迁移框架（DATA_SCHEMA_VERSION=1+双迁移链 applySchemaMigrations）+ 照片孤立扫描清理入口（photoCountOrphans+设置页按钮）+ 热力图月桶 hmMonthAgg 切月 O(1)；②P1：一键示例 loadSampleData + 三步引导卡 WELCOME_STEPS + 本地每周自动备份 autoLocalBackupIfDue；③五项优化：photoCleanBtn 语义色浅红玻璃/示例钮去下划线/dark 引导卡 !important 修复/hexToRgba 死函数+5 处死 CSS 清理/自动+手动备份「成功后才记 last」时序修复；test.js 77 项、P0P3 120 项
+- v1.1.9.6 更新（P0+P1 七项 + 五项优化）：①万条渲染加固（统计 6 reduce→单 pass 23ms、山册组内单 pass 40ms）+ schema 迁移框架（DATA_SCHEMA_VERSION=1+双迁移链 applySchemaMigrations）+ 照片孤立扫描清理入口（photoCountOrphans+设置页按钮）+ 热力图月桶 hmMonthAgg 切月 O(1)；
+  ②P1：一键示例 loadSampleData + 三步引导卡 WELCOME_STEPS + 本地每周自动备份 autoLocalBackupIfDue；
+  ③五项优化：photoCleanBtn 语义色浅红玻璃/示例钮去下划线/dark 引导卡 !important 修复/hexToRgba 死函数+5 处死 CSS 清理/自动+手动备份「成功后才记 last」时序修复；
+  test.js 77 项、P0P3 120 项
 - v1.1.9.5 更新：热力图年月框+年回入口按钮统一「日历/列表」同款 glass-btn（.hm-ym-btn 死 CSS 清理）+ 热力图底部汇总加前缀（本月徒步…/X年X月徒步…防歧义，P0P3 断言升级）
 - v1.1.9.4 更新：热力图年回入口按钮带文字「回顾」（icon+label 12px 600）+ 计划完成顺序化（markPlannedComplete 先弹庆祝卡、showPlanCompleteCelebration 加 onContinue 回调，点「继续补全」才 startEdit 开编辑弹窗，Esc/遮罩跳过不影响已存记录）+ 记录/计划编辑弹窗右上 ✕ 编辑态隐藏（view 态保留，全 App 带取消按钮的弹窗无右上叉）+ 编辑弹窗照片标签下竖排小注「最多 24 张」（.rd-ph-hint 10px）
 - v1.1.9.3 更新：视图说明灰字去 icon 改居中纯文字（色对齐体系 #52606f/#a3b1c6）+ 批量多选框从名称列移到操作列（18px 居中）+ 多选框弃 accent 深红改玻璃自绘（appearance:none：未选白玻璃灰蓝边/选中浅红玻璃红勾，dark 对应暗玻璃亮勾）+ 死码清理（12 个零引用死函数 -153 行）+ 编辑弹窗 3 处 value 补 escapeHtml + 自动测试 P0P3 沉淀 99→115 项 + README 5 处过时修订 & GitHub 全文档同步（docs/PROJECT_STATUS、清 3 个误入 py）
@@ -68,7 +162,7 @@
 - v1.1.8.5 更新：添加从历史复制弹窗（＋添加选择卡/直接新建）、年度回顾「和去年比」（3列/划线增幅/一年小结/底部操作区）、山册↗跳转修复（照片/定位/滚动）、iOS 网页适配
 - **★2026-08-30 测试版已全部删除**（hiking-app3-test + Flutter 全系，用户要求彻底删）；残留两个空壳（C:\Users\NIU-XC\flutter\bin\internal\shared.bat + hiking-flutter-test 空目录）被 WorkBuddy 占句柄，重启 WorkBuddy 后手动删，无害
 - **★应用内自更新**：GitHub Release 源（latest），用户手机「检查更新」自更，依赖仓库 public
-- **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
+- **⚠ 已过期（2026-09-10 起以本文「2. ★发布流程」条 + 顶部「🧰 常用命令速查」为准，本行仅作历史留存）** **★发布流程（2026-08-11 新版，铁律 2026-08-22 强化）**：①CloudStudio 部署 `hiking-app3/www` → 用户网页确认 → ②bump→test（test.js + **test-ui.js** 双自检）→构建→push GitHub（master）→Release 挂 APK → ③用户 App 内检查更新
 - **★★2026-09-01 用户新约定：「以后改完直接部署网页版，我先看」**——改完 www 代码**不用问、直接部署网页版**给用户验收（workbuddy_sites_deploy），再等用户「同步」才 bump/构建/发布
 - **★★★未确认同步前只改 www/index.html + 部署网页，绝不 bump/构建/归档/push**；确认「同步」才 bump→test→构建→push→Release
 - **★版本号铁律（2026-08-24 强化）**：发版口头汇报版本号必须用 **bump.js 实际输出**，禁止十进制直觉（v1.1.2.10 → 必须说 1.1.3.0，不许说 1.1.2.11，被用户叫停纠正过）
@@ -76,6 +170,7 @@
 - **★玻璃质感定稿（2026-08-23 v1.1.2.4~2.8）**：全组件统一透明玻璃配方 = `rgba(255,255,255,0.08) + blur(2px) + 细白边(0.5) + 无高光 + 无任何折射装饰`；**「最强玻璃质感」全局覆盖规则已删除**（光泽带/角部反光/内光晕/四角光斑全清）；弹窗全部 confirm 体系（confirm-modal-content）；toast 浅色同色系底边（成功浅绿底绿边/错误浅红底红边，alpha 统一 0.4）；激活按钮靛蓝描边 0.18；浅色遮罩 0.3 / 深色 0.7
 
 ## 技术栈
+
 - Capacitor 6.2.1 + Android WebView，纯 HTML/JS 单文件（无前端框架，Tailwind v4 编译产物内嵌）
 - 原生依赖仅 OkHttp 3.14.9（WebDAV 桥 + 更新下载；HttpURLConnection 反射在 Android 9+ 被拦）
 - Android 构建：本地 JDK 21 + Gradle 8.2.1 + SDK platform-36 + build-tools 34.0.0（工具链在项目根，不在 C:/Program Files）
@@ -83,13 +178,15 @@
 - 数据存储：localStorage（记录/计划/标题/暗色/帧率/WebDAV 配置）+ IndexedDB（照片大仓库）
 
 ## ★工程治理对策（2026-09-03 起，控制迭代副作用）
+
 1. **不拆文件**：维持 www 4 JS + index.html 结构（方案A 拆分已完成，再拆风险 > 收益）；新增代码按域进对应文件
 2. **新功能必配断言**：功能自测完成后把断言并入 `_test_p0p3.js`（现 55 项，发布三测之一）→ 不留孤儿测试文件
 3. **CSS 分区注释**：index.html 内 CSS 有分区注释头（如 `设置页 - 数据同步`），新样式进对应区并标日期
-4. **发布前建回滚点**：`node prev-snapshot.js` → `backups/prev-<版本>/`（www 7 文件 + build.gradle + MainActivity.java + AndroidManifest.xml），bump/构建/发布事故可整体还原
+4. **发布前建回滚点**：`node prev-snapshot.js` → `backups/prev-<版本>/`（www 9 文件（含 assets/ 收款码 2 + 字体 + vendor） + build.gradle + MainActivity.java + AndroidManifest.xml），bump/构建/发布事故可整体还原
 5. **复杂度"三问"过滤器**：新功能先问——能放进现有页面内部吗（不加平级入口）？能复用现有组件吗？删掉旧的什么来换？
 
 ## 功能清单（当前全部，v1.1.8.7）
+
 - 📊 概览：统计卡片（总记录数/平均海拔/最高海拔/平均难度/**总里程/总用时**）、**难度分布柱状图（独立卡片，图标标题）**、**年度足迹热力图**（GitHub 风格，点格看当天详情：心情/天气/同行/全部照片/分享，底部「累计爬升 X 米」）、**年度回顾入口**（v1.1.8.4：全屏玻璃回顾：6 指标+月度柱状+年度之最条件化+每年 1/1 自动展示；v1.1.8.5：「和去年比」开关 → 去年划线值+增幅+自然语言一年小结，关闭在右下操作区）
 - 📝 记录：增删改、行内编辑（**心情/天气统一玻璃弹窗（v1.1.7.10，替换原生下拉）**/同行人/里程 km/用时 h 单位/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）、**★自定义日期时间选择器（v1.1.7.8：玻璃弹窗日历选日期+时分步进器，替换系统原生 picker）**、**★列表/山册双视图（v1.1.8.4：按山聚合卡片，点 ↗ 直达记录，支持搜索过滤）**、**★＋添加弹「添加徒步记录」选择卡（v1.1.8.5：最近记录单选填充或直接新建，编辑旧记录不打扰）**
 - 📷 照片：记录最多 9 张（canvas 压缩 1280px/JPEG0.7，IndexedDB）、**编辑行层叠卡片**（无照片时白框加号）、**灯箱：查看/保存/翻页 + 编辑模式添加/删除**、热力图弹窗多图显示
@@ -99,25 +196,30 @@
   - 外观（跟随系统/深浅）→ 杂项（FPS 开关、**检查更新确认弹窗**）→ WebDAV 数据同步 → 关于
   - **WebDAV（坚果云）**：上传（时间戳独立 .zip 压缩包备份，v1.1.3.9 起）、下载恢复（zip/老 HTML 兼容）、管理（**云端自动清理保留最近 2 份**）、自动同步（失败限频提醒）、**密码加密存储（xk1: 前缀，老明文兼容）**、**网页版弹窗示例按钮**
   - **导出**（弹窗三选一：**完整备份 = zip 压缩包**（xixi-data.json + photos 二进制 + 纯文字回忆册，省 base64 33%）/ 纯数据 HTML / 诊断报告）、**导入**（zip/HTML/JSON 自动识别，同 id 以备份为准覆盖、本地独有合并保留）；备份回忆册含心情天气同行
-  - **导出诊断**：版本/数据量/最近 100 条错误日志（__diagLogs）
+  - **导出诊断**：版本/数据量/最近 100 条错误日志（\_\_diagLogs）
   - **只有顶栏标题可编辑**（6 个区块标题：统计概览/难度分布/徒步足迹/计划/记录/设置 已改为不可编辑）
 - 🎨 液态玻璃 UI：底栏悬浮 4 tab（概览/计划/记录/设置，**底部阴影已删**），二次点当前 tab 刷新；全 App 统一玻璃配方；**操作按钮统一浅红玻璃（check-go-btn：检查/立即更新/删除/确认完成/分享）**
 
 ## ★关键约定（改代码前必读，都是踩坑换来的）
+
 1. **★版本号规则（2026-08-10 用户最终确认）**：
    - versionName = 按 vc 数 `1.x.x.x`，每段 **0~10 共 11 个值**满 10 进位；公式：索引=vc-1；D4=索引%11；D3=(索引//11)%11；D2=(索引//121)%11
    - 对照：vc84=1.0.7.6、vc99=1.0.8.10、vc100=1.0.9.0、vc122=1.1.0.0
    - **bump 用 `node bump.js` 一键**（vc+1 + 版本名满10进位 + build.gradle/APP_VERSION/版本显示四处同步 + 校验），**汇报版本号以 bump.js 输出为准**（2026-08-24 教训：1.1.2.10 → 1.1.3.0，不许说 1.1.2.11）
-   - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
+   - ⚠️ 历史错位：v1.1.1.0~~1.1.1.4（vc132~~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-12）
-2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 iOS 网页适配=发 APK 时同步做：无 iOS 真机设备，改为发版代码级适配检查——pages.dev 是 iOS 唯一入口，新功能禁用/降级 iOS 不支持的 API（震动→navigator.vibrate guarded 静默、保存→下载/长按引导、WebDAV/通知→不可用提示），无白屏错乱、sw 正常，随 push 自动部署）** → ②**★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点**（backups/prev-<版本>/ 存 www 7 文件+build.gradle+MainActivity+Manifest，事故可整体还原；v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ **★2026-09-10 起一条命令：`node tools/release.js`**（内部=同步 9 文件+assets → obf 混淆 temp → hash 生成 ResGuard → cp build.gradle/ResGuard/MainActivity/Manifest → gradle --rerun-tasks 构建；`--skip-build` 只做前四步）。原理备忘：混淆只对 temp assets 副本，www 源与测试永远明文，ResGuard=APK 内混淆版哈希 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
+2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 iOS 网页适配=发 APK 时同步做：无 iOS 真机设备，改为发版代码级适配检查——pages.dev 是 iOS 唯一入口，新功能禁用/降级 iOS 不支持的 API（震动→navigator.vibrate guarded 静默、保存→下载/长按引导、WebDAV/通知→不可用提示），无白屏错乱、sw 正常，随 push 自动部署）** → ②\*\*★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点\*\*（backups/prev-<版本>/ 存 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor）+build.gradle+MainActivity+Manifest，事故可整体还原；
+  v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ **★2026-09-10 起一条命令：`node tools/release.js`**（内部=同步 9 文件+assets → obf 混淆 temp → hash 生成 ResGuard → cp build.gradle/ResGuard/MainActivity/Manifest → gradle --rerun-tasks 构建；
+  `--skip-build` 只做前四步）。原理备忘：混淆只对 temp assets 副本，www 源与测试永远明文，ResGuard=APK 内混淆版哈希 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload
 4. **底栏**：图标上文字下（column）；fixed 悬浮；激活按钮靛蓝描边（非激活无框）
 5. **顶栏无框**：header-bar 必须透明
 6. **Tailwind v4 坑**：新工具类必须确认编译产物已有（按需编译，如 transition-transform 死类，用 CSS 直写）；弹窗不用 Tailwind `dark:` 前缀（跟随系统主题冲突）
+   - **★★2026-09-10 实测补强（重要）**：index.html 里的 Tailwind 产物是**冻结快照**，之后新增的类多未编译。实测结论——`px-5`（toast 横向内边距=0）、`items-baseline`（概览统计数字/单位基线失准）**无任何兜底 = 真 bug**；而 `py-4`/`mt-3`/`pb-1`/`text-[13px]`/`text-red-400`/`grid-cols-2`/`flex-wrap` 虽同样未编译，却**被自定义 CSS 兜底、观感正常**。
+   - ⇒ **规矩**：① 关键样式（padding / position / z-index / 尺寸 / 颜色）**一律内联硬锁或写进自定义 CSS**，不依赖 Tailwind 类；② 判定"样式是否生效"**只能看浏览器实测 computed 值**（`node e2e/inspect.js`），**不能靠 grep**——Tailwind 会转义 `[`→`\[`、`:`→`\:`，且自定义 CSS 可能已兜底
 7. **暗色模式**：body 纯 background-color 过渡；`.dark-mode` 覆盖 Tailwind 用 !important 是正常手法；**浅色看不清 = 固定灰蓝 #64748b 在玻璃底上偏淡，弹窗内文字一律主题色/近黑**（#0f172a/#1f2937 系）
 8. **圆角层级**：卡片 20 / 子项 16 / 按钮 12 / 输入框 10 / 滚动条 4
 9. **全 App 统一衬线**（SimSun 系）= 刻意手写风，勿改
@@ -126,19 +228,26 @@
 12. **二次点底栏刷新**：记录/计划先取消编辑态
 13. **玻璃统一配方（2026-08-23 定稿）**：透明 0.08 + blur(2px) saturate(150%) + 白边 0.5 + 双层浮动阴影；**禁止加**光泽带/折射渐变/角部反光/内光晕/四角光斑（都被用户否决过）；toast 浅色同色系底边
 14. **★CSS 特异性坑（2026-09-01 v1.1.7.6）**：`confirm-btn-cancel` 自带 `padding:8px 16px + font-size:16px + font-weight:900`，会**压过 Tailwind 的 `px-2 py-1 text-xs`**（类内联顺序/优先级高于工具类）→ 编辑行保存/取消按钮**一律用内联样式硬锁定**：`padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;font-weight:600;display:inline-flex;align-items:center;justify-content:center`（`check-go-btn` 无自带尺寸，取消按钮就是被 confirm-btn-cancel 撑大才不统一的）
-15. **★年份分组预处理模式（v1.1.7.5 记录页 / v1.1.7.6 计划页）**：**不直接改 map 模板**；先预处理数组插入 `{__year,__count}` 标记项，map 回调开头识别 `__year` 返回年份行（`year-group-row`/`year-group-head`），组内保持原排序，条数用预处理全年统计（跨页准确）；⚠️**模板字符串在 `push(` 换行上下文有 ASI 坑**（报 `missing ) after argument list`）——别把 `return \`...\`` 模板改成 `push(\``，恢复 map 原结构即好
-16. **★死 CSS 清理方法论（2026-09-01）**
+15. **★年份分组预处理模式（v1.1.7.5 记录页 / v1.1.7.6 计划页）**：**不直接改 map 模板**；先预处理数组插入 `{__year,__count}` 标记项，map 回调开头识别 `__year` 返回年份行（`year-group-row`/`year-group-head`），组内保持原排序，条数用预处理全年统计（跨页准确）；⚠️**模板字符串在 `push(` 换行上下文有 ASI 坑**（报 `missing ) after argument list`）——别把 `return \`...\``模板改成`push(\`\`，恢复 map 原结构即好
+16. **★死 CSS 清理方法论（2026-09-01）**：先 grep 确认类名无任何 HTML/JS 元素引用再删；**Tailwind 编译产物段（3498+ 行）不可删**，只删自定义覆盖段；`replace_all` 批量替换后必须复查选择器列表（教训：`.btn-click-effect, .edit-input, .sort-header-planned` 被误改成 `.sort-header, .sort-header` 重复，手动清理）
 17. **★更新日志小标题格式（2026-09-08 用户定稿）**：文案里的小标题写法 = `**修复**` 改 `【修复】`（**方括号【】包住分类词**），如【新增】【修复】【优化】【其他】；只改文字、别动渲染（用户三次叫停粗框/加粗/剥星号改造，全部已回滚）；10.3~10.5 历史文案保持原样
-：先 grep 确认类名无任何 HTML/JS 元素引用再删；**Tailwind 编译产物段（3498+ 行）不可删**，只删自定义覆盖段；`replace_all` 批量替换后必须复查选择器列表（教训：`.btn-click-effect, .edit-input, .sort-header-planned` 被误改成 `.sort-header, .sort-header` 重复，手动清理）
+18. **★★离线自足铁律（2026-09-10 实测定稿）**：index.html **禁任何外部 CDN 依赖**——图标字体（material-icons.css）与 Tailwind 运行时（tailwind4.1.13.js）原都挂阿里 CDN（gw.alipayobjects.com），实测断网时**图标 163 处全变成 "speed"/"check_circle" 这类文字**、**概览统计卡从两列 `170px 170px` 塌成单列 `352px`**（徒步野外无信号=常态，属核心缺陷）。已本地化：`www/assets/fonts/material-icons.woff2`（index.html 内联 @font-face + `.material-icons` 基础规则，**保持原 link 位置以不破坏层叠顺序**——原稿这两者全靠 CDN 提供，本地原本没有）+ `www/assets/vendor/tailwind4.1.13.js`。⇒ ① **新增静态资源必须三处同步**：`sw.js` CORE_ASSETS + bump CACHE_NAME、`tools/security.js` HASH_FILES（ResGuard）、`e2e/inspect.js --offline` 实测；
+  ② `tools/audit.js` F 段即门禁（出现 http(s) 外链直接 fail）；
+  ③ 图标显示成文字时，先查 index.html 的 @font-face 是否还在
 
 ## ★应用内更新机制（v1.0.8.7 实现）
+
 - 原生桥 `checkUpdate()`（GET api.github.com/repos/NiUKinGDoM/xixi-hiking/releases/latest 匿名）+ `downloadAndInstall(apkUrl, mirrorUrl)`（OkHttp → FileProvider → 系统安装器）
 - 前端：`APP_VERSION` + `UPDATE_MIRROR_PREFIX='https://ghfast.top/'`（index.html 顶部换源）
 - ★2026-08-25 起网页版也可弹检查更新确认窗并真实检测（GitHub API 支持 CORS），但无法安装（点立即更新有兜底提示）；更新源版本号必须 > 本地
 
 ## 构建流程（PowerShell，牢记）
+
 1. 改 `www/`（★2026-08-30 方案A 落地：主 JS 拆 4 外部文件 app-core/app-data/app-sync/app-init.js，index.html 只留 HTML+CSS+引脚本）→ `node test.js`（60项）+ `node test-ui.js`（26项 jsdom UI，2026-08-28 起）+ ★新功能集成脚本 `node _test_p0p3.js`（69项 jsdom 链路，2026-09-03 P0/P3/山册照片带/健康行/概览布局/年月弹窗 起）→ `node bump.js`（版本号：build.gradle + app-core.js APP_VERSION + index.html 版本显示）
-2. 复制 **index.html + app-core.js + app-data.js + app-sync.js + app-init.js** + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`（★漏同步 JS 会白屏！）；**build.gradle → temp 的 `android/app/build.gradle`**（★2026-09-03 教训：错放 `android/app/src/build.gradle` 会构建出「壳旧版内容新版」的错 APK，aapt 验证才兜住）；**原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；删 temp 的 app/build 旧产物（若 rm 被沙箱拦则直接重建，gradle 会覆盖）
+2. 复制 **index.html + app-core.js + app-data.js + app-sync.js + app-init.js** + **share-bg.jpg** + **sw.js** → `android/app/src/main/assets/public/` + `%TEMP%\hiking-build\android\app\src\main\assets\public\`（★漏同步 JS 会白屏！）；
+  **build.gradle → temp 的 `android/app/build.gradle`**（★2026-09-03 教训：错放 `android/app/src/build.gradle` 会构建出「壳旧版内容新版」的错 APK，aapt 验证才兜住）；
+  **原生改动同步 temp：MainActivity.java + AndroidManifest.xml + styles.xml(values+values-night) + 图标全资源(mipmap 5dpi/anydpi-v26/foreground/background)**；
+  删 temp 的 app/build 旧产物（若 rm 被沙箱拦则直接重建，gradle 会覆盖）
 3. 构建（★2026-09-03 起用 java 直启 GradleMain，勿再走 gradle.bat——PowerShell 后台跑 .bat 会 0 输出、Start-Process 撞 http_proxy 字典重复，白折腾多轮）：
    ```
    export GRADLE_USER_HOME="$TEMP/gradle-home-niuxc" ANDROID_USER_HOME="$TEMP/android-user-home"
@@ -148,39 +257,44 @@
      org.gradle.launcher.GradleMain assembleRelease --no-daemon \
      --project-cache-dir "$TEMP/gradle-project-cache" > "$TEMP/hiking-build/build.log" 2>&1
    ```
-4. ★构建报 `Could not load compiled classes for settings file ... from cache`（settings 编译类缓存损坏）：删 `%TEMP%\gradle-home-niuxc\caches\8.2.1\scripts` + `executionHistory` 后重试（别清整个 caches，会重新下依赖；2026-08-26 遇过）
+4. ★构建报 `Could not load compiled classes for settings file ... from cache`（settings 编译类缓存损坏）：删 `%TEMP%\gradle-home-niuxc\caches\8.2.1\scripts` + `executionHistory` 后重试（别清整个 caches，会重新下依赖；2026-08-26 遇过）  
    （Release+R8，签名不变 = 覆盖安装数据不丢；proguard 铁律：MainActivity+JsFileBridge 保留、okhttp3 保留）
 5. aapt 验证包名/版本（**必查 vc 是新号**，防 build.gradle 放错位出旧壳）+ apksigner 验证签名 SHA-256 `9396fee4...`；★bump.js 后台任务偶发显示 failed 但实际成功（PowerShell 管道尾输出误报）→ 以 stdout `BUILD SUCCESSFUL` + APK 产物存在为准
 6. ★2026-09-03 起 APK 不留本地：Release 上传 + 下载验证（md5/PK）通过后删除本地 APK（历史版本从 Release assets 取）
 7. 部署网页 + GitHub 同步（见发布流程）
 
 ## 签名密钥（★重要）
+
 - 签名 = `C:\Users\NIU-XC\.android\debug.keystore`（SHA256 9396fee4...，所有历史 APK 一致）；别名 androiddebugkey / 密码 android / JKS；备份 `backups/android-signing/`
 - ⚠️ `%TEMP%\android-user-home\debug.keystore` 是残留（B0:C7）勿混淆；**绝不上传**
 
 ## 工具链真实路径（项目根 `C:\Users\NIU-XC\Desktop\buddy\2026-08-07-13-58-04\`）
+
 - `jdk-21.0.12\`、`gradle-8.2.1\bin\gradle.bat`、`android-sdk\`（local.properties 写死 sdk.dir）
 - 托管 python：`C:\Users\NIU-XC\.workbuddy\binaries\python\versions\3.13.12\python.exe`；托管 node：`C:\Users\NIU-XC\.workbuddy\binaries\node\versions\22.22.2-2\node.exe`（★2026-09-01 修正：原 22.22.2 目录已移除，用这个路径）
 
 ## 备份体系
+
 - `backups/hiking-app3-vX.Y.Z/`：完整源码备份；`backups/android-signing/`：签名（绝不上传）
 - **★2026-09-03 起本地不留 APK**：APK 归档只发 GitHub Release（云端即备份）；上传+下载验证通过后**删除本地 APK**（项目根 + 原 apk-history 已清空退役）；**★删除一律走回收站（Windows 回收站 API），禁止永久删除**（历史版本可随时从 Release assets 恢复，v1.0.10.4 起云端全量覆盖）
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
-- **网页版正式通道：https://xixi-hiking.pages.dev**（Cloudflare Pages + GitHub Git 集成，push master 自动部署，Root=www，长期稳定）｜发版前验收预览用 workbuddy_sites_deploy 临时链接（会漂移，仅临时）
+- \*\*网页版正式通道：<https://xixi-hiking.pages.dev\*\*（Cloudflare> Pages + GitHub Git 集成，push master 自动部署，Root=www，长期稳定）｜发版前验收预览用 workbuddy_sites_deploy 临时链接（会漂移，仅临时）
+
 
 ## 近期版本要点（v1.1.0.7 ~ v1.1.8.5）
-- v1.1.0.7~1.1.1.4（vc129~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
+
+- v1.1.0.7~~1.1.1.4（vc129~~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
 - v1.1.1.6（vc138）：导出诊断 + 备份瘦身（完整/纯数据）+ 同步失败提醒 + 云端自动清理（留2份）+ 字段增强（心情/天气/同行人）+ 数据层单测 + 分享卡 v1 + 月度统计
 - v1.1.1.7（vc139）：分享卡动漫风 + 设置页双卡合并 + 编辑行一行化 + 热力图详情弹窗增强
 - v1.1.1.8（vc140）：热力图弹窗 meta 一行 + 分享卡玻璃质感重做
-- v1.1.1.9~1.1.1.10（vc141~142）：刷新错误限频 / 诊断 MIME 修复 / WebDAV 双超时（原生60s+JS桥90s）
+- v1.1.1.9~~1.1.1.10（vc141~~142）：刷新错误限频 / 诊断 MIME 修复 / WebDAV 双超时（原生60s+JS桥90s）
 - v1.1.2.0（vc143）：分享卡庆祝图背景内置（SHARE_BG_DATA）+ 回忆册补字段 + 诊断说明改短
 - v1.1.2.1（vc144）：分享卡布局修复（横排/白标题/自适应字号/心情天气写文字）+ 诊断报告并入导出 + **四项优化约定**
-- v1.1.2.2~2.3（vc145~146）：分享卡数据下沉贴底 + 品牌间隔 120px
+- v1.1.2.2~~2.3（vc145~~146）：分享卡数据下沉贴底 + 品牌间隔 120px
 - v1.1.2.4（vc147）：**玻璃质感定稿**——全组件统一透明玻璃配方（0.08+blur2+亮边）+ 去全部边框高光
 - v1.1.2.5（vc148）：toast 深浅透明度统一 0.4 + 云端弹窗闪灰修复 + 同步转圈修复
-- v1.1.2.6~2.9（vc149~152）：**五项优化约定** + confirm-modal blur 补漏 + 帧率框统一 + 热力图弹窗按钮玻璃化/meta 标签式/分享移底部/多照片 + 弹窗全 confirm 化 + **删除「最强玻璃质感」折射装饰** + 浅色弹窗文字加深 + 遮罩调淡 + 更新弹窗文字修复
+- v1.1.2.6~~2.9（vc149~~152）：**五项优化约定** + confirm-modal blur 补漏 + 帧率框统一 + 热力图弹窗按钮玻璃化/meta 标签式/分享移底部/多照片 + 弹窗全 confirm 化 + **删除「最强玻璃质感」折射装饰** + 浅色弹窗文字加深 + 遮罩调淡 + 更新弹窗文字修复
 - v1.1.2.10（vc153）：月度横条删除 → 热力图下「累计爬升」+ 知道了按钮/设置开关/热力图红格子玻璃化
 - v1.1.3.0（vc154）：**分享卡定版**——新背景图（分享卡背景.png）+ 海拔/难度/心情/天气/同行标题加粗 + textAlign 重叠修复（⚠️版本号教训：1.1.2.10 → 1.1.3.0 非 1.1.2.11）
 - v1.1.3.1（vc155）：**11 项批量优化 + 照片层叠卡片 + 灯箱添加/删除 + 编辑行字段调优 + 难度徽章玻璃化 + 热力图弹窗四行分组/标签内容区分/心情天气文字化 + 添加按钮玻璃化 + toast 加宽 + 记录行照片按钮玻璃版 + iOS 导出修复**（详见 Release）
@@ -212,7 +326,7 @@
 - v1.1.5.5（vc181）：**搜索功能修复（currentTabId 全局化）+ 搜索框交互定稿（任意方向轻滑显示/1秒消失/底部让位分页/键盘跟随+回位）+ 玻璃透明度统一**（详见 Release）
 - v1.1.5.6（vc182）：**搜索框移除底部避让逻辑（滑到列表底部不再自动隐藏）**（详见 Release）
 - v1.1.5.7（vc183）：**紧急修复 v1.1.5.6 更新日志换行转义错误导致页面无法操作**（详见 Release）
-- v1.1.5.8（vc184）：**输入法覆盖式弹出（adjustNothing，软件不再被整体抬高）+ 搜索框原生 IME 桥精确跟随键盘（原生监听 insets 高度 → window.__onImeHeight；网页版 visualViewport 照旧）**（详见 Release）
+- v1.1.5.8（vc184）：**输入法覆盖式弹出（adjustNothing，软件不再被整体抬高）+ 搜索框原生 IME 桥精确跟随键盘（原生监听 insets 高度 → window._\_onImeHeight；网页版 visualViewport 照旧）**（详见 Release）
 - v1.1.5.9（vc185）：**修复输入法弹出时搜索框被顶出屏幕（原生 insets 物理像素 ÷DPR 换算 + 60vh 上限保护 + focus 45vh 兜底）**（详见 Release）
 - v1.1.5.10（vc186）：**修复中文输入法搜索失效（拼音中间态不再误搜 + 上屏强制同步）+ 搜索结果列表避让输入法（键盘弹出列表可滚动查看）**（详见 Release）
 - v1.1.6.0（vc187）：**五项优化：修复编辑输入框被键盘盖住（adjustNothing 回归）+ placeholder 统一 + 删 roundRect 死代码 + 键盘让位平滑过渡**（详见 Release）
@@ -237,21 +351,13 @@
 - v1.1.7.8（vc206）：**★自定义日期时间选择器（替换系统原生 datetime-local picker：readonly + 点击弹玻璃弹窗，日历网格选日期（今天靛蓝描边/选中高亮/左右切月）+ 时分步进器（点按调整/长按连续跳动），值格式保持 YYYY-MM-DDTHH:mm 兼容保存，日期字体与其他输入框统一）**（详见 Release）
 - v1.1.7.9（vc207）：**编辑行体验优化（日期时间选择弹窗缩小 360→320px 更紧凑；里程支持两位小数 12.34 km；用时改「时/分」双框输入直观顺手；心情/天气/同行人尺寸微调（72→76px）与用时框同行紧凑排列）**（详见 Release）
 - v1.1.7.10（vc208）：**★心情/天气选择统一玻璃弹窗（替换原生 select：readonly 输入框 + 点击弹 App 同款玻璃弹窗，心情 4 项/天气 5 项网格点选、当前值预选高亮、支持清空，与日期选择器同设计语言）**（详见 Release）
-
 - v1.1.8.0（vc209）：**五项优化（弹窗底部按钮统一尺寸 10px24px/96px 宽、心情保存 trim 统一）**（详见 Release）
-
 - v1.1.8.1（vc210）：**灵动液态玻璃 B+C（光斑 aurora 动态） + 搜索框避让分页**（详见 Release）
-
 - v1.1.8.2（vc211）：**光斑 v3 增强 + 玻璃卡片透光（浅色 0.10→0.05）**；边框高光（整圈白边/conic L/渐隐 L）多轮试错被否后整体回滚细白边框（详见 Release）
-
 - v1.1.8.3（vc212）：**删统计卡扫描光效 + 设置页边框调浅（灰蓝 0.22→0.14、虚线 0.25→0.16）**（详见 Release）
-
 - v1.1.8.4（vc213）：**年度回顾独立页（概览入口/全屏玻璃回顾：指标+月度柱状+年度之最条件化，每年1/1自动展示）+ 我的山册（记录页 列表/山册 双视图：按山聚合卡片可展开逐次记录可跳转）+ 计划过期独立提醒 + 弹窗玻璃统一**（详见 Release）
-
 - v1.1.8.5（vc214）：**添加从历史复制（点＋弹「添加徒步记录」选择卡：最近记录单选填充/直接新建；填充只落表单、点保存才入库，日期自动今天、照片不复制）+ 年度回顾「和去年比」（3 列指标卡+去年划线值+增幅同排+自然语言一年小结；底部操作区：去胶囊方角玻璃钮） + 山册↗跳转修复（照片不显示/错页/搜索滤除/滚动定位四根因）+ iOS 网页适配（text-size-adjust/safe-area/overscroll contain）+ 全弹窗按钮玻璃统一（选中态半透明靛蓝玻璃化、去纯色实底）**（详见 Release）
-
 - v1.1.8.6（vc215）：**五项优化落地：年回「一年小结」文案活泼化随机（up/down/flat/mixed 趋势分池开场+收尾 pick，数据保持准确）+ XSS 转义加固 5 处（年度之最 lines/最常去 yrBig/小结常去山名/山册一起走过/热力图心情天气同行）+ 死类清理（yr-content）**（详见 Release）
-
 - v1.1.10.2（vc233）：**照片占用弹窗定稿(内联样式修真机/去 TOP 榜/加大/优化按钮+俏皮 toast/行内钮删/加固)**（详见 Release）\n- v1.1.10.1（vc232）：**照片占用详情(300MB 警示+TOP 排行跳转+去清理) + 更新日志三版仅本次徽章**（详见 Release）\n- v1.1.10.0（vc231）：**桌面 App 图标图案放大 30%（launcher PNG 中心放大）**（详见 Release）
 - v1.1.9.10（vc230）：**保存铁律 + 概览单位小字化(stat-unit) + about logo 60px**（详见 Release）
 - v1.1.9.9（vc229）：**概览单位(次/级) + 小日记字色提亮 + i 弹窗间距 + 引导 ✕ 逐卡独立 + 引导按钮统一尺寸**（详见 Release）
@@ -268,12 +374,13 @@
 - v1.1.8.9（vc218）：**＋添加 v3（新建空白独立行 apNew + 「或者」ap-seg + 下拉只做历史复制单选 apOk「填充」确认 + .hcm-dot 圆点）+ 选中态玻璃化收尾（年月 hmyp 已完成、dtp 日期格/mwp 心情格实心转玻璃、全 App 无纯色选中）+ 弹窗可读性提升（浅 #94a3b8→#52606f、深 #64748b/#94a3b8→#a3b1c6、虚线 sync-config 0.07→0.45、ap-seg 加深）**（详见 Release）
 - v1.1.8.8（vc217）：**概览布局重构（统计主次分离 4 主卡+平均海拔/难度/用时矮副卡 .ov-mini、徒步足迹热力图前置难度分布上 ensureOverviewLayout、年回入口收进热力图卡右上改图标钮）+ 热力图年月单框弹窗（删双下拉、openHmYmPicker 年份 chips+12 月格仅记录月可点、底部汇总去日期留 次数·累计爬升）+ 设置页数据管理 i 弹窗分组重排 + 括号文案删除 + 累计爬升回热力图汇总不丢数据**（详见 Release）
 - v1.1.8.7（vc216）：**山册照片回忆（展开顶部横排看该山全部照片、点照进灯箱、标题日期=最近一次记录日期、收起单行化、统计收进展开）+ 同步健康行融合进自动同步卡（i 图标删除去重、busy/error/天龄三态、未配置点击直达配置、照片占用挪杂项第一行）+ 全 App 滚动条玻璃化（含弹窗 6px 细条）+ 同步状态弹窗虚线加深 + 工程治理（prev-snapshot.js 回滚点/五对策）**（详见 Release）
+
 ## 待办/新功能方案（2026-09-08 更新）
+
 - ✅ **隐私政策页**（v1.1.10.6 待发）：关于卡「隐私政策」入口 → showPrivacyPolicyModal（confirm 玻璃弹窗 dmi-* 条目排版，README 隐私段整理 + 崩溃上报联网披露）
-- ✅ **崩溃日志自动采集+上报**（v1.1.10.6 待发）：JS 持久队列 hiking_crash_queue（20 条/同错 1 分钟去重/重启不丢/并入导出诊断）+ 原生 xixi_crash.log 读取桥 getNativeCrashLog/clearNativeCrashLog；App 启动有 WebDAV 时自动 PUT xixi_crash_*.txt（仅版本/错误/时间，当日一次，成功清队列）
+- ✅ **崩溃日志自动采集+上报**（v1.1.10.6 待发）：JS 持久队列 hiking_crash_queue（20 条/同错 1 分钟去重/重启不丢/并入导出诊断）+ 原生 xixi_crash.log 读取桥 getNativeCrashLog/clearNativeCrashLog；App 启动有 WebDAV 时自动 PUT xixi_crash\_*.txt（仅版本/错误/时间，当日一次，成功清队列）
 - ✅ **真实渲染回归 E2E**（e2e/ 2026-09-08）：playwright-core + 系统 Edge 免下载；自起 127.0.0.1:8123 静态服务；核心链路（概览/计划日历/记录+示例/隐私弹窗深浅）+ 截图像素差视觉回归（阈值 0.5%，基线 e2e/shots/baseline/）+ JS 错误监听；node e2e/run.js（--update 刷基线）；真机 UI 自动化待 USB 设备接 Appium（脚本可复用链路）
 - ⚠️ 待办区原内容（2026-09-01）
-
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）
 - ✅ **记录/计划本地搜索**（v1.1.5.4~v1.1.6.4 完成：名称包含匹配 + 输入法协作 + 轮询根治 + 计划页优化）
 - ✅ **UI 层自动化测试**（test-ui.js 26 项 jsdom 渲染测试，发布双保险）
@@ -283,19 +390,41 @@
 - ✅ **备份提醒**（v1.1.7.7 已做：距上次同步超 7 天启动通知栏提示，点通知跳设置页，同一天不重复）
 
 ## ⚠️ 接手注意事项（环境经验大全，防踩坑）
-1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；分支 **master**；★★2026-08-27 凭据读取**必须用 Python ctypes CredEnumerate 枚举过滤 `git:https://github.com` 读 blob**（**CredReadW 读该 target 返回空 blob size=0，CredEnumerate 正常**；CredentialBlob 是 UTF-16LE、40 字符裸 token、无 x-access-token 前缀）；★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；**★★2026-08-27 Release asset 上传必须裸二进制（Content-Type: application/octet-stream，body=APK 原始字节），严禁 multipart（会被原样存成坏文件，手机"解析包出问题"）；上传后必须下载验证 md5 + PK 头；asset 名用 ASCII（中文被替换成 .）**；资产上传端点 **uploads.github.com**；建 Release POST api.github.com；更新依赖仓库 public + tag 版本 > APP_VERSION；**★★2026-09-03 uploads.github.com 已 301 迁移到 github.com 域——旧经验 `--resolve uploads.github.com:443:140.82.112.x/.5/.6` 直 POST 分别 404/422/404 全失败（响应头 Location 指向签名上传新址）→ 正确姿势 = 不加 resolve、让 uploads 用默认 DNS（20.205.243.161）直连 POST → 201**；下载校验时若 github.com 网页域名波动，可改经 `api.github.com/repos/.../releases/assets/{id}`（Accept: application/octet-stream）下载验证
+
+1. **GitHub 同步**：`GIT_SSL_NO_VERIFY=true`（schannel 吊销检查失败）；
+  分支 **master**；
+  ★★2026-08-27 凭据读取**必须用 Python ctypes CredEnumerate 枚举过滤 `git:https://github.com` 读 blob**（**CredReadW 读该 target 返回空 blob size=0，CredEnumerate 正常**；
+  CredentialBlob 是 UTF-16LE、40 字符裸 token、无 x-access-token 前缀）；
+  ★2026-08-25 起 `git -c http.extraHeader` 失效（PortableGit GCM 缺失）→ **改用 `git push https://x-access-token:TOKEN@github.com/... master` URL 带凭据**；
+  ★★2026-08-26 **PortableGit 有 `credential.helper=helper-selector`（+ .gitconfig GCM）→ push 会弹「选择凭证管理器」→ push 必须加 `-c credential.helper=` 禁用**：`git -c credential.helper= push https://x-access-token:TOKEN@github.com/... master`；
+  **★★2026-08-27 Release asset 上传必须裸二进制（Content-Type: application/octet-stream，body=APK 原始字节），严禁 multipart（会被原样存成坏文件，手机"解析包出问题"）；
+  上传后必须下载验证 md5 + PK 头；
+  asset 名用 ASCII（中文被替换成 .）**；
+  资产上传端点 **uploads.github.com**；
+  建 Release POST api.github.com；
+  更新依赖仓库 public + tag 版本 > APP_VERSION；
+  **★★2026-09-03 uploads.github.com 已 301 迁移到 github.com 域——旧经验 `--resolve uploads.github.com:443:140.82.112.x/.5/.6` 直 POST 分别 404/422/404 全失败（响应头 Location 指向签名上传新址）→ 正确姿势 = 不加 resolve、让 uploads 用默认 DNS（20.205.243.161）直连 POST → 201**；
+  下载校验时若 github.com 网页域名波动，可改经 `api.github.com/repos/.../releases/assets/{id}`（Accept: application/octet-stream）下载验证
 2. **构建必须在 %TEMP%\hiking-build**（桌面路径文件锁）；**★2026-09-01 严重事故教训：Capacitor 打包 web 资源来自 temp 的 `android/app/src/main/assets/public/`，不是 `www/`——构建前必须把 7 文件再复制一份到 temp assets/public（只同步 www 会出「光变版本号内容没动」的空包，v1.1.7.9 事故）；上传前必须用 python zipfile 解包验证 APK 内 assets/public 的 APP_VERSION/BUILTIN_CHANGELOG/about-version/新功能特征，全对才上传**
-3. **★★2026-09-01 新解法：github.com:443 直连超时/被重置（DNS 解析到 20.205.243.166 被限），但 api.github.com（.168）通、140.82.112.3/113.3/114.3/116.3 等 IP 通** → git push 加 `-c http.curloptResolve="github.com:443:140.82.112.3"`；下载 asset 用 `curl -sL --noproxy "*" --resolve github.com:443:140.82.112.3`（python urllib 走系统代理必 502；curl 写文件失败 exit 23 先删旧文件再下）；**IP 会失效需轮换**（当天 docs push 时 140.82.112.3 被重置，换 140.82.113.3 即成功）；**push/上传后一律用 api.github.com（commits/master + releases/tags）核对远程真实状态，避免误判失败**
-3a. **★★2026-09-01 晚：IP 可用性会动态反转**——当天下午 140.82.112.x 全挂（000）、默认 DNS 的 20.205.243.166 反而通（200）→ **先试默认解析直推（禁代理即可，不强制 resolve），失败再 curloptResolve 逐个轮换**（140.82.112/113/114/116.3 + 20.205.243.166 全试）；实测默认 DNS 一次成功（7750ab4..afc5b08）
-3b. **★★2026-09-01 版本撞车教训：bump 之前先核对远程版本**——可能被并行会话/自动化抢先发布（本地 vc204 但远程已 vc205+Release，且 GH 副本工作区有未提交的新版本代码 = 「代码就绪等发布」，直接接手发布勿重新 bump）。核对：远程 build.gradle versionCode（contents API base64）+ commits/master 标题 + releases/latest；**误 bump 后回滚三处**：build.gradle（versionCode/versionName）+ app-core.js（APP_VERSION）+ index.html（about-version 版本显示）
-3c. **★★2026-09-03 push 前必须 diff 核对**：v1.1.8.5 曾 push（fff8296）后发现副本 www/index.html 落后——「选中玻璃」等 CSS 是 push 后才改的 → 补推 b068211。教训：**commit 前先 diff 主工程 www 7 文件 vs GH 副本（循环 diff -q），确认零差异再 add/commit/push**；当天网络常反复波动（直连断→resolve IP 通→又全断→默认 DNS 恢复），失败先 curl 探测 github/api 各 1 次判断真断还是临时波动，勿盲重试多轮
+3. **★★2026-09-01 新解法：github.com:443 直连超时/被重置（DNS 解析到 20.205.243.166 被限），但 api.github.com（.168）通、140.82.112.3/113.3/114.3/116.3 等 IP 通** → git push 加 `-c http.curloptResolve="github.com:443:140.82.112.3"`；
+  下载 asset 用 `curl -sL --noproxy "*" --resolve github.com:443:140.82.112.3`（python urllib 走系统代理必 502；
+  curl 写文件失败 exit 23 先删旧文件再下）；
+  **IP 会失效需轮换**（当天 docs push 时 140.82.112.3 被重置，换 140.82.113.3 即成功）；
+  **push/上传后一律用 api.github.com（commits/master + releases/tags）核对远程真实状态，避免误判失败**
+   3a. **★★2026-09-01 晚：IP 可用性会动态反转**——当天下午 140.82.112.x 全挂（000）、默认 DNS 的 20.205.243.166 反而通（200）→ **先试默认解析直推（禁代理即可，不强制 resolve），失败再 curloptResolve 逐个轮换**（140.82.112/113/114/116.3 + 20.205.243.166 全试）；实测默认 DNS 一次成功（7750ab4..afc5b08）  
+   3b. **★★2026-09-01 版本撞车教训：bump 之前先核对远程版本**——可能被并行会话/自动化抢先发布（本地 vc204 但远程已 vc205+Release，且 GH 副本工作区有未提交的新版本代码 = 「代码就绪等发布」，直接接手发布勿重新 bump）。核对：远程 build.gradle versionCode（contents API base64）+ commits/master 标题 + releases/latest；**误 bump 后回滚三处**：build.gradle（versionCode/versionName）+ app-core.js（APP_VERSION）+ index.html（about-version 版本显示）  
+   3c. **★★2026-09-03 push 前必须 diff 核对**：v1.1.8.5 曾 push（fff8296）后发现副本 www/index.html 落后——「选中玻璃」等 CSS 是 push 后才改的 → 补推 b068211。教训：**commit 前先 diff 主工程 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor） vs GH 副本（循环 diff -q），确认零差异再 add/commit/push**；当天网络常反复波动（直连断→resolve IP 通→又全断→默认 DNS 恢复），失败先 curl 探测 github/api 各 1 次判断真断还是临时波动，勿盲重试多轮
 4. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
-5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；**test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require；**Edit 工具报 `File has been modified since read`（文件被 lint/其他进程改过）→ 先重新 Read 再 Edit**
+5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；
+  PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；
+  **test-ui.js 需要 jsdom，装在隔离 workspace**（`C:\Users\NIU-XC\.workbuddy\binaries\node\workspace`，**项目 node_modules 有损坏包（http-proxy-agent/agent-base 缺 dist）不可用**），test-ui.js 用绝对路径 require；
+  **Edit 工具报 `File has been modified since read`（文件被 lint/其他进程改过）→ 先重新 Read 再 Edit**
 6. **敏感凭据红线**：坚果云密码用户自己填、AI 不索要；GitHub token 用完即弃；keystore 绝不外传
 7. **换电脑**：绝对路径只对当前电脑有效；local.properties sdk.dir 必须改；见 `backups/新电脑部署指南.md`
 8. **沟通风格**：用户称呼「爹」，助手自称「小小牛 🛠️」；直接给结论不废话
 9. **★换模型/新会话流程（铁律）**：重读本文件 + `.workbuddy/memory/MEMORY.md` + 最新日期日志 → 复述确认（当前版本号/主工程路径/最近发版/发布流程顺序）→ 再开工
 
 ## 用户信息
+
 - 用户称呼：爹；助手自称：小小牛（🛠️）；直接、不废话风格
 - 钛铸件国企销售，关注航空产业链；偏好 Word 报告（用户级记忆另有）

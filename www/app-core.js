@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.0.2': '【新增】\n- 离线自足：图标字体与样式全部改为本地内置，没有网络时图标和界面也完全正常（山上没信号也不怕）\n\n【修复】\n- 「进行中」提示（下载版本 / 打包备份 / 生成分享卡）原来底色透明、还可能被弹窗盖住，现已修正\n- 若干提示颜色回归语义：「网页版无需更新」「当前环境不支持更新」等改为中性灰蓝色\n- 记录标题为空时输入框的红框提示原来不生效，已修复\n\n【优化】\n- 概览统计的数字与单位对齐更整齐，提示文字左右留白恢复正常\n- 打开更快：图标与样式不再依赖外部网络\n\nMade by XiXi 💛',
     'v1.2.0.1': '【新增】\n- 收款码独立成资源文件，离线也能查看和保存，安装包更轻巧\n\n【修复】\n- iOS 网页版点「保存二维码」会提示长按图片保存到相册（之前苹果手机上点了没反应）\n\n【优化】\n- 关于页「支持作者」的收款码展示更稳，网页版缓存版本更新\n\nMade by XiXi 💛',
     'v1.2.0.0': '【修复】\n- 导出诊断恢复精简内容：只保留版本与运行状态（错误日志、崩溃记录、同步信息），不再附带徒步记录明细——诊断文件里不含你的日记内容，更安心\n\nMade by XiXi 💛',
     'v1.1.10.10': '【新增】\n- 回忆册日记排版：完整备份里的「回忆册.html」改成日记样式——日期大字、山名、难度五档圆点、心情天气同行、小日记全文、照片墙，用浏览器 Ctrl+P 存成 PDF，更像一本徒步日记\n- 导出诊断包含全部记录明细：每条记录完整列出（含小日记、心情、天气、同行人），核对与存档都方便\n\n【优化】\n- 关于页按钮重新排两行（隐私政策·免责声明 / 支持作者·更新日志），更整齐\n\nMade by XiXi 💛',
@@ -543,7 +544,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.0.1';
+var APP_VERSION = '1.2.0.2';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -1165,10 +1166,13 @@ function showErrorMessage(message, duration) {
     
     const errorDiv = document.createElement('div');
     // 内联定位（left 50% + transform translateX(-50%)），避免 Tailwind translate 属性与动画 transform 叠加导致二次偏移
-    errorDiv.className = 'error-message toast-pop toast-glass error fixed z-[300] max-w-[90vw] text-sm px-5 py-3';
+    errorDiv.className = 'error-message toast-pop toast-glass error text-sm';
+    errorDiv.style.padding = '12px 20px';   // ★2026-09-10 内联硬锁：原 Tailwind px-5 从未编译（实测横向内边距=0，文字贴边）
+    errorDiv.style.position = 'fixed';   // ★2026-09-10 内联硬锁：position 不依赖 Tailwind 类（曾误删 fixed 类致 toast 跑到文档末尾看不见）
     errorDiv.style.left = '50%';
     errorDiv.style.bottom = '140px';
     errorDiv.style.transform = 'translateX(-50%)';
+    errorDiv.style.zIndex = '300';   // ★2026-09-10 内联层级：原 Tailwind z-[300] 未编译（计算值为 auto），弹窗遮罩 260 会盖住 toast
     errorDiv.innerHTML = `
         <div class="flex items-center gap-2">
             <span class="material-icons">error</span>
@@ -1202,10 +1206,13 @@ function showInfoMessage(message, duration) {
     const existingInfo = document.querySelector('.info-message');
     if (existingInfo) existingInfo.remove();
     const infoDiv = document.createElement('div');
-    infoDiv.className = 'info-message toast-pop toast-glass info fixed z-[300] max-w-[90vw] text-sm px-5 py-3';
+    infoDiv.className = 'info-message toast-pop toast-glass info text-sm';
+    infoDiv.style.padding = '12px 20px';   // ★2026-09-10 内联硬锁：原 Tailwind px-5 从未编译（实测横向内边距=0，文字贴边）
+    infoDiv.style.position = 'fixed';   // ★2026-09-10 内联硬锁：position 不依赖 Tailwind 类（曾误删 fixed 类致 toast 跑到文档末尾看不见）
     infoDiv.style.left = '50%';
     infoDiv.style.bottom = '140px';
     infoDiv.style.transform = 'translateX(-50%)';
+    infoDiv.style.zIndex = '300';   // ★2026-09-10 内联层级：原 Tailwind z-[300] 未编译（计算值为 auto），弹窗遮罩 260 会盖住 toast
     infoDiv.innerHTML = `
         <div class="flex items-center gap-2">
             <span class="material-icons">info</span>
@@ -1235,10 +1242,13 @@ function showSuccessMessage(message, duration) {
     
     const successDiv = document.createElement('div');
     // 内联定位（left 50% + transform translateX(-50%)），避免 Tailwind translate 属性与动画 transform 叠加导致二次偏移
-    successDiv.className = 'success-message toast-pop toast-glass success fixed z-[300] max-w-[90vw] text-sm px-5 py-3';
+    successDiv.className = 'success-message toast-pop toast-glass success text-sm';
+    successDiv.style.padding = '12px 20px';   // ★2026-09-10 内联硬锁：原 Tailwind px-5 从未编译（实测横向内边距=0，文字贴边）
+    successDiv.style.position = 'fixed';   // ★2026-09-10 内联硬锁：position 不依赖 Tailwind 类（曾误删 fixed 类致 toast 跑到文档末尾看不见）
     successDiv.style.left = '50%';
     successDiv.style.bottom = '140px';
     successDiv.style.transform = 'translateX(-50%)';
+    successDiv.style.zIndex = '300';   // ★2026-09-10 内联层级：原 Tailwind z-[300] 未编译（计算值为 auto），弹窗遮罩 260 会盖住 toast
     successDiv.innerHTML = `
         <div class="flex items-center gap-2">
             <span class="material-icons">check_circle</span>

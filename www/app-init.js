@@ -4,6 +4,7 @@ var GUIDE_CARDS = ['welcomeBanner', 'guideRecords', 'guidePlans', 'guideSettings
 var guideSeen = {};              // ★v3 每卡独立关闭状态：{ 卡id: true }
 var welcomeBannerShown = false;  // 兼容占位（旧引用），实际逻辑由 guideSeen 取代
 
+function resetGuideSeen() { guideSeen = {}; }   // ★测试钩子：清空全部卡的已关状态（_test_p0p3.js 用它重置引导状态；test.js 有断言保护 —— 勿删）
 function loadGuideSeenState() {
     try {
         var i, k;
@@ -18,7 +19,6 @@ function loadGuideSeenState() {
         }
     } catch (e) { /* 忽略 */ }
 }
-function resetGuideSeen() { guideSeen = {}; }   // 测试/调试：清空全部卡的已关状态
 function currentGuideCardId() {
     var tab = (typeof currentTabId !== 'undefined') ? currentTabId : 'overview';
     var map = { overview: 'welcomeBanner', records: 'guideRecords', plans: 'guidePlans', settings: 'guideSettings' };
@@ -439,7 +439,8 @@ function setupEventListeners() {
         const handler = function () {
             showImportModal();
             scheduleSyncStatusRefresh(2000);
-        };        importBtn.addEventListener('click', handler);
+        };
+        importBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => importBtn.removeEventListener('click', handler));
     }
     

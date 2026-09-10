@@ -276,6 +276,28 @@ try {
     ih.includes('.toast-glass.success {') && ih.includes('.toast-glass.error {') && ih.includes('.toast-glass.info {') && ih.includes('.toast-glass.loading {') ? ok('toast 四态 CSS 在(success/error/info/loading)') : bad('toast CSS 缺失!');
     const iInfo = ih.indexOf('.toast-glass.info {');
     (iInfo >= 0 && ih.slice(iInfo, iInfo + 260).includes('background: rgba(226, 232, 240') && ih.slice(iInfo, iInfo + 260).includes('border: 1px solid rgba(100, 116, 139, 0.55)')) ? ok('info toast 玻璃底+边框(与绿/红同款配方)') : bad('info toast 无底无框!');
+    // ★2026-09-10 toast 配色/层级回归（实际出过：loading 漏加 loading 类 → 底色全透明；Tailwind z-[300] 未编译 → 被弹窗遮罩 260 盖住）
+    (function () {
+        const allHaveBg = ['success', 'error', 'info', 'loading'].every(function (k) {
+            const idx = ih.indexOf('.toast-glass.' + k + ' {');
+            return idx >= 0 && ih.slice(idx, idx + 200).indexOf('background:') >= 0;
+        });
+        allHaveBg ? ok('toast 四态均有底色(防透明提示复发)') : bad('有 toast 变体缺底色!');
+        const toastsj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+        toastsj.indexOf('toast-glass loading') >= 0 ? ok('loading toast 带 loading 变体类') : bad('loading toast 缺变体类(会透明)!');
+        const toastcj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+        const zCount = (toastcj.match(/style\.zIndex = '300'/g) || []).length;
+        (zCount === 3 && toastsj.indexOf('z-index:300') >= 0) ? ok('toast 内联层级 300(高于弹窗 260)') : bad('toast 层级缺失 core=' + zCount);
+        const pCount = (toastcj.match(/style\.position = 'fixed'/g) || []).length;
+        (pCount === 3 && toastsj.indexOf('position:fixed') >= 0) ? ok('toast 内联 position:fixed(不依赖 Tailwind 类)') : bad('toast position 缺失 core=' + pCount);
+        const padCount = (toastcj.match(/style\.padding = '12px 20px'/g) || []).length;
+        (padCount === 3 && toastsj.indexOf('padding:12px 20px') >= 0) ? ok('toast 内联内边距 12px 20px(px-5 从未编译)') : bad('toast 内边距缺失 core=' + padCount);
+        (ih.indexOf('.border-red-500 {') >= 0 && ih.indexOf('border-color: #ef4444') >= 0) ? ok('.border-red-500 已补 CSS 定义') : bad('border-red-500 无定义(校验红边不生效)!');
+        const toastdj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+        (toastdj.indexOf("classList.remove('border-red-500')") >= 0) ? ok('border-red-500 校验通过后清除') : bad('border-red-500 只加不删!');
+        (ih.match(/align-items:baseline/g) || []).length >= 3 ? ok('统计卡数字/单位基线对齐(内联)') : bad('统计卡基线对齐缺失!');
+        (function () { var a = ih.indexOf('.toast-glass.info {'), b = ih.indexOf('.toast-glass.loading {'); var ma = ih.slice(a, a + 300).match(/background:\s*([^;]+);/), mb = ih.slice(b, b + 300).match(/background:\s*([^;]+);/); (ma && mb && ma[1].trim() === mb[1].trim()) ? ok('loading 与 info 同配方(中性色统一)') : bad('loading/info 配方不一致!'); })();
+    })();
     ih.includes('.view-caption {') && ih.includes('.stat-card {') && ih.includes('.table-row-advanced {') && ih.includes('#photoUsageRow:active {') ? ok('弹窗/表行/占用行样式在') : bad('通用样式缺失!');
     !ih.includes('#changelogBody') ? ok('cl 依赖 CSS 保持 0 残留') : bad('cl CSS 复现!');
     const msgIdx = ih.indexOf('.confirm-modal-message {');
@@ -366,6 +388,13 @@ try {
     const adRaw2 = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
     const swRaw = fs.readFileSync(path.join(wwwDir, 'sw.js'), 'utf8');
     swRaw.indexOf('assets/support-qr-wechat.jpg') >= 0 && swRaw.indexOf('assets/support-qr-alipay.jpg') >= 0 && /CACHE_NAME = 'xixi-hiking-v\d+'/.test(swRaw) ? ok('SW 离线收录收款码 + CACHE_NAME 版本化') : bad('SW 未收录收款码!');
+    // ★2026-09-10 离线自足（野外无信号是徒步核心场景；原两个阿里 CDN 依赖曾致断网图标全失效+布局塌）
+    const offIdx = fs.readFileSync(path.join(wwwDir, 'index.html'), 'utf8');
+    offIdx.indexOf('gw.alipayobjects') < 0 ? ok('无外部 CDN 依赖（断网自足）') : bad('index.html 仍有外部 CDN 引用!');
+    (offIdx.indexOf('@font-face') >= 0 && offIdx.indexOf('assets/fonts/material-icons.woff2') >= 0 && fs.existsSync(path.join(wwwDir, 'assets/fonts/material-icons.woff2'))) ? ok('图标字体本地化（@font-face + woff2 在位）') : bad('图标字体未本地化!');
+    (fs.existsSync(path.join(wwwDir, 'assets/vendor/tailwind4.1.13.js')) && offIdx.indexOf('assets/vendor/tailwind4.1.13.js') >= 0) ? ok('Tailwind 运行时本地化') : bad('Tailwind 未本地化!');
+    (offIdx.indexOf('rel="icon"') >= 0 && fs.existsSync(path.join(wwwDir, 'icon-192.png'))) ? ok('favicon 已声明（消除 404）') : bad('favicon 缺失!');
+    (swRaw.indexOf('assets/fonts/material-icons.woff2') >= 0 && swRaw.indexOf('assets/vendor/tailwind4.1.13.js') >= 0 && swRaw.indexOf('manifest.json') >= 0) ? ok('SW 离线收录 字体/vendor/manifest') : bad('SW 未收录离线关键资源!');
     adRaw2.indexOf('function isIOSWeb') >= 0 && adRaw2.indexOf('长按二维码图片即可保存到相册') >= 0 ? ok('iOS 网页降级（保存二维码→提示长按）在') : bad('iOS 降级缺失!');
     const adRaw = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
     adRaw.indexOf('data:image/jpeg;base64') < 0 ? ok('app-data 无 base64 内联残留（已瘦身）') : bad('app-data 仍有 base64 内联!');
