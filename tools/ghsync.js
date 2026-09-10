@@ -152,12 +152,65 @@ if (has('push') || has('push-only')) {
   const token = (py.stdout || '').trim();
   if (!token) { console.error('✗ 取 token 失败: ' + (py.stderr || '').trim()); process.exit(1); }
   const url = `https://x-access-token:${token}@github.com/NiUKinGDoM/xixi-hiking.git`;
-  const p = spawnSync('git', [
-    '-c', 'credential.helper=', '-c', 'http.proxy=', '-c', 'https.proxy=',
-    'push', url, 'master',
-  ], { cwd: GH, encoding: 'utf8', env: Object.assign({}, process.env, { GIT_SSL_NO_VERIFY: 'true' }) });
-  const out = ((p.stdout || '') + (p.stderr || '')).trim();
+  const env = Object.assign({}, process.env, { GIT_SSL_NO_VERIFY: 'true' });
+  const BASE = ['-c', 'credential.helper=', '-c', 'http.proxy=', '-c', 'https.proxy='];
+  const doPush = (extra) => spawnSync('git', BASE.concat(extra || [], ['push', url, 'master']), {
+    cwd: GH, encoding: 'utf8', env,
+  });
+
+  // ★容错：直连失败时，探测可用 IP 并用 http.curloptResolve 钉住重试
+  // 背景（2026-09-10 实测）：本机 DNS 解析到的 github.com IP 会 TCP 超时，
+  // 但同段其他 IP 正常；表现是「codeload/pages.dev 通、github.com/api 不通」，
+  // 极易被误判为"节点坏了/被墙"。git 2.42+ 支持 http.curloptResolve 直指可用 IP。
+  const IP_CANDIDATES = [
+    '20.205.243.166', '140.82.112.3', '140.82.113.3', '140.82.114.3',
+    '140.82.116.3', '20.27.177.113', '20.200.245.247', '20.233.83.145', '4.208.26.197',
+  ];
+  const probeIp = (ip) => {
+    const r = spawnSync('curl', [
+      '-s', '-o', process.platform === 'win32' ? 'NUL' : '/dev/null',
+      '-w', '%{http_code}', '--max-time', '5',
+      '--resolve', `github.com:443:${ip}`, 'https://github.com',
+    ], { encoding: 'utf8' });
+    return (r.stdout || '').trim();
+  };
+
+  let p = doPush();
+  let out = ((p.stdout || '') + (p.stderr || '')).trim();
+  if (p.status !== 0) {
+    console.log('⚠ 直连 push 失败，开始探测可用 IP（同段其他 IP 常常是通的）...');
+    // hosts 劫持检测（2026-09-10 本机实测真凶）：Steam++/Watt Toolkit 类加速器会把
+    // github.com 写进 hosts 指向 127.0.0.1，其本地反代没运行时域名全部"连接被拒"。
+    try {
+      const hf = process.platform === 'win32' ? 'C:/Windows/System32/drivers/etc/hosts' : '/etc/hosts';
+      if (/^\s*127\.0\.0\.1\s+github\.com\s*$/m.test(fs.readFileSync(hf, 'utf8'))) {
+        console.log('   ⚠ 检测到 github.com 被 hosts 劫持到 127.0.0.1（Steam++/Watt Toolkit 加速器未运行）');
+        console.log('     → 自动绕过：钉真实 IP（彻底解决可清理 hosts 中的 Steam++ 段）');
+      }
+    } catch (e) { /* hosts 不可读则跳过检测 */ }
+    // 收集最多 3 个 HTTP 可达的 IP，逐个试 push。
+    // ★实测教训：HTTP 200 ≠ git smart protocol 可用（140.82.112.3 曾 HTTP 通但 git push 超时），
+    //   所以找到第一个可用 IP 就单发一次是不够的，必须轮试。
+    const good = [];
+    for (const ip of IP_CANDIDATES) {
+      const code = probeIp(ip);
+      if (code === '200') { good.push(ip); console.log(`  ✓ ${ip} 可达（200）`); }
+      else console.log(`  ✗ ${ip}（${code || 'timeout'}）`);
+      if (good.length >= 3) break;
+    }
+    if (!good.length) {
+      console.error('✗ 候选 IP 全部不可用 → 请检查网络或切换代理节点（见 MEMORY「网络排障顺序」）');
+      process.exit(1);
+    }
+    for (const ip of good) {
+      console.log(`→ 钉 ${ip} 重试 push...`);
+      p = doPush(['-c', `http.curloptResolve=github.com:443:${ip}`, '-c', `http.curloptResolve=api.github.com:443:${ip}`]);
+      out = ((p.stdout || '') + (p.stderr || '')).trim();
+      if (p.status === 0) break;
+      console.log(`   ✗ ${ip} 未能完成 push，换下一个`);
+    }
+  }
   console.log(out.split('\n').slice(-3).join('\n'));
-  if (p.status !== 0) { console.error('✗ push 失败（网络波动：见接手注意事项 3/3a，先 curl 探测再轮换 IP）'); process.exit(1); }
+  if (p.status !== 0) { console.error('✗ push 失败（直连与钉 IP 均失败：见 MEMORY「网络排障顺序」）'); process.exit(1); }
   console.log('✅ 已 push ' + REPO_URL + ' master（若为发布推送，CF Pages 会自动部署）');
 }

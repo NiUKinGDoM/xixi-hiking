@@ -28,6 +28,7 @@ const ROOT = path.resolve(__dirname, '..');
 const NODE = process.execPath;
 const VERBOSE = process.argv.includes('--verbose');
 const LIST = process.argv.includes('--list');
+const NET = process.argv.includes('--net');   // --net：额外跑依赖网络的用例（--selftest）
 
 // path: 相对主工程；args: 安全执行参数；safe: 是否可实际执行
 const CASES = [
@@ -36,6 +37,7 @@ const CASES = [
   { path: 'tools/docrelease.js', args: [], safe: true, note: '无参数 → 用法提示' },
   { path: 'tools/verify-apk.js', args: [], safe: true, note: '无 APK → 优雅报错' },
   { path: 'tools/ghrelease.js', args: [], safe: true, note: '无参数 → 用法提示' },
+  { path: 'tools/ghrelease.js', args: ['--selftest'], safe: true, net: true, note: '网络+token 自检 → https://api.github.com（仅 --net）' },
   { path: 'tools/ship.js', args: [], safe: true, note: '无参数 → 用法提示' },
   { path: 'tools/audit.js', args: [], safe: true, note: '只读分析（含 F 外部依赖门禁）' },
   { path: 'tools/deepcheck.js', args: [], safe: true, note: '只读深查' },
@@ -56,10 +58,14 @@ if (LIST) {
   process.exit(0);
 }
 
-console.log('== 工具链冒烟测试（' + CASES.length + ' 项）==\n');
+const active = CASES.filter((c) => !c.net || NET);
+const netSkipped = CASES.length - active.length;
+
+console.log('== 工具链冒烟测试（' + active.length + ' 项' +
+  (netSkipped ? '；' + netSkipped + ' 项网络用例未跑，加 --net 启用' : '') + '）==\n');
 
 const results = [];
-for (const c of CASES) {
+for (const c of active) {
   const abs = path.join(ROOT, c.path);
   const r = { path: c.path, note: c.note, syntaxOk: false, execOk: null, detail: '' };
 

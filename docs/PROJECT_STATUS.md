@@ -60,6 +60,8 @@ node tools/builtin.js --check                  # 检查当前 APP_VERSION 是否
 node tools/docrelease.js <版本> <vc> <文案>    # 发布文档三处同步（PROJECT_STATUS 双端 + CHANGELOG，幂等）
 node tools/verify-apk.js                       # APK 全面验证（版本/签名/混淆/资源/ResGuard；混淆口径已修正）
 node tools/ghrelease.js <tag> <Release文案>    # 建 Release + 裸二进制上传 + 下载校验 md5/PK + 清理本地 APK
+node tools/ghrelease.js --selftest             # 只读自检：token + 网络层 + hosts 劫持诊断（不发写请求）
+node tools/smoke.js --net                      # 工具链冒烟 + 网络用例（默认不跑网络，保持快）
 
 # ⑧ 断网可用性实测（模拟徒步野外无信号）
 node e2e/inspect.js --file tools/snippets/offline-check.js --offline
@@ -449,6 +451,9 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
    3a. **★★2026-09-01 晚：IP 可用性会动态反转**——当天下午 140.82.112.x 全挂（000）、默认 DNS 的 20.205.243.166 反而通（200）→ **先试默认解析直推（禁代理即可，不强制 resolve），失败再 curloptResolve 逐个轮换**（140.82.112/113/114/116.3 + 20.205.243.166 全试）；实测默认 DNS 一次成功（7750ab4..afc5b08）  
    3b. **★★2026-09-01 版本撞车教训：bump 之前先核对远程版本**——可能被并行会话/自动化抢先发布（本地 vc204 但远程已 vc205+Release，且 GH 副本工作区有未提交的新版本代码 = 「代码就绪等发布」，直接接手发布勿重新 bump）。核对：远程 build.gradle versionCode（contents API base64）+ commits/master 标题 + releases/latest；**误 bump 后回滚三处**：build.gradle（versionCode/versionName）+ app-core.js（APP_VERSION）+ index.html（about-version 版本显示）  
    3c. **★★2026-09-03 push 前必须 diff 核对**：v1.1.8.5 曾 push（fff8296）后发现副本 www/index.html 落后——「选中玻璃」等 CSS 是 push 后才改的 → 补推 b068211。教训：**commit 前先 diff 主工程 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor） vs GH 副本（循环 diff -q），确认零差异再 add/commit/push**；当天网络常反复波动（直连断→resolve IP 通→又全断→默认 DNS 恢复），失败先 curl 探测 github/api 各 1 次判断真断还是临时波动，勿盲重试多轮
+   3d. **★★2026-09-10 真凶查明：hosts 被 Steam++（Watt Toolkit）劫持**——`C:\Windows\System32\drivers\etc\hosts` 里有 `# Steam++ Start ... End` 段，把 `github.com` / `api.github.com` / `uploads.github.com` / `*.githubusercontent.com` 等一大批域名硬指向 `127.0.0.1`；Steam++ 的本地反代没在跑时，这些域名全部「连接被拒」。**判据（一条命令）**：`curl -v https://github.com 2>&1 | grep IPv4` → 显示 `127.0.0.1` 即命中。**典型误判**：`codeload.github.com` / `pages.dev` 不在名单里 → 一直通，于是看起来像「节点坏了」，实际与节点无关。
+     **三种解法（择一）**：① 启动 Watt Toolkit（让它的本地反代接管）；② 清理 hosts 里的 Steam++ 段（需管理员；实测 GitHub 真实 IP 直连 200，清完一切正常）；③ 不动 hosts，用工具内置绕过 —— `ghsync.js` / `ghrelease.js` 已自动探测可用 IP + 钉 IP 重试。
+     **★工具已内置（2026-09-10）**：`node tools/ghsync.js`（直连失败 → 自动探测可用 IP → **逐个轮试 push**）、`node tools/ghrelease.js --selftest`（只读自检：token + 网络层 + 钉 IP 报告）、`node tools/smoke.js --net`（工具链冒烟含网络用例）。**教训**：HTTP 200 ≠ git 协议可用（140.82.112.3 曾 HTTP 通而 git push 超时）→ 必须轮试；且 IP 可用性是**分钟级波动**，勿因单次成功就写死某个 IP。
 4. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
 5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；
   PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；
