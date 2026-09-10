@@ -2,6 +2,7 @@
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
 > 最后更新：2026-09-10（v1.2.0.2 / vc244）  
+> 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
 > ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）  
@@ -28,6 +29,7 @@ node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一�
 node tools/checkall.js            # test + test-ui + P0P3 + E2E 汇总
 node tools/checkall.js --fast     # 只跑前两套（秒级，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
+node tools/smoke.js               # 工具链冒烟（14 工具语法+安全执行；已并入 checkall 第一套）
 
 # ③ 浏览器实测（替代每次新写 playwright 脚本）
 node e2e/inspect.js --inline "return typeof showInfoMessage"
@@ -70,6 +72,27 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 ## 一句话
 
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
+
+## 🧊 功能冻结 · 发版最小验收 · 真机验收记录（2026-09-10 起）
+
+### 一、功能冻结（用户 2026-09-10 确认「可以了」）
+- 功能已闭环、无明显缺口 → **往后只修 bug、做安全与兼容，不再新增功能**；确需新增须用户明确点名
+- 理由：继续堆功能的边际收益已很低，而复杂度（文档 / 工具 / 约定）的维护成本在上升
+
+### 二、★发版后最小验收 3 项（3 分钟 · 用户侧）
+1. **能打开**：装包后正常启动（= 签名自校验放行）
+2. **能出码**：设置 → 关于应用 → 支持作者 → 微信 / 支付宝二维码正常显示（钱的事）
+3. **离线正常**：飞行模式重开 → 图标是图形（非英文单词）、概览统计卡仍两列
+> 三项全过 = 本次发版确认完成；异常 → 按「回退点」处理。完整 17 项见 `hiking-app3/docs/DEVICE-CHECKLIST.md`
+
+### 三、📱 真机验收记录（留痕，防"细心活在某次装机里"）
+> 用户口述结果 → 我在此补一行；目的是换电脑 / 换模型 / 隔久了也不丢
+
+| 版本 | 验收日期 | 结果 | 备注 |
+|---|---|---|---|
+| v1.2.0.2（vc244） | — | ⏳ 待验 | 离线自足 + toast 四态修复 |
+| v1.2.0.1（vc243） | — | ✅ 用户已测 | 收款码外置 + iOS 保存降级 |
+| 更早版本 | — | ✅ 用户陆续实测通过 | 未逐版留痕（本表自 2026-09-10 起维护）|
 
 ## 📌 2026-09-10 机制化升级（把历史踩坑转成自动检查/固定工具）
 

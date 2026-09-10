@@ -23,6 +23,7 @@ const has = (n) => process.argv.indexOf('--' + n) >= 0;
 const onlyArg = (process.argv.find((a) => a.startsWith('--only=')) || '').split('=')[1];
 
 const SUITES = [
+  { key: 'smoke', name: '工具链冒烟（14 工具语法+安全执行）', file: 'tools/smoke.js', timeout: 180000 },
   { key: 'test', name: '数据层/语法自检', file: 'test.js', timeout: 120000 },
   { key: 'test-ui', name: 'jsdom UI 自检', file: 'test-ui.js', timeout: 180000 },
   { key: 'p0p3', name: 'P0P3 链路自检', file: '_test_p0p3.js', timeout: 300000 },
@@ -30,8 +31,8 @@ const SUITES = [
 ];
 
 let list = SUITES;
-if (has('fast')) list = SUITES.slice(0, 2);
-else if (has('no-e2e')) list = SUITES.slice(0, 3);
+if (has('fast')) list = SUITES.slice(0, 3);
+else if (has('no-e2e')) list = SUITES.slice(0, 4);
 if (onlyArg) list = SUITES.filter((s) => s.key === onlyArg);
 
 function parseResult(out) {
