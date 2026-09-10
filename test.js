@@ -320,7 +320,7 @@ try {
     dj.includes('function showDisclaimerModal') && dj.includes('免责声明') && dj.includes('野山') && dj.includes('风险自担') && dj.includes('不是领队') ? ok('免责声明弹窗+户外安全条目在(野山/风险自担)') : bad('免责声明缺失!');
     ih.includes('id="disclaimerBtn"') && ih.includes('>免责声明<') ? ok('关于卡免责声明入口在') : bad('免责声明入口缺失!');
     ij.includes("disclaimerBtn") && ij.includes('showDisclaimerModal') ? ok('app-init 免责声明绑定在') : bad('免责声明绑定缺失!');
-    dj.includes('function showSupportModal') && dj.includes('function saveSupportQr') && dj.includes('SUPPORT_QR_WECHAT') && dj.includes('SUPPORT_QR_ALIPAY') ? ok('支持作者弹窗+双码内联在') : bad('支持作者缺失!');
+    dj.includes('function showSupportModal') && dj.includes('function saveSupportQr') && dj.includes("SUPPORT_QR_WECHAT = 'assets/support-qr-wechat.jpg'") && dj.includes("SUPPORT_QR_ALIPAY = 'assets/support-qr-alipay.jpg'") ? ok('支持作者弹窗+双码外置 assets 路径在') : bad('支持作者/外置路径缺失!');
     ih.includes('id="supportAuthorBtn"') && ih.includes('支持作者') ? ok('关于卡支持作者入口(浅红 check-go)在') : bad('支持作者入口缺失!');
     java.includes('saveQrToGallery') ? ok('原生保存相册桥在(MediaStore)') : bad('保存桥缺失!');
     dj.includes('>微信</button>') && dj.includes('>支付宝</button>') && !dj.includes('6.66 元') && !dj.includes('金额随意') ? ok('双渠道按钮(微信/支付宝)+无金额胶囊') : bad('渠道按钮/金额异常!');
@@ -340,6 +340,36 @@ try {
     java.includes('安装包校验失败') && java.includes('资源校验提示') ? ok('篡改提示对话框文案在') : bad('提示缺失!');
     sec.includes('javascript-obfuscator') && sec.includes("cmd === 'obf'") && sec.includes("cmd === 'hash'") ? ok('安全工具链(obf/hash)在') : bad('工具链缺失!');
 } catch (e) { bad('5q 检查失败: ' + e.message); }
+
+// 5r. 机制化自检（2026-09-10）：外部注入检测 / 文档版本一致 / Java 括号配平
+console.log('-- 5r. 机制化自检 --');
+try {
+    const wwwDir = path.join(__dirname, 'www');
+    const scanFiles = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'sw.js'];
+    const badMarks = [];
+    scanFiles.forEach(f => {
+        const t = fs.readFileSync(path.join(wwwDir, f), 'utf8');
+        if (t.indexOf('data-page-node-id') >= 0) badMarks.push(f + ':data-page-node-id');
+        if (t.indexOf('data-editor-injected') >= 0) badMarks.push(f + ':data-editor-injected');
+    });
+    badMarks.length === 0 ? ok('外部编辑器注入检测（无 data-page-node-id 等标记）') : bad('检测到外部注入标记: ' + badMarks.join(', '));
+    const ps = fs.readFileSync(path.join(__dirname, '..', 'PROJECT_STATUS.md'), 'utf8');
+    const m1 = ps.match(/最后更新：\d{4}-\d{2}-\d{2}（v([\d.]+) \/ vc(\d+)）/);
+    const av = (fs.readFileSync(path.join(wwwDir, 'app-core.js'), 'utf8').match(/APP_VERSION = '([\d.]+)'/) || [])[1];
+    (m1 && av && m1[1] === av) ? ok('文档版本一致（PROJECT_STATUS = ' + av + '）') : bad('文档版本不一致: PROJECT_STATUS=' + (m1 ? m1[1] : '?') + ' APP=' + av);
+    const jv = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
+    const bal = (jv.split('{').length - 1) - (jv.split('}').length - 1);
+    bal === 0 ? ok('MainActivity 花括号配平') : bad('MainActivity 花括号不平衡: ' + bal);
+    const qrFiles = ['assets/support-qr-wechat.jpg', 'assets/support-qr-alipay.jpg'];
+    const qrMissing = qrFiles.filter(f => !fs.existsSync(path.join(wwwDir, f)));
+    qrMissing.length === 0 ? ok('收款码外置文件在位（assets/ 两张）') : bad('收款码外置文件缺失: ' + qrMissing.join(', '));
+    const adRaw2 = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
+    const swRaw = fs.readFileSync(path.join(wwwDir, 'sw.js'), 'utf8');
+    swRaw.indexOf('assets/support-qr-wechat.jpg') >= 0 && swRaw.indexOf('assets/support-qr-alipay.jpg') >= 0 && /CACHE_NAME = 'xixi-hiking-v\d+'/.test(swRaw) ? ok('SW 离线收录收款码 + CACHE_NAME 版本化') : bad('SW 未收录收款码!');
+    adRaw2.indexOf('function isIOSWeb') >= 0 && adRaw2.indexOf('长按二维码图片即可保存到相册') >= 0 ? ok('iOS 网页降级（保存二维码→提示长按）在') : bad('iOS 降级缺失!');
+    const adRaw = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
+    adRaw.indexOf('data:image/jpeg;base64') < 0 ? ok('app-data 无 base64 内联残留（已瘦身）') : bad('app-data 仍有 base64 内联!');
+} catch (e) { bad('5r 机制检查失败: ' + e.message); }
 
 // 6. 原生文件完整性
 console.log('-- 6. 原生层 --');

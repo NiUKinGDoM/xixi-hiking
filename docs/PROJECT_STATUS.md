@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。
-> 最后更新：2026-09-09（v1.2.0.0 / vc242）
+> 最后更新：2026-09-10（v1.2.0.1 / vc243）
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 https://xixi-hiking.pages.dev**（**已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）
 > ★2026-09-09 旧 workbuddy_sites 网页链接（e7f39…gz4.agentos-app.net）已被平台回收（HTTP 400）→ 平台链接会漂移不可作正式通道，仅作临时预览；网页版数据按 origin 隔离：换域=旧数据不可达（教训：网页版勿存重要数据，导出/App 为主）
@@ -10,7 +10,19 @@
 ## 一句话
 纯本地 Android 徒步记录 App（Capacitor 6.2.1 + Android WebView 应用，★2026-08-30 方案A：`www/` 主 JS 拆 4 个外部文件 app-core/app-data/app-sync/app-init.js + index.html(HTML/CSS) + 外置 share-bg.jpg），XiXi 自己用的徒步记录软件。iPhone 可走网页版（PWA）。
 
+## 📌 2026-09-10 机制化升级（把历史踩坑转成自动检查/固定工具）
+- **收款码外置**：`www/assets/support-qr-wechat.jpg` + `support-qr-alipay.jpg`（原 base64 内联退役，app-data.js 513KB → 265KB）；已纳入 **ResGuard 哈希（7 项）**；saveSupportQr 支持外置 URL（fetch→base64→相册桥 / 网页直接下载）
+- **同步清单 7 → 9 文件**：原 7 文件 + `assets/support-qr-wechat.jpg` + `assets/support-qr-alipay.jpg`（assets/ 子目录随包）
+- **新工具 `tools/patch.js`**：JSON 补丁原子写入（解决 heredoc/Edit 转义层数坑；命中校验 + 写后语法校验 + 失败自动还原）
+- **新工具 `tools/release.js`**：发布一条龙（同步 9 文件 → obf 混淆 → hash 生成 ResGuard → 同步原生文件 → gradle 构建），替代手抄 8 步；`--skip-build` 可只做同步+安全两步
+- **test.js 新增 5r 机制化自检**（+3 条）：外部编辑器注入检测（data-page-node-id 等）/ 文档版本一致（PROJECT_STATUS 顶部 == APP_VERSION）/ MainActivity 花括号配平；另 +2 条收款码外置资源断言
+- **2026-09-10 补**：SW `CACHE_NAME` 升至 v18 并把 `assets/` 两收款码纳入 `CORE_ASSETS`（离线可看码；同时强制客户端旧壳失效）；`prev-snapshot.js` 快照纳入 assets（回退点完整）；支持作者保存按钮 iOS 网页降级（长按提示）
+- **真机自检清单 `docs/DEVICE-CHECKLIST.md`**：发版后照单点 16 项（含"收款码是你的码"与"诊断不含记录内容"两项钱/数据关键项）
+
 ## 当前版本状态（2026-09-03）
+
+- **正式版 v1.2.0.1**（versionCode 243，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版
+- v1.2.0.1 更新（机制化收尾 + iOS 适配）：**SW 离线收录收款码**（CACHE_NAME v17→v18，CORE_ASSETS 加 assets 两码 → 断网也能看码；版本化缓存顺带强制客户端刷新）；**iOS 网页降级**（saveSupportQr 加 isIOSWeb：Safari 不支持 a[download] → 提示「长按二维码图片即可保存到相册」）；**prev-snapshot.js 纳入 assets**（回退点不再缺码）；test.js 5r 机制断言 +2（SW 收录码 / iOS 降级）→ 181；BUILTIN 新增 v1.2.0.1【新增/修复/优化】
 - **正式版 v1.2.0.0**（versionCode 242，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.0 更新（★满十进位：1.1.10.10 → 1.2.0.0，段规则 bump.js 自动）：**导出诊断恢复精简**（回滚 10.10 误加的记录/计划明细：诊断=排障文件不含业务数据；helpers buildRecordsDetail/buildPlansDetail 删除，save 头行修复）；回忆册日记样式/按钮换序维持 10.10 状态；test 174/30/194；BUILTIN 新增 v1.2.0.0【修复】
 - **正式版 v1.1.10.10**（versionCode 241，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -99,7 +111,7 @@
    - ⚠️ 历史错位：v1.1.1.0~1.1.1.4（vc132~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-12）
-2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 iOS 网页适配=发 APK 时同步做：无 iOS 真机设备，改为发版代码级适配检查——pages.dev 是 iOS 唯一入口，新功能禁用/降级 iOS 不支持的 API（震动→navigator.vibrate guarded 静默、保存→下载/长按引导、WebDAV/通知→不可用提示），无白屏错乱、sw 正常，随 push 自动部署）** → ②**★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点**（backups/prev-<版本>/ 存 www 7 文件+build.gradle+MainActivity+Manifest，事故可整体还原；v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ 同步 assets+temp（★2026-09-08 起加**安全两步**：`tools/security.js obf <temp assets/public> <同目录>` 就地混淆 4 业务 JS，再 `tools/security.js hash <temp assets/public>` 重生成 ResGuard.java 并 cp 到 temp + MainActivity + AndroidManifest；www 源与测试永远明文，ResGuard=APK 内混淆版哈希）→ gradle 构建（assets 内容变化 gradle 增量常不感知，有疑加 `--rerun-tasks`） → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
+2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 iOS 网页适配=发 APK 时同步做：无 iOS 真机设备，改为发版代码级适配检查——pages.dev 是 iOS 唯一入口，新功能禁用/降级 iOS 不支持的 API（震动→navigator.vibrate guarded 静默、保存→下载/长按引导、WebDAV/通知→不可用提示），无白屏错乱、sw 正常，随 push 自动部署）** → ②**★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点**（backups/prev-<版本>/ 存 www 7 文件+build.gradle+MainActivity+Manifest，事故可整体还原；v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ **★2026-09-10 起一条命令：`node tools/release.js`**（内部=同步 9 文件+assets → obf 混淆 temp → hash 生成 ResGuard → cp build.gradle/ResGuard/MainActivity/Manifest → gradle --rerun-tasks 构建；`--skip-build` 只做前四步）。原理备忘：混淆只对 temp assets 副本，www 源与测试永远明文，ResGuard=APK 内混淆版哈希 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload

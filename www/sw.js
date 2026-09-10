@@ -16,9 +16,10 @@
  * ★2026-09-04 v14→v15：阅读态 v2（列表瘦身名称+操作 / 居中详情弹窗 / 弹窗内编辑 / 表格列宽修复）——强制旧缓存失效
  * ★2026-09-04 v15→v16：列表三列定稿（名称+记录/计划时间+操作，table-layout:fixed 铺满）+ 强制作废用户端全部旧缓存
  * ★2026-09-04 v16→v17：v1.1.9.1（阅读态详情弹窗 + 列表瘦身 + 弹窗文字提亮 + 照片24 + 引导）——强制旧缓存失效
+ * ★2026-09-10 v17→v18：收款码外置 assets 收录（离线也能看码/保存）+ 强制刷新客户端旧壳
  */
-const CACHE_NAME = 'xixi-hiking-v17';
-const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js'];
+const CACHE_NAME = 'xixi-hiking-v18';
+const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg'];
 
 self.addEventListener('install', function (e) {
     e.waitUntil(
