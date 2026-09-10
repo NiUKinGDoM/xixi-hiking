@@ -90,13 +90,29 @@ function hostsHijacked(host) {
 
 function curlProbe(host, ip) {
   const r = spawnSync('curl', ['-s', '-o', NUL, '-w', '%{http_code}', '--max-time', '6', '-L',
-    '--resolve', host + ':443:' + ip, 'https://' + host + (PROBE_PATH[host] || '/')], { encoding: 'utf8' });
+    '--noproxy', '*', '--resolve', host + ':443:' + ip, 'https://' + host + (PROBE_PATH[host] || '/')], { encoding: 'utf8' });
+  return (r.stdout || '').trim();
+}
+
+// 直连探测：不给 IP、不用代理 —— 只有它失败才轮到"钉 IP"这条兜底路
+function probeDirect(host) {
+  const r = spawnSync('curl', ['-s', '-o', NUL, '-w', '%{http_code}', '--max-time', '6', '-L',
+    '--noproxy', '*', 'https://' + host + (PROBE_PATH[host] || '/')], { encoding: 'utf8' });
   return (r.stdout || '').trim();
 }
 
 function ensurePin(host) {
-  if (pinned[host]) return true;
-  if (PIN_HOSTS.indexOf(host) < 0) return false;
+  if (pinned[host] !== undefined) return pinned[host] !== false;
+  if (PIN_HOSTS.indexOf(host) < 0) { pinned[host] = false; return false; }
+
+  // ① 直连优先：网络正常时不钉 IP（钉 IP 会让请求绕过 DNS/CDN，只该作为兜底）
+  if (probeDirect(host) === '200') {
+    pinned[host] = false;
+    console.log('   ℹ ' + host + ' 直连正常，无需钉 IP');
+    return false;
+  }
+
+  // ② 直连不通 → 诊断 + 探测可用 IP
   if (hostsHijacked(host)) {
     console.log('   ⚠ ' + host + ' 被 hosts 劫持到 127.0.0.1（Steam++/Watt Toolkit 类加速器）');
     console.log('     → 自动绕过：钉真实 IP（彻底解决可清理 hosts 中的 Steam++ 段）');
@@ -109,12 +125,14 @@ function ensurePin(host) {
       return true;
     }
   }
+  pinned[host] = false;   // 探不到也别每次都重探
   return false;
 }
 
 function httpExec(o) {
   const host = new URL(o.url).hostname;
-  const args = ['-s', '-S', '--max-time', String(o.timeout || 180)];
+  // --noproxy '*'：语义固定为"直连"，否则环境里的 https_proxy 会悄悄改变行为（且让钉 IP 失效）
+  const args = ['-s', '-S', '--noproxy', '*', '--max-time', String(o.timeout || 180)];
   if (o.follow) args.push('-L');
   if ((o.method || 'GET') !== 'GET') args.push('-X', o.method);
   for (const k of Object.keys(o.headers || {})) args.push('-H', k + ': ' + o.headers[k]);
