@@ -9,7 +9,8 @@
  * 用法：
  *   node tools/ghrelease.js <tag> [apk路径] [body文件] [--keep-apk]
  * 例：
- *   node tools/ghrelease.js v1.2.0.3 tools/release-notes/1.2.0.3.md
+ *   node tools/ghrelease.js v1.2.0.3                                 # APK 默认取构建产物
+ *   node tools/ghrelease.js v1.2.0.3 "" tools/notes/1.2.0.3-release.md  # 带发布说明
  *
  * 退出码：0 成功；1 失败
  */
@@ -27,7 +28,10 @@ const args = process.argv.slice(2);
 const KEEP = args.includes('--keep-apk');
 const pos = args.filter((a) => !a.startsWith('--'));
 const tag = pos[0];
-const apk = pos[1] && fs.existsSync(pos[1]) ? pos[1] : DEFAULT_APK;
+// ★2026-09-11 修复：第 2 参数若是 .md/.txt（发布说明）绝不能当 APK 用——
+//   实测踩过：会把说明文件当安装包上传（Release 资产变成 1815 字节的 md，
+//   流程还会因「PK 头不正确」中止）。APK 只认显式给出的非说明文件路径，否则用构建产物。
+const apk = pos[1] && fs.existsSync(pos[1]) && !/\.(md|txt)$/i.test(pos[1]) ? pos[1] : DEFAULT_APK;
 const bodyFile = pos.slice(1).find((p) => /\.(md|txt)$/i.test(p));
 
 const SELFTEST = args.includes('--selftest');
