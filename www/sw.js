@@ -19,7 +19,7 @@
  * ★2026-09-10 v17→v18：收款码外置 assets 收录（离线也能看码/保存）+ 强制刷新客户端旧壳
  * ★2026-09-10 v18→v19：**去外部 CDN 依赖**——图标字体（原阿里 CDN，断网图标全失效）+ Tailwind 运行时（原阿里 CDN，断网布局塌）本地化；SW 收录字体/vendor/PWA 图标/manifest
  */
-const CACHE_NAME = 'xixi-hiking-v19';
+const CACHE_NAME = 'xixi-hiking-v20';
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {

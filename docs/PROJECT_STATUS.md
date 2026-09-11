@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-11（v1.2.0.3 / vc245）  
+> 最后更新：2026-09-11（v1.2.0.4 / vc246）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -120,6 +120,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.0.4**（versionCode 246，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.4 更新（**计划页搜索框可用性修复**）：`pokeSearchBar()` 原先对**可滚动页面**保留「显示 1 秒后自动收起」（★2026-08-27 方案 A 原始设计），导致切到计划页时搜索框一闪即没、用户来不及点 → 反馈「计划页搜索框不灵敏、没有记录页好用」（日历视图有数据、页面可滚动时尤甚）。本次**去掉该自动收起**：搜索框在记录/计划页下常显（页面已有 `padding-bottom 110px` 让位，不遮挡内容）；保留三种隐藏场景——① 不在记录/计划页 ② 滚到底部避让分页键 ③ 主动清空搜索。全套自检 457 项全绿
 - **正式版 v1.2.0.3**（versionCode 245，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.3 更新（**搜索栏 + 震动两处「静默失效」根因修复**，纯 bug 修复无新增功能）：**① 计划页搜索框不可达**——`switchTab()` 里 `__pokeSearchBar()` 早于 `currentTabId = tabId` 执行（poke 首行按旧页签判定即隐藏，2026-08-27 起的「切页自动呼出」从未生效）＋ `pokeSearchBar()` 的「滚到底部避让」判据 `vh+scrolled >= totalH-150` 在页面不足一屏时恒成立（已加 `scrollable = totalH > vh + 10` 门限，不可滚动页改为常显）＋ 放开 ★2026-08-31「日历下不呼出」限制（用户确认日历/列表逻辑一致）；**② 震动整体偶发失效**——`app-core.js` 把 `cleanupResources` 同时绑在 `beforeunload` + `pagehide`，移动端切后台/锁屏即触发 pagehide 并**一次清空全部 29 条全局监听**（震动、添加记录、导入导出、主题/FPS/震动开关全失灵，重开 App 才恢复），已移除 pagehide 绑定（清理只由真正离开时的 beforeunload 承担）；**③ 震动覆盖补全**——`hapticClickHandler` 增加 `cursor:pointer` 兜底，热力图日期格 `.hm-day`、顶栏标题、视图说明灰字等 43 处原先点了不震的元素现已覆盖（实测 `body`/`html` 不误震）；**④ 备份元数据版本号**由硬编码 `'1.1.0.3'` 改为动态 `APP_VERSION`；**⑤ 顺带确认无问题**：离线缓存 16/16 文件完整、toast 四态配色正常、导出→解析往返一致、记录详情 XSS 转义完整、照片走 IndexedDB 无容量风险；全套自检 457 项全绿（smoke 14 / test 195 / test-ui 30 / P0P3 194 / E2E 24）
 - **★发版注意**：本轮改了 4 个 www JS（app-core / app-data / app-init / app-sync）→ `ResGuard.java` 9 项哈希已随之重算（`release.js` 自动完成）；手工构建切勿跳过 hash 步骤，否则启动会弹「资源文件与官方版本不一致」告警

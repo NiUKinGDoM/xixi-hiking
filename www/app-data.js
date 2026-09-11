@@ -76,8 +76,10 @@ function initGlobalSearch() {
         if (searchQuery && searchQuery.trim()) { setBarVisible(true); return; }
         setBarVisible(true);
         clearTimeout(searchHideTimer);
-        // ★2026-09-11 不可滚动页面没有「滚动呼出」这一手段，隐藏即不可达 → 常显；可滚动页面维持 1 秒自动收起
-        if (scrollable) searchHideTimer = setTimeout(function () { setBarVisible(false); }, 1000);
+        // ★2026-09-11 修复「计划页搜索栏不灵敏」：去掉可滚动页面的「1 秒后自动收起」
+        //   原 8/27 方案 A 是「滚动显示 + 1 秒消失」，但切页后用户还没看清、没来得及点就被收走
+        //   （日历视图有数据、页面可滚动时尤其明显 → 用户反馈「没有记录页好用」）
+        //   搜索是高频主动操作 → 搜索框在记录/计划页下**常显**；页面已有 padding-bottom 110px 让位，不挡内容
     }
     // 滚动监听（rAF 节流，passive 不阻塞滚动）：任意方向滚动都触发显示
     let scrollTicking = false;
