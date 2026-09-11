@@ -166,12 +166,19 @@ if (has('push') || has('push-only')) {
     '20.205.243.166', '140.82.112.3', '140.82.113.3', '140.82.114.3',
     '140.82.116.3', '20.27.177.113', '20.200.245.247', '20.233.83.145', '4.208.26.197',
   ];
+  // ★2026-09-11 修复：探测必须绕开环境代理。
+  //   本机（沙箱）会注入 https_proxy（本次为 127.0.0.1:50083），而该代理对 github.com
+  //   直接返回 502 CONNECT tunnel failed → 所有候选 IP 都被误判为不可用，
+  //   于是永远走不到「钉 IP 重试 push」那一步（而 push 本身已用 -c http.proxy= 清空代理，两者语义必须一致）。
+  const probeEnv = Object.assign({}, env);
+  for (const k of ['http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY']) delete probeEnv[k];
   const probeIp = (ip) => {
     const r = spawnSync('curl', [
       '-s', '-o', process.platform === 'win32' ? 'NUL' : '/dev/null',
       '-w', '%{http_code}', '--max-time', '5',
+      '--noproxy', '*',
       '--resolve', `github.com:443:${ip}`, 'https://github.com',
-    ], { encoding: 'utf8' });
+    ], { encoding: 'utf8', env: probeEnv });
     return (r.stdout || '').trim();
   };
 
