@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-10（v1.2.0.2 / vc244）  
+> 最后更新：2026-09-11（v1.2.0.3 / vc245）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -117,6 +117,9 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-03）
 
+- **正式版 v1.2.0.3**（versionCode 245，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.3 更新（**搜索栏 + 震动两处「静默失效」根因修复**，纯 bug 修复无新增功能）：**① 计划页搜索框不可达**——`switchTab()` 里 `__pokeSearchBar()` 早于 `currentTabId = tabId` 执行（poke 首行按旧页签判定即隐藏，2026-08-27 起的「切页自动呼出」从未生效）＋ `pokeSearchBar()` 的「滚到底部避让」判据 `vh+scrolled >= totalH-150` 在页面不足一屏时恒成立（已加 `scrollable = totalH > vh + 10` 门限，不可滚动页改为常显）＋ 放开 ★2026-08-31「日历下不呼出」限制（用户确认日历/列表逻辑一致）；**② 震动整体偶发失效**——`app-core.js` 把 `cleanupResources` 同时绑在 `beforeunload` + `pagehide`，移动端切后台/锁屏即触发 pagehide 并**一次清空全部 29 条全局监听**（震动、添加记录、导入导出、主题/FPS/震动开关全失灵，重开 App 才恢复），已移除 pagehide 绑定（清理只由真正离开时的 beforeunload 承担）；**③ 震动覆盖补全**——`hapticClickHandler` 增加 `cursor:pointer` 兜底，热力图日期格 `.hm-day`、顶栏标题、视图说明灰字等 43 处原先点了不震的元素现已覆盖（实测 `body`/`html` 不误震）；**④ 备份元数据版本号**由硬编码 `'1.1.0.3'` 改为动态 `APP_VERSION`；**⑤ 顺带确认无问题**：离线缓存 16/16 文件完整、toast 四态配色正常、导出→解析往返一致、记录详情 XSS 转义完整、照片走 IndexedDB 无容量风险；全套自检 457 项全绿（smoke 14 / test 195 / test-ui 30 / P0P3 194 / E2E 24）
+- **★发版注意**：本轮改了 4 个 www JS（app-core / app-data / app-init / app-sync）→ `ResGuard.java` 9 项哈希已随之重算（`release.js` 自动完成）；手工构建切勿跳过 hash 步骤，否则启动会弹「资源文件与官方版本不一致」告警
 - **正式版 v1.2.0.2**（versionCode 244，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.2 更新（**离线自足** + 提示体系统一）：**彻底去外部 CDN 依赖**——图标字体本地化（`assets/fonts/material-icons.woff2` + `@font-face` 内联进 index.html；原阿里 CDN 断网致 163 处图标变英文单词）、Tailwind 运行时本地化（`assets/vendor/tailwind4.1.13.js`；原 CDN 断网致概览统计卡两列塌成一列）；**audit F 段门禁**（index.html 出现任何外链即判失败）+ favicon 声明（消除 /favicon.ico 404）+ **sw `CACHE_NAME` v18→v19、`CORE_ASSETS` 7→16 项**（字体/vendor/manifest/4 个 PWA 图标，逐项验证 200）+ **toast 四态修正**（loading 漏变体类致底色全透明 → 补类；三态 `z-[300]` 未编译 + loading 100 → 全部内联 300；`fixed` 误删致跑出视口 → 内联 position；补内联 padding 12px 20px） + **语义配色 5 处改中性**（网页版无需更新/环境不支持/包失效重下/再按一次退出/年份无记录）+ `border-red-500` 补 CSS 且校验通过后清除 + 统计卡 `items-baseline` 内联 + loading/info 拉同配方；ResGuard 7→9 项；test 195/30/194 + E2E 24/0
 - **正式版 v1.2.0.1**（versionCode 243，com.xixi.hiking，**Release+R8 签名包**）——主工程 `hiking-app3/` 即正式版

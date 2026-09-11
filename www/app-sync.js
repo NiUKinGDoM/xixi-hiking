@@ -1076,7 +1076,9 @@ function buildFullBackupPayload() {
     return {
         app: 'XiXiHiking',
         appName: '徒步小记',
-        version: '1.1.0.3',
+        // ★2026-09-11 修复：原先硬编码 '1.1.0.3'（早已过期，实际版本见 APP_VERSION）——
+        //   导致导出的备份元数据版本号与真实 App 不符（排查/兼容判断会读到错值）；改为动态取 APP_VERSION
+        version: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1.1.0.3'),
         exportedAt: new Date().toISOString(),
         records: records || [],
         plannedTrips: plannedTrips || []

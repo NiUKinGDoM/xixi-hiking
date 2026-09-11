@@ -358,8 +358,21 @@ function setupEventListeners() {
     // ★2026-08-21 v1.1.1.1 震动反馈：全局点击委托——只对按钮/可点击控件短震，空白处不震
     const hapticClickHandler = function (e) {
         if (!hapticEnabled) return;
+        var t = e.target;
+        if (!t || !t.closest) return;
         // 命中按钮类才震：原生 <button> + 全 App 模拟按钮/可点击行
-        var btn = e.target.closest('button, .tab-btn, .glass-btn, .modal-option-btn, .modal-cancel-btn, .confirm-btn-cancel, .confirm-btn-delete, .btn-click-effect, .restore-file-item, .sort-header, .sync-config-toggle-btn, .settings-item, .settings-switch, .glass-modal .modal-option-btn, [data-testid$="-button"]');
+        var btn = t.closest('button, .tab-btn, .glass-btn, .modal-option-btn, .modal-cancel-btn, .confirm-btn-cancel, .confirm-btn-delete, .btn-click-effect, .restore-file-item, .sort-header, .sync-config-toggle-btn, .settings-item, .settings-switch, .glass-modal .modal-option-btn, [data-testid$="-button"]');
+        // ★2026-09-11 修复「震动偶发失效」：显式列表之外，再向上找「光标为手型」的可点击元素兜底。
+        //   原因：热力图日期格 .hm-day（30 个）、顶栏标题、视图说明灰字 .view-caption、设置页 info 图标
+        //   都是可点击控件却不在列表内 → 点了不震，点别的按钮却震，用户感知为「不知为啥偶发失效」
+        //   （实测全 App 共 43 处；原注释本就写「只对按钮/可点击控件短震」，属实现漏网）
+        if (!btn) {
+            var n = t;
+            while (n && n.nodeType === 1 && n !== document.documentElement) {
+                try { if (getComputedStyle(n).cursor === 'pointer') { btn = n; break; } } catch (err) { break; }
+                n = n.parentElement;
+            }
+        }
         if (btn) triggerHaptic();
     };
     document.addEventListener('click', hapticClickHandler);
@@ -696,8 +709,14 @@ function setupEventListeners() {
         }
         // ★2026-08-27 计划页搜索修复：placeholder 按页切换（计划页不再显示"搜索记录…"）+ 切页自动呼出搜索框一次
         //   （计划少、页面不足一屏时轻滑无法滚动呼出，切页自动出现让用户知道搜索框位置，1 秒不碰自动消失）
-        // ★2026-08-31 日历视图模式跳过（搜索是列表功能，日历下不呼出）
-        if (tabId === 'records' || (tabId === 'plans' && (!window.plansViewMode || window.plansViewMode !== 'calendar'))) {
+        // ★2026-09-11 用户确认：计划页日历视图与列表视图逻辑一致，同样自动呼出搜索框
+        //   （原 ★2026-08-31「日历下不呼出」取消——日历搜索会定位到匹配计划的日期 locatePlanInCalendar，
+        //    且计划条数少时页面不足一屏、无法靠轻滑呼出，不弹即等于搜索不可达）
+        if (tabId === 'records' || tabId === 'plans') {
+            // ★2026-09-11 修复：pokeSearchBar 第一行按 currentTabId 判断当前页，必须先同步为 tabId——
+            //   本块原先早于 currentTabId 赋值执行，poke 时读到的还是上一个 tab，直接判定「不在记录/计划页」并隐藏，
+            //   导致切到记录/计划页时搜索框从不自动出现（计划/记录条数少时用户感知为「搜索栏失效」）
+            currentTabId = tabId;
             var gsi = safeGetElementById('globalSearchInput');
             if (gsi) gsi.placeholder = tabId === 'records' ? '搜索记录…' : '搜索计划…';
             if (window.__pokeSearchBar) { try { window.__pokeSearchBar(); } catch (e) { /* 忽略 */ } }

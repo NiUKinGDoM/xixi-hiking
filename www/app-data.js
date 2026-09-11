@@ -69,11 +69,15 @@ function initGlobalSearch() {
         const vh = window.innerHeight || document.documentElement.clientHeight;
         const scrolled = window.pageYOffset || document.documentElement.scrollTop || 0;
         const totalH = document.documentElement.scrollHeight || document.body.scrollHeight || 0;
-        if (vh + scrolled >= totalH - 150) { setBarVisible(false); clearTimeout(searchHideTimer); return; }
+        // ★2026-09-11 修复：页面不可滚动（内容不足一屏）时不做「底部避让」——
+        //   否则 vh+0 >= totalH-150 恒成立，搜索框在任何操作下都不显示（记录/计划条数少时“搜索栏失效”）
+        const scrollable = totalH > vh + 10;
+        if (scrollable && vh + scrolled >= totalH - 150) { setBarVisible(false); clearTimeout(searchHideTimer); return; }
         if (searchQuery && searchQuery.trim()) { setBarVisible(true); return; }
         setBarVisible(true);
         clearTimeout(searchHideTimer);
-        searchHideTimer = setTimeout(function () { setBarVisible(false); }, 1000);
+        // ★2026-09-11 不可滚动页面没有「滚动呼出」这一手段，隐藏即不可达 → 常显；可滚动页面维持 1 秒自动收起
+        if (scrollable) searchHideTimer = setTimeout(function () { setBarVisible(false); }, 1000);
     }
     // 滚动监听（rAF 节流，passive 不阻塞滚动）：任意方向滚动都触发显示
     let scrollTicking = false;
