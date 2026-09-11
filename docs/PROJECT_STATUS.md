@@ -20,7 +20,7 @@
 ```bash
 # 环境前置（每次 bash 会话）
 export NODE_PATH="C:/Users/NIU-XC/.workbuddy/binaries/node/workspace/node_modules"
-NODE="C:/Users/NIU-XC/.workbuddy/binaries/node/versions/22.22.2-2/node.exe"
+NODE="C:/Users/NIU-XC/.workbuddy/binaries/node/versions/22.22.2-3/node.exe"   # ★目录版本号会漂移（旧版被自动删除），用前先 ls binaries/node/versions/ 确认
 
 # ① 改代码：一律走补丁工具（禁 heredoc 拼含转义的 JS）
 node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一校验+写后语法校验+失败还原
@@ -54,12 +54,15 @@ node tools/ship.js prepare --builtin <BUILTIN文案> --doc <文档条目文案> 
 node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同步push→建Release+上传+下载验证→校验 pages.dev
 
 # ⑨ 发布子工具（可单独用）
-node tools/builtin.js <版本> <文案文件>        # BUILTIN 更新日志注入（读真实换行、内部转字面 
-，防坑；幂等）
+node tools/builtin.js <版本> <文案文件>        # BUILTIN 更新日志注入（读真实换行、内部转字面 \n，防坑；幂等）
 node tools/builtin.js --check                  # 检查当前 APP_VERSION 是否已有 BUILTIN 条目
 node tools/docrelease.js <版本> <vc> <文案>    # 发布文档三处同步（PROJECT_STATUS 双端 + CHANGELOG，幂等）
 node tools/verify-apk.js                       # APK 全面验证（版本/签名/混淆/资源/ResGuard；混淆口径已修正）
-node tools/ghrelease.js <tag> <Release文案>    # 建 Release + 裸二进制上传 + 下载校验 md5/PK + 清理本地 APK
+node tools/ghrelease.js <tag> [apk路径] [说明文件]   # 建 Release + 裸二进制上传 + 下载校验 md5/PK + 清理本地 APK
+#   ★参数顺序坑（2026-09-11 实际踩到）：第 2 位是 apk、第 3 位才是说明文件。
+#     省略 apk 即自动取构建产物；**若把说明文件放第 2 位，会被当成 APK 上传**
+#     （Release 资产变成几百字节的 md，下载校验 PK 头不过 → 流程中止）。
+#     已修：现在 .md/.txt 一律不当作 APK。发布走 ship.js publish 时勿手改参数。
 node tools/ghrelease.js --selftest             # 只读自检：token + 网络层 + hosts 劫持诊断（不发写请求）
 node tools/smoke.js --net                      # 工具链冒烟 + 网络用例（默认不跑网络，保持快）
 
@@ -115,7 +118,7 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 - **★离线自足（2026-09-10）**：图标字体 + Tailwind 运行时全部本地化（详见关键约定 18）；**新增静态资源三处同步**（sw CORE_ASSETS + ResGuard HASH_FILES + `inspect --offline` 实测）；`tools/audit.js` 新增 **F 段外部依赖门禁**；`e2e/inspect.js` 新增 **`--offline`**（模拟断网）+ 巡检片段 `tools/snippets/offline-check.js`
 
 
-## 当前版本状态（2026-09-03）
+## 当前版本状态（2026-09-11）
 
 - **正式版 v1.2.0.3**（versionCode 245，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.3 更新（**搜索栏 + 震动两处「静默失效」根因修复**，纯 bug 修复无新增功能）：**① 计划页搜索框不可达**——`switchTab()` 里 `__pokeSearchBar()` 早于 `currentTabId = tabId` 执行（poke 首行按旧页签判定即隐藏，2026-08-27 起的「切页自动呼出」从未生效）＋ `pokeSearchBar()` 的「滚到底部避让」判据 `vh+scrolled >= totalH-150` 在页面不足一屏时恒成立（已加 `scrollable = totalH > vh + 10` 门限，不可滚动页改为常显）＋ 放开 ★2026-08-31「日历下不呼出」限制（用户确认日历/列表逻辑一致）；**② 震动整体偶发失效**——`app-core.js` 把 `cleanupResources` 同时绑在 `beforeunload` + `pagehide`，移动端切后台/锁屏即触发 pagehide 并**一次清空全部 29 条全局监听**（震动、添加记录、导入导出、主题/FPS/震动开关全失灵，重开 App 才恢复），已移除 pagehide 绑定（清理只由真正离开时的 beforeunload 承担）；**③ 震动覆盖补全**——`hapticClickHandler` 增加 `cursor:pointer` 兜底，热力图日期格 `.hm-day`、顶栏标题、视图说明灰字等 43 处原先点了不震的元素现已覆盖（实测 `body`/`html` 不误震）；**④ 备份元数据版本号**由硬编码 `'1.1.0.3'` 改为动态 `APP_VERSION`；**⑤ 顺带确认无问题**：离线缓存 16/16 文件完整、toast 四态配色正常、导出→解析往返一致、记录详情 XSS 转义完整、照片走 IndexedDB 无容量风险；全套自检 457 项全绿（smoke 14 / test 195 / test-ui 30 / P0P3 194 / E2E 24）
@@ -311,7 +314,10 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 ## 工具链真实路径（项目根 `C:\Users\NIU-XC\Desktop\buddy\2026-08-07-13-58-04\`）
 
 - `jdk-21.0.12\`、`gradle-8.2.1\bin\gradle.bat`、`android-sdk\`（local.properties 写死 sdk.dir）
-- 托管 python：`C:\Users\NIU-XC\.workbuddy\binaries\python\versions\3.13.12\python.exe`；托管 node：`C:\Users\NIU-XC\.workbuddy\binaries\node\versions\22.22.2-2\node.exe`（★2026-09-01 修正：原 22.22.2 目录已移除，用这个路径）
+- 托管 python：`C:\Users\NIU-XC\.workbuddy\binaries\python\versions\3.13.12\python.exe`；托管 node：`C:\Users\NIU-XC\.workbuddy\binaries\node\versions\22.22.2-3\node.exe`（★**这个目录版本号会漂移**——WorkBuddy 会删旧版装新版，曾从 `22.22.2`→`22.22.2-2`→`22.22.2-3`；**用前先 `ls binaries/node/versions/` 确认**，或直接用 PATH 里的 `node`）
+- **★本机 bash 的 PATH 会偶发丢失**（报 `dirname: command not found` / Exit 127）→ 命令前加
+  `export PATH="/usr/bin:/bin:/c/Windows/System32:/c/Windows:/c/Users/NIU-XC/.workbuddy/binaries/PortableGit/versions/1.2.0/cmd:$PATH"`
+  即可恢复（`git` 在 PortableGit 的 **cmd/** 子目录，不在 bin/）
 
 ## 备份体系
 
@@ -458,6 +464,10 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
      **三种解法（择一）**：① 启动 Watt Toolkit（让它的本地反代接管）；② 清理 hosts 里的 Steam++ 段（需管理员；实测 GitHub 真实 IP 直连 200，清完一切正常）；③ 不动 hosts，用工具内置绕过 —— `ghsync.js` / `ghrelease.js` 已自动探测可用 IP + 钉 IP 重试。
      **★工具已内置（2026-09-10）**：`node tools/ghsync.js`（直连失败 → 自动探测可用 IP → **逐个轮试 push**）、`node tools/ghrelease.js --selftest`（只读自检：token + 网络层 + 钉 IP 报告）、`node tools/smoke.js --net`（工具链冒烟含网络用例）。**教训**：HTTP 200 ≠ git 协议可用（140.82.112.3 曾 HTTP 通而 git push 超时）→ 必须轮试；且 IP 可用性是**分钟级波动**，勿因单次成功就写死某个 IP。
    3e. **✅ 2026-09-10 晚已解决（终）**：清理 hosts 里的 Steam++ 段后，直连已恢复 —— `github.com` / `api.github.com` 均 **200**，DNS 解析回真实 IP `20.205.243.166`（用户浏览器实测「能上」）。容错逻辑保留作兑底：`ghrelease.js` 已改为**直连优先**（只有直连失败才钉 IP）。**★事故教训**：改 hosts 的脚本曾**静默把 hosts 清成 3 字节**（`Get-Content` 读到空不报错 → 空进空出），两次执行均无异常 → **写系统文件必须写完回读校验**；改 hosts 建议「生成正确文件 + 手工复制」而不用脚本。另：本机执行环境是沙箱，会话被注入 `https_proxy` → curl 结论不代表用户真实环境，工具已加 `--noproxy '*'` 固定为直连语义。
+   3f. **★★2026-09-11 沙箱代理坑（v1.2.0.3 发布时踩到并修复）**：`ship publish` 报「候选 IP 全部不可用」，**但手动用同一个 IP 跑 `git ls-remote` 却能通** → 根因 = `ghsync.js` 的 `probeIp` 用 curl 探测时**没绕开环境代理**：本机会话被注入 `https_proxy`（本次端口 `127.0.0.1:50083`，上次为 55277，**会变**），该代理对 `github.com` 直接返回 **502 CONNECT tunnel failed** → 所有候选 IP 被误判为不可用，永远走不到「钉 IP 重试 push」。**已修**：探测加 `--noproxy '*'` + 从子进程环境剔除 `http(s)_proxy/HTTP(S)_PROXY/all_proxy/ALL_PROXY`（与 push 的 `-c http.proxy=` 语义对齐）。
+       **判据**：`env | grep -i proxy` 看端口；`curl -v https://github.com 2>&1 | grep -i "CONNECT tunnel"` 出 502 即命中。
+       **另**：本次 DNS 默认解析的 `20.205.243.166` 长期不通，而 `140.82.112.3 / 113.3 / 114.3` 的 **git 协议**实测可用 —— 用 `git -c http.proxy= -c https.proxy= -c http.curloptResolve=github.com:443:<IP> ls-remote origin HEAD` 验证，**比 curl 探 HTTP 更接近 push 的真实链路**（HTTP 200 ≠ git 可用，反之亦然）。
+   3g. **★★2026-09-11 Release 资产上传参数坑**：`ghrelease.js <tag> [apk路径] [说明文件]` —— 把说明文件（.md）放在第 2 位会被**当成 APK 上传**（Release 资产变成 1815 字节的 md，下载校验 PK 头不过、流程中止）。**已修**：.md/.txt 一律不认作 APK。`ship publish` 内部调用无此问题，**单独手跑 ghrelease 时务必注意位置**。
 4. **不需要 node_modules / npx cap sync**：改 index.html → 复制 → gradle 构建（除非加 Capacitor 插件）
 5. **★环境坑（2026-08-28）**：Write 工具写入与 Bash 文件系统偶发隔离（Write 报成功但 bash 找不到文件）→ 临时脚本一律用 **Bash heredoc 创建**；
   PowerShell 工具输出偶发被吞 → APK 验证改 **bash/python**（aapt 直接调 + python md5）；
