@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-11（v1.2.0.4 / vc246）  
+> 最后更新：2026-09-14（v1.2.0.5 / vc247）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -49,6 +49,12 @@ node tools/ghsync.js -m "release: vX (vcN)" --push
 
 # ⑦ 代码审计（死类 / 死 CSS / 残留 / 重复 id / 外部 CDN 依赖）——「四项优化」①⑤自动化
 node tools/audit.js
+node tools/deepcheck.js     # 死代码 / XSS / 泄漏 / 全局污染 / 调试残留
+node tools/docaudit.js      # 文档格式 / 版本号 / 路径 / 双端一致
+node tools/designcheck.js   # ★设计一致性（2026-09-14 新增）：实测每个可见元素的圆角/字体与规范表比对，列出漂移
+node tools/status.js        # ★开工核对一条命令（2026-09-14 新增）：版本三处/BUILTIN/本地git/副本差异/远程latest；--offline 跳过远程
+node tools/rollback.js      # ★一键回退（2026-09-14 新增）：无参数=列出回退点；<版本>=预览差异；<版本> --apply=执行（先自动备份当前）
+node tools/doc-sync.js      # ★双端文档同步（2026-09-14 新增）：无参数=只检测；--apply=主工程→副本；--reverse=副本→主工程
 # ⑧ 发布编排（一条命令串起全流程，任一步失败即停）
 node tools/ship.js prepare --builtin <BUILTIN文案> --doc <文档条目文案>   # 核对→快照→bump→BUILTIN→文档→自检→审计→构建→APK验证
 node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同步push→建Release+上传+下载验证→校验 pages.dev
@@ -120,6 +126,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.0.5**（versionCode 247，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.5 更新（**设计规范归位 + 工具链脚本化**，App 侧仅圆角微调）：**① 圆角统一回规范**——`.glass-stat-card` 14→**16px**、`.ov-mini` 13→**12px**（2026-09-03 曾手调 16→14 / 12→13 并与规范脱离，9/14 经实机对比确认差异极小后统一回档位）；**② 新增 5 个工具**：`designcheck.js`（设计一致性体检，实测全元素圆角/字体比对规范表，规范表为唯一事实来源）、`status.js`（开工核对一条命令：版本三处/BUILTIN/本地git/副本差异/远程latest）、`rollback.js`（一键回退到 `backups/prev-*`，默认预览、`--apply` 执行且先自动备份当前）、`doc-sync.js`（双端文档一键同步，`--apply`/`--reverse`）、`snippets/design-scan.js`；**③ `ship.js prepare` 新增自动 bump `sw.js` 的 `CACHE_NAME`**——根治「发版后用户浏览器 SW 缓存不失效、仍看到旧版」（2026-09-11 v1.2.0.3 真实发生，用户报「网页还是 1.2.0.0」）；**④ `docaudit` 双端检查 4 组 → 5 组**（补上此前漏检的「给新模型的提示词.md」）；**⑤ E2E 视觉回归降噪**——`addInitScript` 固定日期 + 关闭 FPS 显示，根治「跨天跑必失败」（9/11、9/14 各误报一次）；**⑥ 圆角统一后全套自检 457 项全绿**，工具链 14→18 冒烟全过
 - **正式版 v1.2.0.4**（versionCode 246，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.4 更新（**计划页搜索框可用性修复**）：`pokeSearchBar()` 原先对**可滚动页面**保留「显示 1 秒后自动收起」（★2026-08-27 方案 A 原始设计），导致切到计划页时搜索框一闪即没、用户来不及点 → 反馈「计划页搜索框不灵敏、没有记录页好用」（日历视图有数据、页面可滚动时尤甚）。本次**去掉该自动收起**：搜索框在记录/计划页下常显（页面已有 `padding-bottom 110px` 让位，不遮挡内容）；保留三种隐藏场景——① 不在记录/计划页 ② 滚到底部避让分页键 ③ 主动清空搜索。全套自检 457 项全绿
 - **正式版 v1.2.0.3**（versionCode 245，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -266,7 +274,9 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
    - **★★2026-09-10 实测补强（重要）**：index.html 里的 Tailwind 产物是**冻结快照**，之后新增的类多未编译。实测结论——`px-5`（toast 横向内边距=0）、`items-baseline`（概览统计数字/单位基线失准）**无任何兜底 = 真 bug**；而 `py-4`/`mt-3`/`pb-1`/`text-[13px]`/`text-red-400`/`grid-cols-2`/`flex-wrap` 虽同样未编译，却**被自定义 CSS 兜底、观感正常**。
    - ⇒ **规矩**：① 关键样式（padding / position / z-index / 尺寸 / 颜色）**一律内联硬锁或写进自定义 CSS**，不依赖 Tailwind 类；② 判定"样式是否生效"**只能看浏览器实测 computed 值**（`node e2e/inspect.js`），**不能靠 grep**——Tailwind 会转义 `[`→`\[`、`:`→`\:`，且自定义 CSS 可能已兜底
 7. **暗色模式**：body 纯 background-color 过渡；`.dark-mode` 覆盖 Tailwind 用 !important 是正常手法；**浅色看不清 = 固定灰蓝 #64748b 在玻璃底上偏淡，弹窗内文字一律主题色/近黑**（#0f172a/#1f2937 系）
-8. **圆角层级**：卡片 20 / 子项 16 / 按钮 12 / 输入框 10 / 滚动条 4
+8. **圆角层级**：卡片 20 / 子项 16 / 按钮 12 / 输入框 10 / 滚动条 4 ｜ 合理例外：8px 小元素（热力图格/徽章）、999px 胶囊、50% 圆形
+   - **★2026-09-14 已机器守护**：`node tools/designcheck.js` 实测全元素 computed 值比对规范表，偏离即报错退出。**改设计规范先改工具里的 `SPEC` 表**（唯一事实来源），再改 CSS。
+   - **★历史教训**：2026-09-03 曾把统计卡 16→14、ov-mini 12→13（注释写"与大卡协调"），此后**无人知道规范已漂移**，直到 9/11 复盘才翻出来；9/14 用户决定统一回 16/12。**这类"手动微调脱离规范"就是本工具的诞生原因。**
 9. **全 App 统一衬线**（SimSun 系）= 刻意手写风，勿改
 10. **折叠动画正解**：grid-template-rows 0fr↔1fr（max-height 卡、transform 不同步、translateY margin 死结——全踩过）
 11. **可编辑栏不自动弹输入法**

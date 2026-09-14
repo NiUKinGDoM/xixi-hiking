@@ -90,6 +90,22 @@ if (mode === 'prepare') {
   // ③ bump
   run('版本号自增（bump）', NODE, ['bump.js']);
   const next = readVer();
+
+  // ③.5 bump sw.js 的 CACHE_NAME（★2026-09-14 新增）
+  //   为什么并入编排：发版若不 bump CACHE_NAME，用户浏览器的 Service Worker 缓存不会失效 →
+  //   用户打开网页版看到的仍是旧版（2026-09-11 发布 v1.2.0.3 时真实发生过，用户报「网页还是 1.2.0.0」）。
+  //   以前靠人工记得手动改，漏了就要等用户反馈；现在固定成流程一步，不可能再漏。
+  const swPath = path.join(ROOT, 'www/sw.js');
+  const swTxt = fs.readFileSync(swPath, 'utf8');
+  const swM = swTxt.match(/CACHE_NAME = 'xixi-hiking-v(\d+)'/);
+  if (!swM) { console.error('\n✗ sw.js 里找不到 CACHE_NAME = \'xixi-hiking-vN\'，流程中止'); process.exit(1); }
+  const nextCache = 'xixi-hiking-v' + (parseInt(swM[1], 10) + 1);
+  console.log('\n▶ sw.js 缓存版本自增（CACHE_NAME）');
+  if (DRY) console.log('   [DRY] xixi-hiking-v' + swM[1] + ' → ' + nextCache);
+  else {
+    fs.writeFileSync(swPath, swTxt.replace(swM[0], "CACHE_NAME = '" + nextCache + "'"), 'utf8');
+    console.log('   ✓ xixi-hiking-v' + swM[1] + ' → ' + nextCache + '（强制用户浏览器 SW 缓存失效，避免看到旧版）');
+  }
   console.log('   → 新版本: v' + next.ver + ' (vc' + next.vc + ')');
 
   // ④ BUILTIN

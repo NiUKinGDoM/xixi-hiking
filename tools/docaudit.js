@@ -120,6 +120,8 @@ const PAIRS = [
     ['README.md', path.join(ROOT, 'README.md'), path.join(GH, 'README.md')],
     ['CHANGELOG.md', path.join(ROOT, 'CHANGELOG.md'), path.join(GH, 'CHANGELOG.md')],
     ['docs/PROJECT_STATUS.md', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'docs', 'PROJECT_STATUS.md')],
+    // ★2026-09-14 补漏：本文件同样是双端的，此前未纳入检查
+    ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs', '给新模型的提示词.md')],
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs', 'DEVICE-CHECKLIST.md'), path.join(GH, 'docs', 'DEVICE-CHECKLIST.md')],
 ];
 const dual = [];
@@ -142,6 +144,6 @@ if (JSON_OUT) {
         });
     });
     console.log('\n【J 双端一致性】');
-    if (dual.length) dual.forEach((x) => console.log('  ⚠ ' + x));
-    else console.log('  ✅ 主工程与 GH 副本 4 组文档完全一致');
+    if (dual.length) dual.forEach((x) => console.log('  ⚠ ' + x + '  （同步：node tools/doc-sync.js --apply）'));
+    else console.log('  ✅ 主工程与 GH 副本 5 组文档完全一致');
 }

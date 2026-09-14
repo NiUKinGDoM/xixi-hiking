@@ -49,6 +49,28 @@ function serverUp() {
     isMobile: true,
     userAgent: 'Mozilla/5.0 (Linux; Android 13; E2E) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'
   });
+  // ★2026-09-14 视觉回归降噪（根治跨天必失败）：
+  //   ① 固定「今天」——概览热力图高亮在当天格子，随真实日期移动 → 每跨一天跑 E2E 都误报（9/11、9/14 各一次）
+  //   ② 关闭 FPS 显示——右上角数字秒变，同样造成噪音
+  //   两者都是「真实数据变化」而非代码回归，必须降噪，否则会掩盖真 bug。
+  await ctx.addInitScript(() => {
+    try { localStorage.setItem('hiking_show_fps', JSON.stringify({ showFps: false })); } catch (e) { }
+    try {
+      const FIXED = new Date('2026-01-15T12:00:00+08:00').getTime();
+      const Orig = Date;
+      function FakeDate() {
+        if (arguments.length === 0) return new Orig(FIXED);
+        var a = Array.prototype.slice.call(arguments);
+        return new (Function.prototype.bind.apply(Orig, [null].concat(a)))();
+      }
+      FakeDate.prototype = Orig.prototype;
+      FakeDate.now = function () { return FIXED; };
+      FakeDate.parse = Orig.parse;
+      FakeDate.UTC = Orig.UTC;
+      window.Date = FakeDate;
+    } catch (e) { }
+  });
+
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
