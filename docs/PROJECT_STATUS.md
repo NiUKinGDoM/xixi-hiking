@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-14（v1.2.0.5 / vc247）  
+> 最后更新：2026-09-14（v1.2.0.6 / vc248）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -127,6 +127,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.0.6**（versionCode 248，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.6 更新（**新增两个功能：那年今日 + 里程碑纪念**，功能冻结按用户点名解冻）：**① 那年今日**（概览页）——`index.html` 统计面板**之前**新增 `#onThisDayCard`（默认 `display:none`），`app-data.js` 新增 `renderOnThisDay()` 并在 `updateStatistics()` **开头**调用（置于指纹快照判断**之前**，跨天/切页回来可刷新）；匹配 `createdAt` 月+日 == 今天**且年份 < 今年**，取年份最近的一条；展示「N 年前的今天」+ 山名 + 里程/难度/心情/天气 + 首张照片缩略图（复用 `loadPhotoThumbs` 的 `data-record`/`data-pid` 机制），点击复用 `openRecordDetailModal(id)`（零新 UI）；**无历史 → 整卡隐藏、内容清空，不占位不打扰**；自带指纹（今天日期 + 记录数 + 最新 `updatedAt`）避免频繁重算；**② 里程碑纪念**（8 档）——山峰 `peaks_1/5/10/25/50` + 里程 `km_100/500/1000`（`MILESTONES` 表），持久化 `localStorage['hiking_milestones']` 保证**绝不重复弹**，`checkMilestones()` 挂在 `saveRecord()` 末尾，`milestoneStats()` 山峰按**名称去重**（与年度回顾/山册口径一致）+ 里程累加，达成弹 `showMilestoneCelebration()`（复用庆祝卡体系；文案已按用户要求改为俏皮版，含西安地标距离）；**一次只弹一个**（取表中靠前的最低档）其余静默标记为已达成，避免弹窗连续堆叠；**③ 顺带重构**——把 `showPlanCompleteCelebration` 内联的 400 粒彩屑**提取为共用 `spawnConfetti(overlay)` + `CONF_COLORS`**，计划完成 / 里程碑两处共用（已回归验证计划完成庆祝正常）；**④ 测试**——`_test_p0p3.js` 新增 **16 项断言**（那年今日 8 / 里程碑 7 / 回归 1）→ **194 → 210**，全套自检 **6 套 493 项全绿**（smoke 19 / ios 10 / test 195 / test-ui 30 / P0P3 210 / E2E 24）；两功能均**纯本地、无平台差异 API**，iOS 网页版天然一致（ioscheck 10/0）
 - **正式版 v1.2.0.5**（versionCode 247，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.5 更新（**设计规范归位 + 工具链脚本化**，App 侧仅圆角微调）：**① 圆角统一回规范**——`.glass-stat-card` 14→**16px**、`.ov-mini` 13→**12px**（2026-09-03 曾手调 16→14 / 12→13 并与规范脱离，9/14 经实机对比确认差异极小后统一回档位）；**② 新增 5 个工具**：`designcheck.js`（设计一致性体检，实测全元素圆角/字体比对规范表，规范表为唯一事实来源）、`status.js`（开工核对一条命令：版本三处/BUILTIN/本地git/副本差异/远程latest）、`rollback.js`（一键回退到 `backups/prev-*`，默认预览、`--apply` 执行且先自动备份当前）、`doc-sync.js`（双端文档一键同步，`--apply`/`--reverse`）、`snippets/design-scan.js`；**③ `ship.js prepare` 新增自动 bump `sw.js` 的 `CACHE_NAME`**——根治「发版后用户浏览器 SW 缓存不失效、仍看到旧版」（2026-09-11 v1.2.0.3 真实发生，用户报「网页还是 1.2.0.0」）；**④ `docaudit` 双端检查 4 组 → 5 组**（补上此前漏检的「给新模型的提示词.md」）；**⑤ E2E 视觉回归降噪**——`addInitScript` 固定日期 + 关闭 FPS 显示，根治「跨天跑必失败」（9/11、9/14 各误报一次）；**⑥ 圆角统一后全套自检 457 项全绿**，工具链 14→18 冒烟全过；**⑦ 新增 `ioscheck.js`（iOS 网页版同步适配体检）**——把「发 APK 时必须同步适配 iOS 网页版（pages.dev 是 iOS 唯一入口）」这条铁律机器化：版本对齐（本地三处/线上 pages.dev/Release latest）+ 能力守卫（差异 API 必有降级，漏适配即报错）+ iOS CSS + 模拟实测（无桥 + 无 vibrate 跑全部能力）；已并入 `checkall` 第二套（秒级）→ 工具链 18→19
 - **正式版 v1.2.0.4**（versionCode 246，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里

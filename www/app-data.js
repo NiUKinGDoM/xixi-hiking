@@ -1623,6 +1623,7 @@ function saveRecord(id) {
         closeRecordDetailModal();
     }
     triggerHaptic(15); // ★2026-08-27 渐进增强：保存成功轻震动反馈
+    checkMilestones(); // ★2026-09-14 新增：保存后判定里程碑（达成弹一次，已达成不再弹）
 }
 
 function handleSort(field) {
@@ -2084,7 +2085,51 @@ function fillAboutSince() {
     el.innerHTML = '<span class="material-icons" style="font-size:12px;vertical-align:-2px;color:#667eea;">hiking</span> <span>徒步第 ' + days + ' 天 · 从 ' + first.getFullYear() + '年' + (first.getMonth() + 1) + '月' + first.getDate() + '日 出发</span>';
     el.style.display = '';
 }
+// ★2026-09-14 新增「那年今日」：概览页展示往年同月同日的徒步记录（纯本地计算、零新依赖、两端通用）
+// 匹配策略：月+日完全相同且年份早于今年；无则整卡不渲染（宁缺毋滥，避免误导）
+var onThisDayFp = '';
+function renderOnThisDay() {
+    try {
+        var card = document.getElementById('onThisDayCard');
+        var body = document.getElementById('onThisDayBody');
+        if (!card || !body) return;
+        var now = new Date();
+        var mm = now.getMonth() + 1, dd = now.getDate(), yy = now.getFullYear();
+        var list = records || [];
+        // 指纹：今天日期 + 记录数 + 最新修改时间（避免频繁重算与重渲染）
+        var fp = yy + '-' + mm + '-' + dd + '_' + list.length + '_' + list.reduce(function (m, r) { var t = (r && (r.updatedAt || r.createdAt)) || ''; return t > m ? t : m; }, '');
+        if (fp === onThisDayFp) return;
+        onThisDayFp = fp;
+        var hits = list.filter(function (r) {
+            if (!r || !r.createdAt) return false;
+            var t = new Date(r.createdAt);
+            if (isNaN(t.getTime())) return false;
+            return (t.getMonth() + 1) === mm && t.getDate() === dd && t.getFullYear() < yy;
+        });
+        if (!hits.length) { card.style.display = 'none'; body.innerHTML = ''; return; }
+        hits.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+        var r = hits[0];
+        var years = yy - new Date(r.createdAt).getFullYear();
+        var dark = document.body.classList.contains('dark-mode');
+        var sub = dark ? 'rgba(255,255,255,0.72)' : '#52606f';
+        var strong = dark ? '#ffffff' : '#0f172a';
+        var pid = (r.photos && r.photos.length) ? r.photos[0] : '';
+        var thumb = '<div style="width:56px;height:56px;border-radius:12px;flex-shrink:0;overflow:hidden;background:' + (dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.05)') + ';display:flex;align-items:center;justify-content:center;">' + (pid ? '<img data-record="' + escapeHtml(r.id) + '" data-pid="' + escapeHtml(pid) + '" alt="" style="width:100%;height:100%;object-fit:cover;">' : '<span class="material-icons" style="font-size:24px;color:' + sub + ';">landscape</span>') + '</div>';
+        var meta = [];
+        if (r.distance) meta.push(r.distance + ' km');
+        if (r.difficulty) meta.push(r.difficulty + ' 级');
+        if (r.mood) meta.push(escapeHtml(r.mood));
+        if (r.weather) meta.push(escapeHtml(r.weather));
+        body.innerHTML = '<div id="onThisDayRow" style="display:flex;align-items:center;gap:12px;cursor:pointer;">' + thumb + '<div style="flex:1;min-width:0;">' + '<div style="font-size:12px;color:' + sub + ';margin-bottom:2px;">' + years + ' 年前的今天</div>' + '<div style="font-size:16px;font-weight:700;color:' + strong + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(r.name || '未命名') + '</div>' + (meta.length ? '<div style="font-size:12px;color:' + sub + ';margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + meta.join(' · ') + '</div>' : '') + '</div>' + '<span class="material-icons" style="font-size:20px;color:' + sub + ';flex-shrink:0;">chevron_right</span>' + '</div>';
+        card.style.display = 'block';
+        var row = document.getElementById('onThisDayRow');
+        if (row) row.addEventListener('click', function () { triggerHaptic(12); if (typeof openRecordDetailModal === 'function') openRecordDetailModal(r.id); });
+        try { loadPhotoThumbs(r.id); } catch (eP) { /* 缩略图失败不影响文字 */ }
+    } catch (e) { /* 那年今日失败绝不影响概览渲染 */ }
+}
+
 function updateStatistics() {
+    renderOnThisDay(); // ★2026-09-14「那年今日」：置于指纹快照判断之前，跨天/切页回来也能刷新
     const fp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
         const t = r.updatedAt || r.createdAt || '';
         return t > m ? t : m;
@@ -4158,6 +4203,102 @@ function markPlannedComplete(tripId, tripName) {
     });
 }
 
+// ★2026-09-14 提取：彩屑粒子（400 粒满屏爆撒）—— 计划完成庆祝与里程碑庆祝共用
+var CONF_COLORS = ['#667eea', '#f472b6', '#fbbf24', '#34d399', '#60a5fa', '#f87171', '#a78bfa'];
+function spawnConfetti(overlay) {
+    for (var i = 0; i < 400; i++) {
+        var p = document.createElement('div');
+        var size = 5 + Math.random() * 7;
+        var left = Math.random() * 100;
+        var delay = Math.random() * 0.6;
+        var dur = 1.4 + Math.random() * 0.8;
+        p.style.cssText = 'position:fixed;top:-16px;left:' + left + '%;width:' + size + 'px;height:' + (size * 0.62) + 'px;' +
+            'background:' + CONF_COLORS[Math.floor(Math.random() * CONF_COLORS.length)] + ';border-radius:2px;' +
+            'z-index:1101;pointer-events:none;opacity:0.95;' +
+            'animation:confetti-fall ' + dur + 's ease-in ' + delay + 's forwards;';
+        overlay.appendChild(p);
+        (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, (dur + delay + 0.3) * 1000); })(p);
+    }
+}
+
+// ★2026-09-14 新增「里程碑纪念」：保存记录后判定，达成弹一次庆祝；已达成档位持久化，绝不重复弹
+var MILESTONES = [
+    { id: 'peaks_1', type: 'peaks', value: 1, title: '第 1 座山', desc: '恭喜入坑，从此周末有地方去了' },
+    { id: 'peaks_5', type: 'peaks', value: 5, title: '第 5 座山', desc: '五座山，够凑一桌了' },
+    { id: 'peaks_10', type: 'peaks', value: 10, title: '第 10 座山', desc: '两位数了，可以对外自称驴友' },
+    { id: 'peaks_25', type: 'peaks', value: 25, title: '第 25 座山', desc: '山册翻起来，边角都磨圆了' },
+    { id: 'peaks_50', type: 'peaks', value: 50, title: '第 50 座山', desc: '半百。这已经不只是爱好，是生活了' },
+    { id: 'km_100', type: 'km', value: 100, title: '累计 100 公里', desc: '一百公里，够沿着城墙走七圈' },
+    { id: 'km_500', type: 'km', value: 500, title: '累计 500 公里', desc: '差不多西安到郑州，一步没少走' },
+    { id: 'km_1000', type: 'km', value: 1000, title: '累计 1000 公里', desc: '一千里。古人进京赶考，也就这个数' }
+];
+
+var MILESTONE_KEY = 'hiking_milestones';
+function getMilestoneDone() {
+    try { var a = JSON.parse(localStorage.getItem(MILESTONE_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+}
+function setMilestoneDone(arr) {
+    try { localStorage.setItem(MILESTONE_KEY, JSON.stringify(arr)); } catch (e) { /* 存储失败不影响 */ }
+}
+// 当前统计：山峰数（按名称去重，与年度回顾/山册口径一致）+ 累计里程
+function milestoneStats() {
+    var nameCnt = {}, km = 0;
+    (records || []).forEach(function (r) {
+        var n = (r && r.name ? String(r.name).trim() : '');
+        if (n) nameCnt[n] = 1;
+        km += (parseFloat(r && r.distance) || 0);
+    });
+    return { peaks: Object.keys(nameCnt).length, km: Math.round(km * 10) / 10 };
+}
+function checkMilestones() {
+    try {
+        var st = milestoneStats();
+        var done = getMilestoneDone();
+        var newly = MILESTONES.filter(function (ms) {
+            if (done.indexOf(ms.id) >= 0) return false;
+            return (ms.type === 'peaks' ? st.peaks : st.km) >= ms.value;
+        });
+        if (!newly.length) return;
+        // 一次最多弹一个（取表中靠前的最低档），其余一并标记已达成，避免连续弹窗堆叠
+        setMilestoneDone(done.concat(newly.map(function (x) { return x.id; })));
+        showMilestoneCelebration(newly[0], st);
+    } catch (e) { /* 里程碑失败绝不影响保存流程 */ }
+}
+function showMilestoneCelebration(ms, st) {
+    try {
+        var old = document.getElementById('celebrateOverlay');
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+        var dark = document.body.classList.contains('dark-mode');
+        var overlay = document.createElement('div');
+        overlay.id = 'celebrateOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;' +
+            'background:' + (dark ? 'rgba(15,23,42,0.42)' : 'rgba(15,23,42,0.2)') + ';';
+        spawnConfetti(overlay);
+        var card = document.createElement('div');
+        card.className = 'confirm-modal-content modal-fade-scale celebration-card';
+        card.innerHTML =
+            '<span class="material-icons" style="font-size:44px;color:#f59e0b;line-height:1;">emoji_events</span>' +
+            '<div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#f59e0b;margin-top:8px;">里程碑达成</div>' +
+            '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">' + escapeHtml(ms.title) + '</div>' +
+            '<div style="font-size:14px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';">' + escapeHtml(ms.desc) + '</div>' +
+            '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
+            '<button id="celebrateOkBtn" class="check-go-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">收下</button>';
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        var escHandler = function (e) { if (e.key === 'Escape') close(); };
+        var close = function () {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            document.removeEventListener('keydown', escHandler);
+        };
+        document.addEventListener('keydown', escHandler);
+        var btn = document.getElementById('celebrateOkBtn');
+        if (btn) btn.addEventListener('click', close);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+        triggerHaptic(20);
+    } catch (e) { /* 弹窗失败不影响保存 */ }
+}
+
 // ★2026-08-31 计划完成庆祝卡片：彩屑 + 弹入卡片 + 「继续补全」；轻量粒子（≤24），播完自动清理
 function showPlanCompleteCelebration(tripName, onContinue) {   // ★2026-09-04 加 onContinue：点「继续补全」触发（计划完成补记录用）
     try {
@@ -4169,22 +4310,7 @@ function showPlanCompleteCelebration(tripName, onContinue) {   // ★2026-09-04 
         overlay.id = 'celebrateOverlay';
         overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;' +
             'background:' + (dark ? 'rgba(15,23,42,0.42)' : 'rgba(15,23,42,0.2)') + ';';
-        // 彩屑粒子（★08-31 满屏爆撒：400 粒，覆盖整屏，撒约 2 秒；一次性动画播完自动移除）
-        var confColors = ['#667eea', '#f472b6', '#fbbf24', '#34d399', '#60a5fa', '#f87171', '#a78bfa'];
-        for (var i = 0; i < 400; i++) {
-            var p = document.createElement('div');
-            var size = 5 + Math.random() * 7;
-            var left = Math.random() * 100;
-            var delay = Math.random() * 0.6;
-            var dur = 1.4 + Math.random() * 0.8;
-            p.style.cssText = 'position:fixed;top:-16px;left:' + left + '%;width:' + size + 'px;height:' + (size * 0.62) + 'px;' +
-                'background:' + confColors[Math.floor(Math.random() * confColors.length)] + ';border-radius:2px;' +
-                'z-index:1101;pointer-events:none;opacity:0.95;' +
-                'animation:confetti-fall ' + dur + 's ease-in ' + delay + 's forwards;';
-            overlay.appendChild(p);
-            (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, (dur + delay + 0.3) * 1000); })(p);
-        }
-        // 卡片（★08-31 参数统一热力图弹窗：confirm-modal-content 玻璃弹窗类 + modal-fade-scale 同款动画）
+        spawnConfetti(overlay);
         var card = document.createElement('div');
         card.className = 'confirm-modal-content modal-fade-scale celebration-card';
         card.innerHTML =
