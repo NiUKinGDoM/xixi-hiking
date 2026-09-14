@@ -136,7 +136,10 @@ function ensurePin(host) {
 function httpExec(o) {
   const host = new URL(o.url).hostname;
   // --noproxy '*'：语义固定为"直连"，否则环境里的 https_proxy 会悄悄改变行为（且让钉 IP 失效）
-  const args = ['-s', '-S', '--noproxy', '*', '--max-time', String(o.timeout || 180)];
+  // ★2026-09-14 补 --ssl-no-revoke：Windows schannel 的证书吊销检查（CRL/OCSP）在国内网络常失败
+  //   （报 CRYPT_E_NO_REVOCATION_CHECK），导致上传/下载/探测直接失败。该参数**只跳过吊销检查**，
+  //   证书链仍正常校验，安全性不受影响（与 MEMORY「git 必须 GIT_SSL_NO_VERIFY」同源问题）。
+  const args = ['-s', '-S', '--noproxy', '*', '--ssl-no-revoke', '--max-time', String(o.timeout || 180)];
   if (o.follow) args.push('-L');
   if ((o.method || 'GET') !== 'GET') args.push('-X', o.method);
   for (const k of Object.keys(o.headers || {})) args.push('-H', k + ': ' + o.headers[k]);
@@ -186,16 +189,47 @@ if (SELFTEST) {
     tag_name: tag, name: tag, body: body, draft: false, prerelease: false,
   }), 'utf8');
 
-  const r1 = httpExec({
-    method: 'POST', url: 'https://api.github.com/repos/' + REPO + '/releases',
-    headers: Object.assign({}, H, { 'Content-Type': 'application/json' }), dataFile: payloadFile,
-  });
-  if (!ok2xx(r1.code)) {
-    console.error('✗ 建 Release 失败 HTTP ' + r1.code + (r1.stderr ? ' | ' + r1.stderr : '') + ': ' + r1.body.slice(0, 300));
-    process.exit(1);
+  // 1) 建 Release（★2026-09-14 幂等化：已存在则复用，支持上传失败后直接重跑）
+  //    背景：大文件上传失败后重跑本工具，POST /releases 会 422 already_exists 直接中止，
+  //    只能人工删 Release 再来（2026-09-14 真实踩到）。改为先 GET /releases/tags/<tag>。
+  const relUrl = 'https://api.github.com/repos/' + REPO + '/releases';
+  let rel = null;
+  const rq = httpExec({ url: relUrl + '/tags/' + tag, headers: H });
+  if (ok2xx(rq.code)) {
+    rel = JSON.parse(rq.body);
+    console.log('ℹ Release 已存在，复用: id=' + rel.id + '  ' + rel.html_url);
+    const patchFile = path.join(os.tmpdir(), 'ghrel-patch.json');
+    fs.writeFileSync(patchFile, JSON.stringify({ body: body }), 'utf8');
+    const rp = httpExec({
+      method: 'PATCH', url: relUrl + '/' + rel.id,
+      headers: Object.assign({}, H, { 'Content-Type': 'application/json' }), dataFile: patchFile,
+    });
+    console.log((ok2xx(rp.code) ? '✅' : '⚠') + ' Release body 更新 HTTP ' + rp.code + (ok2xx(rp.code) ? '' : '（不致命，继续）'));
+  } else {
+    const r1 = httpExec({
+      method: 'POST', url: relUrl,
+      headers: Object.assign({}, H, { 'Content-Type': 'application/json' }), dataFile: payloadFile,
+    });
+    if (!ok2xx(r1.code)) {
+      console.error('✗ 建 Release 失败 HTTP ' + r1.code + (r1.stderr ? ' | ' + r1.stderr : '') + ': ' + r1.body.slice(0, 300));
+      process.exit(1);
+    }
+    rel = JSON.parse(r1.body);
+    console.log('✅ Release 创建: id=' + rel.id + '  ' + rel.html_url);
   }
-  const rel = JSON.parse(r1.body);
-  console.log('✅ Release 创建: id=' + rel.id + '  ' + rel.html_url);
+
+  // 1.5) 清掉同名旧资产（★2026-09-14 幂等化：重试不会累积/冲突）
+  const ra = httpExec({ url: relUrl + '/' + rel.id + '/assets?per_page=100', headers: H });
+  if (ok2xx(ra.code)) {
+    try {
+      JSON.parse(ra.body).forEach(function (a) {
+        if (a.name === assetName) {
+          const rd = httpExec({ method: 'DELETE', url: 'https://api.github.com/repos/' + REPO + '/releases/assets/' + a.id, headers: H });
+          console.log('ℹ 删除同名旧资产 id=' + a.id + ' → HTTP ' + rd.code);
+        }
+      });
+    } catch (e) { /* 列表解析失败不影响主流程 */ }
+  }
 
   // 2) 裸二进制上传（严禁 multipart）
   const r2 = httpExec({
