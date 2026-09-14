@@ -46,6 +46,7 @@ const CASES = [
   { path: 'tools/status.js', args: ['--offline'], safe: true, note: '--offline → 只读状态核对（跳过远程）' },
   { path: 'tools/rollback.js', args: [], safe: true, note: '无参数 → 只列出回退点（预览模式，不写文件）' },
   { path: 'tools/doc-sync.js', args: [], safe: true, note: '无参数 → 只检测双端文档差异（不写文件）' },
+  { path: 'tools/ioscheck.js', args: ['--no-sim', '--no-net'], safe: true, note: '--no-sim --no-net → 只读静态（版本对齐 + iOS 能力守卫）' },
   { path: 'tools/ghsync.js', args: ['--dry-run'], safe: true, note: '--dry-run → 只读预览' },
   { path: 'tools/security.js', args: [], safe: true, note: '无参数 → 用法提示' },
   { path: 'tools/release.js', args: [], safe: false, note: '⚠ 会触发构建 → 仅语法校验' },

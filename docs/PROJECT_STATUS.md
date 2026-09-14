@@ -26,8 +26,8 @@ NODE="C:/Users/NIU-XC/.workbuddy/binaries/node/versions/22.22.2-3/node.exe"   # 
 node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一校验+写后语法校验+失败还原
 
 # ② 跑测试：一条命令跑全部（替代反复单跑）
-node tools/checkall.js            # test + test-ui + P0P3 + E2E 汇总
-node tools/checkall.js --fast     # 只跑前两套（秒级，改文档/小改后先跑它）
+node tools/checkall.js            # smoke + iOS适配 + test + test-ui + P0P3 + E2E 汇总
+node tools/checkall.js --fast     # 只跑前三套（秒级，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
 node tools/smoke.js               # 工具链冒烟（14 工具语法+安全执行；已并入 checkall 第一套）
 
@@ -55,6 +55,7 @@ node tools/designcheck.js   # ★设计一致性（2026-09-14 新增）：实测
 node tools/status.js        # ★开工核对一条命令（2026-09-14 新增）：版本三处/BUILTIN/本地git/副本差异/远程latest；--offline 跳过远程
 node tools/rollback.js      # ★一键回退（2026-09-14 新增）：无参数=列出回退点；<版本>=预览差异；<版本> --apply=执行（先自动备份当前）
 node tools/doc-sync.js      # ★双端文档同步（2026-09-14 新增）：无参数=只检测；--apply=主工程→副本；--reverse=副本→主工程
+node tools/ioscheck.js      # ★iOS 网页版同步适配体检（2026-09-14 新增）：①版本对齐（本地三处/线上 pages.dev/Release latest）②能力守卫（差异 API 必有降级）③iOS CSS ④模拟实测（无桥+无vibrate）；--no-sim/--no-net 快速模式
 # ⑧ 发布编排（一条命令串起全流程，任一步失败即停）
 node tools/ship.js prepare --builtin <BUILTIN文案> --doc <文档条目文案>   # 核对→快照→bump→BUILTIN→文档→自检→审计→构建→APK验证
 node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同步push→建Release+上传+下载验证→校验 pages.dev
@@ -127,7 +128,7 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 ## 当前版本状态（2026-09-11）
 
 - **正式版 v1.2.0.5**（versionCode 247，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
-- v1.2.0.5 更新（**设计规范归位 + 工具链脚本化**，App 侧仅圆角微调）：**① 圆角统一回规范**——`.glass-stat-card` 14→**16px**、`.ov-mini` 13→**12px**（2026-09-03 曾手调 16→14 / 12→13 并与规范脱离，9/14 经实机对比确认差异极小后统一回档位）；**② 新增 5 个工具**：`designcheck.js`（设计一致性体检，实测全元素圆角/字体比对规范表，规范表为唯一事实来源）、`status.js`（开工核对一条命令：版本三处/BUILTIN/本地git/副本差异/远程latest）、`rollback.js`（一键回退到 `backups/prev-*`，默认预览、`--apply` 执行且先自动备份当前）、`doc-sync.js`（双端文档一键同步，`--apply`/`--reverse`）、`snippets/design-scan.js`；**③ `ship.js prepare` 新增自动 bump `sw.js` 的 `CACHE_NAME`**——根治「发版后用户浏览器 SW 缓存不失效、仍看到旧版」（2026-09-11 v1.2.0.3 真实发生，用户报「网页还是 1.2.0.0」）；**④ `docaudit` 双端检查 4 组 → 5 组**（补上此前漏检的「给新模型的提示词.md」）；**⑤ E2E 视觉回归降噪**——`addInitScript` 固定日期 + 关闭 FPS 显示，根治「跨天跑必失败」（9/11、9/14 各误报一次）；**⑥ 圆角统一后全套自检 457 项全绿**，工具链 14→18 冒烟全过
+- v1.2.0.5 更新（**设计规范归位 + 工具链脚本化**，App 侧仅圆角微调）：**① 圆角统一回规范**——`.glass-stat-card` 14→**16px**、`.ov-mini` 13→**12px**（2026-09-03 曾手调 16→14 / 12→13 并与规范脱离，9/14 经实机对比确认差异极小后统一回档位）；**② 新增 5 个工具**：`designcheck.js`（设计一致性体检，实测全元素圆角/字体比对规范表，规范表为唯一事实来源）、`status.js`（开工核对一条命令：版本三处/BUILTIN/本地git/副本差异/远程latest）、`rollback.js`（一键回退到 `backups/prev-*`，默认预览、`--apply` 执行且先自动备份当前）、`doc-sync.js`（双端文档一键同步，`--apply`/`--reverse`）、`snippets/design-scan.js`；**③ `ship.js prepare` 新增自动 bump `sw.js` 的 `CACHE_NAME`**——根治「发版后用户浏览器 SW 缓存不失效、仍看到旧版」（2026-09-11 v1.2.0.3 真实发生，用户报「网页还是 1.2.0.0」）；**④ `docaudit` 双端检查 4 组 → 5 组**（补上此前漏检的「给新模型的提示词.md」）；**⑤ E2E 视觉回归降噪**——`addInitScript` 固定日期 + 关闭 FPS 显示，根治「跨天跑必失败」（9/11、9/14 各误报一次）；**⑥ 圆角统一后全套自检 457 项全绿**，工具链 14→18 冒烟全过；**⑦ 新增 `ioscheck.js`（iOS 网页版同步适配体检）**——把「发 APK 时必须同步适配 iOS 网页版（pages.dev 是 iOS 唯一入口）」这条铁律机器化：版本对齐（本地三处/线上 pages.dev/Release latest）+ 能力守卫（差异 API 必有降级，漏适配即报错）+ iOS CSS + 模拟实测（无桥 + 无 vibrate 跑全部能力）；已并入 `checkall` 第二套（秒级）→ 工具链 18→19
 - **正式版 v1.2.0.4**（versionCode 246，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.4 更新（**计划页搜索框可用性修复**）：`pokeSearchBar()` 原先对**可滚动页面**保留「显示 1 秒后自动收起」（★2026-08-27 方案 A 原始设计），导致切到计划页时搜索框一闪即没、用户来不及点 → 反馈「计划页搜索框不灵敏、没有记录页好用」（日历视图有数据、页面可滚动时尤甚）。本次**去掉该自动收起**：搜索框在记录/计划页下常显（页面已有 `padding-bottom 110px` 让位，不遮挡内容）；保留三种隐藏场景——① 不在记录/计划页 ② 滚到底部避让分页键 ③ 主动清空搜索。全套自检 457 项全绿
 - **正式版 v1.2.0.3**（versionCode 245，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -262,7 +263,7 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
    - ⚠️ 历史错位：v1.1.1.0~~1.1.1.4（vc132~~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
    - 测试版 `1.X.test-X`（当前 1.4.test-12）
-2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 iOS 网页适配=发 APK 时同步做：无 iOS 真机设备，改为发版代码级适配检查——pages.dev 是 iOS 唯一入口，新功能禁用/降级 iOS 不支持的 API（震动→navigator.vibrate guarded 静默、保存→下载/长按引导、WebDAV/通知→不可用提示），无白屏错乱、sw 正常，随 push 自动部署）** → ②\*\*★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点\*\*（backups/prev-<版本>/ 存 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor）+build.gradle+MainActivity+Manifest，事故可整体还原；
+2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 起 iOS 网页适配＝发 APK 时同步做；**★2026-09-14 起机器守护 `node tools/ioscheck.js`**——无 iOS 真机，改为代码级体检：①**版本对齐**（本地三处 / 线上 pages.dev / Release latest 必须同一版本，这是「iOS 页面与 APK 一起更新」的直接判据）②**能力守卫**（差异 API 必有降级：震动→guarded 静默、保存→长按引导、原生桥/系统通知→降级、a[download]→isIOSWeb 分支；**新增功能漏适配会在这里被抓出**）③iOS CSS（safe-area / text-size-adjust / 100dvh）④模拟实测（无桥 + 无 vibrate 跑全部能力，未捕获错误须 0）。已并入 `checkall` 第二套（秒级）与发布门禁），无白屏错乱、sw 正常，随 push 自动部署）** → ②\*\*★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点\*\*（backups/prev-<版本>/ 存 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor）+build.gradle+MainActivity+Manifest，事故可整体还原；
   v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ **★2026-09-10 起一条命令：`node tools/release.js`**（内部=同步 9 文件+assets → obf 混淆 temp → hash 生成 ResGuard → cp build.gradle/ResGuard/MainActivity/Manifest → gradle --rerun-tasks 构建；
   `--skip-build` 只做前四步）。原理备忘：混淆只对 temp assets 副本，www 源与测试永远明文，ResGuard=APK 内混淆版哈希 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
