@@ -41,37 +41,6 @@ GitHub Releases 获取最新 APK：https://github.com/NiUKinGDoM/xixi-hiking/rel
 
 （App 内置"检查更新"，装好后可直接在应用内升级，支持直装免重下）
 
-## 🔧 技术概览
-
-- **Capacitor 6**（Android WebView）+ 原生桥（WebDAV OkHttp / 文件 / 震动 / 通知）
-- 前端：`www/index.html` + 4 个外部 JS（core 工具 / data 数据 / sync 同步 / init 启动）+ sw.js 离线缓存
-- 存储：localStorage（记录/计划/设置）+ IndexedDB（照片）；最低 Android 7，targetSdk 36
-- 发布：GitHub Release 分发 APK + Cloudflare Pages 自动发布网页版（push 即部署）
-
-## 🧑‍💻 开发者入口
-
-> 完整交接手册（版本规则/发布流程/踩坑经验）见 **`docs/PROJECT_STATUS.md`**；演进史见 **CHANGELOG.md**；历史变更与决策见 `.workbuddy/memory/` 日志
-
-```bash
-# 一条命令跑全部自检（数据层 + UI 链路 + E2E 视觉回归）
-node tools/checkall.js        # --fast 只跑前两套；--no-e2e 跳过视觉回归
-
-# 体检三件套（改了样式 / 逻辑 / 文档后跑）
-node tools/audit.js           # 死类 / 死 CSS / 残留 / 重复 id / 外部依赖门禁
-node tools/deepcheck.js       # 死代码 / XSS / 泄漏 / 全局污染 / 调试残留
-node tools/docaudit.js        # 文档格式 / 版本号 / 路径 / 双端一致
-
-# 浏览器实测与断网验证
-node e2e/inspect.js --inline "return typeof showInfoMessage"
-node e2e/inspect.js --file tools/snippets/offline-check.js --offline   # 模拟野外无信号
-
-# 发版（详见交接手册，勿跳步）
-node prev-snapshot.js && node bump.js   # 回滚点 + 版本递增
-node tools/release.js                   # 同步 9 文件+assets → 混淆 → ResGuard → 构建
-```
-
-版本号规则：`vc → 1.x.x.x`，每段 0~10 满十进位，用 `node bump.js` 一键同步（勿手改）；已发布版本号不可复用。
-
 > 🛡️ **正版提示**：请从上方 Release 下载并覆盖安装，勿安装来路不明的安装包（App 内置签名校验，非官方包会被拦截）。所有正式版使用同一签名，覆盖安装不会丢数据。
 
 ---
