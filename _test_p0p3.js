@@ -979,6 +979,75 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         assert('「西岳华山」同时算五岳与陕西', !!stShx2.wuyue['华山'] && !!stShx2.shaanxi['华山']);
         window.localStorage.removeItem('hiking_milestones');
     } catch (e) { console.log('ERR-msext:', e.message); }
+
+    // ===== ★2026-09-15 三修回归：天气识别 / 成就可变 / 一览滚动条 / 入口渐入 =====
+    try {
+        // ① 天气识别：记录里存的是 emoji（WEATHER_OPTIONS），此前只按文本匹配 → 永远收集不到
+        window.localStorage.removeItem('hiking_milestones');
+        window.localStorage.removeItem('hiking_milestones_seen');
+        window.__testSetRecords([
+            { id: 'w1', name: 'A', weather: '☀️', distance: 1 },
+            { id: 'w2', name: 'B', weather: '🌤️', distance: 1 },
+            { id: 'w3', name: 'C', weather: '☁️', distance: 1 },
+            { id: 'w4', name: 'D', weather: '🌧️', distance: 1 },
+            { id: 'w5', name: 'E', weather: '❄️', distance: 1 }
+        ]);
+        let stW = window.milestoneStats().weather;
+        assert('天气-emoji 识别齐全(5/5)', Object.keys(stW).length === 5, Object.keys(stW).join(','));
+        assert('天气-emoji 映射为天气名', !!stW['晴'] && !!stW['雪'] && !!stW['多云'], Object.keys(stW).join(','));
+        assert('天气-旧文本数据兼容', window.normWeather('晴') === '晴' && window.normWeather('晴天') === '晴' && window.normWeather('') === null);
+        assert('天气-天气收藏家可达成', window.getMilestoneDone().indexOf('weather') >= 0);
+
+        // ② 成就可变：删记录后成就自动失效（不再是「一次达成永久锁定」）
+        window.localStorage.removeItem('hiking_milestones');
+        window.__testSetRecords([
+            { id: 'v1', name: '华山', distance: 1 },
+            { id: 'v2', name: '太白山', distance: 1 },
+            { id: 'v3', name: '翠华山', distance: 1 },
+            { id: 'v4', name: '南五台山', distance: 1 }
+        ]);
+        assert('可变-删前陕西名山已达成', window.getMilestoneDone().indexOf('shaanxi') >= 0);
+        window.renderMilestoneEntry();
+        const cntBefore = document.getElementById('milestoneEntryCount').textContent;
+        // 删掉华山
+        window.__testSetRecords([
+            { id: 'v2', name: '太白山', distance: 1 },
+            { id: 'v3', name: '翠华山', distance: 1 },
+            { id: 'v4', name: '南五台山', distance: 1 }
+        ]);
+        assert('可变-删后陕西名山失效', window.getMilestoneDone().indexOf('shaanxi') < 0);
+        assert('可变-删后进度退回 3/4', Object.keys(window.milestoneStats().shaanxi).length === 3);
+        window.updateStatistics();
+        const cntAfter = document.getElementById('milestoneEntryCount').textContent;
+        assert('可变-入口计数随之下调', cntAfter !== cntBefore, cntBefore + ' -> ' + cntAfter);
+        window.showMilestoneList();
+        let shxRow = '';
+        document.querySelectorAll('.ms-scroll > div').forEach(function (r) { if (r.textContent.indexOf('陕西名山') >= 0) shxRow = r.textContent.replace(/\s+/g, ' '); });
+        assert('可变-一览中已不是已达成', shxRow.indexOf('已达成') < 0, shxRow.slice(0, 40));
+        const lc3 = document.getElementById('msListClose');
+        if (lc3) lc3.click();
+
+        // ③ 一览滚动条不再越出圆角：卡片 flex 列 + 行列表放进内嵌滚动容器
+        window.showMilestoneList();
+        let msCard = null;
+        document.querySelectorAll('.modal-backdrop-animate').forEach(function (n) { if (n.querySelector('#msListClose')) msCard = n.firstElementChild; });
+        const msCs = msCard ? getComputedStyle(msCard) : null;
+        const msScr = msCard ? msCard.querySelector('.ms-scroll') : null;
+        assert('一览-卡片为 flex 列', !!msCs && msCs.display === 'flex' && msCs.flexDirection === 'column', msCs ? msCs.display + '/' + msCs.flexDirection : 'no');
+        assert('一览-卡片裁剪滚动条', !!msCs && msCs.overflow === 'hidden', msCs ? msCs.overflow : 'no');
+        assert('一览-内嵌滚动容器含全部档位', !!msScr && msScr.children.length === window.MILESTONES.length, msScr ? String(msScr.children.length) : 'no');
+        assert('一览-滚动容器右内缩(不越圆角)', !!msCs && msCs.paddingRight === '20px', msCs ? msCs.paddingRight : 'no');
+        const lc4 = document.getElementById('msListClose');
+        if (lc4) lc4.click();
+
+        // ④ 入口卡与其它卡片一致 fadeInUp 渐入
+        const mEntry = document.getElementById('milestoneEntry');
+        const mEntryCs = mEntry ? getComputedStyle(mEntry) : null;
+        assert('入口-与统计卡同款渐入动画', !!mEntryCs && mEntryCs.animationName === 'fadeInUp' && mEntryCs.animationFillMode === 'forwards', mEntryCs ? mEntryCs.animationName : 'no');
+
+        window.localStorage.removeItem('hiking_milestones');
+        window.localStorage.removeItem('hiking_milestones_seen');
+    } catch (e) { console.log('ERR-ms3:', e.message); }
     console.log('\n===== 结果: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
     process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL:', e.message); process.exit(1); });

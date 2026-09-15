@@ -2132,6 +2132,7 @@ function updateStatistics() {
     renderOnThisDay(); // ★2026-09-14「那年今日」：置于指纹快照判断之前，跨天/切页回来也能刷新
     // ★2026-09-15 里程碑补领已移出此处：saveRecord() 内 updateStatistics() 先于 checkMilestones() 执行，
     //   静默补领会抢先标记新达成档位 → 庆祝卡永不弹（真 bug）。改由「启动 + 切到概览页」触发（见 app-init.js）
+    renderMilestoneEntry(); // ★2026-09-15 入口计数跟随数据实时刷新（删/改记录后立即变化；纯展示无副作用）
     const fp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
         const t = r.updatedAt || r.createdAt || '';
         return t > m ? t : m;
@@ -4265,15 +4266,40 @@ var MILESTONES = [
 
 
 
-var MILESTONE_KEY = 'hiking_milestones';
-function getMilestoneDone() {
-    try { var a = JSON.parse(localStorage.getItem(MILESTONE_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+var MILESTONE_KEY = 'hiking_milestones';   // ★2026-09-15 语义变更：已「庆祝过」的档位 id（旧数据=已达成，天然兼容：老用户不会被补弹一堆庆祝）
+var MILESTONE_SEEN_KEY = 'hiking_milestones_seen';   // 已「查看过」的档位 id（入口红点用）
+function msReadIds(key) {
+    try { var a = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(a) ? a.map(String) : []; }
     catch (e) { return []; }
 }
-function setMilestoneDone(arr) {
-    try { localStorage.setItem(MILESTONE_KEY, JSON.stringify(arr)); } catch (e) { /* 存储失败不影响 */ }
+function msWriteIds(key, arr) {
+    try { localStorage.setItem(key, JSON.stringify(arr)); } catch (e) { /* 存储失败不影响 */ }
 }
-// 当前统计：山峰数（按名称去重，与年度回顾/山册口径一致）+ 累计里程
+function msGetCelebrated() { return msReadIds(MILESTONE_KEY); }
+function msSetCelebrated(arr) { msWriteIds(MILESTONE_KEY, arr); }
+function msGetSeen() { return msReadIds(MILESTONE_SEEN_KEY); }
+function msSetSeen(arr) { msWriteIds(MILESTONE_SEEN_KEY, arr); }
+// ★2026-09-15 成就「实时计算」：不再是写入即永久的清单——删记录/改数据后自动失效（如删掉华山 → 陕西名山不再是已达成）
+function getMilestoneDone() {
+    try {
+        var st = milestoneStats();
+        return MILESTONES.filter(function (ms) {
+            var p = milestoneProgress(ms, st);
+            return p.cur >= p.need;
+        }).map(function (ms) { return ms.id; });
+    } catch (e) { return []; }
+}// 当前统计：山峰数（按名称去重，与年度回顾/山册口径一致）+ 累计里程
+
+// ★2026-09-15 天气归一化：现行存 emoji、旧数据可能存文本（'晴' / '晴天' …），两者都归一为 '晴'|'多云'|'阴'|'雨'|'雪'
+var WEATHER_EMOJI_MAP = { '☀': '晴', '🌤': '多云', '☁': '阴', '🌧': '雨', '❄': '雪' };
+function normWeather(v) {
+    var s = String(v == null ? '' : v).replace(/[\uFE0F\u200D\s]/g, '');   // 去变体选择符/连接符/空白
+    if (!s) return null;
+    if (WEATHER_EMOJI_MAP[s]) return WEATHER_EMOJI_MAP[s];
+    var T = ['晴', '多云', '阴', '雨', '雪'];
+    for (var i = 0; i < T.length; i++) { if (s.indexOf(T[i]) >= 0) return T[i]; }
+    return null;
+}
 function milestoneStats() {
     // ★2026-09-15 一次遍历算全部维度，收集类按「别名组」判断命中
     // pool 为各维度的原始值集合；MILESTONES 里的 collect 组据此算进度（items 支持 ['别名1','别名2']）
@@ -4298,8 +4324,9 @@ function milestoneStats() {
                 pool.season[mo === 12 || mo <= 2 ? '冬' : (mo <= 5 ? '春' : (mo <= 8 ? '夏' : '秋'))] = 1;
             }
         }
-        var w = (r.weather ? String(r.weather) : '');
-        if (w) WEATHERS.forEach(function (k) { if (w.indexOf(k) >= 0) pool.weather[k] = 1; });
+        // ★2026-09-15 修复天气识别：记录里存的是 emoji（WEATHER_OPTIONS 的 ☀️🌤️☁️🌧️❄️），原先只做 indexOf('晴') 文本匹配 → 永远匹配不上，天气收藏家永远收不齐
+        var wt = normWeather(r.weather);
+        if (wt) pool.weather[wt] = 1;
         var dv = parseInt(r.difficulty, 10);
         if (dv >= 1 && dv <= 5) pool.difficulty[String(dv)] = 1;
     });
@@ -4324,25 +4351,27 @@ function milestoneStats() {
     return st;
 }
 function checkMilestones(silent) {
-    // silent=true：启动/切页补领用 —— 只标记并刷新入口（红点提示），不弹窗打扰
+    // silent=true：启动/切页补领用 —— 只记录「已庆祝」+ 刷新入口（红点提示），不弹窗打扰
     // silent 省略/false：保存记录时用 —— 弹庆祝卡给即时正反馈
+    // ★2026-09-15 达成改为实时计算：持久化的只有「已庆祝 / 已查看」两个簿记；
+    //   档位失效会自动从两者剔除 → 删记录后成就立即失效，重新达成会再庆祝
     try {
         var st = milestoneStats();
-        var done = getMilestoneDone();
+        var achieved = getMilestoneDone();
+        var cel = msGetCelebrated().filter(function (id) { return achieved.indexOf(id) >= 0; });
         var newly = MILESTONES.filter(function (ms) {
-            if (done.indexOf(ms.id) >= 0) return false;
-            var p = milestoneProgress(ms, st);
-            return p.cur >= p.need;
+            return achieved.indexOf(ms.id) >= 0 && cel.indexOf(ms.id) < 0;
         });
         if (newly.length) {
-            // 先落盘再弹（防重复触发）；单个→庆祝卡，多个→汇总卡
-            setMilestoneDone(done.concat(newly.map(function (x) { return x.id; })));
+            msSetCelebrated(cel.concat(newly.map(function (x) { return x.id; })));
             if (!silent) {
                 if (newly.length === 1) showMilestoneCelebration(newly[0], st);
                 else showMilestoneSummary(newly, st);
             }
+        } else {
+            msSetCelebrated(cel);   // 回收已失效档位
         }
-        // 放在写入之后：否则补领那一刻入口计数还是旧值
+        msSetSeen(msGetSeen().filter(function (id) { return achieved.indexOf(id) >= 0; }));
         renderMilestoneEntry();
     } catch (e) { /* 里程碑失败绝不影响保存流程 */ }
 }
@@ -4385,15 +4414,14 @@ function renderMilestoneEntry() {
     try {
         var el = document.getElementById('milestoneEntryCount');
         if (!el) return;
-        var done = getMilestoneDone().filter(function (id) {
-            return MILESTONES.some(function (m) { return m.id === id; });
-        });
+        // ★2026-09-15 实时计算：计数跟随记录变化（删/改记录后立即变动）
+        var done = getMilestoneDone();
         el.textContent = done.length + ' / ' + MILESTONES.length;
-        // ★2026-09-15 红点：有已达成的「没看过」的（多为升级后补领）就提示一下
         var dot = document.getElementById('milestoneNewDot');
         if (dot) {
-            var seen = parseInt(localStorage.getItem('hiking_milestones_seen') || '0', 10) || 0;
-            dot.style.display = done.length > seen ? 'block' : 'none';
+            var seen = msGetSeen();
+            var unseen = done.some(function (id) { return seen.indexOf(id) < 0; });
+            dot.style.display = unseen ? 'block' : 'none';
         }
     } catch (e) { /* 入口计数失败不影响 */ }
 }
@@ -4415,9 +4443,9 @@ function showMilestoneList() {
         var line = dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)';
         var st = milestoneStats();
         var done = getMilestoneDone();
-        var got = MILESTONES.filter(function (ms) { return done.indexOf(ms.id) >= 0; }).length;
+        var got = done.length;
         // ★2026-09-15 打开一览即视为已查看：记录 seen 并清掉入口红点
-        try { localStorage.setItem('hiking_milestones_seen', String(got)); } catch (eS) { /* 存储失败不影响 */ }
+        try { msSetSeen(done); } catch (eS) { /* 存储失败不影响 */ }
         renderMilestoneEntry();
         var rows = MILESTONES.map(function (ms) {
             var has = done.indexOf(ms.id) >= 0;
@@ -4453,14 +4481,14 @@ function showMilestoneList() {
         var modal = document.createElement('div');
         modal.className = 'modal-backdrop-animate';
         modal.style.cssText = 'position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;background:' + (dark ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.35)') + ';padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:440px;width:calc(100vw - 44px);box-sizing:border-box;max-height:70vh;overflow-y:auto;border-radius:20px;">' +
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:440px;width:calc(100vw - 44px);box-sizing:border-box;max-height:70vh;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#f59e0b;">emoji_events</span>' +
             '<span style="font-size:15px;font-weight:700;flex:1;color:' + (dark ? '#fff' : '#334155') + ';">我的里程碑</span>' +
             '<button id="msListClose" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
             '</div>' +
             '<div style="font-size:12px;color:' + sub + ';margin-bottom:6px;">已达成 ' + got + ' / ' + MILESTONES.length + ' 项</div>' +
-            rows + '</div>';
+            '<div class="ms-scroll" style="overflow-y:auto;flex:1;min-height:0;">' + rows + '</div></div>';
         document.body.appendChild(modal);
         var esc = function (e) { if (e.key === 'Escape') close(); };
         var close = function () {

@@ -634,7 +634,7 @@ function setupEventListeners() {
                         }
                     });
                 });
-                const fadeTargets = document.querySelectorAll('#tab-overview .glass-stat-card, #heatmapPanel');
+                const fadeTargets = document.querySelectorAll('#tab-overview .glass-stat-card, #heatmapPanel, #milestoneEntry');
                 fadeTargets.forEach(el => {
                     if (typeof el.animate === 'function') {
                         try {
