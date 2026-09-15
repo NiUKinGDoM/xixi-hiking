@@ -308,6 +308,7 @@ async function init() {
         initGlobalSearch(); // ★2026-08-27 记录/计划搜索（方案A 滚动显示）
         initYearReview(); // ★2026-09-02 年度回顾（入口绑定 + 每年 1/1 自动展示）
         initRecordsView(); // ★2026-09-02 记录页 列表/山册 双视图
+        initMilestoneEntry(); // ★2026-09-15 里程碑入口绑定（点开看 8 档与进度）
         
         // WebDAV 同步：配置已由 loadSyncState 并行加载，这里绑定事件 + 若开启自动同步则静默合并
         try {

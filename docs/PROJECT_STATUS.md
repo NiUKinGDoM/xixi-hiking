@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-14（v1.2.0.6 / vc248）  
+> 最后更新：2026-09-15（v1.2.0.7 / vc249）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -127,6 +127,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.0.7**（versionCode 249，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.7 更新（**里程碑补领 + 档位 8→17**，起因：用户 v1.2.0.6 升级后历史已达成但不弹——`checkMilestones()` 原只在 `saveRecord()` 末触发，历史成就从未被检查）：**① 补领（静默）**——`updateStatistics()` 内调用 `checkMilestones(true)`（silent 模式）+ `renderMilestoneEntry()`，切页/启动即自动补齐历史档位并写 `localStorage['hiking_milestones']`，同时把"没看过的新成就"记入 `hiking_milestones_seen` 用于红点；**★初版做成"启动即弹汇总卡"→ E2E 报 `subtree intercepts pointer events` 超时、真实用户同样被打扰 → 改为非阻塞入口红点提示**（保存记录时的即时庆祝保留弹窗）；**② 常驻入口**——`index.html` 统计面板下方新增 `#milestoneEntry`（奖杯图标 + `#milestoneEntryCount` 如 `3 / 17` + `#milestoneNewDot` 红点），点击 `showMilestoneList()`；**③ 一览弹窗**——17 档全列，已达成显示金色奖杯、未达成显示实时进度（如 `120.0 / 500 km`），收集类列出子项清单并打勾（`五岳集齐  泰山 ✓ · 华山 ✓ · 衡山 · 恒山 · 嵩山   2 / 5`）；打开后清除红点；**④ 档位 8→17**（`MILESTONES` 表）：新增高度挑战 `alt_1000/2000/3000/4000`（按单次最高 `elevation`）、`wuyue`（五岳集齐）、`shaanxi`（陕西名山）、`season`（四季足迹）、`weather`（天气收藏家：晴·多云·阴·雨·雪）、`difficulty`（难度全通关 1~5）；`milestoneStats()` 相应扩展 `maxAlt / wuyue / shaanxi / season / weather / difficulty` 维度；**⑤ 山名归一化** `normalizePeakName()`（去「西岳/东岳」等前缀、去括号内容、去空格后再比较）+ 别名表（南五台↔南五台山、翠华↔翠华山、太白↔太白山、华山↔西岳华山），**按用户规则「少华山」不计入华山**；「西岳华山」同时计入五岳与陕西名山；**⑥ 测试**——`_test_p0p3.js` 新增断言（补领 6 / 一览 3 / 档位数 1 / 归一化 5 / 五岳精确性 2 / 各维度统计 4 / 陕西名山 10）→ **210 → 258**；**★把"写死档位数"的旧断言改为动态引用 `MILESTONES.length`**，以后加档不再误报；全套自检 **6 套 526 项全绿**；两功能纯本地、无平台差异 API，iOS 网页版天然一致（ioscheck 通过）
 - **正式版 v1.2.0.6**（versionCode 248，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.6 更新（**新增两个功能：那年今日 + 里程碑纪念**，功能冻结按用户点名解冻）：**① 那年今日**（概览页）——`index.html` 统计面板**之前**新增 `#onThisDayCard`（默认 `display:none`），`app-data.js` 新增 `renderOnThisDay()` 并在 `updateStatistics()` **开头**调用（置于指纹快照判断**之前**，跨天/切页回来可刷新）；匹配 `createdAt` 月+日 == 今天**且年份 < 今年**，取年份最近的一条；展示「N 年前的今天」+ 山名 + 里程/难度/心情/天气 + 首张照片缩略图（复用 `loadPhotoThumbs` 的 `data-record`/`data-pid` 机制），点击复用 `openRecordDetailModal(id)`（零新 UI）；**无历史 → 整卡隐藏、内容清空，不占位不打扰**；自带指纹（今天日期 + 记录数 + 最新 `updatedAt`）避免频繁重算；**② 里程碑纪念**（8 档）——山峰 `peaks_1/5/10/25/50` + 里程 `km_100/500/1000`（`MILESTONES` 表），持久化 `localStorage['hiking_milestones']` 保证**绝不重复弹**，`checkMilestones()` 挂在 `saveRecord()` 末尾，`milestoneStats()` 山峰按**名称去重**（与年度回顾/山册口径一致）+ 里程累加，达成弹 `showMilestoneCelebration()`（复用庆祝卡体系；文案已按用户要求改为俏皮版，含西安地标距离）；**一次只弹一个**（取表中靠前的最低档）其余静默标记为已达成，避免弹窗连续堆叠；**③ 顺带重构**——把 `showPlanCompleteCelebration` 内联的 400 粒彩屑**提取为共用 `spawnConfetti(overlay)` + `CONF_COLORS`**，计划完成 / 里程碑两处共用（已回归验证计划完成庆祝正常）；**④ 测试**——`_test_p0p3.js` 新增 **16 项断言**（那年今日 8 / 里程碑 7 / 回归 1）→ **194 → 210**，全套自检 **6 套 493 项全绿**（smoke 19 / ios 10 / test 195 / test-ui 30 / P0P3 210 / E2E 24）；两功能均**纯本地、无平台差异 API**，iOS 网页版天然一致（ioscheck 10/0）
 - **正式版 v1.2.0.5**（versionCode 247，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里

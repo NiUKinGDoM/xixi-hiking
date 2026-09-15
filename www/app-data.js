@@ -2130,6 +2130,8 @@ function renderOnThisDay() {
 
 function updateStatistics() {
     renderOnThisDay(); // ★2026-09-14「那年今日」：置于指纹快照判断之前，跨天/切页回来也能刷新
+    checkMilestones(true); // ★2026-09-15 补检查：升级/切页时把历史已达成的里程碑补领（不再只靠保存记录触发）
+    // ↑ silent=true：升级/切页时静默补领历史里程碑（入口红点提示），不弹窗打扰
     const fp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
         const t = r.updatedAt || r.createdAt || '';
         return t > m ? t : m;
@@ -4222,6 +4224,25 @@ function spawnConfetti(overlay) {
 }
 
 // ★2026-09-14 新增「里程碑纪念」：保存记录后判定，达成弹一次庆祝；已达成档位持久化，绝不重复弹
+// ★2026-09-15 山名归一化：去括号内容 / 空白 / 「东·西·南·北·中岳」前缀 / 分隔符
+// 用途：五岳等「收集类」精确匹配 —— 「西岳华山」→「华山」命中；「少华山」→ 不等于「华山」，不命中
+function normalizePeakName(s) {
+    var n = String(s || '').trim();
+    n = n.replace(/[（(][^）)]*[）)]/g, '');
+    n = n.replace(/\s+/g, '');
+    n = n.replace(/^(东岳|西岳|南岳|北岳|中岳)/, '');
+    n = n.replace(/[·•.\-—_、,，]/g, '');
+    return n;
+}
+// ★2026-09-15 统一的「当前值 / 目标值」：单点达成与收集类共用（一览与达成判定都走它）
+function milestoneProgress(ms, st) {
+    if (ms.type === 'collect') {
+        var set = st[ms.collectKey] || {};
+        return { cur: Object.keys(set).length, need: ms.items.length };
+    }
+    var map = { peaks: st.peaks, km: st.km, alt: st.maxAlt };
+    return { cur: map[ms.type] || 0, need: ms.value };
+}
 var MILESTONES = [
     { id: 'peaks_1', type: 'peaks', value: 1, title: '第 1 座山', desc: '恭喜入坑，从此周末有地方去了' },
     { id: 'peaks_5', type: 'peaks', value: 5, title: '第 5 座山', desc: '五座山，够凑一桌了' },
@@ -4230,8 +4251,19 @@ var MILESTONES = [
     { id: 'peaks_50', type: 'peaks', value: 50, title: '第 50 座山', desc: '半百。这已经不只是爱好，是生活了' },
     { id: 'km_100', type: 'km', value: 100, title: '累计 100 公里', desc: '一百公里，够沿着城墙走七圈' },
     { id: 'km_500', type: 'km', value: 500, title: '累计 500 公里', desc: '差不多西安到郑州，一步没少走' },
-    { id: 'km_1000', type: 'km', value: 1000, title: '累计 1000 公里', desc: '一千里。古人进京赶考，也就这个数' }
+    { id: 'km_1000', type: 'km', value: 1000, title: '累计 1000 公里', desc: '一千里。古人进京赶考，也就这个数' },
+    { id: 'alt_1000', type: 'alt', value: 1000, title: '登顶 1000 米', desc: '一千米，视野一下子开阔了' },
+    { id: 'alt_2000', type: 'alt', value: 2000, title: '登顶 2000 米', desc: '两千米，云差不多在脚下了' },
+    { id: 'alt_3000', type: 'alt', value: 3000, title: '登顶 3000 米', desc: '三千米，正经的高山了' },
+    { id: 'alt_4000', type: 'alt', value: 4000, title: '登顶 4000 米', desc: '四千米，喘气都得慢慢来' },
+    { id: 'wuyue', type: 'collect', collectKey: 'wuyue', matchBy: 'peak', items: ['泰山', '华山', '衡山', '恒山', '嵩山'], title: '五岳集齐', desc: '三山五岳，先把五岳走一遍' },
+    { id: 'shaanxi', type: 'collect', collectKey: 'shaanxi', matchBy: 'peak', items: [['南五台山', '南五台'], ['翠华山', '翠华'], '华山', ['太白山', '太白']], title: '陕西名山', desc: '家门口的这几座，总得走一遍' },
+    { id: 'season', type: 'collect', collectKey: 'season', matchBy: 'season', items: ['春', '夏', '秋', '冬'], title: '四季足迹', desc: '春夏秋冬，一季都没落下' },
+    { id: 'weather', type: 'collect', collectKey: 'weather', matchBy: 'weather', items: ['晴', '多云', '阴', '雨', '雪'], title: '天气收藏家', desc: '晴天雨天，各有各的好' },
+    { id: 'difficulty', type: 'collect', collectKey: 'difficulty', matchBy: 'difficulty', items: [1, 2, 3, 4, 5], title: '难度全通关', desc: '从散步到自虐，全试过一遍' }
 ];
+
+
 
 var MILESTONE_KEY = 'hiking_milestones';
 function getMilestoneDone() {
@@ -4243,26 +4275,75 @@ function setMilestoneDone(arr) {
 }
 // 当前统计：山峰数（按名称去重，与年度回顾/山册口径一致）+ 累计里程
 function milestoneStats() {
-    var nameCnt = {}, km = 0;
+    // ★2026-09-15 一次遍历算全部维度，收集类按「别名组」判断命中
+    // pool 为各维度的原始值集合；MILESTONES 里的 collect 组据此算进度（items 支持 ['别名1','别名2']）
+    var WEATHERS = ['晴', '多云', '阴', '雨', '雪'];
+    var nameCnt = {}, km = 0, maxAlt = 0;
+    var pool = { peak: {}, season: {}, weather: {}, difficulty: {} };
     (records || []).forEach(function (r) {
-        var n = (r && r.name ? String(r.name).trim() : '');
+        if (!r) return;
+        var n = (r.name ? String(r.name).trim() : '');
         if (n) nameCnt[n] = 1;
-        km += (parseFloat(r && r.distance) || 0);
+        km += (parseFloat(r.distance) || 0);
+        var alt = parseFloat(r.elevation) || 0;
+        if (alt > maxAlt) maxAlt = alt;
+        if (n) {
+            var nn = normalizePeakName(n);
+            if (nn) pool.peak[nn] = 1;
+        }
+        if (r.createdAt) {
+            var t = new Date(r.createdAt);
+            if (!isNaN(t.getTime())) {
+                var mo = t.getMonth() + 1;
+                pool.season[mo === 12 || mo <= 2 ? '冬' : (mo <= 5 ? '春' : (mo <= 8 ? '夏' : '秋'))] = 1;
+            }
+        }
+        var w = (r.weather ? String(r.weather) : '');
+        if (w) WEATHERS.forEach(function (k) { if (w.indexOf(k) >= 0) pool.weather[k] = 1; });
+        var dv = parseInt(r.difficulty, 10);
+        if (dv >= 1 && dv <= 5) pool.difficulty[String(dv)] = 1;
     });
-    return { peaks: Object.keys(nameCnt).length, km: Math.round(km * 10) / 10 };
+    var st = {
+        peaks: Object.keys(nameCnt).length,
+        km: Math.round(km * 10) / 10,
+        maxAlt: Math.round(maxAlt)
+    };
+    MILESTONES.forEach(function (ms) {
+        if (ms.type !== 'collect') return;
+        var p = pool[ms.matchBy] || {};
+        var hit = {};
+        ms.items.forEach(function (it) {
+            var keys = Array.isArray(it) ? it : [it];
+            var label = Array.isArray(it) ? it[0] : it;
+            for (var i = 0; i < keys.length; i++) {
+                if (p[String(keys[i])]) { hit[String(label)] = 1; break; }
+            }
+        });
+        st[ms.collectKey] = hit;
+    });
+    return st;
 }
-function checkMilestones() {
+function checkMilestones(silent) {
+    // silent=true：启动/切页补领用 —— 只标记并刷新入口（红点提示），不弹窗打扰
+    // silent 省略/false：保存记录时用 —— 弹庆祝卡给即时正反馈
     try {
         var st = milestoneStats();
         var done = getMilestoneDone();
         var newly = MILESTONES.filter(function (ms) {
             if (done.indexOf(ms.id) >= 0) return false;
-            return (ms.type === 'peaks' ? st.peaks : st.km) >= ms.value;
+            var p = milestoneProgress(ms, st);
+            return p.cur >= p.need;
         });
-        if (!newly.length) return;
-        // 一次最多弹一个（取表中靠前的最低档），其余一并标记已达成，避免连续弹窗堆叠
-        setMilestoneDone(done.concat(newly.map(function (x) { return x.id; })));
-        showMilestoneCelebration(newly[0], st);
+        if (newly.length) {
+            // 先落盘再弹（防重复触发）；单个→庆祝卡，多个→汇总卡
+            setMilestoneDone(done.concat(newly.map(function (x) { return x.id; })));
+            if (!silent) {
+                if (newly.length === 1) showMilestoneCelebration(newly[0], st);
+                else showMilestoneSummary(newly, st);
+            }
+        }
+        // 放在写入之后：否则补领那一刻入口计数还是旧值
+        renderMilestoneEntry();
     } catch (e) { /* 里程碑失败绝不影响保存流程 */ }
 }
 function showMilestoneCelebration(ms, st) {
@@ -4297,6 +4378,135 @@ function showMilestoneCelebration(ms, st) {
         overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
         triggerHaptic(20);
     } catch (e) { /* 弹窗失败不影响保存 */ }
+}
+
+// ★2026-09-15 新增「我的里程碑」一览：8 档全列 + 达成状态 + 未达成显示当前进度
+function renderMilestoneEntry() {
+    try {
+        var el = document.getElementById('milestoneEntryCount');
+        if (!el) return;
+        var done = getMilestoneDone().filter(function (id) {
+            return MILESTONES.some(function (m) { return m.id === id; });
+        });
+        el.textContent = done.length + ' / ' + MILESTONES.length;
+        // ★2026-09-15 红点：有已达成的「没看过」的（多为升级后补领）就提示一下
+        var dot = document.getElementById('milestoneNewDot');
+        if (dot) {
+            var seen = parseInt(localStorage.getItem('hiking_milestones_seen') || '0', 10) || 0;
+            dot.style.display = done.length > seen ? 'block' : 'none';
+        }
+    } catch (e) { /* 入口计数失败不影响 */ }
+}
+function initMilestoneEntry() {
+    try {
+        var entry = document.getElementById('milestoneEntry');
+        if (!entry) return;
+        renderMilestoneEntry();
+        var handler = function () { triggerHaptic(12); showMilestoneList(); };
+        entry.addEventListener('click', handler);
+        cleanupFunctions.push(function () { entry.removeEventListener('click', handler); });
+    } catch (e) { /* 绑定失败不影响启动 */ }
+}
+function showMilestoneList() {
+    try {
+        var dark = document.body.classList.contains('dark-mode');
+        var sub = dark ? 'rgba(255,255,255,0.6)' : '#64748b';
+        var strong = dark ? '#ffffff' : '#0f172a';
+        var line = dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)';
+        var st = milestoneStats();
+        var done = getMilestoneDone();
+        var got = MILESTONES.filter(function (ms) { return done.indexOf(ms.id) >= 0; }).length;
+        // ★2026-09-15 打开一览即视为已查看：记录 seen 并清掉入口红点
+        try { localStorage.setItem('hiking_milestones_seen', String(got)); } catch (eS) { /* 存储失败不影响 */ }
+        renderMilestoneEntry();
+        var rows = MILESTONES.map(function (ms) {
+            var has = done.indexOf(ms.id) >= 0;
+            var p = milestoneProgress(ms, st);
+            var prog;
+            if (ms.type === 'collect') prog = p.cur + ' / ' + p.need;
+            else if (ms.type === 'km') prog = p.cur.toFixed(1) + ' / ' + p.need + ' km';
+            else if (ms.type === 'alt') prog = p.cur + ' / ' + p.need + ' m';
+            else if (ms.type === 'peaks') prog = p.cur + ' / ' + p.need + ' 座';
+            else prog = p.cur + ' / ' + p.need;
+            // 收集类：把具体清单列出来，已达成的打勾（看得出还缺哪几项）
+            var subLine = '';
+            if (ms.type === 'collect') {
+                var set = st[ms.collectKey] || {};
+                subLine = '<div style="font-size:11px;color:' + sub + ';margin-top:3px;line-height:1.6;">' +
+                    ms.items.map(function (it) {
+                        var label = Array.isArray(it) ? it[0] : it;
+                        return escapeHtml(String(label)) + (set[String(label)] ? ' \u2713' : '');
+                    }).join(' · ') + '</div>';
+
+            }
+            return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid ' + line + ';">' +
+                '<span class="material-icons" style="font-size:20px;flex-shrink:0;color:' + (has ? '#f59e0b' : sub) + ';">' + (has ? 'emoji_events' : 'radio_button_unchecked') + '</span>' +
+                '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:14px;font-weight:700;color:' + (has ? strong : sub) + ';">' + escapeHtml(ms.title) + '</div>' +
+                '<div style="font-size:12px;color:' + sub + ';margin-top:2px;line-height:1.5;">' + escapeHtml(ms.desc) + '</div>' +
+                subLine +
+                '</div>' +
+                '<span style="font-size:11px;font-weight:700;flex-shrink:0;margin-top:3px;color:' + (has ? '#f59e0b' : sub) + ';">' + (has ? '已达成' : prog) + '</span>' +
+                '</div>';
+        }).join('');
+
+        var modal = document.createElement('div');
+        modal.className = 'modal-backdrop-animate';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.45);padding:16px;';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:400px;width:100%;box-sizing:border-box;max-height:82vh;overflow-y:auto;border-radius:20px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
+            '<span class="material-icons" style="color:#f59e0b;">emoji_events</span>' +
+            '<span style="font-size:15px;font-weight:700;flex:1;color:' + (dark ? '#fff' : '#334155') + ';">我的里程碑</span>' +
+            '<button id="msListClose" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
+            '</div>' +
+            '<div style="font-size:12px;color:' + sub + ';margin-bottom:6px;">已达成 ' + got + ' / ' + MILESTONES.length + ' 项</div>' +
+            rows + '</div>';
+        document.body.appendChild(modal);
+        var esc = function (e) { if (e.key === 'Escape') close(); };
+        var close = function () {
+            if (modal.parentNode) modal.parentNode.removeChild(modal);
+            document.removeEventListener('keydown', esc);
+        };
+        document.addEventListener('keydown', esc);
+        var btn = document.getElementById('msListClose');
+        if (btn) btn.addEventListener('click', close);
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    } catch (e) { /* 一览失败不影响页面 */ }
+}
+// ★2026-09-15 汇总卡：一次补领多个时用（升级老用户首次打开会走到这里）
+function showMilestoneSummary(list, st) {
+    try {
+        var oldOv = document.getElementById('celebrateOverlay');
+        if (oldOv && oldOv.parentNode) oldOv.parentNode.removeChild(oldOv);
+        var dark = document.body.classList.contains('dark-mode');
+        var overlay = document.createElement('div');
+        overlay.id = 'celebrateOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;' +
+            'background:' + (dark ? 'rgba(15,23,42,0.42)' : 'rgba(15,23,42,0.2)') + ';';
+        spawnConfetti(overlay);
+        var names = list.map(function (m) { return escapeHtml(m.title); }).join(' · ');
+        var card = document.createElement('div');
+        card.className = 'confirm-modal-content modal-fade-scale celebration-card';
+        card.innerHTML =
+            '<span class="material-icons" style="font-size:44px;color:#f59e0b;line-height:1;">emoji_events</span>' +
+            '<div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#f59e0b;margin-top:8px;">里程碑达成</div>' +
+            '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">解锁了 ' + list.length + ' 个</div>' +
+            '<div style="font-size:13px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';line-height:1.7;">' + names + '</div>' +
+            '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
+            '<button id="celebrateOkBtn" class="check-go-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">去看看</button>';
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        var escHandler = function (e) { if (e.key === 'Escape') close(); };
+        var close = function () {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            document.removeEventListener('keydown', escHandler);
+        };
+        document.addEventListener('keydown', escHandler);
+        var btn = document.getElementById('celebrateOkBtn');
+        if (btn) btn.addEventListener('click', function () { close(); showMilestoneList(); });
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+        triggerHaptic(20);
+    } catch (e) { /* 汇总卡失败不影响保存 */ }
 }
 
 // ★2026-08-31 计划完成庆祝卡片：彩屑 + 弹入卡片 + 「继续补全」；轻量粒子（≤24），播完自动清理
