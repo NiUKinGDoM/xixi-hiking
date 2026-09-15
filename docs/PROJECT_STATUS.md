@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-15（v1.2.0.9 / vc251）  
+> 最后更新：2026-09-15（v1.2.0.10 / vc252）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -127,6 +127,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.0.10**（versionCode 252，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.0.10 更新（**里程碑一览文字折行修复 + 首页引导补条**）：**① 描述文字被进度串挤成两行（用户报「累计 1000 公里下面的说明分成两行」）**——实测：行结构为 `图标 | mid(标题/描述/清单) | 进度`，进度与描述**同列抢宽**；km 档进度串最长（`300.0 / 1000 km` = 90px）把 mid 压到 **178px**，而描述文本需 ~192px → **明明一行能写完却折两行**（`累计 500 公里`（184px）同样在折；collect 类清单也被挤成两行）；**修法（结构微调、视觉位置不变）**：进度 span 移入 mid 内部、**只与「标题行」同行**（标题仅 98px 不占地），描述与清单升为 mid 直系 → 拿到**整行宽度 277px**；实测 **17 行全部单行**（描述最长需 214px < 277px），1000 公里行 178px/2 行 → **277px/1 行**，五岳与陕西名山清单也从 2 行回到 1 行；**② 首页新人引导补一条**（用户点名新增）——`#welcomeBanner` 内新增 `#wbTitleEditHint`：`<b>标题可自定义</b>：点击顶栏标题即可进入编辑，支持修改为你自己的名字（最多 20 个字符）。`；新行复用 `class="wb-sub"` → 自动继承 `body.dark-mode #welcomeBanner .wb-sub` 的深色适配（实测浅色 `#52606f` / 深色 `#a3b1c6`）；**③ 测试**——**新增 3 项「真实浏览器」断言**（`e2e/run.js` 末尾：档位行齐全 / 进度并入标题行（行仅 2 子元素）/ 描述与清单全部单行）；**★这类"折没折行"的断言必须放 E2E —— jsdom 不做布局，`clientHeight` 全为 0，写在 jsdom 里等于假断言**；E2E **24 → 27**，全套自检 **6 套 552 项全绿**（smoke 19 / ios 10 / test 195 / test-ui 30 / P0P3 271 / E2E 27）
 - **正式版 v1.2.0.9**（versionCode 251，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.9 更新（**里程碑四修：天气识别 / 成就可变 / 滚动条 / 入口渐入**，用户四反馈）：**① 天气收藏家收不齐（真 bug）**——`WEATHER_OPTIONS` 写入的是 **emoji**（`☀️🌤️☁️🌧️❄️`），而 `milestoneStats()` 原用 `w.indexOf('晴')` 文本匹配 → **永远不命中**；新增 `normWeather(v)`：剥变体选择符/连接符/空白后查 emoji→天气名映射，再兜底文本包含（兼容旧数据 `'晴'`/`'晴天'`）；实测 5 种 emoji 记录 → `多云·晴·阴·雨·雪` 全中；**② 成就改为「实时计算」（架构修正）**——原把「已达成」持久化 → **写入即永久**，删记录后仍显示已达成；改为 `getMilestoneDone()` 由 `milestoneStats()` **当场算**（`p.cur >= p.need`），持久化只保留 `hiking_milestones`（**语义变更为「已庆祝」**，旧数据=已达成 → 天然兼容，老用户不会被补弹）+ `hiking_milestones_seen`（已查看，红点用）；档位失效自动从两簿记回收 → **重新达成会再次庆祝、红点复亮**；`setMilestoneDone` 已移除；`updateStatistics()` 补 `renderMilestoneEntry()`（纯展示）让入口计数随数据实时变化；实测删华山 → 陕西名山 `4/4`+已达成 → `3/4`+失效+计数 `2/17→1/17`，补回后**再弹庆祝**、红点复亮、计数回 `2/17`；**③ 一览弹窗滚动条越出圆角**——卡片原 `overflow-y:auto`+`border-radius:20px`，6px 滚动条贴边在圆角处"跑出"轮廓；改为卡片 `display:flex;flex-direction:column;overflow:hidden`，17 行移入内嵌 `.ms-scroll`（`overflow-y:auto;flex:1;min-height:0`）→ 滚动条落在卡片 20px 内边距内；`.ms-scroll::-webkit-scrollbar` 并入原 6px 玻璃滚动条规则；**④ 入口卡缺渐入**——`#milestoneEntry` 不在动画目标选择器内，补 `fadeInUp 0.5s ease-out 0.64s forwards`（接力在矮副卡之后）并加入二次点击刷新的 `fadeTargets`；**⑤ 测试**——`_test_p0p3.js` 新增 **9 项回归**（天气 emoji 识别 / 旧文本兼容 / 成就失效与计数据随 / 重新达成再庆祝 / 滚动容器结构 / 入口渐入）→ **262 → 271**，全套自检 **6 套 549 项全绿**（smoke 19 / ios 10 / test 195 / test-ui 30 / P0P3 271 / E2E 24）
 - **正式版 v1.2.0.8**（versionCode 250，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里

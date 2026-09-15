@@ -4467,14 +4467,18 @@ function showMilestoneList() {
                     }).join(' · ') + '</div>';
 
             }
+            // ★2026-09-15 修复描述被挤成两行：右侧进度原与「标题+描述」同列竞争宽度，km 档进度串最长（如「300.0 / 1000 km」宽 90px）→ 描述可用宽仅 178px，明明一行能写完却折两行；
+            //   现改为：进度只在「标题行」占位（标题短），描述/清单拿到整行宽度
             return '<div style="display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid ' + line + ';">' +
                 '<span class="material-icons" style="font-size:20px;flex-shrink:0;color:' + (has ? '#f59e0b' : sub) + ';">' + (has ? 'emoji_events' : 'radio_button_unchecked') + '</span>' +
                 '<div style="flex:1;min-width:0;">' +
-                '<div style="font-size:14px;font-weight:700;color:' + (has ? strong : sub) + ';">' + escapeHtml(ms.title) + '</div>' +
+                '<div style="display:flex;align-items:baseline;gap:8px;">' +
+                '<div style="flex:1;min-width:0;font-size:14px;font-weight:700;color:' + (has ? strong : sub) + ';">' + escapeHtml(ms.title) + '</div>' +
+                '<span style="font-size:11px;font-weight:700;flex-shrink:0;color:' + (has ? '#f59e0b' : sub) + ';">' + (has ? '已达成' : prog) + '</span>' +
+                '</div>' +
                 '<div style="font-size:12px;color:' + sub + ';margin-top:2px;line-height:1.5;">' + escapeHtml(ms.desc) + '</div>' +
                 subLine +
                 '</div>' +
-                '<span style="font-size:11px;font-weight:700;flex-shrink:0;margin-top:3px;color:' + (has ? '#f59e0b' : sub) + ';">' + (has ? '已达成' : prog) + '</span>' +
                 '</div>';
         }).join('');
 

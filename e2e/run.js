@@ -241,6 +241,47 @@ function serverUp() {
   // 清掉测试队列
   await page.evaluate(() => { try { window.__clearCrashQueue(); } catch (e) {} });
 
+  console.log('== E2E: 里程碑一览行布局（描述不得折行）==');
+  const msLayout = await page.evaluate(() => {
+    try {
+      const backup = window.records;
+      // 造数据：4 座山 + 300km → 触发「300.0 / 1000 km」这种最长进度串
+      window.records = [
+        { id: 'L1', name: '太白山', distance: 120, elevation: 3767, difficulty: 5, weather: '☀️', createdAt: '2026-03-10T09:00:00.000Z' },
+        { id: 'L2', name: '华山', distance: 80, elevation: 2154, difficulty: 4, weather: '🌤️', createdAt: '2026-06-10T09:00:00.000Z' },
+        { id: 'L3', name: '翠华山', distance: 60, elevation: 1600, difficulty: 2, weather: '☁️', createdAt: '2026-09-10T09:00:00.000Z' },
+        { id: 'L4', name: '南五台山', distance: 40, elevation: 1688, difficulty: 3, weather: '🌧️', createdAt: '2026-12-10T09:00:00.000Z' }
+      ];
+      if (typeof window.renderMilestoneEntry === 'function') window.renderMilestoneEntry();
+      window.showMilestoneList();
+      let card = null;
+      document.querySelectorAll('.modal-backdrop-animate').forEach(function (n) { if (n.querySelector('#msListClose')) card = n.firstElementChild; });
+      if (!card) { window.records = backup; return { ok: false, reason: '一览未打开' }; }
+      let rows = 0; const wrapped = []; let progressInside = true;
+      card.querySelectorAll('.ms-scroll > div').forEach(function (row) {
+        if (row.children.length !== 2) { progressInside = false; return; }
+        rows++;
+        const mid = row.children[1];
+        const tRow = mid.children[0], desc = mid.children[1], sub = mid.children[2];
+        const lh = parseFloat(getComputedStyle(desc).lineHeight) || 0;
+        if (lh && Math.round(desc.clientHeight / lh) > 1) wrapped.push(tRow.children[0].textContent);
+        if (sub) {
+          const slh = parseFloat(getComputedStyle(sub).lineHeight) || 0;
+          if (slh && Math.round(sub.clientHeight / slh) > 1) wrapped.push(tRow.children[0].textContent + '(清单)');
+        }
+      });
+      const close = document.getElementById('msListClose');
+      if (close) close.click();
+      const total = window.MILESTONES.length;
+      window.records = backup;
+      if (typeof window.renderMilestoneEntry === 'function') window.renderMilestoneEntry();
+      return { ok: true, rows: rows, wrapped: wrapped, progressInside: progressInside, total: total };
+    } catch (e) { return { ok: false, reason: e.message }; }
+  });
+  ok('里程碑一览-档位行齐全', msLayout.ok && msLayout.rows === msLayout.total, JSON.stringify(msLayout).slice(0, 90));
+  ok('里程碑一览-进度并入标题行（行仅 2 子元素）', msLayout.ok === true && msLayout.progressInside === true, JSON.stringify(msLayout).slice(0, 90));
+  ok('里程碑一览-描述/清单全部单行', msLayout.ok === true && Array.isArray(msLayout.wrapped) && msLayout.wrapped.length === 0, (msLayout.wrapped || []).join(','));
+
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
   console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
