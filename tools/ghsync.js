@@ -29,7 +29,8 @@ const DRY = has('dry-run');
 
 // ---- 同步清单 ----
 const WWW_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
-const ROOT_FILES = ['README.md', 'CHANGELOG.md', 'prev-snapshot.js', 'bump.js', 'test.js', 'test-ui.js'];
+const ROOT_FILES = ['README.md', 'CHANGELOG.md', 'prev-snapshot.js', 'bump.js', 'test.js', 'test-ui.js',
+  '_test_p0p3.js', '_test_batch3.js'];   // ★2026-09-15 补入：P0P3 断言集与历史批次脚本原仅存于本地
 const ANDROID_FILES = [
   'android/app/build.gradle',
   'android/app/src/main/java/com/xixi/hiking/MainActivity.java',

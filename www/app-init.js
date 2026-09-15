@@ -222,6 +222,8 @@ async function init() {
         
         // ★2026-08-21 v1.1.1.5 启动优化：启动只渲染当前概览页，记录/计划表格延迟到切 tab 时渲染
         updateStatistics();
+        // ★2026-09-15 里程碑补领（启动时机）：升级后把历史已达成的档位静默补上（入口红点提示，不弹窗）
+        if (typeof checkMilestones === 'function') { try { checkMilestones(true); } catch (e) { /* 忽略 */ } }
                 // ★2026-09-05 提示灵活化：视图说明灰字单击即收起（收起的是该视图这条；切换视图 apply 时自动恢复显示）
         document.addEventListener('click', function (ev) {
             try {
@@ -694,6 +696,10 @@ function setupEventListeners() {
         // 切到概览时刷新统计数据
         if (tabId === 'overview' && typeof updateStatistics === 'function') {
             try { updateStatistics(); } catch (e) { console.error('updateStatistics failed:', e); }
+        }
+        // ★2026-09-15 里程碑补领（切页时机）：静默补齐 + 红点提示（不弹窗，不挡操作）
+        if (tabId === 'overview' && typeof checkMilestones === 'function') {
+            try { checkMilestones(true); } catch (e) { console.error('checkMilestones failed:', e); }
         }
         // ★2026-08-21 v1.1.1.5 懒渲染：切到记录/计划页时渲染对应表格（启动不再全量渲染）
         // ★2026-09-03 记录页双视图修复：recordsViewMode 为 mountain 时渲染山册而非列表——

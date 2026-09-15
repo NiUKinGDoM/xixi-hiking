@@ -2130,8 +2130,8 @@ function renderOnThisDay() {
 
 function updateStatistics() {
     renderOnThisDay(); // ★2026-09-14「那年今日」：置于指纹快照判断之前，跨天/切页回来也能刷新
-    checkMilestones(true); // ★2026-09-15 补检查：升级/切页时把历史已达成的里程碑补领（不再只靠保存记录触发）
-    // ↑ silent=true：升级/切页时静默补领历史里程碑（入口红点提示），不弹窗打扰
+    // ★2026-09-15 里程碑补领已移出此处：saveRecord() 内 updateStatistics() 先于 checkMilestones() 执行，
+    //   静默补领会抢先标记新达成档位 → 庆祝卡永不弹（真 bug）。改由「启动 + 切到概览页」触发（见 app-init.js）
     const fp = (records || []).length + '_' + (records || []).reduce(function (m, r) {
         const t = r.updatedAt || r.createdAt || '';
         return t > m ? t : m;
@@ -4410,7 +4410,7 @@ function initMilestoneEntry() {
 function showMilestoneList() {
     try {
         var dark = document.body.classList.contains('dark-mode');
-        var sub = dark ? 'rgba(255,255,255,0.6)' : '#64748b';
+        var sub = dark ? 'rgba(255,255,255,0.6)' : '#1e293b'; // ★2026-09-15 浅色对比度修复：玻璃卡在遮罩上呈中灰（实测 #9A9EA9），#64748b 仅 1.78:1 → 看不清；#1e293b 为 5.4:1
         var strong = dark ? '#ffffff' : '#0f172a';
         var line = dark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)';
         var st = milestoneStats();
@@ -4439,7 +4439,7 @@ function showMilestoneList() {
                     }).join(' · ') + '</div>';
 
             }
-            return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid ' + line + ';">' +
+            return '<div style="display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid ' + line + ';">' +
                 '<span class="material-icons" style="font-size:20px;flex-shrink:0;color:' + (has ? '#f59e0b' : sub) + ';">' + (has ? 'emoji_events' : 'radio_button_unchecked') + '</span>' +
                 '<div style="flex:1;min-width:0;">' +
                 '<div style="font-size:14px;font-weight:700;color:' + (has ? strong : sub) + ';">' + escapeHtml(ms.title) + '</div>' +
@@ -4452,8 +4452,8 @@ function showMilestoneList() {
 
         var modal = document.createElement('div');
         modal.className = 'modal-backdrop-animate';
-        modal.style.cssText = 'position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.45);padding:16px;';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:400px;width:100%;box-sizing:border-box;max-height:82vh;overflow-y:auto;border-radius:20px;">' +
+        modal.style.cssText = 'position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;background:' + (dark ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.35)') + ';padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:440px;width:calc(100vw - 44px);box-sizing:border-box;max-height:70vh;overflow-y:auto;border-radius:20px;">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#f59e0b;">emoji_events</span>' +
             '<span style="font-size:15px;font-weight:700;flex:1;color:' + (dark ? '#fff' : '#334155') + ';">我的里程碑</span>' +
