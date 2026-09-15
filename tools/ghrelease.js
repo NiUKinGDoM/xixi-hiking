@@ -71,13 +71,21 @@ function eolOf(s) { return s.includes('\r\n') ? '\r\n' : '\n'; }
 // （表现：codeload / pages.dev 通，github / api 不通，极易误判为"节点坏了"）。
 // node fetch 无法自定义 DNS 解析 → 改用 curl，支持 --resolve 直接指定可用 IP。
 const NUL = os.platform() === 'win32' ? 'NUL' : '/dev/null';
-const PIN_HOSTS = ['api.github.com', 'github.com'];
+const PIN_HOSTS = ['api.github.com', 'github.com', 'uploads.github.com'];
 const IP_MAP = {
   'api.github.com': ['20.205.243.168', '140.82.112.6', '140.82.113.6', '20.205.243.166', '20.27.177.113'],
   'github.com': ['20.205.243.166', '140.82.112.3', '140.82.113.3', '140.82.114.3', '140.82.116.3', '20.27.177.113'],
+  // ★2026-09-15 补：APK 上传走 uploads.github.com，同样被 hosts 劫持，不钉 IP 就 `Failed to connect`（发 v1.2.0.10 时真实踩到）
+  // ★2026-09-15 实测：20.205.243.161 才是真正的 uploads 节点（CNAME alambic-origin.githubusercontent.com），POST 返 201；
+  //   github.com 系列 IP 对这个 vhost 只会 301 到 github.com → 上传必失败。
+  'uploads.github.com': ['20.205.243.161', '20.205.243.160', '20.205.243.162', '140.82.112.3', '140.82.113.3'],
 };
 // 探针端点按 host 定制：用真实接口，避免 vhost 不匹配的 301 被误判为可用
-const PROBE_PATH = { 'api.github.com': '/rate_limit', 'github.com': '/' };
+const PROBE_PATH = { 'api.github.com': '/rate_limit', 'github.com': '/', 'uploads.github.com': '/' };
+// ★2026-09-15 探针可接受码按主机定制：uploads.github.com 只收 POST 上传，GET / 会返 **301**（实测）——一律要求 200 会让它永远钉不上；
+//   且该主机不能用「跳转后 200」判定（vhost 不匹配会得到空响应）。
+const PROBE_OK = { 'uploads.github.com': ['302', '404', '200'] };   // 实测 20.205.243.161 返 302；**不收 301**（那是 github.com 前端的误报信号）
+function probeAccept(host, code) { return (PROBE_OK[host] || ['200']).indexOf(code) >= 0; }
 const pinned = {};
 
 // hosts 劫持检测：Steam++ / Watt Toolkit 类加速器会把域名写进 hosts 指向 127.0.0.1，
@@ -92,16 +100,21 @@ function hostsHijacked(host) {
   } catch (e) { return false; }
 }
 
+function followArgs(host) {
+  // ★2026-09-15 uploads 探针不能跟随重定向：错误 vhost 会 301 跳到 github.com 并最终 200
+  //   → 被误判为可用，上传却必然失败（本次 APK 上传失败的真正原因）。
+  return host === 'uploads.github.com' ? [] : ['-L'];
+}
 function curlProbe(host, ip) {
-  const r = spawnSync('curl', ['-s', '-o', NUL, '-w', '%{http_code}', '--max-time', '6', '-L',
-    '--noproxy', '*', '--resolve', host + ':443:' + ip, 'https://' + host + (PROBE_PATH[host] || '/')], { encoding: 'utf8' });
+  const r = spawnSync('curl', ['-s', '-o', NUL, '-w', '%{http_code}', '--max-time', '6'].concat(followArgs(host), [
+    '--noproxy', '*', '--resolve', host + ':443:' + ip, 'https://' + host + (PROBE_PATH[host] || '/')]), { encoding: 'utf8' });
   return (r.stdout || '').trim();
 }
 
 // 直连探测：不给 IP、不用代理 —— 只有它失败才轮到"钉 IP"这条兜底路
 function probeDirect(host) {
-  const r = spawnSync('curl', ['-s', '-o', NUL, '-w', '%{http_code}', '--max-time', '6', '-L',
-    '--noproxy', '*', 'https://' + host + (PROBE_PATH[host] || '/')], { encoding: 'utf8' });
+  const r = spawnSync('curl', ['-s', '-o', NUL, '-w', '%{http_code}', '--max-time', '6'].concat(followArgs(host), [
+    '--noproxy', '*', 'https://' + host + (PROBE_PATH[host] || '/')]), { encoding: 'utf8' });
   return (r.stdout || '').trim();
 }
 
@@ -110,7 +123,7 @@ function ensurePin(host) {
   if (PIN_HOSTS.indexOf(host) < 0) { pinned[host] = false; return false; }
 
   // ① 直连优先：网络正常时不钉 IP（钉 IP 会让请求绕过 DNS/CDN，只该作为兜底）
-  if (probeDirect(host) === '200') {
+  if (probeAccept(host, probeDirect(host))) {
     pinned[host] = false;
     console.log('   ℹ ' + host + ' 直连正常，无需钉 IP');
     return false;
@@ -123,7 +136,8 @@ function ensurePin(host) {
   }
   for (const ip of (IP_MAP[host] || [])) {
     const c = curlProbe(host, ip);
-    if (c === '200') {   // 只认 200：301/302 多为 vhost 不匹配，用它会得到空响应
+    if (probeAccept(host, c)) {   // 默认只认 200；
+      // ★2026-09-15 uploads.github.com 额外接受 301/404（该主机只收 POST 传输，GET / 本就不是 200）
       pinned[host] = ip;
       console.log('   ℹ 网络适配：' + host + ' → 钉 ' + ip + '（200）');
       return true;
