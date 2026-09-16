@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-15（v1.2.0.10 / vc252）  
+> 最后更新：2026-09-16（v1.2.1.0 / vc253）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -51,7 +51,7 @@ node tools/ghsync.js -m "release: vX (vcN)" --push
 node tools/audit.js
 node tools/deepcheck.js     # 死代码 / XSS / 泄漏 / 全局污染 / 调试残留
 node tools/docaudit.js      # 文档格式 / 版本号 / 路径 / 双端一致
-node tools/designcheck.js   # ★设计一致性（2026-09-14 新增）：实测每个可见元素的圆角/字体与规范表比对，列出漂移
+node tools/designcheck.js   # ★设计一致性（2026-09-14 新增，09-16 扩维）：实测每个可见元素的**圆角/字体/玻璃配方/层级**与规范表比对，列出漂移
 node tools/status.js        # ★开工核对一条命令（2026-09-14 新增）：版本三处/BUILTIN/本地git/副本差异/远程latest；--offline 跳过远程
 node tools/rollback.js      # ★一键回退（2026-09-14 新增）：无参数=列出回退点；<版本>=预览差异；<版本> --apply=执行（先自动备份当前）
 node tools/doc-sync.js      # ★双端文档同步（2026-09-14 新增）：无参数=只检测；--apply=主工程→副本；--reverse=副本→主工程
@@ -127,8 +127,23 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 - **★离线自足（2026-09-10）**：图标字体 + Tailwind 运行时全部本地化（详见关键约定 18）；**新增静态资源三处同步**（sw CORE_ASSETS + ResGuard HASH_FILES + `inspect --offline` 实测）；`tools/audit.js` 新增 **F 段外部依赖门禁**；`e2e/inspect.js` 新增 **`--offline`**（模拟断网）+ 巡检片段 `tools/snippets/offline-check.js`
 
 
+## 📌 2026-09-16 五项优化（设计统一 · 代码清理 · 帧率 · 文档 · 查 bug）
+
+> **本轮未发版**：版本仍 v1.2.0.10 / vc252，改动已在主工程 `www/`，等用户说「同步」才走 ship.js。
+
+- **① 设计统一（实测）**：玻璃配方两处漂移 —— `.settings-group` 用 `saturate(120%)`、`.settings-switch .switch-slider` 用 `blur(4px)`（既非 2px、也没饱和度），与全站 18 处 `blur(2px) saturate(150%)` 不一致 → 已统一；复核**浅色/深色各 27 处玻璃面 100% 一致**。
+- **① 工具升级**：`tools/designcheck.js` 从「只查圆角/字体」扩为**圆角 / 字体 / 玻璃配方 / 层级**四维体检（SPEC 规范表为唯一事实来源）；扫描逻辑改为读 `tools/snippets/design-scan.js` —— 该文件此前**无人引用**（designcheck 内联复制了一份），现为单一事实来源，避免同类手漏第三次发生。
+- **② 代码清理**：删除 5 处**恒被覆盖的死声明**（`.hm-day:active` 0.88 → `.dtp-cell:active` 0.92 → `.mwp-opt:active` 0.94 → `.btn-click-effect:active` 0.92 → `.confirm-btn-cancel/delete:active` translateY(0)，均被「统一按压块 `scale(0.96)`（放在所有 :active 之后）」取代）；另核实：同名函数跨文件覆盖 0 处、自定义 CSS 无未引用类、www 静态资源无孤儿（原报告为假警：`resetGuideSeen` 是测试钩子、`celebration-card` 由 JS 动态拼接）。
+- **③ 帧率/流畅度（真实浏览器实测）**：四页均 **60fps、0 掉帧、0 长任务**；500 条记录下批量渲染 22ms / 切页 23~38ms / 冷启动 FCP 344ms；反复开关弹窗 15 轮 **0 DOM 泄漏** → 无卡顿瓶颈。唯一真实收益：**切后台暂停常驻动画** —— 新增 `body.app-bg-paused`（`visibilitychange` 切换）+ 全局 `animation-play-state: paused`，实测 **8 个运行中动画 → 全暂停 → 回前台自动恢复**（动效一个没删）。**主动否掉**「搜索去重」：收益极小（`renderTable` 已 rAF 合并）且有陈旧 UI 风险，已撤回。
+- **④ 文档同步**：本文件 + `docs/DEVICE-CHECKLIST.md` 双端一致；`tools/docaudit.js` 仅剩信号级告警（历史版本号/长行）。
+- **⑤ 查 bug（安全加固）**：修 **WebDAV 服务端文本注入** —— toast 与「云端备份」列表都用 `innerHTML` 渲染，而服务端返回的错误正文（`bodyPreview`/`error`）与**云端文件名**（`formatSyncFileLabel(f.name)`）未转义 → 服务端返回 HTML 会被当标记渲染（破版 / 注入）。已在 `app-sync.js` 新增 `esc()`（= `escapeHtml(String(...))`）并转义 10 处拼接点；`test.js` 补 **5 条回归断言**（195 → 200 项）。
+- **新增工具**：`tools/snippets/perf-check.js` —— 逐页 rAF 帧率 / 长任务 / 动画与合成层压力 / 滚动帧表现一体体检（`node e2e/inspect.js --file tools/snippets/perf-check.js`）。
+- **验收**：全套自检 **557 项全绿**（19+10+200+30+271+27），含 E2E 像素回归 27/0 —— 证明改动**无视觉漂移**。
+
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.1.0**（versionCode 253，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.1.0 更新（**五项优化：设计统一 / 代码清理 / 帧率 / 文档 / 查 bug** —— App 侧改动均为不可见或近乎不可见，属"加固型"版本）：**① 设计统一**——实测抓到玻璃配方两处漂移：`.settings-group` 用 `saturate(120%)`、`.settings-switch .switch-slider` 用 `blur(4px)`，而全站其余 18 处玻璃面都是 `blur(2px) saturate(150%)`（同一个"统一玻璃配方"的活儿此前只统一了一半）→ 两处已统一，复核**浅色 27 处 / 深色 27 处玻璃面 100% 一致**；**② 代码清理**——删除 5 处**恒被覆盖的死声明**（`.hm-day:active` 0.88 / `.dtp-cell:active` 0.92 / `.mwp-opt:active` 0.94 / `.btn-click-effect:active` 0.92 / `.confirm-btn-cancel|delete:active` translateY(0)），均被「统一按压块 `transform: scale(0.96)`（注释明确写在所有 `:active` 之后生效）」取代；另核实：同名函数跨文件覆盖 0 处、自定义 CSS 无未引用类、www 静态资源无孤儿（`resetGuideSeen` 是测试钩子、`celebration-card` 由 JS 动态拼接，均为假警）；**③ 帧率/流畅度**——真实浏览器实测四页均 **60fps / 0 掉帧 / 0 长任务**，500 条记录下批量渲染 22ms、搜索链路分段 <7ms、切页 23~38ms、冷启动 FCP 344ms、滚动 60.7fps、反复开关弹窗 15 轮 **0 DOM 泄漏** → 判定无卡顿瓶颈（`renderTable` 本就 rAF 合并、滚动监听已 passive+rAF 节流）；**唯一真实收益 = 切后台暂停常驻动画**：新增 `body.app-bg-paused`（`visibilitychange` 切 class，不拆任何监听器）+ 全局 `animation-play-state: paused`，实测 **8 个运行中动画 → 18 个全暂停 → 回前台恢复 8 个**（动效零删减；Chromium 空闲页会节流，iOS WebKit 不保证 → 这条对网页版更值）；**④ 安全加固（查 bug）**——修 **WebDAV 服务端文本注入**：toast 与「云端备份」列表都用 `innerHTML` 渲染，而服务端返回的错误正文（`bodyPreview`/`error`）与**云端文件名**（`formatSyncFileLabel` 在不匹配时间戳格式时原样返回原名）未转义 → 服务端返回 HTML 会被当标记渲染（破版 / 注入）；新增 `esc()`（= `escapeHtml(String(...))`）并转义 10 处拼接点（toast×8 + 云端列表文件名×2）；**★注意 toast 不能整体转义** —— 有 2 处调用方故意传 `<b>`；**⑤ 工具链**——`designcheck.js` 从"只查圆角/字体"扩为**圆角 / 字体 / 玻璃配方 / 层级四维**体检（SPEC 规范表为唯一事实来源），扫描逻辑改读 `snippets/design-scan.js`（该片段此前**无人引用**、逻辑被内联复制了一份，现为单一事实来源）；新增 `snippets/perf-check.js`（逐页 rAF 帧率 / 长任务 / 动画与合成层压力 / 滚动表现一体体检）；**⑥ 测试**——`test.js` 新增 5 条转义回归断言（195 → 200 项），全套自检 **6 套 557 项全绿**（smoke 19 / ios 10 / test 200 / test-ui 30 / P0P3 271 / E2E 27），其中 **E2E 像素回归 27/0** 证明本轮改动**无视觉漂移**；`audit` D/E/F 确定性项通过（残留 0 / 重复 id 0 / 外部依赖 0）
 - **正式版 v1.2.0.10**（versionCode 252，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.0.10 更新（**里程碑一览文字折行修复 + 首页引导补条**）：**① 描述文字被进度串挤成两行（用户报「累计 1000 公里下面的说明分成两行」）**——实测：行结构为 `图标 | mid(标题/描述/清单) | 进度`，进度与描述**同列抢宽**；km 档进度串最长（`300.0 / 1000 km` = 90px）把 mid 压到 **178px**，而描述文本需 ~192px → **明明一行能写完却折两行**（`累计 500 公里`（184px）同样在折；collect 类清单也被挤成两行）；**修法（结构微调、视觉位置不变）**：进度 span 移入 mid 内部、**只与「标题行」同行**（标题仅 98px 不占地），描述与清单升为 mid 直系 → 拿到**整行宽度 277px**；实测 **17 行全部单行**（描述最长需 214px < 277px），1000 公里行 178px/2 行 → **277px/1 行**，五岳与陕西名山清单也从 2 行回到 1 行；**② 首页新人引导补一条**（用户点名新增）——`#welcomeBanner` 内新增 `#wbTitleEditHint`：`<b>标题可自定义</b>：点击顶栏标题即可进入编辑，支持修改为你自己的名字（最多 20 个字符）。`；新行复用 `class="wb-sub"` → 自动继承 `body.dark-mode #welcomeBanner .wb-sub` 的深色适配（实测浅色 `#52606f` / 深色 `#a3b1c6`）；**③ 测试**——**新增 3 项「真实浏览器」断言**（`e2e/run.js` 末尾：档位行齐全 / 进度并入标题行（行仅 2 子元素）/ 描述与清单全部单行）；**★这类"折没折行"的断言必须放 E2E —— jsdom 不做布局，`clientHeight` 全为 0，写在 jsdom 里等于假断言**；E2E **24 → 27**，全套自检 **6 套 552 项全绿**（smoke 19 / ios 10 / test 195 / test-ui 30 / P0P3 271 / E2E 27）
 - **正式版 v1.2.0.9**（versionCode 251，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里

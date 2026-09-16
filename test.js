@@ -508,5 +508,22 @@ const avgDiff = (mockRecords.reduce((a, r) => a + r.difficulty, 0) / mockRecords
 (totalDur === 240) ? ok('统计：总用时 240 分钟') : bad('总用时计算: ' + totalDur);
 (avgDiff === '3.3') ? ok('统计：平均难度 3.3') : bad('平均难度: ' + avgDiff);
 
+// 9.4 服务端文本转义（★2026-09-16 五项优化⑤ 安全加固：云端文件名 / 错误正文进 innerHTML 前必须过 esc()）
+const escSrc = extractFn('escapeHtml'), escWrap = extractFn('esc');
+if (escSrc && escWrap) {
+    const escCtx = { String };
+    vm.createContext(escCtx);
+    vm.runInContext(escSrc, escCtx);
+    vm.runInContext(escWrap, escCtx);
+    const evil = '<img src=x onerror=alert(1)>';
+    escCtx.esc(evil).indexOf('<') < 0 ? ok('转义：<img onerror> 标记被消解') : bad('转义失败: ' + escCtx.esc(evil));
+    escCtx.esc('" onmouseover="x').indexOf('"') < 0 ? ok('转义：引号被消解（属性注入防护）') : bad('引号未转义');
+    escCtx.esc(null) === '' ? ok('转义：null → 空串') : bad('null 转义失败: ' + escCtx.esc(null));
+    escCtx.esc(0) === '0' ? ok('转义：数字 0 不丢') : bad('数字 0 被吞: ' + escCtx.esc(0));
+} else { bad('esc/escapeHtml 提取失败'); }
+// 9.4b 源码守卫：云端备份列表的文件名插值必须包在 esc(...) 里（防回退成裸插值）
+(/\$\{esc\(formatSyncFileLabel\(f\.name\)\)\}/.test(allJs) && !/\$\{formatSyncFileLabel\(f\.name\)\}/.test(allJs))
+    ? ok('守卫：云端文件名插值已转义（无裸插值）') : bad('云端文件名出现裸插值（未转义）');
+
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

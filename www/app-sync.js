@@ -251,6 +251,10 @@ function versionGreater(a, b) {
 function parseTagVersion(tag) {
     return String(tag || '').replace(/^v/i, '').trim();
 }
+// ★2026-09-16 五项优化⑤（安全）：**下面两处用 innerHTML 渲染**（toast、云端备份列表），
+//   因此从 WebDAV 服务端 / 网络返回的文本（错误正文、文件名等）拼进去前必须过 esc()，
+//   否则服务端返回的 HTML 会被当标记渲染（破版 / 注入）。本地用户数据（记录名等）同理。
+function esc(s) { return escapeHtml(String(s == null ? '' : s)); }
 function escapeHtml(s) {
     // ★2026-08-28 安全加固：补引号转义（防记录名/计划名/云端文件名含 " ' 时属性注入）
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -732,7 +736,7 @@ async function uploadSyncBackup(silent) {
         if (!dirsResult.ok) {
             const detail = dirsResult.detail || '未知错误';
             setSyncStatus('目录检查失败：' + detail, 'error', 'error');
-            showErrorMessage('目录检查失败：' + detail);
+            showErrorMessage('目录检查失败：' + esc(detail));
             return;
         }
         const result = await webdavRequest(url, 'PUT', bodyBase64);
@@ -770,13 +774,13 @@ async function uploadSyncBackup(silent) {
             const detail = friendlySyncError(result.error ? result.error : ('HTTP ' + result.status));
             const bodyPreview = result.body ? base64ToUtf8(result.body).slice(0, 200) : '';
             setSyncStatus('上传失败：' + detail, 'error', 'error');
-            if (!silent) showErrorMessage('上传失败：' + detail + (bodyPreview ? '（' + bodyPreview + '）' : ''));
+            if (!silent) showErrorMessage('上传失败：' + esc(detail) + (bodyPreview ? '（' + esc(bodyPreview) + '）' : ''));
             else notifySyncFailure('自动同步失败：' + detail);
             console.error('[Sync] 上传失败', url, result.status, bodyPreview);
         }
     } catch (e) {
         setSyncStatus('上传失败：' + friendlySyncError(e.message || e), 'error', 'error');
-        if (!silent) showErrorMessage('上传失败：' + friendlySyncError(e.message || e));
+        if (!silent) showErrorMessage('上传失败：' + esc(friendlySyncError(e.message || e)));
         else notifySyncFailure('自动同步失败：' + friendlySyncError(e.message || e));
     } finally {
         syncInProgress = false;
@@ -885,7 +889,7 @@ function showRestoreFileModal(files) {
         <button class="restore-file-item" data-name="${escapeHtml(f.name)}" style="border-radius: 12px;">
             <span class="material-icons" style="color: #4f46e5;">description</span>
             <span class="restore-file-info">
-                <span class="restore-file-label">${formatSyncFileLabel(f.name)}</span>
+                <span class="restore-file-label">${esc(formatSyncFileLabel(f.name))}</span>
                 <span class="restore-file-desc">${f.fromCloud ? '云端备份' : ('记录 ' + (f.records || 0) + ' 条 · 计划 ' + (f.plans || 0) + ' 条')}</span>
             </span>
             <span class="material-icons hm-chevron" style="font-size: 18px;">chevron_right</span>
@@ -961,7 +965,7 @@ async function doRestoreFromCloud(fileName) {
         } else {
             const msg = friendlySyncError(result.error ? result.error : ('状态码 ' + result.status));
             setSyncStatus('下载失败：' + msg, 'error', 'error');
-            showErrorMessage('下载失败：' + msg);
+            showErrorMessage('下载失败：' + esc(msg));
         }
     } catch (e) {
         setSyncStatus('下载失败：' + friendlySyncError(e.message || e), 'error', 'error');
@@ -1042,7 +1046,7 @@ async function mergeSyncBackup(silent) {
         } else if (!silent) {
             const msg = friendlySyncError(result.error ? result.error : ('状态码 ' + result.status));
             setSyncStatus('合并失败：' + msg, 'error', 'error');
-            showErrorMessage('合并失败：' + msg);
+            showErrorMessage('合并失败：' + esc(msg));
         } else {
             notifySyncFailure('自动同步失败：' + friendlySyncError(result.error ? result.error : ('状态码 ' + result.status)));
         }
@@ -1536,7 +1540,7 @@ async function autoCheckSyncConnection(showTip) {
         if (!dirsResult.ok) {
             syncUiBusy = false;
             setSyncStatus(friendlySyncError(dirsResult.detail), 'error', 'error');
-            if (showTip) showErrorMessage('连接失败：' + friendlySyncError(dirsResult.detail));
+            if (showTip) showErrorMessage('连接失败：' + esc(friendlySyncError(dirsResult.detail)));
             return;
         }
         // 目录存在：再试一次真实连通性（探测目录 GET 成功即代表认证+网络都通）
@@ -1734,7 +1738,7 @@ function showManageBackupsModal(files) {
         <div class="restore-file-item" style="border-radius: 12px; margin-bottom: 8px;">
             <span class="material-icons" style="color: #4f46e5;">description</span>
             <span class="restore-file-info">
-                <span class="restore-file-label">${formatSyncFileLabel(f.name)}</span>
+                <span class="restore-file-label">${esc(formatSyncFileLabel(f.name))}</span>
                 <span class="restore-file-desc">云端备份 · 第 ${i + 1} 个</span>
             </span>
             <button class="manage-delete-btn" data-name="${escapeHtml(f.name)}" title="删除此备份" style="border: none; background: none; cursor: pointer; padding: 6px;">
@@ -1777,10 +1781,10 @@ function showManageBackupsModal(files) {
                     await removeSyncFileFromIndex(name);
                     // 刷新弹窗列表
                     document.body.removeChild(modal);
-                    showSuccessMessage('已删除：' + formatSyncFileLabel(name));
+                    showSuccessMessage('已删除：' + esc(formatSyncFileLabel(name)));
                     setTimeout(function () { manageCloudBackups(); }, 300);
                 } else {
-                    showErrorMessage('删除失败（HTTP ' + r.status + '）：' + (r.error || ''));
+                    showErrorMessage('删除失败（HTTP ' + r.status + '）：' + esc(r.error || ''));
                 }
             } catch (e) {
                 showErrorMessage('删除失败：' + (e.message || e));

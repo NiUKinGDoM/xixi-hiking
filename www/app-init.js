@@ -300,6 +300,12 @@ async function init() {
                 try { consumeNotifyActionOnce(); } catch (e) { /* 忽略 */ }
             }
         });
+
+        // ★2026-09-16 五项优化③：切后台暂停常驻无限动画（混沌光斑 / 图标脉动等），
+        //   省电与 GPU；回前台自动恢复。只切一个 body class，不拆任何监听器（避开 pagehide 坑）
+        document.addEventListener('visibilitychange', function () {
+            document.body.classList.toggle('app-bg-paused', document.hidden === true);
+        });
         // ★2026-08-30 启动同步计划闹钟：不打开 App 也能收到计划提醒（原生 AlarmManager，每天 08:00）
         syncPlanAlarmsBridge();
         // ★2026-08-25 计划日期提醒（今天有/已过期未完成）：延迟 1s 显示、toast 停留 2s
