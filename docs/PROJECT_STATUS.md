@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-16（v1.2.1.0 / vc253）  
+> 最后更新：2026-09-16（v1.2.1.1 / vc254）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -129,7 +129,7 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 📌 2026-09-16 五项优化（设计统一 · 代码清理 · 帧率 · 文档 · 查 bug）
 
-> **本轮未发版**：版本仍 v1.2.0.10 / vc252，改动已在主工程 `www/`，等用户说「同步」才走 ship.js。
+> **已随 v1.2.1.0（vc253）发布**（2026-09-16），五项优化全部上线；随后 v1.2.1.1 又修了「概览渐入动画被 WAAPI 残留覆盖」的老 bug。
 
 - **① 设计统一（实测）**：玻璃配方两处漂移 —— `.settings-group` 用 `saturate(120%)`、`.settings-switch .switch-slider` 用 `blur(4px)`（既非 2px、也没饱和度），与全站 18 处 `blur(2px) saturate(150%)` 不一致 → 已统一；复核**浅色/深色各 27 处玻璃面 100% 一致**。
 - **① 工具升级**：`tools/designcheck.js` 从「只查圆角/字体」扩为**圆角 / 字体 / 玻璃配方 / 层级**四维体检（SPEC 规范表为唯一事实来源）；扫描逻辑改为读 `tools/snippets/design-scan.js` —— 该文件此前**无人引用**（designcheck 内联复制了一份），现为单一事实来源，避免同类手漏第三次发生。
@@ -142,6 +142,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.1.1**（versionCode 254，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.1.1 更新（**hotfix：修复「概览渐入动画大部分失效」** —— 用户 2026-09-16 13:24 报「从别的页面切换到概览，只有三个小卡片有动画」）：**根因**——概览页「同 tab 点击 = 刷新」的 380ms 反馈动画用 WAAPI 写成 `el.animate(..., { duration: 380, fill: 'both' })`，**`fill:'both'` 让它播完后继续生效**，而 **WAAPI 动画优先级高于 CSS 动画** → `.glass-stat-card ×4`、`#heatmapPanel`、`#milestoneEntry` 自身的 `fadeInUp` 仍在跑却被**钉死在 `opacity: 1`**（用户看不到渐入），而 `.ov-mini`（三个小卡）**不在该反馈动画的名单里**所以照常渐入 —— 与用户描述逐字吻合；**A/B 对照确认是 2026-08-11 引入的既有 bug**（拉出上一版提交 `e43cb80` 用同一探针复现完全相同的症状：`stat op=1 / mini op=0`、残留 `WAAPI:finished@380|fill=both`），**与 v1.2.1.0 的五项优化无关**；**修法**——给该动画加 `refreshAnim.onfinish → cancel()`（播完即取消，把层叠状态交还 CSS；刷新反馈动画本身照旧完整播放，终态一致、无闪烁）；**顺带修好**同源问题：`.stat-card:hover` 的抬升（`transform: translateY(-4px)`）此前也被那枚 WAAPI 的 `transform` 覆盖压住，现已恢复；**回归守卫**——`e2e/run.js` 新增 4 条**真实浏览器**断言（先确保当前在概览页 → 同 tab 再点一次触发反馈动画 → 切走再切回，100ms 后统计卡/里程碑卡 `opacity < 0.7`、`getAnimations()` 中 `animationName` 为空的残留动画数 **= 0**、播完归位 `opacity = 1`），E2E **27 → 31**；并做了**反向验证**（临时撤掉修复 → 精确复现报红 `statOp:1, mileOp:1, miniOp:0, leftover:1` → 装回后全绿；★第一版断言因未先切到概览、目标分支没被触发而是**假断言**，已修正后才有效）；**全套自检 6 套 561 项全绿**（smoke 19 / ios 10 / test 200 / test-ui 30 / P0P3 271 / E2E 31）
 - **正式版 v1.2.1.0**（versionCode 253，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.1.0 更新（**五项优化：设计统一 / 代码清理 / 帧率 / 文档 / 查 bug** —— App 侧改动均为不可见或近乎不可见，属"加固型"版本）：**① 设计统一**——实测抓到玻璃配方两处漂移：`.settings-group` 用 `saturate(120%)`、`.settings-switch .switch-slider` 用 `blur(4px)`，而全站其余 18 处玻璃面都是 `blur(2px) saturate(150%)`（同一个"统一玻璃配方"的活儿此前只统一了一半）→ 两处已统一，复核**浅色 27 处 / 深色 27 处玻璃面 100% 一致**；**② 代码清理**——删除 5 处**恒被覆盖的死声明**（`.hm-day:active` 0.88 / `.dtp-cell:active` 0.92 / `.mwp-opt:active` 0.94 / `.btn-click-effect:active` 0.92 / `.confirm-btn-cancel|delete:active` translateY(0)），均被「统一按压块 `transform: scale(0.96)`（注释明确写在所有 `:active` 之后生效）」取代；另核实：同名函数跨文件覆盖 0 处、自定义 CSS 无未引用类、www 静态资源无孤儿（`resetGuideSeen` 是测试钩子、`celebration-card` 由 JS 动态拼接，均为假警）；**③ 帧率/流畅度**——真实浏览器实测四页均 **60fps / 0 掉帧 / 0 长任务**，500 条记录下批量渲染 22ms、搜索链路分段 <7ms、切页 23~38ms、冷启动 FCP 344ms、滚动 60.7fps、反复开关弹窗 15 轮 **0 DOM 泄漏** → 判定无卡顿瓶颈（`renderTable` 本就 rAF 合并、滚动监听已 passive+rAF 节流）；**唯一真实收益 = 切后台暂停常驻动画**：新增 `body.app-bg-paused`（`visibilitychange` 切 class，不拆任何监听器）+ 全局 `animation-play-state: paused`，实测 **8 个运行中动画 → 18 个全暂停 → 回前台恢复 8 个**（动效零删减；Chromium 空闲页会节流，iOS WebKit 不保证 → 这条对网页版更值）；**④ 安全加固（查 bug）**——修 **WebDAV 服务端文本注入**：toast 与「云端备份」列表都用 `innerHTML` 渲染，而服务端返回的错误正文（`bodyPreview`/`error`）与**云端文件名**（`formatSyncFileLabel` 在不匹配时间戳格式时原样返回原名）未转义 → 服务端返回 HTML 会被当标记渲染（破版 / 注入）；新增 `esc()`（= `escapeHtml(String(...))`）并转义 10 处拼接点（toast×8 + 云端列表文件名×2）；**★注意 toast 不能整体转义** —— 有 2 处调用方故意传 `<b>`；**⑤ 工具链**——`designcheck.js` 从"只查圆角/字体"扩为**圆角 / 字体 / 玻璃配方 / 层级四维**体检（SPEC 规范表为唯一事实来源），扫描逻辑改读 `snippets/design-scan.js`（该片段此前**无人引用**、逻辑被内联复制了一份，现为单一事实来源）；新增 `snippets/perf-check.js`（逐页 rAF 帧率 / 长任务 / 动画与合成层压力 / 滚动表现一体体检）；**⑥ 测试**——`test.js` 新增 5 条转义回归断言（195 → 200 项），全套自检 **6 套 557 项全绿**（smoke 19 / ios 10 / test 200 / test-ui 30 / P0P3 271 / E2E 27），其中 **E2E 像素回归 27/0** 证明本轮改动**无视觉漂移**；`audit` D/E/F 确定性项通过（残留 0 / 重复 id 0 / 外部依赖 0）
 - **正式版 v1.2.0.10**（versionCode 252，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里

@@ -644,10 +644,15 @@ function setupEventListeners() {
                 fadeTargets.forEach(el => {
                     if (typeof el.animate === 'function') {
                         try {
-                            el.animate(
+                            const refreshAnim = el.animate(
                                 [{ opacity: 0.45, transform: 'scale(0.99)' }, { opacity: 1, transform: 'scale(1)' }],
                                 { duration: 380, easing: 'ease-out', fill: 'both' }
                             );
+                            // ★2026-09-16 修复「概览渐入动画大部分失效」：`fill:'both'` 会让这枚 WAAPI 动画**播完后继续生效**，
+                            //   而 WAAPI 优先级高于 CSS 动画 → 统计卡/热力图/里程碑卡自身的 fadeInUp 仍在跑却被钉在 opacity:1，
+                            //   用户从别的页面切回概览时“看不见渐入”（.ov-mini 不在本名单里，所以照常渐入）。
+                            //   播完即取消，交还给 CSS 状态（终态一致，无闪烁）。
+                            refreshAnim.onfinish = function () { try { refreshAnim.cancel(); } catch (e) { /* 忽略 */ } };
                         } catch (e) { /* 动画失败静默，不影响刷新 */ }
                     }
                 });

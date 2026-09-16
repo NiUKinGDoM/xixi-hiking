@@ -282,6 +282,40 @@ function serverUp() {
   ok('里程碑一览-进度并入标题行（行仅 2 子元素）', msLayout.ok === true && msLayout.progressInside === true, JSON.stringify(msLayout).slice(0, 90));
   ok('里程碑一览-描述/清单全部单行', msLayout.ok === true && Array.isArray(msLayout.wrapped) && msLayout.wrapped.length === 0, (msLayout.wrapped || []).join(','));
 
+
+  // ★2026-09-16 回归：概览入场动画不得被「同 tab 刷新」的 WAAPI 残留动画盖掉
+  //   旧 bug：同 tab 点击会用 el.animate(..., {fill:'both'}) 做刷新反馈，播完后仍生效（WAAPI 优先级 > CSS 动画）
+  //   → 统计卡/热力图/里程碑卡被钉在 opacity:1，从别的页面切回概览时“看不见渐入”
+  console.log('== E2E: 概览入场动画（同 tab 刷新后不得残留覆盖）==');
+  const animCheck = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const opOf = (el) => (el ? parseFloat(getComputedStyle(el).opacity) : -1);
+    const leftoverOf = (el) => (el && el.getAnimations ? el.getAnimations().filter((a) => !a.animationName).length : -1);
+    if (typeof switchTab === 'function') switchTab('overview');
+    await sleep(320);                       // ① 先确保当前就是概览（否则同 tab 分支不会跑，断言就是假的）
+    if (typeof switchTab === 'function') switchTab('overview');   // ② 同 tab 再点一次 = 触发刷新反馈动画（旧 bug 的来源）
+    await sleep(560);                       // 等那段 380ms 反馈动画播完
+    if (typeof switchTab === 'function') switchTab('records');
+    await sleep(320);
+    if (typeof switchTab === 'function') switchTab('overview');
+    await sleep(100);                       // 刚起步（延迟 0.05~0.64s）
+    const card = document.querySelector('#tab-overview .stat-card');
+    const mile = document.querySelector('#tab-overview #milestoneEntry');
+    const mini = document.querySelector('#tab-overview .ov-mini');
+    const snap = {
+      statOp: opOf(card), mileOp: opOf(mile), miniOp: opOf(mini),
+      statLeftover: leftoverOf(card), mileLeftover: leftoverOf(mile),
+    };
+    await sleep(1100);                      // 等动画播完
+    snap.statFinal = opOf(card);
+    snap.mileFinal = opOf(mile);
+    return snap;
+  });
+  ok('概览入场-统计卡真的在渐入（同 tab 刷新后）', animCheck.statOp >= 0 && animCheck.statOp < 0.7, JSON.stringify(animCheck));
+  ok('概览入场-里程碑卡真的在渐入', animCheck.mileOp >= 0 && animCheck.mileOp < 0.7, 'mileOp=' + animCheck.mileOp);
+  ok('概览入场-无 WAAPI 残留覆盖', animCheck.statLeftover === 0 && animCheck.mileLeftover === 0, 'stat=' + animCheck.statLeftover + ' mile=' + animCheck.mileLeftover);
+  ok('概览入场-动画播完归位 opacity=1', animCheck.statFinal === 1 && animCheck.mileFinal === 1, 'stat=' + animCheck.statFinal + ' mile=' + animCheck.mileFinal);
+
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
   console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
