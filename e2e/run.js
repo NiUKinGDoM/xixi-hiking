@@ -316,6 +316,45 @@ function serverUp() {
   ok('概览入场-无 WAAPI 残留覆盖', animCheck.statLeftover === 0 && animCheck.mileLeftover === 0, 'stat=' + animCheck.statLeftover + ' mile=' + animCheck.mileLeftover);
   ok('概览入场-动画播完归位 opacity=1', animCheck.statFinal === 1 && animCheck.mileFinal === 1, 'stat=' + animCheck.statFinal + ' mile=' + animCheck.mileFinal);
 
+
+  // ★2026-09-16 回归：选择器弹窗的「内容 → 取消/确定」必须有间距（曾有三个是 0~6px，真机上看着像重合）
+  //   覆盖：天气 / 心情 / 难度 / 日期时间 / 年月（热力图）
+  console.log('== E2E: 选择器弹窗内容与按钮间距 ==');
+  const pickerGap = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const cases = [
+      ['weather', () => openMoodWeatherPicker('weather', 'e2e-gap-probe')],
+      ['mood', () => openMoodWeatherPicker('mood', 'e2e-gap-probe')],
+      ['difficulty', () => openDifficultyPicker('e2e-gap-probe')],
+      ['datetime', () => openDateTimePicker('e2e-gap-probe')],
+      ['hmym', () => openHmYmPicker()],
+    ];
+    const out = {};
+    for (const [key, open] of cases) {
+      try { closeOpenModals(); } catch (e) {}
+      await sleep(150);
+      try { open(); } catch (e) { out[key] = { err: (e && e.message) || String(e) }; continue; }
+      await sleep(300);
+      const msg = document.querySelector('.confirm-modal .confirm-modal-message') || document.querySelector('.confirm-modal .confirm-modal-content');
+      const btns = document.querySelector('.confirm-modal .confirm-modal-buttons');
+      if (!msg || !btns) { out[key] = { err: 'missing-el' }; continue; }
+      let maxB = -1;
+      msg.querySelectorAll('*').forEach((e) => {
+        const r = e.getBoundingClientRect();
+        if (r.height > 2 && r.width > 2 && r.bottom > maxB) maxB = r.bottom;
+      });
+      const top = btns.getBoundingClientRect().top;
+      out[key] = { gap: Math.round(top - maxB), overlap: top < maxB - 0.5 };
+    }
+    try { closeOpenModals(); } catch (e) {}
+    return out;
+  });
+  const names = { weather: '天气', mood: '心情', difficulty: '难度', datetime: '日期时间', hmym: '年月' };
+  Object.keys(names).forEach((k) => {
+    const r = pickerGap[k] || {};
+    ok('弹窗间距-' + names[k] + '（内容与取消/确定不重合）', !r.err && r.overlap === false && r.gap >= 8, JSON.stringify(r));
+  });
+
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
   console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');

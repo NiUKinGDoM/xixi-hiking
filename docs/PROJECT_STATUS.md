@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-16（v1.2.1.1 / vc254）  
+> 最后更新：2026-09-17（v1.2.1.2 / vc255）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -142,6 +142,8 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.1.2**（versionCode 255，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.1.2 更新（**hotfix：修复选择器弹窗「内容与取消/确定贴合」+ 统一全族间距** —— 用户 2026-09-16 23:58 报「记录的编辑页面，天气和心情的小弹窗里的清空按钮和他下边的取消、确定按钮重合了」）：**根因**——`.mwp-clear-wrap`（包着「清空」按钮）自 2026-09-01 该弹窗诞生起**只有 `margin-top: 2px`、没有下间距**，而 `.confirm-modal-buttons` 自身也没有 `margin-top` → 实测（无头浏览器 390×844）**间距 = 0px**，两排按钮直接贴合，真机字体度量稍不同即视觉重叠；对照同类弹窗：难度 `.df-grid` 6px、日期时间 `.dtp-time-row` 4px、年月 `.hmyp-months` **0px**（同一类问题），其它确认弹窗则在内联样式里给了 16px —— 只有这一族选择器弹窗漏了；**修法**——统一到 **12px**（与 `.confirm-modal-buttons` 的 `gap: 12px` 同节奏）：`.mwp-clear-wrap` 补 `margin-bottom: 12px`、`.df-grid` 6→12、`.dtp-time-row` 4→12、`.hmyp-months` 补 `margin-bottom: 12px`；实测四个数值 **0/4/6/0 → 全部 12px**，并出图复核（修复前/后对比）；**回归守卫**——`e2e/run.js` 新增 5 条**真实浏览器布局断言**（天气 / 心情 / 难度 / 日期时间 / 年月：内容块底边到按钮行顶边 **≥ 8px 且不重叠**），E2E **31 → 33 → 36**；**反向验证**：临时回退三处 CSS → 精确复现报红（`难度 gap:6 / 日期时间 gap:4 / 年月 gap:0`）→ 装回全绿；**全套自检 6 套 563 项全绿**（smoke 19 / ios 10 / test 200 / test-ui 30 / P0P3 271 / E2E 36）
 - **正式版 v1.2.1.1**（versionCode 254，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.1.1 更新（**hotfix：修复「概览渐入动画大部分失效」** —— 用户 2026-09-16 13:24 报「从别的页面切换到概览，只有三个小卡片有动画」）：**根因**——概览页「同 tab 点击 = 刷新」的 380ms 反馈动画用 WAAPI 写成 `el.animate(..., { duration: 380, fill: 'both' })`，**`fill:'both'` 让它播完后继续生效**，而 **WAAPI 动画优先级高于 CSS 动画** → `.glass-stat-card ×4`、`#heatmapPanel`、`#milestoneEntry` 自身的 `fadeInUp` 仍在跑却被**钉死在 `opacity: 1`**（用户看不到渐入），而 `.ov-mini`（三个小卡）**不在该反馈动画的名单里**所以照常渐入 —— 与用户描述逐字吻合；**A/B 对照确认是 2026-08-11 引入的既有 bug**（拉出上一版提交 `e43cb80` 用同一探针复现完全相同的症状：`stat op=1 / mini op=0`、残留 `WAAPI:finished@380|fill=both`），**与 v1.2.1.0 的五项优化无关**；**修法**——给该动画加 `refreshAnim.onfinish → cancel()`（播完即取消，把层叠状态交还 CSS；刷新反馈动画本身照旧完整播放，终态一致、无闪烁）；**顺带修好**同源问题：`.stat-card:hover` 的抬升（`transform: translateY(-4px)`）此前也被那枚 WAAPI 的 `transform` 覆盖压住，现已恢复；**回归守卫**——`e2e/run.js` 新增 4 条**真实浏览器**断言（先确保当前在概览页 → 同 tab 再点一次触发反馈动画 → 切走再切回，100ms 后统计卡/里程碑卡 `opacity < 0.7`、`getAnimations()` 中 `animationName` 为空的残留动画数 **= 0**、播完归位 `opacity = 1`），E2E **27 → 31**；并做了**反向验证**（临时撤掉修复 → 精确复现报红 `statOp:1, mileOp:1, miniOp:0, leftover:1` → 装回后全绿；★第一版断言因未先切到概览、目标分支没被触发而是**假断言**，已修正后才有效）；**全套自检 6 套 561 项全绿**（smoke 19 / ios 10 / test 200 / test-ui 30 / P0P3 271 / E2E 31）
 - **正式版 v1.2.1.0**（versionCode 253，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
