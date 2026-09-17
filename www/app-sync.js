@@ -746,14 +746,23 @@ async function submitSyncBind() {
 
 // 解绑：清空本机配置（云端已有备份文件不动）
 function unbindSyncAccount() {
-    const ok = confirm('解绑后本机不再自动备份到云端。\n云端已有的备份文件不会被删除，之后可重新绑定取回。\n\n确定解绑？');
-    if (!ok) return;
-    syncConfig = { server: '', username: '', password: '' };
-    // ★AppStore.setItem 是同步函数（内部 localStorage，返回 undefined）→ 不能接 .then()；顺序执行即可
-    AppStore.setItem(SYNC_CONFIG_KEY, { server: '', username: '', password: '' });
-    renderSyncForm(syncUiState.lastSyncAt || '');   // 内部会刷新账号卡 → 切回未绑定态
-    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
-    showSuccessMessage('已解绑');
+    // ★2026-09-17 改用统一确认弹窗（原为原生 confirm()，系统样式不符设计语言）
+    askConfirm({
+        title: '解绑账号',
+        icon: 'link_off',
+        danger: true,
+        message: '解绑后本机不再自动备份到云端。<br>云端已有的备份文件不会被删除，之后可重新绑定取回。',
+        okText: '解绑',
+        cancelText: '取消'
+    }).then(function (ok) {
+        if (!ok) return;
+        syncConfig = { server: '', username: '', password: '' };
+        // ★AppStore.setItem 是同步函数（内部 localStorage，返回 undefined）→ 不能接 .then()；顺序执行即可
+        AppStore.setItem(SYNC_CONFIG_KEY, { server: '', username: '', password: '' });
+        renderSyncForm(syncUiState.lastSyncAt || '');   // 内部会刷新账号卡 → 切回未绑定态
+        try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
+        showSuccessMessage('已解绑');
+    });
 }
 
 // 从表单读取并保存配置
@@ -1887,6 +1896,53 @@ function closeOpenModals() {
         if (m && m.parentNode) m.parentNode.removeChild(m);
     });
 }
+// ★2026-09-17 通用确认弹窗（Promise）——彻底替代原生 confirm()，统一设计语言
+//   原生 confirm() 在 APK / iOS 网页里都是系统样式（灰底方块 + 系统字体），与全站玻璃语言完全不搭且不可控。
+//   用法：askConfirm({ title, message, okText, cancelText, icon, danger }).then(function (ok) { ... })
+//   注意：message 允许 HTML（调用方拼接用户数据时必须自己 esc()）
+//   兜底：弹窗被外部 closeOpenModals() 移除时也 resolve(false)（防调用方 await 永挂）
+function askConfirm(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+        closeOpenModals();
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.id = 'askConfirmModal';
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale">' +
+                '<div class="confirm-modal-title">' +
+                    '<span class="material-icons" style="color: ' + (opts.danger ? '#dc2626' : '#4f46e5') + ';">' +
+                    (opts.icon || 'help_outline') + '</span>' +
+                    escapeHtml(opts.title || '确认') +
+                '</div>' +
+                '<div class="confirm-modal-message">' + (opts.message || '') + '</div>' +
+                '<div class="confirm-modal-buttons">' +
+                    '<button class="confirm-btn-cancel ripple-effect" id="askConfirmCancel">' +
+                    escapeHtml(opts.cancelText || '取消') + '</button>' +
+                    '<button class="check-go-btn ripple-effect" id="askConfirmOk">' +
+                    escapeHtml(opts.okText || '确定') + '</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+        let settled = false;
+        let obs = null;
+        const done = function (v) {
+            if (settled) return;
+            settled = true;
+            try { if (obs) obs.disconnect(); } catch (e) { /* 忽略 */ }
+            try { modal.remove(); } catch (e) { /* 忽略 */ }
+            resolve(v);
+        };
+        obs = new MutationObserver(function () {
+            if (!document.body.contains(modal)) done(false);
+        });
+        try { obs.observe(document.body, { childList: true }); } catch (e) { /* 忽略 */ }
+        document.getElementById('askConfirmCancel').addEventListener('click', function () { done(false); });
+        document.getElementById('askConfirmOk').addEventListener('click', function () { done(true); });
+        modal.addEventListener('click', function (e) { if (e.target === modal) done(false); });
+    });
+}
+
 // 云端备份管理弹窗：列出全部备份 + 每个可删除
 function showManageBackupsModal(files) {
     closeOpenModals(); // ★2026-08-29 防重入：连点管理按钮不再叠加弹窗
@@ -1927,7 +1983,15 @@ function showManageBackupsModal(files) {
     modal.querySelectorAll('.manage-delete-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
             const name = this.getAttribute('data-name');
-            const ok = confirm('确定删除云端备份「' + formatSyncFileLabel(name) + '」？\n删除后无法恢复！');
+            // ★2026-09-17 改用统一确认弹窗（原为原生 confirm()）
+            const ok = await askConfirm({
+                title: '删除云端备份',
+                icon: 'warning',
+                danger: true,
+                message: '确定删除云端备份「' + esc(formatSyncFileLabel(name)) + '」？<br>删除后无法恢复！',
+                okText: '删除',
+                cancelText: '取消'
+            });
             if (!ok) return;
             this.disabled = true;
             this.querySelector('.material-icons').style.opacity = '0.4';
@@ -1997,17 +2061,17 @@ function showExportModal() {
                 <div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">backup</span>导出备份</div>
 
                 <div class="space-y-3">
-                    <button id="exportRecordsBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
+                    <button id="exportRecordsBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">backup</span>
                         <span>导出完整备份压缩包（含照片）</span>
                     </button>
                     <!-- 2026-08-21 v1.1.1.6 纯数据备份（不含照片，体积小，适合日常快速备份） -->
-                    <button id="exportDataOnlyBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
+                    <button id="exportDataOnlyBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">description</span>
                         <span>导出纯数据备份（不含照片）</span>
                     </button>
                     <!-- 2026-08-21 v1.1.2.1 导出诊断报告（并入导出弹窗） -->
-                    <button id="exportDiagBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
+                    <button id="exportDiagBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">bug_report</span>
                         <span>导出诊断报告</span>
                     </button>
@@ -2199,7 +2263,7 @@ function showImportModal() {
         <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 90vw;">
             <div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">upload_file</span>导入</div>
             <div class="space-y-3">
-                <button id="selectFileBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
+                <button id="selectFileBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
                     <span class="material-icons text-xl">upload_file</span>
                     <span>选择备份文件</span>
                 </button>

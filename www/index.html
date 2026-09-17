@@ -1459,13 +1459,35 @@
         body.dark-mode .chk-row {
             color: #f1f5f9;
         }
+        /* ★2026-09-17 自绘勾选框：原用 accent-color（浏览器原生方框，iOS/APK 上外观不统一、与玻璃语言不符）
+           —— 改用 appearance:none + SVG 勾，配方对齐 .batch-check（同圆角/同阴影），色沿用品牌靛蓝 */
         .chk-row input {
-            width: 15px;
-            height: 15px;
+            appearance: none;
+            -webkit-appearance: none;
+            width: 17px;
+            height: 17px;
             margin: 2px 0 0;
-            accent-color: #4f46e5;
+            border-radius: 5px;
             flex: 0 0 auto;
             cursor: pointer;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(100, 116, 139, 0.35);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+        .chk-row input:checked {
+            background: rgba(224, 231, 255, 0.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3.2L13 5' fill='none' stroke='%234f46e5' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+            border-color: rgba(79, 70, 229, 0.9);
+        }
+        body.dark-mode .chk-row input {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.28);
+            box-shadow: none;
+        }
+        body.dark-mode .chk-row input:checked {
+            background: rgba(30, 27, 75, 0.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3.2L13 5' fill='none' stroke='%23a5b4fc' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+            border-color: rgba(129, 140, 248, 0.9);
         }
         .chk-sub {
             display: block;
@@ -2856,6 +2878,7 @@
             position: relative;
             overflow: hidden;
             transition: transform 0.15s ease;
+            cursor: pointer;   /* ★2026-09-17 补：波纹按钮原缺手型（支持作者的微信/支付宝按钮实测为 default） */
         }
         
         .ripple-effect:active {
@@ -3132,6 +3155,7 @@
                     border: 1px solid rgba(0, 0, 0, 0.08);
             border-radius: 12px;
             color: #374151;
+            cursor: pointer;   /* ★2026-09-17 补（原缺失 → computed 为 default，不像按钮） */
             box-shadow: 
                 0 2px 8px rgba(0, 0, 0, 0.04),;
             transition: transform 0.1s ease, background-color 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
@@ -3143,6 +3167,27 @@
             box-shadow: 
                 0 4px 16px rgba(0, 0, 0, 0.08);
             transform: translateY(-2px);
+        }
+
+        /* ★2026-09-17 弹窗内的中性按钮（导出/导入/选择器弹窗的选项）：
+           弹窗本身是白玻璃，.glass-btn 默认描边 rgba(0,0,0,0.08) 在白玻璃上几乎看不见 →
+           按钮会"糊"进背景（用户 2026-09-17 连续两次指出）。这里换成可见的灰蓝描边（仍是中性色，不抢红/蓝的行动按钮语义）。
+           只作用于弹窗内，不影响全站其它 37 处 .glass-btn 用法。 */
+        .confirm-modal-content .glass-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(100, 116, 139, 0.45);
+        }
+        .confirm-modal-content .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(100, 116, 139, 0.7);
+        }
+        body.dark-mode .confirm-modal-content .glass-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(148, 163, 184, 0.45);
+        }
+        body.dark-mode .confirm-modal-content .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(148, 163, 184, 0.7);
         }
         
         .glass-btn:active {
@@ -6302,7 +6347,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.2.1.4</div>
+                        <div class="about-version">版本 1.2.1.5</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

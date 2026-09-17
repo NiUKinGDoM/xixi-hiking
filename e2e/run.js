@@ -498,11 +498,14 @@ function serverUp() {
     await sleep(150);
     out.keptUser = (typeof syncConfig !== 'undefined') ? (syncConfig.username || '') : 'NA';
     out.keptPwdLen = (typeof syncConfig !== 'undefined') ? String(syncConfig.password || '').length : -1;
-    var orig = window.confirm;
-    window.confirm = function () { return true; };
+    // ★2026-09-17 解绑改走 askConfirm 玻璃弹窗（不再用原生 confirm）→ 断言改为驱动弹窗
     try { unbindSyncAccount(); } catch (e) { out.unbindErr = String(e); }
-    await sleep(600);
-    window.confirm = orig;
+    await sleep(480);
+    out.unbindModalShown = !!document.getElementById('askConfirmModal');
+    out.unbindModalCls = ((document.getElementById('askConfirmModal') || {}).className || 'MISSING');
+    var unbindOk = document.getElementById('askConfirmOk');
+    if (unbindOk) unbindOk.click();
+    await sleep(520);
     out.unboundBack = !!(off && on) && off.style.display !== 'none' && on.style.display === 'none';
     return out;
   });
@@ -519,6 +522,7 @@ function serverUp() {
   ok('已绑定态显示网盘名', entry.shownProvider === '坚果云', entry.shownProvider);
   ok('★弹窗关闭后保存不清空配置（空表单守卫）', entry.keptUser === 'e2e@test.com' && entry.keptPwdLen === 'e2epassword1234'.length, entry.keptUser + '/' + entry.keptPwdLen);
   ok('解绑后回到未绑定态', entry.unboundBack === true && !entry.unbindErr, entry.unbindErr || '');
+  ok('解绑确认改用玻璃弹窗（非原生 confirm）', entry.unbindModalShown === true && entry.unbindModalCls.indexOf('confirm-modal') >= 0, entry.unbindModalCls);
   console.log('== E2E: 备份包含同步配置 ==');
   const cfgChk = await page.evaluate(async function () {
     var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
@@ -668,6 +672,13 @@ function serverUp() {
     out.btnWideOption = pickBtn('#exportRecordsBtn');
     out.btnWideCancel = pickBtn('#closeExportModal');
     out.oldBtnCls = document.querySelectorAll('.modal-option-btn, .modal-cancel-btn').length;   // ★须在弹窗仍打开时采样
+    // ★2026-09-17 危险操作确认（askConfirm）：确定按钮必须仍是红色（红色只给重要/危险操作）
+    try { closeOpenModals(); askConfirm({ title: 't', message: 'm', danger: true, okText: '确认', cancelText: '取消' }); } catch (e) {}
+    await sleep(420);
+    out.dangerOk = pickBtn('#askConfirmOk');
+    out.askModalCls = ((document.querySelector('#askConfirmModal') || {}).className || 'MISSING');
+    try { closeOpenModals(); } catch (e) {}
+    await sleep(160);
     try { closeOpenModals(); } catch (e) {}
     await sleep(160);
     try { closeOpenModals(); openSyncBindModal(); } catch (e) {}
@@ -692,7 +703,9 @@ function serverUp() {
   ok('四类弹窗均能被 closeOpenModals 清理（无残留）', dlgUni.leftover === 0, String(dlgUni.leftover));
   ok('旧折叠区类已从 DOM 彻底移除', dlgUni.oldCls === 0, String(dlgUni.oldCls));
   ok('弹窗按钮旧类已彻底移除（modal-option-btn / modal-cancel-btn）', dlgUni.oldBtnCls === 0, String(dlgUni.oldBtnCls));
-  ok('导出弹窗「选项按钮」配色与全站行动按钮一致', dlgUni.btnWideOption === dlgUni.btnStdPrimary, 'wide=' + dlgUni.btnWideOption + ' std=' + dlgUni.btnStdPrimary);
+  ok('导出弹窗「选项按钮」为中性玻璃（红色不铺在普通选项上）', (dlgUni.btnWideOption || '').indexOf('185, 28, 28') < 0 && (dlgUni.btnWideOption || '').indexOf('rgba(255, 255, 255') >= 0, 'wide=' + dlgUni.btnWideOption);
+  ok('★红色语义守卫：危险操作确认按钮仍是红色', (dlgUni.dangerOk || '').indexOf('185, 28, 28') >= 0, dlgUni.dangerOk);
+  ok('askConfirm 用标准玻璃弹窗外壳', (dlgUni.askModalCls || '').indexOf('confirm-modal') >= 0, dlgUni.askModalCls);
   ok('导出弹窗「取消按钮」配色与全站取消按钮一致', dlgUni.btnWideCancel === dlgUni.btnStdCancel, 'wide=' + dlgUni.btnWideCancel + ' std=' + dlgUni.btnStdCancel);
 
   await browser.close();
