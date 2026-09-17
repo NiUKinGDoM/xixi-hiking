@@ -768,6 +768,44 @@ async function submitSyncBind() {
     try { await autoCheckSyncConnection(true); } catch (e) { /* 静默 */ }
 }
 
+// ★2026-09-18 查看网盘信息（账号卡「网盘信息」按钮）：显示网盘类型/服务器/账号，密码加密脱敏不显示明文
+function showSyncInfoModal() {
+    closeOpenModals();
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    const srv = (syncConfig && syncConfig.server) || '';
+    const usr = (syncConfig && syncConfig.username) || '';
+    const hasPwd = !!(syncConfig && syncConfig.password);
+    const prov = syncProviderOf(srv);
+    const IS_DARK = typeof document.body !== 'undefined' && document.body.classList && document.body.classList.contains('dark-mode');
+    const LB = IS_DARK ? 'rgba(255,255,255,0.5)' : '#52606f';
+    const VL = IS_DARK ? '#f1f5f9' : '#1e293b';
+    const row = function (k, v, wrap) {
+        return '<div style="display:flex;justify-content:space-between;gap:14px;font-size:13px;line-height:1.6;">' +
+            '<span style="color:' + LB + ';flex-shrink:0;">' + k + '</span>' +
+            '<span style="color:' + VL + ';font-weight:600;text-align:right;' + (wrap ? 'word-break:break-all;min-width:0;' : '') + '">' + v + '</span></div>';
+    };
+    modal.innerHTML =
+        '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+            '<div class="confirm-modal-title">' +
+                '<span class="material-icons" style="color: #4f46e5;">cloud</span>' +
+                '网盘信息' +
+            '</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-bottom: 16px;">' +
+                row('网盘类型', esc(prov)) +
+                row('服务器地址', esc(srv || '—'), true) +
+                row('账号', esc(usr || '—'), true) +
+                row('应用密码', hasPwd ? '••••••••（已加密保存）' : '（未保存）') +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+                '<button class="confirm-btn-cancel ripple-effect" id="syncInfoClose">关闭</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(modal);
+    document.getElementById('syncInfoClose').addEventListener('click', function () { document.body.removeChild(modal); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
+}
+
 // 解绑：清空本机配置（云端已有备份文件不动）
 function unbindSyncAccount() {
     // ★2026-09-17 改用统一确认弹窗（原为原生 confirm()，系统样式不符设计语言）
@@ -928,7 +966,7 @@ async function uploadSyncBackup(silent) {
     setSyncBusy(true, '正在打包备份…'); // ★2026-08-26 阶段1：打包（zip 含照片耗时）
     try {
         // ★2026-08-25 完整备份改 zip 压缩包上传（照片二进制省 33%，下载时兼容 zip + 老 HTML）
-        const zip = await buildFullBackupZip(true);
+        const zip = await buildFullBackupZip(true, { includeCfg: true, includePwd: true });   // ★2026-09-18 云端上传带网盘配置（含加密密码），换机一键配置
         const bodyBase64 = uint8ToBase64(zip);
         // ★2026-08-26 阶段2：打包完成 → 上传中（带大小提示；原生桥无字节进度回调，阶段式提示）
         const sizeMB = (bodyBase64.length * 3 / 4 / 1024 / 1024).toFixed(1);
@@ -1148,7 +1186,8 @@ async function doRestoreFromCloud(fileName) {
             const payload = await parseSyncFileBody(result.body);
             if (payload && Array.isArray(payload.records) && Array.isArray(payload.plannedTrips)) {
                 // ★2026-08-25 下载恢复改合并（复用 importFullBackupPayload：照片补 + 按 id 合并取新 + 保存刷新）
-                await importFullBackupPayload(payload);
+                // ★2026-09-18 下载恢复一键配置：备份是本机云端的，配置（含加密密码）直接恢复，不必重填
+                await importFullBackupPayload(payload, { applySyncConfig: true });
                 const now = formatSyncTime(new Date());
                 await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'download' });
                 // ★2026-08-25 下载成功 → 对号 + 弹窗「下载成功」
@@ -1641,36 +1680,62 @@ function setSyncStatus(text, icon, type) {
 //   未配置灰引导 / 同步中转圈蓝 / 失败红 / 成功绿 / 闲置按天龄（绿≤3 黄4-7 红>7）
 async function updateSyncHealthRow() {
     try {
+        const simple = document.getElementById('syncHealthSimple');
+        const grid = document.getElementById('syncHealthGrid');
         const txt = document.getElementById('syncHealthText');
         const dot = document.getElementById('syncHealthDot');
         if (!txt || !dot) return;
         const url = buildSyncFileUrl();
         const hasCfg = !!(url && syncConfig && syncConfig.username && syncConfig.password);
-        let color = '#94a3b8';
-        let label = '还没连接云端 · 点这里配置备份';
-        if (!hasCfg) { dot.style.background = color; txt.textContent = label; return; }
-        // 同步中：蓝点 + 文案
-        if (syncUiBusy) { color = '#4f46e5'; label = syncUiState.text || '正在同步…'; dot.style.background = color; txt.textContent = label; return; }
-        // 最近一次失败：红 + 错误提示（点击弹详情）
-        if (syncUiState.status === 'error') { color = '#dc2626'; label = (syncUiState.text || '同步失败') + ' · 点这里查看'; dot.style.background = color; txt.textContent = label; return; }
+        if (!hasCfg) {
+            if (simple) simple.style.display = 'flex';
+            if (grid) grid.style.display = 'none';
+            dot.style.background = '#94a3b8';
+            txt.textContent = '还没连接云端 · 点这里配置备份';
+            return;
+        }
+        // ★2026-09-18 连接态：单行 → 两行四维（网盘数据/图片 · 徒步计划/徒步记录）
+        if (simple) simple.style.display = 'none';
+        if (grid) grid.style.display = 'flex';
+        // 同步中：四维统一灰 sync 旋转
+        if (syncUiBusy) {
+            ['syncDimNet', 'syncDimPhoto', 'syncDimPlan', 'syncDimRecord'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) { el.textContent = 'sync'; el.style.color = '#94a3b8'; }
+            });
+            return;
+        }
         let lastSyncAt = '';
         try { const d = await AppStore.getItem(SYNC_STATUS_KEY); if (d && d.lastSyncAt) lastSyncAt = d.lastSyncAt; } catch (e) { /* 忽略 */ }
-        if (!lastSyncAt) {
-            color = '#d97706';
-            label = '已连接，还没备份过 · 建议先上传一次';
-        } else {
-            const diffDays = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 86400000);
-            if (diffDays <= 0) { color = '#16a34a'; label = '上次同步：刚刚 · 云端有备份'; }
-            else if (diffDays === 1) { color = '#16a34a'; label = '上次同步：昨天 · 云端有备份'; }
-            else if (diffDays <= 3) { color = '#16a34a'; label = '上次同步：' + diffDays + ' 天前 · 云端有备份'; }
-            else if (diffDays <= 7) { color = '#d97706'; label = '上次同步：' + diffDays + ' 天前 · 快一周了，抽空备份一下'; }
-            else { color = '#dc2626'; label = '上次同步：' + diffDays + ' 天前 · 有点久了，建议立即备份'; }
+        const failed = syncUiState.status === 'error';
+        let diffDays = -1;
+        if (lastSyncAt) diffDays = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 86400000);
+        // 阈值：开了自动同步 3 天没同步=超时；没开 7 天=超时（用户 2026-09-18 定）
+        const thr = syncAuto ? 3 : 7;
+        const synced = !failed && diffDays >= 0 && diffDays <= thr;
+        const overdue = !failed && diffDays > thr;
+        let photoCount = 0;
+        try { const u = await photoGetUsage(); photoCount = (u && u.count) || 0; } catch (e) { /* 忽略 */ }
+        const dims = [
+            { id: 'syncDimNet', has: true },
+            { id: 'syncDimPhoto', has: photoCount > 0 },
+            { id: 'syncDimPlan', has: (plannedTrips || []).length > 0 },
+            { id: 'syncDimRecord', has: (records || []).length > 0 }
+        ];
+        for (let i = 0; i < dims.length; i++) {
+            const el = document.getElementById(dims[i].id);
+            if (!el) continue;
+            let icon, color;
+            if (failed) { icon = 'cancel'; color = '#dc2626'; }
+            else if (!dims[i].has) { icon = 'circle'; color = '#16a34a'; }
+            else if (synced) { icon = 'check_circle'; color = '#16a34a'; }
+            else if (overdue) { icon = 'cancel'; color = '#dc2626'; }
+            else { icon = 'circle'; color = '#16a34a'; }
+            el.textContent = icon;
+            el.style.color = color;
         }
-        dot.style.background = color;
-        txt.textContent = label;
     } catch (e) { /* 静默 */ }
 }
-
 function setSyncBusy(busy, label) {
     const btns = ['syncUploadBtn', 'syncDownloadBtn'];
     btns.forEach(id => {
@@ -1842,11 +1907,11 @@ function setupSyncEventListeners() {
         bindOpenBtn.addEventListener('click', handler);
         cleanupFunctions.push(() => bindOpenBtn.removeEventListener('click', handler));
     }
-    const acctNowBtn = document.getElementById('syncAcctNowBtn');
-    if (acctNowBtn) {
-        const handler = function () { uploadSyncBackup(); };
-        acctNowBtn.addEventListener('click', handler);
-        cleanupFunctions.push(() => acctNowBtn.removeEventListener('click', handler));
+    const infoBtn = document.getElementById('syncInfoBtn');
+    if (infoBtn) {
+        const handler = function () { showSyncInfoModal(); };
+        infoBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => infoBtn.removeEventListener('click', handler));
     }
     const unbindBtn = document.getElementById('syncUnbindBtn');
     if (unbindBtn) {

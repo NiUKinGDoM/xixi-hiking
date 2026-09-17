@@ -1753,7 +1753,7 @@ function showDataInfoModal() {
                 <div class="dmi-group">
                     <span class="material-icons dmi-ic">cloud_done</span>
                     <div style="min-width:0;"><div class="dmi-title">自动同步</div>
-                    <div class="dmi-body">开启后数据变更自动上传云端备份，本机数据多一层保险。</div></div>
+                    <div class="dmi-body">开启后数据变更自动上传云端备份，本机数据多一层保险；云端备份会带上你的网盘配置（含加密密码），换机下载恢复一键配好。</div></div>
                 </div>
                 <!-- ★2026-09-06 由导出弹窗迁入（用户要求：说明统一收进数据管理 i）：本地自动备份说明 -->
                 <div class="dmi-group">
@@ -1836,7 +1836,7 @@ function showPrivacyPolicyModal() {
                 <div class="dmi-group">
                     <span class="material-icons dmi-ic">cloud_done</span>
                     <div style="min-width:0;"><div class="dmi-title">云备份（可选）</div>
-                    <div class="dmi-body">只有你在设置里主动配置坚果云 WebDAV 后，数据才会同步到<b>你自己的</b>坚果云账号（全程 HTTPS）；账号与密码只存在本机。</div></div>
+                    <div class="dmi-body">只有你在设置里主动配置 WebDAV 后，数据才会同步到<b>你自己的</b>网盘账号（全程 HTTPS）；账号与密码只存在本机、加密保存、绝不明文展示。备份文件里会带一份加密后的网盘配置（含密码），用于换机时一键配置——请妥善保管备份文件，不要发给他人。</div></div>
                 </div>
                 <div class="dmi-group">
                     <span class="material-icons dmi-ic">schedule</span>
