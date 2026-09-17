@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-18（v1.2.1.6 / vc259）  
+> 最后更新：2026-09-18（v1.2.1.7 / vc260）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -174,6 +174,8 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > **★探针踩坑（已记入 MEMORY）**：`records`/`plannedTrips` 是**脚本作用域**变量（`window.records` 为 undefined）→ 注入必须**裸赋值** `records = arr`，否则探针静默假阴性。
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.1.7**（versionCode 260，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.1.7 更新（**更新弹窗日志显示不全 + 弹窗宽度全量统一 + 例行体检** —— 用户 2026-09-18 报「打开 app 后更新的弹窗里更新日志显示不全，但设置页日志是全的」）：**① 更新弹窗日志截断修复** —— `showUpdateModal` 原 `(info.body||'').slice(0,400)` 硬截断 400 字（本版日志 801 字只显示一半），去掉截断改 `trim()`，内容区本身已有 `max-height:200px + overflow-y:auto` 滚动兜底；**② 去重复标题** —— Release body 是 markdown（首行 `## v1.x.x 更新内容`），App 弹窗用 `white-space:pre-wrap` 原样渲染会裸露这行标题（与弹窗标题「发现新版本 vX」重复、和设置页观感不一致），加 `bodyText.replace(/^##[^\n]*\n\s*/i,'')` 清洗；**③ 弹窗宽度全量统一** —— 承接 v1.2.1.6 的绑定弹窗跳变根因（grid `place-items:center` 下弹窗按内容自适应定宽），扫出**另有 10 处**弹窗只写 `max-width:N` 未写 `width`（选择日期时间/难度/年月/通用确认/支持作者/同步状态/更新日志等），逐一补 `width: calc(100vw - 44px) + box-sizing:border-box`，实现「凡有明确宽度意图的弹窗一律锁定，不再受字体/设备影响漂移」；**④ 五项例行体检** —— 设计四维（圆角/字体/玻璃配方/层级）`designcheck.js` 全绿；JS 366 个函数逐一比对零死函数（`confirmWipeAllData` 由 HTML onclick 引用、`resetGuideSeen` 为测试钩子，均非死代码）；滚动监听已 rAF 节流 + passive、键盘跟随轻量、FPS 监控有开关、切后台暂停动画，无确凿帧率优化点；清理本轮临时截图 7 张；全套自检（E2E 101 + test 219 + jsdom 30 + P0P3 271 + ioscheck 10 + 工具链 19 = 650）全绿
 - **正式版 v1.2.1.6**（versionCode 259，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.1.6 更新（**绑定弹窗 4 项修复 + 「未知错误」根因定位** —— 用户 2026-09-17 23:5x 报「选另一个 webdav 时弹窗会变窄」「账号框还显示坚果云邮箱」「应用密码不一定是 16 位」「把『·免费额度够用』和『群晖』删掉」+「切后台回前台显示未知错误」）：**① 弹窗宽度跳变根因** —— `.modal-backdrop-animate` 的 `display:grid + place-items:center` **覆盖了 `.confirm-modal` 的 flex**，弹窗宽度因此按内容 max-content 自适应（`width:100%` 被解析成 grid 轨道宽），切「其他 WebDAV」内容变短 → **实测 340px ↔ 276.6px**；改为显式 `width: calc(100vw - 44px)` + `box-sizing: border-box`（照抄导出弹窗写法），并同步锁定「更新弹窗」「发现网盘配置弹窗」两个同类隐患 → 实测两态均 340.00px；**② 账号框残留 + 提示不随切换** —— 新增 `syncBindUserSync(isJ)`：占位随服务商切换（"你的坚果云邮箱" ↔ "你的 WebDAV 账号"），切走时**仅当值 === 打开弹窗时的预填值**（即用户没手动改过）才清掉另一家的账号，切回自动恢复，手输值永不被清；**③ 密码提示去硬编码** —— 「16 位应用密码，不是登录密码」→「应用密码，不是登录密码」（各服务商规则不同）；**④ 副标题清理** —— 「推荐 · 免费额度够用」→「推荐」、「自建 / 群晖 / 其他网盘」→「自建 / 其他网盘」；**⑤ 「出错了：未知错误」根因** —— 该文案只能出自 `extractErrMsg(假值)`：Chromium 对**原生 evaluateJavascript 注入的无来源脚本**不给错误对象（`event.error === null`），旧代码只读 `event.error`，把 `event.message` 里的真原因丢了；改为 `event.error || event.message`，并把「Script error. / 空 message / Promise 拒绝不带 reason」这类零信息错误改走 `logSilentAppError()` **只进 `__diagLogs` 不弹窗**；**⑥ 原生侧根治** —— `MainActivity.java` 的 WebDAV 回调注入加 `callbackName.matches("[A-Za-z0-9_]+")` + `try{if(typeof window['cb']==='function'){…}}catch(e){}`（原生侧永不把异常抛进页面）；**⑦ 回归测试 90 → 101 条**（+11：弹窗两态等宽 / 占位随切换 / 残留账号清理与恢复 / 手输不被清 / 无信息错误不弹窗且进日志 / 有信息错误照弹 / error 为 null 用 message 兜底）；**全套自检 650 项全绿**
 - **正式版 v1.2.1.5**（versionCode 258，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里

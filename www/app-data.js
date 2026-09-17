@@ -1331,7 +1331,7 @@ function openDateTimePicker(inputId, currentValue) {
         modal.className = 'confirm-modal modal-backdrop-animate';
         // ★2026-09-01 v3：时/分改步进器（- 数字 +），彻底告别 select 全屏原生列表；★09-01 弹窗缩小 360→320px
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event</span>选择日期时间</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="dtp-nav" id="dtpNav"></div>' +
@@ -1434,7 +1434,7 @@ function openDifficultyPicker(inputId) {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">signal_cellular_alt</span>选择难度</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="df-grid" id="dfGrid"></div>' +
@@ -1491,7 +1491,7 @@ function openMoodWeatherPicker(type, recordId) {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 300px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 300px;width:calc(100vw - 44px);box-sizing:border-box;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">' + icon + '</span>' + title + '</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="mwp-grid" id="mwpGrid"></div>' +
@@ -1733,7 +1733,7 @@ function showDataInfoModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
@@ -1781,7 +1781,7 @@ function showDisclaimerModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">hiking</span>
                 免责声明
@@ -1822,7 +1822,7 @@ function showPrivacyPolicyModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">security</span>
                 隐私与数据说明
@@ -1945,7 +1945,7 @@ function showSupportModal() {
     var dark = document.body.classList.contains('dark-mode');
     var bodyTxt = dark ? '#cbd5e1' : '#334155';
     var subTxt = dark ? '#94a3b8' : '#64748b';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:330px;">' +
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 330px;width:calc(100vw - 44px);box-sizing:border-box;">' +
         '<div class="confirm-modal-title">支持作者</div>' +
         '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:14px;">' +
         '<div style="font-size:13px;color:' + bodyTxt + ';line-height:1.7;">徒步小记是 XiXi 亲手做的小软件，完全免费、没有广告。如果你用得开心，欢迎请作者喝杯奶茶支持一下——纯自愿，不付费也拥有全部功能。</div>' +
@@ -2271,7 +2271,7 @@ function openHmYmPicker() {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width:380px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 380px;width:calc(100vw - 44px);box-sizing:border-box;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">calendar_view_month</span>选择年月</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="hmyp-yrs" id="hmypYrs"></div>' +
@@ -2491,7 +2491,7 @@ function showHeatmapDayDetail(year, month, day) {
             picBox +
             '</div>';
     }).join('');
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">local_fire_department</span>' + year + '年' + month + '月' + day + '日</div>' +
         '<div class="confirm-modal-message" style="text-align:left;">' + items + '</div>' +
         '<div class="confirm-modal-buttons"><button class="ripple-effect hm-share-btn check-go-btn" id="hm-share" data-share="' + dayRecords[0].id + '">分享</button><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';

@@ -471,7 +471,8 @@ function showUpdateModal(info) {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    const bodyText = (info.body || '').slice(0, 400);
+    var bodyText = (info.body || '').trim();   // ★2026-09-18 去掉 400 字符硬截断（更新弹窗日志曾显示不全；内容区已有 max-height+滚动兜底）
+    bodyText = bodyText.replace(/^##[^\n]*\n\s*/i, '');   // 去掉 markdown 标题行（弹窗标题已含版本号，且与设置页日志观感一致）
     // ★2026-09-07 直装判定：本地已下载过且版本一致 → 不再重下，直接弹「立即安装」
     const localReady = hasLocalApkFor('v' + info.tag);
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
@@ -1720,7 +1721,7 @@ async function showSyncStatusModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;">
+        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">sync_alt</span>
                 同步状态
