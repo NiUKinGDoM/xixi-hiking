@@ -474,7 +474,7 @@ function showUpdateModal(info) {
     const bodyText = (info.body || '').slice(0, 400);
     // ★2026-09-07 直装判定：本地已下载过且版本一致 → 不再重下，直接弹「立即安装」
     const localReady = hasLocalApkFor('v' + info.tag);
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>发现新版本 v' + escapeHtml(info.tag) + '</div>' +
         '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;">' +
         '<div style="font-weight:600;margin-bottom:4px;">当前 v' + APP_VERSION + ' → 新 v' + escapeHtml(info.tag) + '</div>' +
@@ -626,6 +626,26 @@ function renderSyncAccountCard() {
     if (mailEl) mailEl.textContent = syncConfig.username || '';
 }
 
+// 弹窗内「选网盘」辅助：账号框的「占位提示 / 预填值」随网盘类型切换
+// ★2026-09-17 用户反馈：切到「其他 WebDAV」后，账号框里还留着坚果云的邮箱（提示也仍写"你的坚果云邮箱"）
+var syncBindPrefillUser = '';          // 打开弹窗时的账号预填值（用于判断用户是否手动改过）
+var syncBindUserAutoCleared = false;   // 该值是否由本次切换自动清掉（切回时恢复，避免误丢）
+
+function syncBindUserSync(isJ) {
+    const el = document.getElementById('syncUsername');
+    if (!el) return;
+    el.placeholder = isJ ? '你的坚果云邮箱' : '你的 WebDAV 账号';
+    const v = el.value || '';
+    if (isJ) {
+        // 切回坚果云：把刚才自动清掉的预填值还回来
+        if (syncBindUserAutoCleared) { el.value = syncBindPrefillUser; syncBindUserAutoCleared = false; }
+    } else if (v === syncBindPrefillUser) {
+        // 用户没手动改过 → 清掉另一家的账号，避免带着坚果云邮箱去连别的 WebDAV
+        el.value = '';
+        syncBindUserAutoCleared = !!syncBindPrefillUser;
+    }
+}
+
 // 弹窗内「选网盘」切换：坚果云 → 地址自动填 + 隐藏地址框；其他 → 显示地址框让用户填
 function pickSyncProvider(kind) {
     const isJ = kind === 'jianguo';
@@ -643,6 +663,7 @@ function pickSyncProvider(kind) {
         else if (serverEl.value === SYNC_PROVIDER_JIANGUO_URL) serverEl.value = '';   // 切换时清掉预填，避免误用
     }
     if (label) label.textContent = isJ ? '坚果云账号（邮箱）' : '账号';
+    syncBindUserSync(isJ);   // ★账号占位提示 + 残留账号随服务商切换
     if (hint) hint.textContent = isJ
         ? '坚果云 → 右上角头像 → 账户信息 → 安全选项 → 应用密码 → 添加'
         : '填你的 WebDAV 服务商提供的账号与应用密码';
@@ -660,7 +681,7 @@ function openSyncBindModal() {
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.id = 'syncBindModal';
     modal.innerHTML =
-        '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+        '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
             '<div class="confirm-modal-title">' +
                 '<span class="material-icons" style="color: #4f46e5;">link</span>' +
                 '绑定账号' +
@@ -669,12 +690,12 @@ function openSyncBindModal() {
                 '<div class="sync-bind-steps"><b>① 选网盘</b> ── ② 填账号</div>' +
                 '<div class="sync-provider-card sel" id="syncProvJianguo" data-testid="sync-prov-jianguo">' +
                     '<div><div class="sync-provider-name">坚果云</div>' +
-                    '<div class="sync-provider-sub">推荐 · 免费额度够用</div></div>' +
+                    '<div class="sync-provider-sub">推荐</div></div>' +
                     '<div class="sync-provider-tick">✓</div>' +
                 '</div>' +
                 '<div class="sync-provider-card" id="syncProvOther" data-testid="sync-prov-other">' +
                     '<div><div class="sync-provider-name">其他 WebDAV</div>' +
-                    '<div class="sync-provider-sub">自建 / 群晖 / 其他网盘</div></div>' +
+                    '<div class="sync-provider-sub">自建 / 其他网盘</div></div>' +
                     '<div class="sync-provider-tick">✓</div>' +
                 '</div>' +
                 '<div class="sync-config-item" id="syncServerWrap" style="display: none; margin-top: 12px;">' +
@@ -687,7 +708,7 @@ function openSyncBindModal() {
                 '</div>' +
                 '<div class="sync-config-item" style="margin-bottom: 0;">' +
                     '<label class="sync-config-label" for="syncPassword">应用密码</label>' +
-                    '<input type="password" id="syncPassword" class="sync-input" placeholder="16 位应用密码，不是登录密码" autocomplete="off" spellcheck="false">' +
+                    '<input type="password" id="syncPassword" class="sync-input" placeholder="应用密码，不是登录密码" autocomplete="off" spellcheck="false">' +
                     '<div class="sync-bind-hint" id="syncPwdHint">坚果云 → 右上角头像 → 账户信息 → 安全选项 → 应用密码 → 添加</div>' +
                 '</div>' +
             '</div>' +
@@ -707,6 +728,8 @@ function openSyncBindModal() {
     if (passEl) passEl.value = (syncConfig && syncConfig.password) || '';
     // 已配非坚果云 → 默认落在「其他 WebDAV」；否则默认坚果云
     const isJianguo = !syncConfig || !syncConfig.server || syncConfig.server.indexOf('jianguoyun.com') >= 0;
+    syncBindPrefillUser = (syncConfig && syncConfig.username) || '';   // ★切换服务商时用它判断"用户有没有手动改过账号"
+    syncBindUserAutoCleared = false;
     pickSyncProvider(isJianguo ? 'jianguo' : 'other');
 
     const jianguoCard = document.getElementById('syncProvJianguo');
@@ -2426,7 +2449,7 @@ function askRestoreSyncConfig(cfg) {
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.id = 'syncRestoreAskModal';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
                 '<div class="confirm-modal-title">' +
                     '<span class="material-icons" style="color: #4f46e5;">cloud_download</span>' +
                     '发现网盘配置' +

@@ -570,9 +570,14 @@ public class MainActivity extends BridgeActivity {
                             wv.post(new Runnable() {
                                 @Override
                                 public void run() {
+                                    // ★2026-09-17 加固①：回调名只允许 [A-Za-z0-9_]（防拼接注入）
+                                    if (callbackName == null || !callbackName.matches("[A-Za-z0-9_]+")) {
+                                        Log.w(TAG, "webdavRequestAsync 回调名非法，已丢弃回调");
+                                        return;
+                                    }
                                     String escaped = result.replace("\\", "\\\\").replace("\"", "\\\"")
                                             .replace("\n", "\\n").replace("\r", "\\r");
-                                    wv.evaluateJavascript("window['" + callbackName + "'](\"" + escaped + "\");", null);
+                                    wv.evaluateJavascript("try{if(typeof window['" + callbackName + "']==='function'){window['" + callbackName + "'](\"" + escaped + "\");}}catch(e){}", null);
                                 }
                             });
                         } catch (Exception e) {

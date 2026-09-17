@@ -481,9 +481,16 @@ function serverUp() {
     out.serverShown = (document.getElementById('syncServerWrap') || {}).style.display === 'block';
     out.serverCleared = ((document.getElementById('syncServer') || {}).value || '') === '';
     out.userLabel = (document.getElementById('syncUserLabel') || {}).textContent || '';
+    // ★2026-09-17 用户反馈：切「其他 WebDAV」→ 弹窗变窄 / 账号框残留坚果云邮箱 / 密码提示写死 16 位
+    var mc = document.querySelector('#syncBindModal .confirm-modal-content');
+    out.wOther = Math.round(mc.getBoundingClientRect().width * 10) / 10;
+    out.phOtherUser = (document.getElementById('syncUsername') || {}).placeholder || '';
+    out.phOtherPwd = (document.getElementById('syncPassword') || {}).placeholder || '';
+    out.subsOther = Array.prototype.map.call(document.querySelectorAll('#syncBindModal .sync-provider-sub'), function (e) { return e.textContent; }).join(' | ');
     try { pickSyncProvider('jianguo'); } catch (e) {}
     await sleep(150);
     out.serverBack = (document.getElementById('syncServer') || {}).value || '';
+    out.wJianguo = (mc && mc.parentNode) ? Math.round(mc.getBoundingClientRect().width * 10) / 10 : -1;
     document.getElementById('syncUsername').value = 'e2e@test.com';
     document.getElementById('syncPassword').value = 'e2epassword1234';
     try { submitSyncBind(); } catch (e) { out.submitErr = String(e); }
@@ -507,6 +514,25 @@ function serverUp() {
     if (unbindOk) unbindOk.click();
     await sleep(520);
     out.unboundBack = !!(off && on) && off.style.display !== 'none' && on.style.display === 'none';
+    // ★2026-09-17 残留账号处理：模拟「已绑定坚果云」后切「其他 WebDAV」
+    syncConfig = { server: 'https://dav.jianguoyun.com/dav/', username: 'old@example.com', password: 'x' };
+    try { openSyncBindModal(); } catch (e) { out.resErr = String(e); }
+    await sleep(470);
+    out.resPrefill = (document.getElementById('syncUsername') || {}).value || '';
+    try { pickSyncProvider('other'); } catch (e) {}
+    await sleep(180);
+    out.resAfter = (document.getElementById('syncUsername') || {}).value || '';
+    out.resPh = (document.getElementById('syncUsername') || {}).placeholder || '';
+    try { pickSyncProvider('jianguo'); } catch (e) {}
+    await sleep(180);
+    out.resBack = (document.getElementById('syncUsername') || {}).value || '';
+    document.getElementById('syncUsername').value = 'typed@x.com';   // 用户手动改过 → 切走不该清
+    try { pickSyncProvider('other'); } catch (e) {}
+    await sleep(150);
+    out.resTyped = (document.getElementById('syncUsername') || {}).value || '';
+    closeSyncBindModal();
+    await sleep(120);
+    syncConfig = { server: '', username: '', password: '' };
     return out;
   });
   ok('同步账号卡在设置页', entry.hasCard === true, JSON.stringify(entry).slice(0, 110));
@@ -523,6 +549,52 @@ function serverUp() {
   ok('★弹窗关闭后保存不清空配置（空表单守卫）', entry.keptUser === 'e2e@test.com' && entry.keptPwdLen === 'e2epassword1234'.length, entry.keptUser + '/' + entry.keptPwdLen);
   ok('解绑后回到未绑定态', entry.unboundBack === true && !entry.unbindErr, entry.unbindErr || '');
   ok('解绑确认改用玻璃弹窗（非原生 confirm）', entry.unbindModalShown === true && entry.unbindModalCls.indexOf('confirm-modal') >= 0, entry.unbindModalCls);
+  // ★2026-09-17 用户反馈 4 项（宽度跳变 / 账号残留 / 16位文案 / 副标题）
+  ok('★切「其他 WebDAV」弹窗不再变窄（两态同宽）', entry.wOther > 100 && Math.abs(entry.wOther - entry.wJianguo) < 1, entry.wJianguo + ' vs ' + entry.wOther);
+  ok('★账号框占位提示随服务商切换', entry.phOtherUser.length > 0 && entry.phOtherUser.indexOf('坚果云') < 0, entry.phOtherUser);
+  ok('★应用密码占位不再写死「16 位」', entry.phOtherPwd.indexOf('16') < 0 && entry.phOtherPwd.indexOf('应用密码') >= 0, entry.phOtherPwd);
+  ok('★网盘副标题已清理（无"免费额度"/"群晖"）', entry.subsOther.indexOf('免费额度') < 0 && entry.subsOther.indexOf('群晖') < 0, entry.subsOther);
+  ok('★切其他 WebDAV 清掉坚果云残留账号', entry.resPrefill === 'old@example.com' && entry.resAfter === '' && entry.resPh.indexOf('坚果云') < 0, entry.resPrefill + ' → ' + JSON.stringify(entry.resAfter));
+  ok('★切回坚果云恢复预填账号', entry.resBack === 'old@example.com', entry.resBack);
+  ok('★用户手动输入的账号不被切走清掉', entry.resTyped === 'typed@x.com', entry.resTyped);
+  console.log('== E2E: 全局错误提示（无信息量不再弹窗）==');
+  const errRep = await page.evaluate(async function () {
+    var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var out = {};
+    var seen = [];
+    var origErr = window.showErrorMessage;
+    window.showErrorMessage = function (m) { seen.push(String(m)); return origErr.apply(this, arguments); };
+    try { window.__diagLogs.length = 0; } catch (e) {}
+    // ① 无原因的 Promise 拒绝（切后台/生命周期中断的典型形态）→ 不应再弹「未知错误」
+    window._lastGlobalErrToast = 0;
+    seen.length = 0;   // 每步独立采集
+    Promise.reject();
+    await sleep(300);
+    out.afterNoReason = seen.slice();
+    // ② 有原因 → 照常提示（回归保护）
+    window._lastGlobalErrToast = 0;
+    seen.length = 0;   // 每步独立采集
+    Promise.reject(new Error('boom-test'));
+    await sleep(300);
+    out.afterReason = seen.slice();
+    // ③ error 事件但错误对象为空（原生注入脚本的典型情形）→ 用 event.message 兜底
+    window._lastGlobalErrToast = 0;
+    seen.length = 0;   // 每步独立采集
+    try {
+      window.dispatchEvent(new ErrorEvent('error', {
+        message: 'Uncaught SyntaxError: Invalid or unexpected token',
+        filename: 'native-inject', lineno: 1, error: null }));
+    } catch (e) { out.dispatchErr = String(e); }
+    await sleep(300);
+    out.afterNullErr = seen.slice();
+    out.diagLog = (window.__diagLogs || []).join(' || ');
+    window.showErrorMessage = origErr;
+    return out;
+  });
+  ok('★无原因的 Promise 拒绝不再弹「未知错误」', errRep.afterNoReason.length === 0, JSON.stringify(errRep.afterNoReason));
+  ok('★无原因拒绝写入诊断日志（可导出排查）', errRep.diagLog.indexOf('静默') >= 0, errRep.diagLog.slice(0, 130));
+  ok('★有原因的错误照常提示（回归保护）', errRep.afterReason.length === 1 && errRep.afterReason[0].indexOf('boom-test') >= 0, JSON.stringify(errRep.afterReason));
+  ok('★错误对象为空时用 event.message 兜底（不再显示未知错误）', errRep.afterNullErr.length === 1 && errRep.afterNullErr[0].indexOf('未知错误') < 0 && !errRep.dispatchErr, JSON.stringify(errRep.afterNullErr) + (errRep.dispatchErr || ''));
   console.log('== E2E: 备份包含同步配置 ==');
   const cfgChk = await page.evaluate(async function () {
     var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
