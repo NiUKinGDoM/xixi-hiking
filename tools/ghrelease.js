@@ -78,13 +78,16 @@ const IP_MAP = {
   // ★2026-09-15 补：APK 上传走 uploads.github.com，同样被 hosts 劫持，不钉 IP 就 `Failed to connect`（发 v1.2.0.10 时真实踩到）
   // ★2026-09-15 实测：20.205.243.161 才是真正的 uploads 节点（CNAME alambic-origin.githubusercontent.com），POST 返 201；
   //   github.com 系列 IP 对这个 vhost 只会 301 到 github.com → 上传必失败。
-  'uploads.github.com': ['20.205.243.161', '20.205.243.160', '20.205.243.162', '140.82.112.3', '140.82.113.3'],
+  // ★2026-09-17 只留实测可用节点：.160=000（连不上）、.162=404（假可用，POST 会 403）、github 段=301（vhost 不匹配）
+  'uploads.github.com': ['20.205.243.161'],
 };
 // 探针端点按 host 定制：用真实接口，避免 vhost 不匹配的 301 被误判为可用
 const PROBE_PATH = { 'api.github.com': '/rate_limit', 'github.com': '/', 'uploads.github.com': '/' };
-// ★2026-09-15 探针可接受码按主机定制：uploads.github.com 只收 POST 上传，GET / 会返 **301**（实测）——一律要求 200 会让它永远钉不上；
-//   且该主机不能用「跳转后 200」判定（vhost 不匹配会得到空响应）。
-const PROBE_OK = { 'uploads.github.com': ['302', '404', '200'] };   // 实测 20.205.243.161 返 302；**不收 301**（那是 github.com 前端的误报信号）
+// ★2026-09-15 探针可接受码按主机定制：uploads.github.com 只收 POST 上传，GET / 返 **301/302**——一律要求 200 会让它永远钉不上。
+// ★2026-09-17 **去掉 404**（发 v1.2.1.4 踩到）：本机 hosts 把该域劫持到 127.0.0.1 时，本机某服务对 GET / 正好返回 404，
+//   于是「直连探测」被误判为可用 → 判定「无需钉 IP」→ 请求真发到 127.0.0.1 → **上传 403（Unicorn 页）**。
+//   只认 302/200 后：真节点 20.205.243.161（实测 GET=302、POST=201）命中；.160=000 / .162=404 / github 段=301 全部落选。
+const PROBE_OK = { 'uploads.github.com': ['302', '200'] };
 function probeAccept(host, code) { return (PROBE_OK[host] || ['200']).indexOf(code) >= 0; }
 const pinned = {};
 
@@ -136,8 +139,7 @@ function ensurePin(host) {
   }
   for (const ip of (IP_MAP[host] || [])) {
     const c = curlProbe(host, ip);
-    if (probeAccept(host, c)) {   // 默认只认 200；
-      // ★2026-09-15 uploads.github.com 额外接受 301/404（该主机只收 POST 传输，GET / 本就不是 200）
+    if (probeAccept(host, c)) {   // 默认只认 200；按主机放宽见 PROBE_OK
       pinned[host] = ip;
       console.log('   ℹ 网络适配：' + host + ' → 钉 ' + ip + '（200）');
       return true;
