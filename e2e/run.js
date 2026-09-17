@@ -455,6 +455,246 @@ function serverUp() {
     ok('弹窗间距-' + names[k] + '（内容与取消/确定不重合）', !r.err && r.overlap === false && r.gap >= 8, JSON.stringify(r));
   });
 
+
+  console.log('== E2E: 同步入口改造（账号卡 + 绑定弹窗）==');
+  await page.locator('[data-testid="tab-settings"]').click().catch(async () => { await page.evaluate(() => { try { switchTab('settings'); } catch (e) {} }); });
+  await page.waitForTimeout(800);
+  const entry = await page.evaluate(async function () {
+    var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var out = {};
+    var card = document.getElementById('syncAccountCard');
+    var auto = document.getElementById('autoSyncCard');
+    out.hasCard = !!card;
+    out.cardBeforeAuto = !!(card && auto) && (card.compareDocumentPosition(auto) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    out.formNotInSettings = !document.getElementById('syncServer');
+    try { openSyncBindModal(); } catch (e) { out.openErr = String(e); }
+    await sleep(450);
+    out.modalOpen = !!document.getElementById('syncBindModal');
+    out.steps = (document.querySelector('#syncBindModal .sync-bind-steps') || {}).textContent || '';
+    out.providerCount = document.querySelectorAll('#syncBindModal .sync-provider-card').length;
+    var pj = document.getElementById('syncProvJianguo');
+    out.defaultJianguo = !!(pj && pj.classList.contains('sel'));
+    out.serverFilled = (document.getElementById('syncServer') || {}).value || '';
+    out.serverHidden = (document.getElementById('syncServerWrap') || {}).style.display === 'none';
+    try { pickSyncProvider('other'); } catch (e) { out.pickErr = String(e); }
+    await sleep(150);
+    out.serverShown = (document.getElementById('syncServerWrap') || {}).style.display === 'block';
+    out.serverCleared = ((document.getElementById('syncServer') || {}).value || '') === '';
+    out.userLabel = (document.getElementById('syncUserLabel') || {}).textContent || '';
+    try { pickSyncProvider('jianguo'); } catch (e) {}
+    await sleep(150);
+    out.serverBack = (document.getElementById('syncServer') || {}).value || '';
+    document.getElementById('syncUsername').value = 'e2e@test.com';
+    document.getElementById('syncPassword').value = 'e2epassword1234';
+    try { submitSyncBind(); } catch (e) { out.submitErr = String(e); }
+    await sleep(1100);
+    out.modalClosed = !document.getElementById('syncBindModal');
+    var off = document.getElementById('syncAcctOff');
+    var on = document.getElementById('syncAcctOn');
+    out.boundState = !!(off && on) && off.style.display === 'none' && on.style.display !== 'none';
+    out.shownMail = (document.getElementById('syncAcctMail') || {}).textContent || '';
+    out.shownProvider = (document.getElementById('syncAcctProvider') || {}).textContent || '';
+    try { await saveSyncConfigFromForm(); } catch (e) { out.guardErr = String(e); }
+    await sleep(150);
+    out.keptUser = (typeof syncConfig !== 'undefined') ? (syncConfig.username || '') : 'NA';
+    out.keptPwdLen = (typeof syncConfig !== 'undefined') ? String(syncConfig.password || '').length : -1;
+    var orig = window.confirm;
+    window.confirm = function () { return true; };
+    try { unbindSyncAccount(); } catch (e) { out.unbindErr = String(e); }
+    await sleep(600);
+    window.confirm = orig;
+    out.unboundBack = !!(off && on) && off.style.display !== 'none' && on.style.display === 'none';
+    return out;
+  });
+  ok('同步账号卡在设置页', entry.hasCard === true, JSON.stringify(entry).slice(0, 110));
+  ok('账号卡排在自动同步卡之前（先绑定）', entry.cardBeforeAuto === true);
+  ok('配置表单已收进弹窗（不在设置页）', entry.formNotInSettings === true);
+  ok('绑定弹窗可打开且无异常', entry.modalOpen === true && !entry.openErr, entry.openErr || '');
+  ok('弹窗含「选网盘 → 填账号」步骤条', entry.steps.indexOf('选网盘') >= 0 && entry.steps.indexOf('填账号') >= 0, entry.steps);
+  ok('弹窗 2 个网盘选项且默认坚果云', entry.providerCount === 2 && entry.defaultJianguo === true, 'count=' + entry.providerCount);
+  ok('选坚果云：地址自动填好且输入框隐藏', entry.serverFilled.indexOf('jianguoyun.com') >= 0 && entry.serverHidden === true, entry.serverFilled);
+  ok('切「其他 WebDAV」：显示地址框并清空预填', entry.serverShown === true && entry.serverCleared === true);
+  ok('切回坚果云：地址恢复', entry.serverBack.indexOf('jianguoyun.com') >= 0, entry.serverBack);
+  ok('提交后弹窗关闭且账号卡变已绑定', entry.modalClosed === true && entry.boundState === true && entry.shownMail === 'e2e@test.com', JSON.stringify([entry.modalClosed, entry.boundState, entry.shownMail]));
+  ok('已绑定态显示网盘名', entry.shownProvider === '坚果云', entry.shownProvider);
+  ok('★弹窗关闭后保存不清空配置（空表单守卫）', entry.keptUser === 'e2e@test.com' && entry.keptPwdLen === 'e2epassword1234'.length, entry.keptUser + '/' + entry.keptPwdLen);
+  ok('解绑后回到未绑定态', entry.unboundBack === true && !entry.unbindErr, entry.unbindErr || '');
+  console.log('== E2E: 备份包含同步配置 ==');
+  const cfgChk = await page.evaluate(async function () {
+    var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var out = {};
+    var crash0 = (typeof __getCrashQueue === 'function') ? __getCrashQueue().length : -1;
+    syncConfig = { server: '', username: '', password: '' };
+    out.a_null = (buildFullBackupPayload({ includeCfg: true, includePwd: false }).syncConfig === null);
+    syncConfig = { server: 'https://dav.jianguoyun.com/dav/', username: 'e2e@test.com', password: 'pwd1234567890ab' };
+    try { renderSyncForm(''); } catch (e) {}
+    var p1 = buildFullBackupPayload({ includeCfg: true, includePwd: false }).syncConfig;
+    out.b_cfg = !!(p1 && p1.server === 'https://dav.jianguoyun.com/dav/' && p1.username === 'e2e@test.com');
+    out.b_pwdEmpty = (p1.password === '');
+    out.b_noPlain = (JSON.stringify(p1).indexOf('pwd1234567890ab') < 0);
+    var p2 = buildFullBackupPayload({ includeCfg: true, includePwd: true }).syncConfig;
+    out.c_pwdSet = String(p2.password || '').length > 0;
+    out.c_notPlain = (p2.password !== 'pwd1234567890ab');
+    out.d_null = (buildFullBackupPayload({ includeCfg: false, includePwd: false }).syncConfig === null);
+    // ★防污染：自动/上传路径不传 opts（默认）→ 即使前面勾过密码，也必须不带密码
+    var pAuto = buildFullBackupPayload().syncConfig;
+    out.d_autoNoPwd = !!(pAuto && pAuto.password === '');
+    try { showExportModal(); } catch (e) { out.e_err = String(e); }
+    await sleep(400);
+    out.e_block = !!document.getElementById('exportSyncCfgBlock');
+    out.e_cfgChecked = !!(document.getElementById('exportIncludeSyncCfg') || {}).checked;
+    out.e_pwdUnchecked = !(document.getElementById('exportIncludeSyncPwd') || {}).checked;
+    out.e_pwdWrapShown = ((document.getElementById('exportSyncPwdWrap') || {}).style.display !== 'none');
+    try { closeOpenModals(); } catch (e) {}
+    await sleep(200);
+    var cfg = buildFullBackupPayload().syncConfig;
+    syncConfig = { server: '', username: '', password: '' };
+    var pr = askRestoreSyncConfig(cfg);
+    await sleep(450);
+    out.f_open = !!document.getElementById('syncRestoreAskModal');
+    out.f_info = ((document.querySelector('#syncRestoreAskModal .sync-restore-info') || {}).textContent || '').trim();
+    out.f_btnCount = document.querySelectorAll('#syncRestoreAskModal .confirm-modal-buttons button').length;
+    document.getElementById('syncRestoreOnlyRecords').click();
+    out.f_choiceRecords = await pr;
+    out.f_cfgUntouched = (syncConfig.server === '' && syncConfig.username === '');
+    var pr2 = askRestoreSyncConfig(cfg);
+    await sleep(400);
+    document.getElementById('syncRestoreAll').click();
+    out.g_choiceRestore = await pr2;
+    var applied = await applySyncConfigFromBackup(cfg);
+    await sleep(250);
+    out.g_applied = (applied === true);
+    out.g_restored = (syncConfig.username === 'e2e@test.com' && syncConfig.server === 'https://dav.jianguoyun.com/dav/');
+    out.g_pwdEmpty = (syncConfig.password === '');
+    out.g_cardBound = (document.getElementById('syncAcctOn') || {}).style.display === 'block';
+    syncConfig = { server: 'https://dav.jianguoyun.com/dav/', username: 'e2e@test.com', password: 'pwd1234567890ab' };
+    var cfgP = buildFullBackupPayload({ includeCfg: true, includePwd: true }).syncConfig;
+    syncConfig = { server: '', username: '', password: '' };
+    await applySyncConfigFromBackup(cfgP);
+    out.h_pwdBack = (syncConfig.password === 'pwd1234567890ab');
+    syncConfig = { server: '', username: '', password: '' };
+    AppStore.setItem('hiking_sync_config', { server: '', username: '', password: '' });
+    try { renderSyncForm(''); } catch (e) {}
+    try { closeOpenModals(); } catch (e) {}
+    out.z_noCrash = ((typeof __getCrashQueue === 'function') ? __getCrashQueue().length : -1) === crash0;
+    return out;
+  });
+  ok('备份配置-未绑定时不带配置', cfgChk.a_null === true);
+  ok('备份配置-默认带服务器与账号', cfgChk.b_cfg === true);
+  ok('备份配置-默认不含密码且无明文', cfgChk.b_pwdEmpty === true && cfgChk.b_noPlain === true);
+  ok('备份配置-勾选后带密码且为密文', cfgChk.c_pwdSet === true && cfgChk.c_notPlain === true);
+  ok('备份配置-取消勾选则不带', cfgChk.d_null === true);
+  ok('★自动/上传路径默认不带密码（防全局选项污染）', cfgChk.d_autoNoPwd === true);
+  ok('导出弹窗有「包含网盘配置」且默认勾上', cfgChk.e_block === true && cfgChk.e_cfgChecked === true, JSON.stringify(cfgChk).slice(0, 110));
+  ok('导出弹窗-密码项默认不勾', cfgChk.e_pwdUnchecked === true);
+  ok('导出弹窗-默认勾选时密码项可见', cfgChk.e_pwdWrapShown === true);
+  ok('导入询问弹窗出现且显示账号', cfgChk.f_open === true && cfgChk.f_info.indexOf('e2e@test.com') >= 0, cfgChk.f_info);
+  ok('询问弹窗为并列两按钮', cfgChk.f_btnCount === 2);
+  ok('选「只恢复记录」不动本机配置', cfgChk.f_choiceRecords === 'records' && cfgChk.f_cfgUntouched === true);
+  ok('选「恢复配置」后本机配置被填好', cfgChk.g_choiceRestore === 'restore' && cfgChk.g_applied === true && cfgChk.g_restored === true, JSON.stringify([cfgChk.g_applied, cfgChk.g_restored]));
+  ok('恢复后密码留空待补填', cfgChk.g_pwdEmpty === true);
+  ok('恢复后账号卡变已绑定', cfgChk.g_cardBound === true);
+  ok('带密码的备份可还原密码', cfgChk.h_pwdBack === true);
+  ok('备份配置流程无运行时错误', cfgChk.z_noCrash === true);
+  console.log('== E2E: 弹窗健壮性（永挂 / 间距）==');
+  const dlgRobust = await page.evaluate(async function () {
+    var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var out = {};
+    var holder = 'pending';
+    var p = askRestoreSyncConfig({ server: 'https://dav.jianguoyun.com/dav/', username: 'e2e@test.com', password: '' });
+    p.then(function (v) { holder = v; });
+    await sleep(400);
+    out.opened = !!document.getElementById('syncRestoreAskModal');
+    try { closeOpenModals(); } catch (e) {}
+    await sleep(550);
+    out.afterForceClose = holder;
+    var h2 = 'pending';
+    var p2 = askRestoreSyncConfig({ server: 'https://dav.jianguoyun.com/dav/', username: 'e2e@test.com', password: '' });
+    p2.then(function (v) { h2 = v; });
+    await sleep(400);
+    var btn = document.getElementById('syncRestoreAll');
+    if (btn) btn.click();
+    await sleep(300);
+    out.afterClickAll = h2;
+    out.modalGone = !document.getElementById('syncRestoreAskModal');
+    try { closeOpenModals(); } catch (e) {}
+    await sleep(200);
+    try { showSyncStatusModal(); } catch (e) { out.err = String(e); }
+    await sleep(450);
+    var msg = document.querySelector('.confirm-modal .confirm-modal-message') || document.querySelector('.confirm-modal .confirm-modal-content');
+    var btns = document.querySelector('.confirm-modal .confirm-modal-buttons');
+    if (msg && btns) {
+      var maxB = -1;
+      msg.querySelectorAll('*').forEach(function (e) {
+        var r = e.getBoundingClientRect();
+        if (r.height > 2 && r.width > 2 && r.bottom > maxB) maxB = r.bottom;
+      });
+      out.statusGap = Math.round(btns.getBoundingClientRect().top - maxB);
+      out.statusOverlap = btns.getBoundingClientRect().top < maxB - 0.5;
+    } else { out.statusGap = 'missing'; }
+    try { closeOpenModals(); } catch (e) {}
+    return out;
+  });
+  ok('询问弹窗被外部关闭时 Promise 仍 resolve（不永挂）', dlgRobust.opened === true && dlgRobust.afterForceClose === 'records', String(dlgRobust.afterForceClose));
+  ok('询问弹窗正常点「恢复配置」仍返回 restore', dlgRobust.afterClickAll === 'restore' && dlgRobust.modalGone === true, String(dlgRobust.afterClickAll));
+  ok('同步状态弹窗内容与按钮不重合（≥8px）', dlgRobust.statusOverlap === false && dlgRobust.statusGap >= 8, 'gap=' + dlgRobust.statusGap);
+
+  console.log('== E2E: 弹窗体系统一（层级 / 遮罩 / 旧写法残留）==');
+  const dlgUni = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const out = {};
+    const zOf = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e).zIndex : 'MISSING'; };
+    const bgOf = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e).backgroundColor : 'MISSING'; };
+    const run = (fn) => { try { fn(); } catch (e) { out.err = (out.err || '') + String(e) + ';'; } };
+    const lightZ = [], lightBg = [];
+    run(() => { closeOpenModals(); showExportModal(); });                    await sleep(380);
+    lightZ.push(zOf('#exportModal')); lightBg.push(bgOf('#exportModal'));
+    run(() => { closeOpenModals(); showImportModal(); });                    await sleep(380);
+    lightZ.push(zOf('#importMethodModal')); lightBg.push(bgOf('#importMethodModal'));
+    run(() => { closeOpenModals(); openSyncBindModal(); });                  await sleep(380);
+    lightZ.push(zOf('#syncBindModal')); lightBg.push(bgOf('#syncBindModal'));
+    run(() => { closeOpenModals(); askRestoreSyncConfig({ server: 'https://dav.jianguoyun.com/dav/', username: 'a@b.com', password: '' }); });
+    await sleep(380);
+    lightZ.push(zOf('#syncRestoreAskModal')); lightBg.push(bgOf('#syncRestoreAskModal'));
+    try { closeOpenModals(); } catch (e) {}
+    await sleep(140);
+    out.lightZ = lightZ; out.lightBg = lightBg;
+    out.leftover = document.querySelectorAll('#exportModal, #importMethodModal, #syncBindModal, #syncRestoreAskModal').length;
+    out.oldCls = document.querySelectorAll('.sync-config-toggle-btn, .sync-config-collapse').length;
+    // 按钮体系（原 modal-option-btn / modal-cancel-btn 已统一为标准按钮）
+    const pickBtn = (sel) => { const e = document.querySelector(sel); if (!e) return 'MISSING'; const c = getComputedStyle(e); return c.backgroundColor + '|' + c.borderTopLeftRadius + '|' + c.cursor + '|' + c.color; };
+    try { closeOpenModals(); showExportModal(); } catch (e) {}
+    await sleep(380);
+    out.btnWideOption = pickBtn('#exportRecordsBtn');
+    out.btnWideCancel = pickBtn('#closeExportModal');
+    out.oldBtnCls = document.querySelectorAll('.modal-option-btn, .modal-cancel-btn').length;   // ★须在弹窗仍打开时采样
+    try { closeOpenModals(); } catch (e) {}
+    await sleep(160);
+    try { closeOpenModals(); openSyncBindModal(); } catch (e) {}
+    await sleep(380);
+    out.btnStdPrimary = pickBtn('#syncBindModal .check-go-btn');
+    out.btnStdCancel = pickBtn('#syncBindModal .confirm-btn-cancel');
+    try { closeOpenModals(); } catch (e) {}
+    // 深色：旧的 inline 0.3 会压过 .confirm-modal 的深色 0.7 → 导出/导入弹窗遮罩比别的淡
+    document.body.classList.add('dark-mode');
+    await sleep(260);
+    run(() => { closeOpenModals(); showExportModal(); });   await sleep(360);
+    out.darkExportBg = bgOf('#exportModal');
+    run(() => { closeOpenModals(); openSyncBindModal(); }); await sleep(360);
+    out.darkBindBg = bgOf('#syncBindModal');
+    try { closeOpenModals(); } catch (e) {}
+    document.body.classList.remove('dark-mode');
+    return out;
+  });
+  ok('四类弹窗层级统一为 100（导出/导入原为 50）', dlgUni.lightZ.length === 4 && dlgUni.lightZ.every((v) => v === '100') && !dlgUni.err, 'z=' + (dlgUni.lightZ || []).join(',') + (dlgUni.err ? ' err=' + dlgUni.err : ''));
+  ok('四类弹窗浅色遮罩一致（同一套 .confirm-modal）', dlgUni.lightBg.length === 4 && dlgUni.lightBg.every((v) => v === dlgUni.lightBg[0]), (dlgUni.lightBg || []).join(' | '));
+  ok('四类弹窗深色遮罩一致（原导出/导入被内联 0.3 压淡）', dlgUni.darkExportBg === dlgUni.darkBindBg, 'export=' + dlgUni.darkExportBg + ' bind=' + dlgUni.darkBindBg);
+  ok('四类弹窗均能被 closeOpenModals 清理（无残留）', dlgUni.leftover === 0, String(dlgUni.leftover));
+  ok('旧折叠区类已从 DOM 彻底移除', dlgUni.oldCls === 0, String(dlgUni.oldCls));
+  ok('弹窗按钮旧类已彻底移除（modal-option-btn / modal-cancel-btn）', dlgUni.oldBtnCls === 0, String(dlgUni.oldBtnCls));
+  ok('导出弹窗「选项按钮」配色与全站行动按钮一致', dlgUni.btnWideOption === dlgUni.btnStdPrimary, 'wide=' + dlgUni.btnWideOption + ' std=' + dlgUni.btnStdPrimary);
+  ok('导出弹窗「取消按钮」配色与全站取消按钮一致', dlgUni.btnWideCancel === dlgUni.btnStdCancel, 'wide=' + dlgUni.btnWideCancel + ' std=' + dlgUni.btnStdCancel);
+
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
   console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');

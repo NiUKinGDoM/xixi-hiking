@@ -551,5 +551,13 @@ if (fdtSrc && fdtlSrc) {
 // 9.5d 源码守卫：保存校验必须是归一化而非严格 filter（★2026-09-17 修复①：严格 filter 会静默删用户记录）
 (/function normalizeRecordFields/.test(allJs) && /normalizeRecordFields\(record\)/.test(allJs) && /normalizeRecordFields\(trip\)/.test(allJs)) ? ok('守卫：保存走归一化（记录+计划）') : bad('保存校验未走归一化（会静默删记录）');
 (!/typeof (record|trip)\.difficulty === 'number' &&/.test(allJs)) ? ok('守卫：旧的严格 filter 已移除（加载+保存）') : bad('旧严格 filter 仍存在（会静默丢记录）');
+
+// 9.5e 源码守卫：弹窗层级统一为 confirm-modal 体系（★2026-09-17 去掉旧的 Tailwind z-50 写法）
+(!/inset-0 z-50/.test(allJs)) ? ok('守卫：弹窗不再用 Tailwind 拼装的 z-50 遮罩') : bad('仍有 inset-0 z-50 旧写法（层级会比 confirm-modal 低）');
+(!/querySelectorAll\('\.confirm-modal, #/.test(allJs)) ? ok('守卫：closeOpenModals 不再用 id 特判（统一 .confirm-modal）') : bad('closeOpenModals 仍有 id 特判旧写法');
+(!/sync-config-(toggle-btn|collapse)/.test(html)) ? ok('守卫：旧同步配置折叠区 CSS/类已彻底删除') : bad('index.html 仍残留旧折叠区样式（sync-config-toggle-btn/collapse）');
+// 9.5f 源码守卫：弹窗按钮统一为标准体系（★2026-09-17 去掉 modal-option-btn/modal-cancel-btn 旧类）
+(!/modal-(option|cancel)-btn/.test(allJs + html)) ? ok('守卫：弹窗按钮无旧类残留（已统一 check-go-btn/confirm-btn-cancel）') : bad('仍存在 modal-option-btn/modal-cancel-btn 旧类');
+(/\.check-go-btn \{[^}]*border-radius: 12px/.test(html)) ? ok('守卫：.check-go-btn 基础定义自带圆角（全宽场景不塌成 0px）') : bad('.check-go-btn 缺基础圆角（全宽按钮会变直角）');
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

@@ -592,6 +592,10 @@
             -webkit-backdrop-filter: blur(2px) saturate(150%);
             border: 1px solid rgba(220, 38, 38, 0.9) !important;
             color: #b91c1c !important;
+            /* ★2026-09-17 补全基础定义：弹窗内由 .confirm-modal-buttons 限定提供，
+               全宽选项按钮（导出/导入弹窗）落在该容器外，需在此补齐（否则圆角 0、无手型） */
+            border-radius: 12px;
+            cursor: pointer;
         }
         body.dark-mode .check-go-btn {
             background: rgba(70, 15, 20, 0.08) !important;
@@ -1074,12 +1078,8 @@
         .settings-group .sync-config-item + .sync-config-item {
             margin-top: 10px;
         }
-        .settings-group > .grid + .settings-item,
-        .settings-group > .grid + .sync-config-toggle-btn {
+        .settings-group > .grid + .settings-item {
             margin-top: 12px;
-        }
-        .sync-config-toggle-btn + .sync-config-collapse {
-            margin-top: 12px; /* v1.4.10.5 修复：虚线要有上间距（原 margin-top:0 导致虚线贴按钮） */
         }
         body.dark-mode .settings-group {
             background-color: rgba(255, 255, 255, 0.05);
@@ -1103,22 +1103,6 @@
         }
         body.dark-mode .settings-group-title .material-icons {
             color: #a5b4fc;
-        }
-        /* 同步配置折叠区（2026-08-12 v1.0.10.0：收起=无动画瞬间收起（多版本动画方案在 WebView 均有跳变，
-           弃用）；展开=JS 固化高度 height 动画（不裁内容）；无 no-blur/无输入框 blur（会致背景/输入框闪亮）） */
-        .sync-config-collapse {
-            display: none; /* JS 控制显隐 */
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed rgba(100, 116, 139, 0.45);   /* ★2026-09-03 可读性：虚线 0.07→0.45（原几乎不可见） */
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-        body.dark-mode .sync-config-collapse {
-            border-top-color: rgba(148, 163, 184, 0.32);
-        }
-        .sync-config-collapse.open {
-            display: block;
         }
         /* 2026-08-12 移除 .no-blur 机制：它会在动画期间禁用设置组自身的毛玻璃背景，
            导致"背景跳亮一下再变暗"（用户复现）；去掉后背景恒定，无跳变 */
@@ -1152,39 +1136,6 @@
         }
         body.dark-mode .sync-status-time {
             border-top-color: rgba(148, 163, 184, 0.45);
-        }
-        .sync-config-toggle-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            width: 100%;
-            padding: 8px 0;
-            margin-top: 12px;
-            border-radius: 12px; /* 2026-08-11 3条优化：与全局按钮圆角统一(12px) */
-            font-size: 13px;
-            font-weight: 600;
-            color: #475569;   /* ★v1.1.2.7 浅色加深 */
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(100, 116, 139, 0.2);
-            cursor: pointer;
-            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-        }
-        .sync-config-toggle-btn:hover {
-            background: rgba(99, 102, 241, 0.1);
-            border-color: rgba(99, 102, 241, 0.4);
-        }
-        body.dark-mode .sync-config-toggle-btn {
-            color: #94a3b8;
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(148, 163, 184, 0.2);
-        }
-        .sync-config-toggle-btn .material-icons {
-            font-size: 16px;
-            transition: transform 0.3s ease;
-        }
-        .sync-config-toggle-btn.open .material-icons {
-            transform: rotate(180deg);
         }
         /* ========== 设置页 - 杂项开关列表 ========== */
         .settings-item {
@@ -1396,6 +1347,155 @@
         body.dark-mode .sync-health-arrow {
             color: rgba(148, 163, 184, 0.65);
         }
+
+        /* ★2026-09-17 入口改造：账号卡圆点 + 绑定弹窗内「选网盘」卡片 / 步骤条 / 提示 */
+        .sync-acct-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 6px;
+            vertical-align: 1px;
+        }
+        .sync-provider-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 12px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.10);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .sync-provider-card.sel {
+            background: rgba(99, 102, 241, 0.10);
+            border-color: rgba(99, 102, 241, 0.55);
+        }
+        body.dark-mode .sync-provider-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.09);
+        }
+        body.dark-mode .sync-provider-card.sel {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(129, 140, 248, 0.55);
+        }
+        .sync-provider-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        body.dark-mode .sync-provider-name {
+            color: #f1f5f9;
+        }
+        .sync-provider-sub {
+            font-size: 11px;
+            color: #334155;
+            margin-top: 2px;
+        }
+        body.dark-mode .sync-provider-sub {
+            color: #a3b1c6;
+        }
+        .sync-provider-tick {
+            font-weight: 700;
+            color: #4f46e5;
+            visibility: hidden;
+            flex-shrink: 0;
+        }
+        body.dark-mode .sync-provider-tick {
+            color: #818cf8;
+        }
+        .sync-provider-card.sel .sync-provider-tick {
+            visibility: visible;
+        }
+        .sync-bind-steps {
+            font-size: 11px;
+            color: #334155;   /* ★可读性：弹窗玻璃叠深遮罩后底色变中灰，#64748b 只有 2:1 */
+            margin-bottom: 10px;
+        }
+        body.dark-mode .sync-bind-steps {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .sync-bind-steps b {
+            color: #4f46e5;
+        }
+        body.dark-mode .sync-bind-steps b {
+            color: #818cf8;
+        }
+        .sync-bind-hint {
+            font-size: 11px;
+            color: #334155;   /* ★同上：弹窗内次要文字用深色，勿用 #64748b */
+            margin-top: 6px;
+            line-height: 1.6;
+        }
+        body.dark-mode .sync-bind-hint {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ★2026-09-17 备份含配置：导出弹窗勾选行 + 导入询问弹窗提示条 */
+        .export-sync-opt {
+            border-radius: 12px;
+            padding: 11px 12px;
+            background: rgba(255, 255, 255, 0.10);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        body.dark-mode .export-sync-opt {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.09);
+        }
+        .chk-row {
+            display: flex;
+            gap: 9px;
+            align-items: flex-start;
+            cursor: pointer;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+        body.dark-mode .chk-row {
+            color: #f1f5f9;
+        }
+        .chk-row input {
+            width: 15px;
+            height: 15px;
+            margin: 2px 0 0;
+            accent-color: #4f46e5;
+            flex: 0 0 auto;
+            cursor: pointer;
+        }
+        .chk-sub {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+            color: #334155;   /* ★弹窗内次要文字用深色（玻璃叠遮罩后底色变中灰） */
+            margin-top: 2px;
+            line-height: 1.55;
+        }
+        body.dark-mode .chk-sub {
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .sync-restore-warn {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #b45309;
+        }
+        body.dark-mode .sync-restore-warn {
+            color: #fbbf24;
+        }
+        .sync-restore-info {
+            font-size: 12px;
+            color: #1e293b;
+            margin-top: 5px;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        body.dark-mode .sync-restore-info {
+            color: #e5e7eb;
+        }
         .sync-config-item {
             margin-bottom: 12px;
         }
@@ -1403,7 +1503,7 @@
             display: block;
             font-size: 12px;
             font-weight: 600;
-            color: #64748b;
+            color: #334155;   /* ★2026-09-17 表单移入弹窗：玻璃叠深遮罩底色变中灰，#64748b 对比度仅 2:1 */
             margin-bottom: 6px;
         }
         .sync-input {
@@ -1430,9 +1530,6 @@
         }
         body.dark-mode .sync-config-label {
             color: rgba(255, 255, 255, 0.55);
-        }
-        body.dark-mode .sync-config-toggle-btn {
-            color: #cbd5e1;   /* ★v1.1.2.7 深色适配 */
         }
         body.dark-mode .sync-input {
             background: rgba(255, 255, 255, 0.05);
@@ -1555,37 +1652,7 @@
         }
         
         /* 弹窗取消按钮 - 跟随 App 主题的液态玻璃 */
-        .modal-cancel-btn {
-            background: rgba(255, 255, 255, var(--glass-alpha));
-            color: #1f2937;   /* ★v1.1.2.8 浅色加深 */
-            border: 1px solid rgba(255, 255, 255, 0.45);   /* ★五项优化①：边框统一玻璃配方 */
-            border-radius: 12px !important;  /* 与 modal-option-btn 圆角统一 */
-            transition: background 0.2s ease, transform 0.15s ease;
-        }
-        .modal-cancel-btn:hover {
-            background: rgba(255, 255, 255, 0.14);
-        }
-        body.dark-mode .modal-cancel-btn {
-            background: rgba(255, 255, 255, 0.03);
-            color: #e5e7eb;
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-        body.dark-mode .modal-cancel-btn:hover {
-            background: rgba(255, 255, 255, 0.07);
-        }
         
-        /* 弹窗选项按钮 - 液态玻璃（替换实色按钮，统一设计语言） */
-        .modal-option-btn {
-            background: rgba(255, 255, 255, var(--glass-alpha));
-                    color: #0f172a;   /* ★v1.1.2.8 浅色加深 */
-            border: 1px solid rgba(255, 255, 255, 0.45);   /* ★五项优化①：边框统一玻璃配方 */
-            border-radius: 12px;
-            transition: background 0.2s ease, border-color 0.2s ease;
-        }
-        .modal-option-btn:hover {
-            background: rgba(255, 255, 255, 0.14);
-            border-color: rgba(0, 0, 0, 0.1);
-        }
         /* ★2026-08-20 v1.1.0.3 玻璃弹窗文字深浅自适应（修复浅色模式下白色文字看不见） */
         .glass-modal h3, .glass-modal .modal-title {
             color: #1e293b;
@@ -1598,17 +1665,6 @@
         }
         body.dark-mode .glass-modal p {
             color: rgba(248, 250, 252, 0.7);
-        }
-        .modal-option-btn .material-icons { color: #4f46e5; }
-        .modal-option-btn.green .material-icons { color: #16a34a; }
-        .modal-option-btn.purple .material-icons { color: #9333ea; }
-        body.dark-mode .modal-option-btn {
-            background: rgba(255, 255, 255, calc(var(--glass-alpha) * 0.3));
-            color: #e5e7eb;
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-        body.dark-mode .modal-option-btn:hover {
-            background: rgba(255, 255, 255, 0.07);
         }
         
         .glass-panel:hover {
@@ -3263,8 +3319,7 @@
         .ms-scroll::-webkit-scrollbar,
         .confirm-modal-message::-webkit-scrollbar,
         .hcm-list::-webkit-scrollbar,
-        .yr-body::-webkit-scrollbar,
-        .sync-config-collapse::-webkit-scrollbar {
+        .yr-body::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
@@ -3396,8 +3451,7 @@
         #recordsTable th, #plannedTripsTable th {
             font-weight: 600 !important;
         }
-        .glass-btn, .modal-option-btn, .modal-cancel-btn,
-        .btn-click-effect, .edit-input, .sort-header {
+        .glass-btn, .btn-click-effect, .edit-input, .sort-header {
             font-weight: 600;
         }
         /* ★2026-09-02 灵动液态玻璃 B：全 App 玻璃可点件统一"轻沉回弹"按压（0.96 液态手感，替代此前 0.88~0.97 不一的力度）
@@ -6092,6 +6146,26 @@
                     <button id="syncDemoBtn" style="display:none;margin-top:8px;width:100%;padding:8px 10px;border-radius:10px;font-size:12px;background:rgba(99,102,241,0.08);border:1px dashed rgba(99,102,241,0.35);color:#4f46e5;cursor:pointer;" data-testid="sync-demo-button">
                         🧪 弹窗示例：管理云端备份（网页预览）
                     </button>
+                    <!-- ★2026-09-17 入口改造（改法 C）：配置表单收进「绑定账号」弹窗，设置页只留一张账号卡
+                         未绑定 = 说明 + 主按钮；已绑定 = 账号 + 立即同步/解绑。
+                         表单内 syncServer/syncUsername/syncPassword 三个 id 不变（既有逻辑零改动复用） -->
+                    <div id="syncAccountCard" class="settings-item" data-testid="sync-account-card" style="border-radius: 12px; flex-wrap: wrap; padding: 0; align-items: stretch; gap: 0; margin-top: 10px;">
+                        <div id="syncAcctOff" style="width: 100%; padding: 14px 16px;">
+                            <div class="settings-item-title">还没有绑定</div>
+                            <div class="settings-item-desc" style="margin-top: 3px;">绑定后：换手机不用重填配置，记录自动备份到你的网盘</div>
+                            <button id="syncBindOpenBtn" class="check-go-btn ripple-effect" type="button" data-testid="sync-bind-open" style="width: 100%; margin-top: 11px; padding: 10px 0; border-radius: 12px; font-size: 13px; font-weight: 600;">绑定账号</button>
+                        </div>
+                        <div id="syncAcctOn" style="display: none; width: 100%; padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="settings-item-text" style="flex: 1; min-width: 0;">
+                                    <div class="settings-item-title"><span class="sync-acct-dot"></span>已绑定 · <span id="syncAcctProvider">坚果云</span></div>
+                                    <div class="settings-item-desc" id="syncAcctMail" style="margin-top: 3px;"></div>
+                                </div>
+                                <button id="syncUnbindBtn" class="confirm-btn-cancel ripple-effect" type="button" data-testid="sync-unbind" style="padding: 7px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">解绑</button>
+                            </div>
+                            <button id="syncAcctNowBtn" class="check-go-btn ripple-effect" type="button" data-testid="sync-acct-now" style="width: 100%; margin-top: 11px; padding: 9px 0; border-radius: 12px; font-size: 13px; font-weight: 600;">立即同步</button>
+                        </div>
+                    </div>
                     <!-- ★2026-09-03 自动同步 + 同步健康行融合：开关行下方同卡嵌健康状态子行（未配置=引导/已配置=距上次同步），点击未配置展开配置、已配置弹状态 -->
                     <div id="autoSyncCard" class="settings-item" style="border-radius: 12px; flex-wrap: wrap; padding: 0; align-items: stretch; gap: 0; margin-top: 10px;">  <!-- ★2026-09-03 gap:0 去掉 settings-item 默认 12px（否则两子行之间拉开空隙）；margin-top:10 与上方示例按钮分离不贴边 -->
                         <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px 10px;">
@@ -6111,24 +6185,6 @@
                             <span id="syncHealthDot" class="sync-health-dot"></span>
                             <span id="syncHealthText" class="sync-health-text">同步状态计算中…</span>
                             <span class="material-icons sync-health-arrow">chevron_right</span>
-                        </div>
-                    </div>
-                    <button id="syncConfigToggleBtn" class="sync-config-toggle-btn" data-testid="sync-config-toggle">
-                        <span class="material-icons">keyboard_arrow_down</span>
-                        <span>配置服务器 / 账号</span>
-                    </button>
-                    <div id="syncConfigCollapse" class="sync-config-collapse">
-                        <div class="sync-config-item">
-                            <label class="sync-config-label" for="syncServer">服务器地址（WebDAV）</label>
-                            <input type="text" id="syncServer" class="sync-input" placeholder="https://dav.jianguoyun.com/dav/" autocomplete="off" spellcheck="false">
-                        </div>
-                        <div class="sync-config-item">
-                            <label class="sync-config-label" for="syncUsername">账号（坚果云邮箱）</label>
-                            <input type="text" id="syncUsername" class="sync-input" placeholder="你的坚果云账号" autocomplete="off" spellcheck="false">
-                        </div>
-                        <div class="sync-config-item" style="margin-bottom: 0;">
-                            <label class="sync-config-label" for="syncPassword">应用密码（设置→安全选项→应用密码）</label>
-                            <input type="password" id="syncPassword" class="sync-input" placeholder="16位应用密码，不是登录密码" autocomplete="off" spellcheck="false">
                         </div>
                     </div>
                     <!-- 2026-08-12 同步状态行已删除，改为「自动同步」标题旁 i 标识 + 弹窗 -->
@@ -6246,7 +6302,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.2.1.3</div>
+                        <div class="about-version">版本 1.2.1.4</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

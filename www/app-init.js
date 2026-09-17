@@ -365,7 +365,7 @@ function setupEventListeners() {
         var t = e.target;
         if (!t || !t.closest) return;
         // 命中按钮类才震：原生 <button> + 全 App 模拟按钮/可点击行
-        var btn = t.closest('button, .tab-btn, .glass-btn, .modal-option-btn, .modal-cancel-btn, .confirm-btn-cancel, .confirm-btn-delete, .btn-click-effect, .restore-file-item, .sort-header, .sync-config-toggle-btn, .settings-item, .settings-switch, .glass-modal .modal-option-btn, [data-testid$="-button"]');
+        var btn = t.closest('button, .tab-btn, .glass-btn, .confirm-btn-cancel, .confirm-btn-delete, .btn-click-effect, .restore-file-item, .sort-header, .settings-item, .settings-switch, [data-testid$="-button"]');
         // ★2026-09-11 修复「震动偶发失效」：显式列表之外，再向上找「光标为手型」的可点击元素兜底。
         //   原因：热力图日期格 .hm-day（30 个）、顶栏标题、视图说明灰字 .view-caption、设置页 info 图标
         //   都是可点击控件却不在列表内 → 点了不震，点别的按钮却震，用户感知为「不知为啥偶发失效」

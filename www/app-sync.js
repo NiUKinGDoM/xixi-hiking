@@ -595,13 +595,179 @@ function renderSyncForm(lastSync) {
     if (autoToggle) autoToggle.checked = syncAuto;
     syncUiState.lastSyncAt = lastSync || ''; // 2026-08-12 状态行删除 → 存全局，弹窗读取
     // ★2026-09-03 未配置引导已融合进「自动同步」卡健康子行（updateSyncHealthRow），不再单独蓝条
+    try { renderSyncAccountCard(); } catch (e) { /* 静默 */ }
+}
+
+// ===== ★2026-09-17 入口改造（改法 C）：账号卡 + 「绑定账号」弹窗 =====
+// 背景：原先三个输入框（服务器地址（WebDAV）/ 账号 / 应用密码）直接摊在设置页折叠区里，
+//       术语晦涩、换机要重新查一遍，也不像"登录"。
+// 现在：设置页只留一张账号卡（未绑定 / 已绑定两态），表单收进弹窗，弹窗内用
+//       「① 选网盘 → ② 填账号」两步引导，选坚果云时地址自动填好。
+// ★三个输入框 id（syncServer/syncUsername/syncPassword）保持不变 ⇒ renderSyncForm /
+//   saveSyncConfigFromForm 等既有逻辑零改动即可复用（配合上面的"空表单守卫"）。
+const SYNC_PROVIDER_JIANGUO_URL = 'https://dav.jianguoyun.com/dav/';
+
+function syncProviderOf(server) {
+    return String(server || '').indexOf('jianguoyun.com') >= 0 ? '坚果云' : 'WebDAV';
+}
+
+// 账号卡两态渲染（绑定 / 解绑 / 配置变化后都要调）
+function renderSyncAccountCard() {
+    const off = document.getElementById('syncAcctOff');
+    const on = document.getElementById('syncAcctOn');
+    if (!off || !on) return;
+    const bound = !!(syncConfig && syncConfig.server && syncConfig.username);
+    off.style.display = bound ? 'none' : 'block';
+    on.style.display = bound ? 'block' : 'none';
+    if (!bound) return;
+    const provEl = document.getElementById('syncAcctProvider');
+    const mailEl = document.getElementById('syncAcctMail');
+    if (provEl) provEl.textContent = syncProviderOf(syncConfig.server);
+    if (mailEl) mailEl.textContent = syncConfig.username || '';
+}
+
+// 弹窗内「选网盘」切换：坚果云 → 地址自动填 + 隐藏地址框；其他 → 显示地址框让用户填
+function pickSyncProvider(kind) {
+    const isJ = kind === 'jianguo';
+    const cardJ = document.getElementById('syncProvJianguo');
+    const cardO = document.getElementById('syncProvOther');
+    const wrap = document.getElementById('syncServerWrap');
+    const serverEl = document.getElementById('syncServer');
+    const label = document.getElementById('syncUserLabel');
+    const hint = document.getElementById('syncPwdHint');
+    if (cardJ) cardJ.classList.toggle('sel', isJ);
+    if (cardO) cardO.classList.toggle('sel', !isJ);
+    if (wrap) wrap.style.display = isJ ? 'none' : 'block';
+    if (serverEl) {
+        if (isJ) serverEl.value = SYNC_PROVIDER_JIANGUO_URL;
+        else if (serverEl.value === SYNC_PROVIDER_JIANGUO_URL) serverEl.value = '';   // 切换时清掉预填，避免误用
+    }
+    if (label) label.textContent = isJ ? '坚果云账号（邮箱）' : '账号';
+    if (hint) hint.textContent = isJ
+        ? '坚果云 → 右上角头像 → 账户信息 → 安全选项 → 应用密码 → 添加'
+        : '填你的 WebDAV 服务商提供的账号与应用密码';
+}
+
+function closeSyncBindModal() {
+    const m = document.getElementById('syncBindModal');
+    if (m && m.parentNode) m.parentNode.removeChild(m);
+}
+
+// 绑定弹窗（观感取改法 B：步骤条 + 服务商卡片 + 主按钮）
+function openSyncBindModal() {
+    closeOpenModals();   // 防重入：连点不叠加
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.id = 'syncBindModal';
+    modal.innerHTML =
+        '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+            '<div class="confirm-modal-title">' +
+                '<span class="material-icons" style="color: #4f46e5;">link</span>' +
+                '绑定账号' +
+            '</div>' +
+            '<div class="confirm-modal-message" style="margin-bottom: 12px;">' +
+                '<div class="sync-bind-steps"><b>① 选网盘</b> ── ② 填账号</div>' +
+                '<div class="sync-provider-card sel" id="syncProvJianguo" data-testid="sync-prov-jianguo">' +
+                    '<div><div class="sync-provider-name">坚果云</div>' +
+                    '<div class="sync-provider-sub">推荐 · 免费额度够用</div></div>' +
+                    '<div class="sync-provider-tick">✓</div>' +
+                '</div>' +
+                '<div class="sync-provider-card" id="syncProvOther" data-testid="sync-prov-other">' +
+                    '<div><div class="sync-provider-name">其他 WebDAV</div>' +
+                    '<div class="sync-provider-sub">自建 / 群晖 / 其他网盘</div></div>' +
+                    '<div class="sync-provider-tick">✓</div>' +
+                '</div>' +
+                '<div class="sync-config-item" id="syncServerWrap" style="display: none; margin-top: 12px;">' +
+                    '<label class="sync-config-label" for="syncServer">服务器地址</label>' +
+                    '<input type="text" id="syncServer" class="sync-input" placeholder="https://dav.example.com/dav/" autocomplete="off" spellcheck="false">' +
+                '</div>' +
+                '<div class="sync-config-item" style="margin-top: 12px;">' +
+                    '<label class="sync-config-label" for="syncUsername" id="syncUserLabel">坚果云账号（邮箱）</label>' +
+                    '<input type="text" id="syncUsername" class="sync-input" placeholder="你的坚果云邮箱" autocomplete="off" spellcheck="false">' +
+                '</div>' +
+                '<div class="sync-config-item" style="margin-bottom: 0;">' +
+                    '<label class="sync-config-label" for="syncPassword">应用密码</label>' +
+                    '<input type="password" id="syncPassword" class="sync-input" placeholder="16 位应用密码，不是登录密码" autocomplete="off" spellcheck="false">' +
+                    '<div class="sync-bind-hint" id="syncPwdHint">坚果云 → 右上角头像 → 账户信息 → 安全选项 → 应用密码 → 添加</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+                '<button class="confirm-btn-cancel ripple-effect" id="syncBindCancel">取消</button>' +
+                '<button class="check-go-btn ripple-effect" id="syncBindSubmit" data-testid="sync-bind-submit">绑定并同步</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(modal);
+
+    // 回填已有配置（改绑场景：预填旧值，只改要改的那项）
+    const serverEl = document.getElementById('syncServer');
+    const userEl = document.getElementById('syncUsername');
+    const passEl = document.getElementById('syncPassword');
+    if (serverEl) serverEl.value = (syncConfig && syncConfig.server) || '';
+    if (userEl) userEl.value = (syncConfig && syncConfig.username) || '';
+    if (passEl) passEl.value = (syncConfig && syncConfig.password) || '';
+    // 已配非坚果云 → 默认落在「其他 WebDAV」；否则默认坚果云
+    const isJianguo = !syncConfig || !syncConfig.server || syncConfig.server.indexOf('jianguoyun.com') >= 0;
+    pickSyncProvider(isJianguo ? 'jianguo' : 'other');
+
+    const jianguoCard = document.getElementById('syncProvJianguo');
+    const otherCard = document.getElementById('syncProvOther');
+    if (jianguoCard) jianguoCard.addEventListener('click', function () { pickSyncProvider('jianguo'); });
+    if (otherCard) otherCard.addEventListener('click', function () { pickSyncProvider('other'); });
+    const cancelBtn = document.getElementById('syncBindCancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeSyncBindModal);
+    const submitBtn = document.getElementById('syncBindSubmit');
+    if (submitBtn) submitBtn.addEventListener('click', submitSyncBind);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeSyncBindModal(); });
+    if (userEl) setTimeout(function () { try { userEl.focus(); } catch (err) { /* 忽略 */ } }, 320);
+}
+
+// 提交绑定：校验 → 保存（表单此刻在 DOM 内，可正常读值）→ 刷新账号卡 → 测连接
+async function submitSyncBind() {
+    const serverEl = document.getElementById('syncServer');
+    const userEl = document.getElementById('syncUsername');
+    const passEl = document.getElementById('syncPassword');
+    if (!serverEl || !userEl || !passEl) return;
+    const server = (serverEl.value || '').trim();
+    const user = (userEl.value || '').trim();
+    const pass = passEl.value || '';
+    if (!server) { showErrorMessage('请先选择网盘，或填写服务器地址'); return; }
+    if (!user) { showErrorMessage('请填写账号'); return; }
+    if (!pass) { showErrorMessage('请填写应用密码'); return; }
+    await saveSyncConfigFromForm();          // 表单在 DOM 内，正常写入并持久化
+    closeSyncBindModal();                    // 关闭弹窗（清掉弹窗 DOM）
+    renderSyncForm(syncUiState.lastSyncAt || '');
+    renderSyncAccountCard();
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
+    showSuccessMessage('已绑定，正在测试连接…');
+    // 弹窗已关闭（输入框不在 DOM）→ autoCheckSyncConnection 内部的 saveSyncConfigFromForm
+    // 靠「空表单守卫」保住刚保存的配置，不会被清空
+    try { await autoCheckSyncConnection(true); } catch (e) { /* 静默 */ }
+}
+
+// 解绑：清空本机配置（云端已有备份文件不动）
+function unbindSyncAccount() {
+    const ok = confirm('解绑后本机不再自动备份到云端。\n云端已有的备份文件不会被删除，之后可重新绑定取回。\n\n确定解绑？');
+    if (!ok) return;
+    syncConfig = { server: '', username: '', password: '' };
+    // ★AppStore.setItem 是同步函数（内部 localStorage，返回 undefined）→ 不能接 .then()；顺序执行即可
+    AppStore.setItem(SYNC_CONFIG_KEY, { server: '', username: '', password: '' });
+    renderSyncForm(syncUiState.lastSyncAt || '');   // 内部会刷新账号卡 → 切回未绑定态
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
+    showSuccessMessage('已解绑');
 }
 
 // 从表单读取并保存配置
 async function saveSyncConfigFromForm() {
-    syncConfig.server = (document.getElementById('syncServer') || {}).value || '';
-    syncConfig.username = (document.getElementById('syncUsername') || {}).value || '';
-    syncConfig.password = (document.getElementById('syncPassword') || {}).value || '';   // 内存保持明文（webdavRequest 用）
+    // ★2026-09-17 入口改造配套守卫（★安全加固）：绑定表单现只存在于「绑定账号」弹窗内，
+    //   而上传/下载/管理/测试连接等所有操作前都会调用本函数；若弹窗未打开（三输入框不在 DOM）
+    //   仍照旧赋空字符串，会把已绑定的配置**静默清空**。故：读不到输入框 → 保持内存原值，不覆盖。
+    const serverEl = document.getElementById('syncServer');
+    const userEl = document.getElementById('syncUsername');
+    const passEl = document.getElementById('syncPassword');
+    if (!serverEl && !userEl && !passEl) return;
+    syncConfig.server = (serverEl || {}).value || '';
+    syncConfig.username = (userEl || {}).value || '';
+    syncConfig.password = (passEl || {}).value || '';   // 内存保持明文（webdavRequest 用）
     // ★2026-08-25 存储时密码加密（本地不再明文）
     await AppStore.setItem(SYNC_CONFIG_KEY, {
         server: syncConfig.server,
@@ -721,7 +887,7 @@ async function uploadSyncBackup(silent) {
     const fileName = buildSyncFileName(); // 每次备份独立文件名（带时间戳）
     const url = buildSyncFileUrl(fileName);
     if (!url) {
-        showErrorMessage('请先填写服务器地址');
+        showErrorMessage('请先绑定账号');
         return;
     }
     if (syncInProgress) return;
@@ -807,7 +973,7 @@ async function downloadSyncBackup() {
         await saveSyncConfigFromForm();
         const url = buildSyncFileUrl();
         if (!url) {
-            showErrorMessage('请先填写服务器地址');
+            showErrorMessage('请先绑定账号');
             return;
         }
         setSyncStatus('正在读取云端备份…', 'info', '');
@@ -910,7 +1076,7 @@ function showRestoreFileModal(files) {
             <div class="restore-file-list" style="max-height: 260px; overflow-y: auto; padding: 2px 0 10px;">
                 ${listHtml}
             </div>
-            <button id="restoreCancelBtn" class="mt-2 w-full py-2 px-4 rounded-lg modal-cancel-btn">
+            <button id="restoreCancelBtn" class="mt-2 w-full py-2 px-4 confirm-btn-cancel">
                 取消
             </button>
         </div>
@@ -986,7 +1152,7 @@ async function mergeSyncBackup(silent) {
     await saveSyncConfigFromForm();
     const url = buildSyncFileUrl();
     if (!url) {
-        if (!silent) showErrorMessage('请先填写服务器地址');
+        if (!silent) showErrorMessage('请先绑定账号');
         return;
     }
     if (syncInProgress) return;
@@ -1078,8 +1244,29 @@ function notifySyncFailure(msg) {
     }
 }
 
+// ★2026-09-17 备份包含同步配置：导出时把网盘配置一并写进备份包
+//   - 默认带「服务器 + 账号」（本身不敏感），新机导入后自动填好 —— 这正是换机少填几步的关键
+//   - 密码由导出弹窗的勾选决定（默认不带）；带则用与本地同款 encPwd 混淆，不写明文
+//   - 选项由**调用方以参数传入**（只有「手动导出」这条链会传；自动/上传路径不传 → 走安全默认）
+function buildSyncConfigForBackup(opts) {
+    try {
+        // ★2026-09-17 改参数化（原读全局 window.__backupSyncOpts）：全局状态会**残留** ——
+        //   用户手动导出勾了「含密码」后，后续自动上传 / 每周本地备份也会带上密码
+        //   （等于网盘上躺着一份含密码的包）。现在只有"手动导出"这条链会传 opts，
+        //   自动 / 上传路径不传 → 走安全默认（带配置、不带密码）。
+        const o = opts || { includeCfg: true, includePwd: false };
+        if (!o.includeCfg) return null;
+        if (!syncConfig || !syncConfig.server || !syncConfig.username) return null;   // 未绑定 → 不带
+        return {
+            server: syncConfig.server,
+            username: syncConfig.username,
+            password: (o.includePwd && syncConfig.password) ? encPwd(syncConfig.password) : ''
+        };
+    } catch (e) { return null; }
+}
+
 // 全量数据打包（含应用版本、标题、暗色模式等元信息）
-function buildFullBackupPayload() {
+function buildFullBackupPayload(opts) {
     return {
         app: 'XiXiHiking',
         appName: '徒步小记',
@@ -1088,7 +1275,8 @@ function buildFullBackupPayload() {
         version: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1.1.0.3'),
         exportedAt: new Date().toISOString(),
         records: records || [],
-        plannedTrips: plannedTrips || []
+        plannedTrips: plannedTrips || [],
+        syncConfig: buildSyncConfigForBackup(opts)   // ★2026-09-17 备份含同步配置（未绑定/未勾选 = null）
     };
 }
 
@@ -1283,8 +1471,8 @@ footer{text-align:center;color:#a8a29e;font-size:12px;margin-top:34px;}
         '</body></html>';
 }
 // 组装完整备份 HTML（文字 + 照片 base64）
-async function buildFullBackupHTML(includePhotos) {
-    var payload = buildFullBackupPayload();
+async function buildFullBackupHTML(includePhotos, opts) {
+    var payload = buildFullBackupPayload(opts);
     if (includePhotos === false) {
         // ★2026-08-21 v1.1.1.6 纯数据备份：不含照片（体积小，日常快速备份用）
         payload.photos = {};
@@ -1312,8 +1500,8 @@ function blobToUint8(blob) {
         r.readAsArrayBuffer(blob);
     });
 }
-async function buildFullBackupZip(includePhotos) {
-    var payload = buildFullBackupPayload();
+async function buildFullBackupZip(includePhotos, opts) {
+    var payload = buildFullBackupPayload(opts);
     var enc = new TextEncoder();
     var files = [];
     // 回忆册（纯文字版，照片不内嵌——照片在 zip 二进制目录里）
@@ -1505,7 +1693,8 @@ async function showSyncStatusModal() {
                 <span class="material-icons" style="color: #4f46e5;">sync_alt</span>
                 同步状态
             </div>
-            <div class="confirm-modal-message">
+            <!-- ★2026-09-17 与「弹窗间距规范」对齐：内容 → 按钮 固定 12px（原先实测 0px，文字贴着按钮） -->
+            <div class="confirm-modal-message" style="margin-bottom: 12px;">
                 ${statusHtml}
                 ${timeHtml}
             </div>
@@ -1528,7 +1717,7 @@ async function autoCheckSyncConnection(showTip) {
     await saveSyncConfigFromForm();
     const url = buildSyncFileUrl();
     if (!url) {
-        setSyncStatus('请先填写服务器地址', 'info', '');
+        setSyncStatus('请先绑定账号', 'info', '');
         return;
     }
     if (!syncConfig.username || !syncConfig.password) {
@@ -1568,11 +1757,8 @@ function setupSyncEventListeners() {
                 const url = buildSyncFileUrl();
                 const configured = !!(url && syncConfig && syncConfig.username && syncConfig.password);
                 if (configured) { showSyncStatusModal(); return; }
-                const toggleBtn = document.getElementById('syncConfigToggleBtn');
-                const collapse = document.getElementById('syncConfigCollapse');
-                if (toggleBtn && collapse && !collapse.classList.contains('open')) toggleBtn.click();
-                const serverInput = document.getElementById('syncServer');
-                setTimeout(function () { if (serverInput) { try { serverInput.focus(); } catch (e) { /* 忽略 */ } } }, 350);
+                // ★2026-09-17 入口改造：未绑定时直接打开「绑定账号」弹窗（原为展开折叠配置区）
+                openSyncBindModal();
             } catch (e) { /* 静默 */ }
         };
         healthRow.addEventListener('click', hHandler);
@@ -1616,57 +1802,26 @@ function setupSyncEventListeners() {
         cleanupFunctions.push(() => syncDemoBtn.removeEventListener('click', handler));
     }
     // ★配置折叠区（v1.4.10.1；v1.4.10.10 加回弹展开/平滑收起）
-    const configToggle = document.getElementById('syncConfigToggleBtn');
-    if (configToggle) {
-        const handler = function () {
-            const collapse = document.getElementById('syncConfigCollapse');
-            if (!collapse) return;
-            const isOpen = collapse.classList.contains('open');
-            if (isOpen) {
-                // 收起（2026-08-12 v1.0.10.0 终版：无动画瞬间收起！
-                // 8 版动画方案（max-height/transform/grid/height）在用户 WebView 上均有跳变/错位，
-                // 无动画过程=物理上不存在"跳一下"；展开保留平滑动画）
-                collapse.classList.remove('open');
-                collapse.style.display = 'none';
-                collapse.style.transition = '';
-                collapse.style.height = '';
-                collapse.style.paddingTop = '';
-                collapse.style.opacity = '';
-                collapse.style.borderTopWidth = '';
-                collapse.style.borderTopColor = '';
-                configToggle.classList.remove('open');
-            } else {
-                // 展开（height 0→实际高度：先 auto 实测完整高度（含 margin/padding），再动画展开，绝不裁切；
-                // 2026-08-12 不再加 no-blur（它会导致背景跳亮变暗））
-                collapse.style.display = 'block';
-                collapse.classList.add('open');
-                configToggle.classList.add('open');
-                collapse.style.height = 'auto';
-                collapse.style.paddingTop = '12px';
-                collapse.style.opacity = '0';
-                collapse.style.borderTopColor = 'transparent';
-                const target = collapse.offsetHeight; // 真实完整高度（含 padding，含子项 margin）
-                collapse.style.height = '0px';
-                collapse.style.paddingTop = '0px';
-                requestAnimationFrame(function () {
-                    collapse.style.transition = 'height 0.3s cubic-bezier(0.25, 0.85, 0.3, 1), padding-top 0.3s ease, opacity 0.25s ease, border-top-color 0.3s ease';
-                    collapse.style.height = target + 'px';
-                    collapse.style.paddingTop = '12px';
-                    collapse.style.opacity = '1';
-                    collapse.style.borderTopColor = '';
-                });
-                setTimeout(function () {
-                    collapse.style.transition = '';
-                    collapse.style.height = '';
-                    collapse.style.paddingTop = '';
-                    collapse.style.opacity = '';
-                    collapse.style.borderTopColor = '';
-                }, 360);
-            }
-        };
-        configToggle.addEventListener('click', handler);
-        cleanupFunctions.push(() => configToggle.removeEventListener('click', handler));
+    // ★2026-09-17 入口改造（改法 C）：配置表单收进弹窗后，此处只绑账号卡上的按钮
+    const bindOpenBtn = document.getElementById('syncBindOpenBtn');
+    if (bindOpenBtn) {
+        const handler = function () { openSyncBindModal(); };
+        bindOpenBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => bindOpenBtn.removeEventListener('click', handler));
     }
+    const acctNowBtn = document.getElementById('syncAcctNowBtn');
+    if (acctNowBtn) {
+        const handler = function () { uploadSyncBackup(); };
+        acctNowBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => acctNowBtn.removeEventListener('click', handler));
+    }
+    const unbindBtn = document.getElementById('syncUnbindBtn');
+    if (unbindBtn) {
+        const handler = function () { unbindSyncAccount(); };
+        unbindBtn.addEventListener('click', handler);
+        cleanupFunctions.push(() => unbindBtn.removeEventListener('click', handler));
+    }
+    try { renderSyncAccountCard(); } catch (e) { /* 静默 */ }
     const autoToggle = document.getElementById('syncAutoToggle');
     if (autoToggle) {
         const handler = async function (e) {
@@ -1696,7 +1851,7 @@ async function manageCloudBackups() {
         await saveSyncConfigFromForm();
         const url = buildSyncFileUrl();
         if (!url) {
-            showErrorMessage('请先填写服务器地址');
+            showErrorMessage('请先绑定账号');
             return;
         }
         setSyncStatus('正在读取云端备份…', 'info', '');
@@ -1728,7 +1883,7 @@ function showSyncDemoModal() {
 }
 // ★2026-08-29 全局弹窗防重入：打开任何弹窗前先移除所有已存在弹窗（导出/导入/管理叠加的根治）
 function closeOpenModals() {
-    document.querySelectorAll('.confirm-modal, #exportModal, #importMethodModal').forEach(function (m) {
+    document.querySelectorAll('.confirm-modal').forEach(function (m) {
         if (m && m.parentNode) m.parentNode.removeChild(m);
     });
 }
@@ -1761,7 +1916,7 @@ function showManageBackupsModal(files) {
             <div class="restore-file-list" style="max-height: 280px; overflow-y: auto; padding: 2px 0 10px;">
                 ${listHtml}
             </div>
-            <button id="manageCloseBtn" class="mt-2 w-full py-2 px-4 rounded-lg modal-cancel-btn">
+            <button id="manageCloseBtn" class="mt-2 w-full py-2 px-4 confirm-btn-cancel">
                 关闭
             </button>
         </div>
@@ -1837,28 +1992,43 @@ function showExportModal() {
     closeOpenModals(); // ★2026-08-29 全局防重入（替代原 exportModal 单查重，防任意弹窗叠加）
 
     const modalHtml = `
-        <div id="exportModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop-animate" style="background: rgba(0,0,0,0.3);">
+        <div id="exportModal" class="confirm-modal modal-backdrop-animate">
             <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 90vw;">
                 <div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">backup</span>导出备份</div>
 
                 <div class="space-y-3">
-                    <button id="exportRecordsBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
+                    <button id="exportRecordsBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">backup</span>
                         <span>导出完整备份压缩包（含照片）</span>
                     </button>
                     <!-- 2026-08-21 v1.1.1.6 纯数据备份（不含照片，体积小，适合日常快速备份） -->
-                    <button id="exportDataOnlyBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
+                    <button id="exportDataOnlyBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">description</span>
                         <span>导出纯数据备份（不含照片）</span>
                     </button>
                     <!-- 2026-08-21 v1.1.2.1 导出诊断报告（并入导出弹窗） -->
-                    <button id="exportDiagBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
+                    <button id="exportDiagBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">bug_report</span>
                         <span>导出诊断报告</span>
                     </button>
                 </div>
+                <!-- ★2026-09-17 备份包含同步配置：换机导入后自动填好（默认带配置、默认不带密码） -->
+                <div id="exportSyncCfgBlock" class="export-sync-opt" style="margin-top: 12px;">
+                    <label class="chk-row">
+                        <input type="checkbox" id="exportIncludeSyncCfg" checked>
+                        <span>同时包含网盘配置
+                            <span class="chk-sub">换机导入后自动填好地址与账号（不含密码）</span></span>
+                    </label>
+                    <div id="exportSyncPwdWrap" style="margin: 9px 0 0 24px;">
+                        <label class="chk-row">
+                            <input type="checkbox" id="exportIncludeSyncPwd">
+                            <span>连应用密码一起带上
+                                <span class="chk-sub">新机彻底免填；但这份文件一旦外泄，别人就能访问你的网盘</span></span>
+                        </label>
+                    </div>
+                </div>
                 <!-- ★2026-09-06 说明移入「数据管理」标题旁 i 弹窗（用户要求：弹窗只留操作，说明收进数据管理说明） -->
-                <button id="closeExportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
+                <button id="closeExportModal" class="mt-4 w-full py-2 px-4 confirm-btn-cancel">
                     取消
                 </button>
             </div>
@@ -1885,13 +2055,33 @@ function showExportModal() {
         }
     });
 
+    // ★2026-09-17 备份含配置：读勾选并**作为参数**传给导出链（不写全局，防污染自动备份）
+    const readBackupSyncOpts = function () {
+        const c = document.getElementById('exportIncludeSyncCfg');
+        const p = document.getElementById('exportIncludeSyncPwd');
+        return {
+            includeCfg: !!(c && c.checked),
+            includePwd: !!(c && c.checked && p && p.checked)
+        };
+    };
+    const cfgBlock = document.getElementById('exportSyncCfgBlock');
+    if (cfgBlock && !(syncConfig && syncConfig.server && syncConfig.username)) cfgBlock.style.display = 'none';   // 未绑定 → 无意义
+    const cfgChk = document.getElementById('exportIncludeSyncCfg');
+    const pwdWrap = document.getElementById('exportSyncPwdWrap');
+    const syncPwdToggle = function () {
+        if (pwdWrap) pwdWrap.style.display = (cfgChk && cfgChk.checked) ? 'block' : 'none';
+    };
+    if (cfgChk) cfgChk.addEventListener('change', syncPwdToggle);
+    syncPwdToggle();
     exportRecordsBtn.addEventListener('click', async () => {
+        const opts = readBackupSyncOpts();
         closeModal();
-        await performBackupExport(true);
+        await performBackupExport(true, opts);
     });
     exportDataOnlyBtn.addEventListener('click', async () => {
+        const opts = readBackupSyncOpts();
         closeModal();
-        await performBackupExport(false);
+        await performBackupExport(false, opts);
     });
     exportDiagBtn.addEventListener('click', () => {
         closeModal();
@@ -1923,19 +2113,19 @@ function autoLocalBackupIfDue() {
 }
 
 // ★2026-08-20 导出备份（★2026-08-25 完整备份改 zip 压缩包：照片二进制省 33%；纯数据仍 HTML）
-async function performBackupExport(includePhotos) {
+async function performBackupExport(includePhotos, opts) {
     try {
         showLoadingToast('正在打包备份…');
         const isFull = includePhotos !== false;
         const dateStr = new Date().toISOString().replace(/[-:TZ]/g, '').slice(0, 14);
         let fileName, outData, mime;
         if (isFull) {
-            const zip = await buildFullBackupZip(true);
+            const zip = await buildFullBackupZip(true, opts);
             fileName = 'XiXi徒步备份-' + dateStr + '.zip';
             outData = uint8ToBase64(zip);
             mime = 'application/zip';
         } else {
-            const html = await buildFullBackupHTML(false);
+            const html = await buildFullBackupHTML(false, opts);
             fileName = 'XiXi纯数据备份-' + dateStr + '.html';
             outData = utf8ToBase64(html);
             mime = 'text/html;charset=utf-8';
@@ -2004,18 +2194,17 @@ function showImportModal() {
 
     const modal = document.createElement('div');
     modal.id = 'importMethodModal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center modal-backdrop-animate';
-    modal.style.background = 'rgba(0,0,0,0.3)';   /* ★v1.1.2.8 浅色遮罩调淡 */
+    modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
         <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 90vw;">
             <div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">upload_file</span>导入</div>
             <div class="space-y-3">
-                <button id="selectFileBtn" class="w-full py-3 px-4 modal-option-btn flex items-center justify-center gap-2">
+                <button id="selectFileBtn" class="w-full py-3 px-4 check-go-btn flex items-center justify-center gap-2">
                     <span class="material-icons text-xl">upload_file</span>
                     <span>选择备份文件</span>
                 </button>
             </div>
-            <button id="cancelImportModal" class="mt-4 w-full py-2 px-4 rounded-lg modal-cancel-btn">
+            <button id="cancelImportModal" class="mt-4 w-full py-2 px-4 confirm-btn-cancel">
                 取消
             </button>
         </div>
@@ -2064,7 +2253,7 @@ function importBackup() {
                         showErrorMessage('不是有效的备份文件（需为备份压缩包或 HTML 备份）');
                         return;
                     }
-                    importFullBackupPayload(payload);
+                    importFullBackupPayloadWithConfigAsk(payload);   // ★先问是否恢复网盘配置
                 } else {
                     // ★2026-08-25 zip 压缩包备份（PK 头检测）
                     const u8 = new Uint8Array(ev.target.result);
@@ -2077,7 +2266,7 @@ function importBackup() {
                             showErrorMessage('不是有效的备份文件（需为备份压缩包或 HTML 备份）');
                             return;
                         }
-                        importFullBackupPayload(payload);
+                        importFullBackupPayloadWithConfigAsk(payload);   // ★先问是否恢复网盘配置
                     }
                 }
             } catch (err) {
@@ -2109,9 +2298,9 @@ async function importZipBackup(u8) {
         if (files[fname]) photoData[pid] = bytesToDataURL(files[fname]);
     });
     if (Object.keys(photoData).length) payload.photos = photoData;
-    await importFullBackupPayload(payload);
+    await importFullBackupPayloadWithConfigAsk(payload);   // ★先问是否恢复网盘配置
 }
-async function importFullBackupPayload(payload) {
+async function importFullBackupPayload(payload, opts) {
     try {
         if (payload.photos) {
             const added = await restorePhotosFromPayload(payload);
@@ -2129,11 +2318,101 @@ async function importFullBackupPayload(payload) {
         updateStatistics();
         renderTable();
         renderPlannedTripsTable();
+        // ★2026-09-17 备份含配置：只有「手动导入 + 用户选择恢复」才应用网盘配置
+        //   （WebDAV 自动下载/合并路径不传 opts → 绝不动本机已有配置）
+        if (opts && opts.applySyncConfig) {
+            const applied = await applySyncConfigFromBackup(payload.syncConfig);
+            if (applied && !(payload.syncConfig && payload.syncConfig.password)) {
+                showInfoMessage('已恢复网盘配置，请补填应用密码');
+            } else if (applied) {
+                showSuccessMessage('已恢复网盘配置');
+            }
+        }
         showSuccessMessage('完整备份导入成功：' + records.length + ' 条记录');
     } catch (e) {
         console.error('导入完整备份失败:', e);
         showErrorMessage('导入失败：' + (e.message || e));
     }
+}
+
+// ===== ★2026-09-17 备份包含同步配置（导入侧） =====
+
+// 把备份里的网盘配置写入本机（含密码则解密后按本地规则重新加密存储）
+async function applySyncConfigFromBackup(cfg) {
+    if (!cfg || !cfg.server || !cfg.username) return false;
+    syncConfig.server = cfg.server;
+    syncConfig.username = cfg.username;
+    syncConfig.password = cfg.password ? decPwd(cfg.password) : '';   // 密码可能未随包带 → 留空待补填
+    AppStore.setItem(SYNC_CONFIG_KEY, {
+        server: syncConfig.server,
+        username: syncConfig.username,
+        password: encPwd(syncConfig.password)
+    });
+    try { renderSyncForm(syncUiState.lastSyncAt || ''); } catch (e) { /* 静默 */ }
+    try { renderSyncAccountCard(); } catch (e) { /* 静默 */ }
+    try { updateSyncHealthRow(); } catch (e) { /* 静默 */ }
+    return true;
+}
+
+// 导入前询问：这份备份带了网盘配置，要不要一并恢复？（不静默改配置）
+function askRestoreSyncConfig(cfg) {
+    return new Promise(function (resolve) {
+        closeOpenModals();
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.id = 'syncRestoreAskModal';
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;">' +
+                '<div class="confirm-modal-title">' +
+                    '<span class="material-icons" style="color: #4f46e5;">cloud_download</span>' +
+                    '发现网盘配置' +
+                '</div>' +
+                '<div class="confirm-modal-message" style="margin-bottom: 12px;">' +
+                    '<div class="sync-restore-warn">这份备份里带有网盘配置</div>' +
+                    '<div class="sync-restore-info">' + esc(syncProviderOf(cfg.server)) + ' · ' + esc(cfg.username) + '</div>' +
+                    '<div class="sync-bind-hint">恢复后本机就能直接同步，不必重新填地址与账号。' +
+                        (cfg.password ? '' : '（备份里没有密码，恢复后补填一次即可）') +
+                        '<br>如果这不是你自己的备份文件，请选「只恢复记录」。</div>' +
+                '</div>' +
+                '<div class="confirm-modal-buttons">' +
+                    '<button class="confirm-btn-cancel ripple-effect" id="syncRestoreOnlyRecords">只恢复记录</button>' +
+                    '<button class="check-go-btn ripple-effect" id="syncRestoreAll">恢复配置</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+        // ★2026-09-17 防「Promise 永挂」：本弹窗可能被外部 closeOpenModals() 强制移除（用户点别处 / 流程触发）
+        //   → 此时也必须 resolve，否则调用方 await 永远挂着、备份静默不导入且无任何提示。
+        //   保守取 'records'（不动本机配置）。
+        let settled = false;
+        let obs = null;
+        const done = function (v) {
+            if (settled) return;
+            settled = true;
+            try { if (obs) obs.disconnect(); } catch (e) { /* 忽略 */ }
+            try { modal.remove(); } catch (e) { /* 忽略 */ }
+            resolve(v);
+        };
+        obs = new MutationObserver(function () {
+            if (!document.body.contains(modal)) done('records');
+        });
+        try { obs.observe(document.body, { childList: true }); } catch (e) { /* 忽略 */ }
+        document.getElementById('syncRestoreOnlyRecords').addEventListener('click', function () { done('records'); });
+        document.getElementById('syncRestoreAll').addEventListener('click', function () { done('restore'); });
+        modal.addEventListener('click', function (e) { if (e.target === modal) done('records'); });   // 点遮罩 = 保守选择
+    });
+}
+
+// ★手动导入统一入口：备份带配置就先问一句，再按选择导入
+//   （WebDAV 自动下载恢复不经过这里 → 本机配置不受影响）
+async function importFullBackupPayloadWithConfigAsk(payload) {
+    const cfg = payload && payload.syncConfig;
+    if (!cfg || !cfg.server || !cfg.username) {
+        await importFullBackupPayload(payload);
+        return;
+    }
+    let choice = 'records';
+    try { choice = await askRestoreSyncConfig(cfg); } catch (e) { choice = 'records'; }
+    await importFullBackupPayload(payload, { applySyncConfig: choice === 'restore' });
 }
 
 // ★2026-08-26 清理：showLoadingMessage/hideLoadingMessage 死代码已删（showLoadingToast 取代）

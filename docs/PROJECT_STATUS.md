@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-17（v1.2.1.3 / vc256）  
+> 最后更新：2026-09-17（v1.2.1.4 / vc257）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -174,6 +174,8 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > **★探针踩坑（已记入 MEMORY）**：`records`/`plannedTrips` 是**脚本作用域**变量（`window.records` 为 undefined）→ 注入必须**裸赋值** `records = arr`，否则探针静默假阴性。
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.1.4**（versionCode 257，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.1.4 更新（**弹窗体系统一 + 旧样式清理** —— 用户 2026-09-17 19:08「都换为一致的，不要旧的了」、20:56 追认「我记得导出和导入弹窗还是旧版」）：**① 容器层级统一** —— 导出/导入弹窗原用 Tailwind 拼装 `fixed inset-0 z-50` + 内联 `rgba(0,0,0,0.3)`，改为标准 `.confirm-modal`；收益：z **50→100**、深色遮罩 **0.3→0.7**（内联样式原本压过 `body.dark-mode .confirm-modal !important`）、iOS safe-area padding 生效；`closeOpenModals()` 去掉 `#exportModal, #importMethodModal` id 特判（旧写法实测**清不掉会累积**，反向验证残留=2）；**② 按钮体系统一** —— 8 处旧类（`modal-option-btn` 白玻璃 / `modal-cancel-btn`，全站仅 app-sync 使用）→ `check-go-btn`（红框行动按钮）/ `confirm-btn-cancel`（灰蓝），删 12 条旧 CSS + 1 条组合选择器死类名 + `app-init.js` 点击反馈白名单死类（`.green`/`.purple` 变体一并清）；**③ 连带修复** —— `.check-go-btn` 基础定义补 `border-radius:12px` + `cursor:pointer`（圆角原只在 `.confirm-modal-buttons` 限定选择器里 → 全宽按钮塌成 **0px 直角 / default 光标**）；**④ 旧折叠区清理** —— 12 条 `sync-config-toggle-btn`/`collapse` CSS + 注释块（2026-09-01 入口改造的遗留）；**实测** —— 全宽按钮与标准弹窗按钮 computed 全等（`rgba(254,226,226,0.08)|12px|pointer|rgb(185,28,28)`），深浅两模式均出图确认；**回归守卫** —— `e2e/run.js` +8（79→**87**：容器层级 100 / 浅色遮罩 / 深色遮罩 / 清理无残留 / 旧类 DOM / 按钮配色 x2 / 旧折叠区）、`test.js` +4（215→**219**：旧类回流 + `.check-go-btn` 圆角自洽）；**反向验证** —— 撤统一 → 精确报红（`z=50,100,100,100`、`export=0.3 bind=0.7`、`leftover=2`、`oldBtnCls=1`、配色量化差异）→ 装回全绿；**全套自检 636 项全绿**（smoke 19 / ios 10 / test 219 / test-ui 30 / P0P3 271 / E2E 87）
 - **正式版 v1.2.1.3**（versionCode 256，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.1.3 更新（**数据健壮性：一次修掉 4 个真 bug** —— 用户 2026-09-17 09:58「再检查找找app看看有啥bug」，从「测试未覆盖的数据健壮性」切入，用浏览器实测探针撞出）：**① 静默删记录（数据安全，最严重）**——`saveToStorage` 与计划保存的校验 `typeof id/name/difficulty/elevation` 不符即 `records = validRecords` **整条永久删除**（仅 console.warn），实测 4 条可修记录保存后只剩 2 条；**修法**——新增 `normalizeRecordFields()` 就地归一化（`'3'`→3、数字 id→字符串、`NaN`→默认值），**只有非对象才丢弃**，覆盖 **4 处**（记录保存/启动加载、计划保存/加载）；其中 `app-init.js` 的**启动加载校验**（比保存路径更早生效）是第一版修复的遗漏，由 `test.js` 源码守卫报红揪出；**② 搜索被字段类型打崩**——`(r.name || '').toLowerCase()` 等对类型零防护，非字符串抛 `TypeError` → 搜索整体失效（`||` 短路导致「有时崩有时不崩」）；**修法**——新增 `lowerText()` 归一化 helper，替换 7 处（记录页 5 + 计划页 1 + 山册 1）；**③ 非法日期显示 NaN**——`formatDateTime`/`formatDateTimeLocal` 的 `try/catch` **永不触发**（`new Date('x')` 返回 Invalid Date 而不抛错）→ 列表 `NaN-NaN-NaN NaN:NaN`、年份分组 `NaN年`；**修法**——两处加 `isNaN(date.getTime())` 判断 + 新增 `yearKeyOf()` + 排序日期比较加 `|| 0` 兜底（4 处）；**④ 崩溃上报当日去重用 UTC 日期**（低）——`new Date().toISOString().slice(0,10)` 在中国时区 08:00 前算成昨天 → 同日可能重复上报，改用本地年月日；**实测**——保存 6 条（4 可修 + 2 垃圾）→ **4 条全保住**、计划加载 5 → 3 条且类型全归位、搜索零崩溃、列表无 NaN（出图对比修复前后）；**回归守卫**——`e2e/run.js` +5 条数据健壮性断言（41→46）、`test.js` +11 条（200→214，含日期纯函数 + 4 条源码守卫 + 3 条 critical 登记）；**反向验证**——撤掉修复 → 4 条精确报红（`["2026年","NaN年"]`、`NaN-NaN-NaN`、搜索崩 2 次、保存 6→**2**）→ 装回全绿；**附带**——清理 `e2e/shots/` 16 个历史调试截图（8.9M→3.4M）、五项优化（designcheck 四维全绿 / deepcheck 死代码 0 / 四页 60fps 0 掉帧 / 文档双端一致）；**全套自检 580 项全绿**（smoke 19 / ios 10 / test 214 / test-ui 30 / P0P3 271 / E2E 46）
 - **正式版 v1.2.1.2**（versionCode 255，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
@@ -500,6 +502,8 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - v1.1.8.7（vc216）：**山册照片回忆（展开顶部横排看该山全部照片、点照进灯箱、标题日期=最近一次记录日期、收起单行化、统计收进展开）+ 同步健康行融合进自动同步卡（i 图标删除去重、busy/error/天龄三态、未配置点击直达配置、照片占用挪杂项第一行）+ 全 App 滚动条玻璃化（含弹窗 6px 细条）+ 同步状态弹窗虚线加深 + 工程治理（prev-snapshot.js 回滚点/五对策）**（详见 Release）
 
 ## 待办/新功能方案（2026-09-08 更新）
+
+- 📋 **「联网登录」方案评估（2026-09-17，**未动手**）**：需求实为「换机不用重填同步配置」+ **APK 为主** → 建议**零后端三件套**（同步配置码 / 预设服务商 / 入口「登录化」）；**不建议真账号**（平台云服务按访问域名精确校验，APK 本地包是 localhost 用不了）。完整方案与待拍板 4 点：`docs/方案-换机同步与登录体验.md`
 
 - ✅ **隐私政策页**（v1.1.10.6 待发）：关于卡「隐私政策」入口 → showPrivacyPolicyModal（confirm 玻璃弹窗 dmi-* 条目排版，README 隐私段整理 + 崩溃上报联网披露）
 - ✅ **崩溃日志自动采集+上报**（v1.1.10.6 待发）：JS 持久队列 hiking_crash_queue（20 条/同错 1 分钟去重/重启不丢/并入导出诊断）+ 原生 xixi_crash.log 读取桥 getNativeCrashLog/clearNativeCrashLog；App 启动有 WebDAV 时自动 PUT xixi_crash\_*.txt（仅版本/错误/时间，当日一次，成功清队列）
