@@ -421,7 +421,10 @@ function maybeUploadCrashReport() {
         if (!syncConfig || !syncConfig.server || !syncConfig.username || !syncConfig.password) return;   // 未配云
         var report = buildCrashReport();
         if (!report) return;
-        var today = new Date().toISOString().slice(0, 10);
+        // ★2026-09-17 改用本地日期：toISOString() 是 UTC，中国时区 08:00 前会算成“昨天”——同一天内可能重复上报
+        var dToday = new Date();
+        var padToday = function (n) { return String(n).padStart(2, '0'); };
+        var today = dToday.getFullYear() + '-' + padToday(dToday.getMonth() + 1) + '-' + padToday(dToday.getDate());
         var lastUp = '';
         try { lastUp = AppStore.getItem('hiking_crash_uploaded') || ''; } catch (e) { lastUp = ''; }
         if (lastUp === today) return;   // 当日已上报

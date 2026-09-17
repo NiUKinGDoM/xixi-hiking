@@ -2,6 +2,18 @@
 var SUPPORT_QR_WECHAT = 'assets/support-qr-wechat.jpg';
 var SUPPORT_QR_ALIPAY = 'assets/support-qr-alipay.jpg';
 
+// ★2026-09-17 搜索文本归一化：字段可能是数字/对象/null（导入的备份），直接 .toLowerCase() 会抛
+//   TypeError: (r.name || "").toLowerCase is not a function → 搜索整体失效（列表不刷新）
+function lowerText(v) { return String(v == null ? '' : v).toLowerCase(); }
+
+// ★2026-09-17 年份分组 key：无效日期返回空串
+//   （原先 String(new Date('x').getFullYear()) = "NaN" → 列表里会出现「NaN年」分组标题）
+function yearKeyOf(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : String(d.getFullYear());
+}
+
 function getSortedRecords() {
     // ★2026-08-27 搜索过滤：记录页有搜索词时按名称匹配（方案A，找"去年去过的那座山"）
     var src = records;
@@ -9,11 +21,11 @@ function getSortedRecords() {
         var q = searchQuery.trim().toLowerCase();
         // ★2026-09-05 P0-② 全文搜索：山名 + 小日记(notes) + 心情/天气/同行人（记得内容搜不到山名也能找到）
         src = records.filter(function (r) {
-            return (r.name || '').toLowerCase().indexOf(q) >= 0 ||
-                (r.notes || '').toLowerCase().indexOf(q) >= 0 ||
-                (r.mood || '').toLowerCase().indexOf(q) >= 0 ||
-                (r.weather || '').toLowerCase().indexOf(q) >= 0 ||
-                (r.companions || '').toLowerCase().indexOf(q) >= 0;
+            return lowerText(r.name).indexOf(q) >= 0 ||
+                lowerText(r.notes).indexOf(q) >= 0 ||
+                lowerText(r.mood).indexOf(q) >= 0 ||
+                lowerText(r.weather).indexOf(q) >= 0 ||
+                lowerText(r.companions).indexOf(q) >= 0;
         });
     }
     if (!currentSort.field) {
@@ -26,8 +38,8 @@ function getSortedRecords() {
         
         // 处理 createdAt 字段的时间排序
         if (currentSort.field === 'createdAt') {
-            aValue = aValue ? new Date(aValue).getTime() : 0;
-            bValue = bValue ? new Date(bValue).getTime() : 0;
+            aValue = aValue ? (new Date(aValue).getTime() || 0) : 0;   // ★2026-09-17 无效日期兜底为 0（NaN 会让排序顺序错乱）
+            bValue = bValue ? (new Date(bValue).getTime() || 0) : 0;
         } else if (typeof aValue === 'string') {
             aValue = aValue.toLowerCase();
             bValue = bValue.toLowerCase();
@@ -340,11 +352,11 @@ function renderTable() {
     let lastYearKey = null;
     const yearTotals = {};
     records.forEach(function (rr) {
-        const yy = rr.createdAt ? String(new Date(rr.createdAt).getFullYear()) : '';
+        const yy = yearKeyOf(rr.createdAt);
         if (yy) yearTotals[yy] = (yearTotals[yy] || 0) + 1;
     });
     pageRecords.forEach(function (r) {
-        const y = r.createdAt ? String(new Date(r.createdAt).getFullYear()) : '';
+        const y = yearKeyOf(r.createdAt);
         if (y && y !== lastYearKey) { lastYearKey = y; groupedRecords.push({ __year: y, __count: yearTotals[y] || 0 }); }
         groupedRecords.push(r);
     });
@@ -1573,7 +1585,7 @@ function saveRecord(id) {
     
     nameInput.classList.remove('border-red-500');   // ★2026-09-10 校验通过清红边（原来只加不删）
     record.name = nameInput.value.trim();
-    record.difficulty = parseInt(difficultyInput.value);
+    record.difficulty = parseInt(difficultyInput.value, 10) || 3;   // ★2026-09-17 NaN 兜底（空值会存成 NaN → JSON 变 null → 下轮被误删）
     record.elevation = Math.max(0, parseInt(elevationInput.value) || 0); // ★2026-08-29 与新增记录一致：负数防护
     
     // 保存记录时间
@@ -2520,7 +2532,7 @@ function getSortedPlannedTrips() {
     if (typeof searchQuery === 'string' && searchQuery.trim() && currentTabId === 'plans') {
         var q = searchQuery.trim().toLowerCase();
         src = plannedTrips.filter(function (t) {
-            return (t.name || '').toLowerCase().indexOf(q) >= 0;
+            return lowerText(t.name).indexOf(q) >= 0;
         });
     }
     const sortedTrips = [...src];
@@ -2539,8 +2551,8 @@ function getSortedPlannedTrips() {
                 bVal = (bVal || '').toString().toLowerCase();
             } else if (plannedCurrentSort.field === 'planned-createdAt') {
                 // 按时间排序
-                aVal = aVal ? new Date(aVal).getTime() : 0;
-                bVal = bVal ? new Date(bVal).getTime() : 0;
+                aVal = aVal ? (new Date(aVal).getTime() || 0) : 0;
+                bVal = bVal ? (new Date(bVal).getTime() || 0) : 0;
             } else {
                 aVal = Number(aVal) || 0;
                 bVal = Number(bVal) || 0;
@@ -2555,8 +2567,8 @@ function getSortedPlannedTrips() {
     } else {
         // ★2026-08-25 默认按计划时间由近到远（升序 createdAt：今天→明天→后天…）
         sortedTrips.sort((a, b) => {
-            let aT = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            let bT = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            let aT = a && a.createdAt ? (new Date(a.createdAt).getTime() || 0) : 0;
+            let bT = b && b.createdAt ? (new Date(b.createdAt).getTime() || 0) : 0;
             return aT - bT;
         });
     }
@@ -3329,7 +3341,7 @@ function renderMountainBook() {
     var padLen = Math.max(2, String(allKeys.length).length);
     var keys = allKeys.filter(function (k) {
         if (!q) return true;
-        if (k.toLowerCase().indexOf(q) >= 0) return true;
+        if (lowerText(k).indexOf(q) >= 0) return true;
         // 山名本身没匹配时，再翻这座山的所有记录（同伴/备注等字段也可能命中）
         return groups[k].some(function (r) {
             return String(r.companions || '').toLowerCase().indexOf(q) >= 0 ||
@@ -4669,16 +4681,16 @@ async function savePlannedTripsToStorage() {
     
     plannedSaveTimeout = setTimeout(async () => {
         try {
-            const validTrips = plannedTrips.filter(trip => {
-                return trip && 
-                       typeof trip.id === 'string' &&
-                       typeof trip.name === 'string' &&
-                       typeof trip.difficulty === 'number' &&
-                       typeof trip.elevation === 'number';
+            const validTrips = [];
+            let droppedTrips = 0;
+            plannedTrips.forEach(trip => {
+                const fixed = normalizeRecordFields(trip);
+                if (fixed) validTrips.push(fixed);
+                else droppedTrips++;
             });
             
+            if (droppedTrips) console.warn(`Dropped ${droppedTrips} non-object planned trips`);
             if (validTrips.length !== plannedTrips.length) {
-                console.warn(`Filtered ${plannedTrips.length - validTrips.length} invalid planned trips`);
                 plannedTrips = validTrips;
             }
             
@@ -4703,16 +4715,11 @@ async function loadPlannedTripsFromStorage() {
         const data = await AppStore.getItem(PLANNED_TRIPS_KEY);
         if (data && Array.isArray(data.trips)) {
             // ★2026-09-05 P0-2 计划数据先过 schema 迁移链
-            plannedTrips = applySchemaMigrations(data.trips, TRIP_SCHEMA_MIGRATIONS).filter(trip => {
-                return trip && 
-                       typeof trip.id === 'string' &&
-                       typeof trip.name === 'string' &&
-                       typeof trip.difficulty === 'number' &&
-                       typeof trip.elevation === 'number' &&
-                       trip.difficulty >= 1 && 
-                       trip.difficulty <= 5 &&
-                       trip.elevation >= 0;
-            }).map(trip => ({
+            // ★2026-09-17 加载也走归一化（同记录：避免启动时静默丢计划）
+            plannedTrips = applySchemaMigrations(data.trips, TRIP_SCHEMA_MIGRATIONS)
+                .map(trip => normalizeRecordFields(trip))
+                .filter(trip => trip !== null)
+                .map(trip => ({
                 ...trip,
                 name: trip.name.trim(),
                 difficulty: Math.min(5, Math.max(1, Math.round(trip.difficulty))),
@@ -4729,6 +4736,24 @@ async function loadPlannedTripsFromStorage() {
     }
 }
 
+// ★2026-09-17 数据自愈：字段类型不符的记录「就地归一化」而不是整条删除
+//   （原先用 filter 直接丢弃 → 导入外部/手工改过的备份时，用户记录会静默消失）
+//   只有「非对象」才丢弃；id/name/difficulty/elevation 能修的都修
+function normalizeRecordFields(rec) {
+    if (!rec || typeof rec !== 'object' || Array.isArray(rec)) return null;
+    if (typeof rec.id !== 'string' || !rec.id) {
+        rec.id = (rec.id == null) ? generateId() : String(rec.id);
+    }
+    if (typeof rec.name !== 'string') rec.name = (rec.name == null) ? '' : String(rec.name);
+    var d = rec.difficulty;
+    if (typeof d !== 'number' || !isFinite(d)) d = parseInt(d, 10);
+    rec.difficulty = (isFinite(d) && d >= 1 && d <= 5) ? Math.round(d) : 3;
+    var el = rec.elevation;
+    if (typeof el !== 'number' || !isFinite(el)) el = parseFloat(el);
+    rec.elevation = (isFinite(el) && el >= 0) ? el : 0;
+    return rec;
+}
+
 let saveTimeout = null;
 
 async function saveToStorage() {
@@ -4738,16 +4763,16 @@ async function saveToStorage() {
     
     saveTimeout = setTimeout(async () => {
         try {
-            const validRecords = records.filter(record => {
-                return record && 
-                       typeof record.id === 'string' &&
-                       typeof record.name === 'string' &&
-                       typeof record.difficulty === 'number' &&
-                       typeof record.elevation === 'number';
+            const validRecords = [];
+            let droppedRecords = 0;
+            records.forEach(record => {
+                const fixed = normalizeRecordFields(record);
+                if (fixed) validRecords.push(fixed);
+                else droppedRecords++;
             });
             
+            if (droppedRecords) console.warn(`Dropped ${droppedRecords} non-object records`);
             if (validRecords.length !== records.length) {
-                console.warn(`Filtered ${records.length - validRecords.length} invalid records`);
                 records = validRecords;
             }
             

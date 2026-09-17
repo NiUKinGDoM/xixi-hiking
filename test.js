@@ -53,6 +53,9 @@ const critical = [
     ['setupEventListeners（事件）', 'function setupEventListeners'],
     ['showSuccessMessage（成功提示）', 'function showSuccessMessage'],
     ['showErrorMessage（错误提示）', 'function showErrorMessage'],
+    ['normalizeRecordFields（数据自愈）', 'function normalizeRecordFields'],
+    ['lowerText（搜索归一化）', 'function lowerText'],
+    ['yearKeyOf（年份分组）', 'function yearKeyOf'],
 ];
 critical.forEach(([name, sig]) => allJs.includes(sig) ? ok(name) : bad(name + ' 缺失!'));
 
@@ -525,5 +528,28 @@ if (escSrc && escWrap) {
 (/\$\{esc\(formatSyncFileLabel\(f\.name\)\)\}/.test(allJs) && !/\$\{formatSyncFileLabel\(f\.name\)\}/.test(allJs))
     ? ok('守卫：云端文件名插值已转义（无裸插值）') : bad('云端文件名出现裸插值（未转义）');
 
+// 9.5 日期健壮性（★2026-09-17 修复③：无效日期不得输出 NaN-NaN-NaN）
+const fdtSrc = extractFn('formatDateTime'), fdtlSrc = extractFn('formatDateTimeLocal');
+if (fdtSrc && fdtlSrc) {
+    const dateCtx = { String };
+    vm.createContext(dateCtx);
+    vm.runInContext(fdtSrc, dateCtx);
+    vm.runInContext(fdtlSrc, dateCtx);
+    const fdt = dateCtx.formatDateTime, fdtl = dateCtx.formatDateTimeLocal;
+    fdt('not-a-date') === '-' ? ok('日期：无效串 → "-"') : bad('无效日期未兜底: ' + fdt('not-a-date'));
+    fdt('2026-13-45T99:99:99.000Z') === '-' ? ok('日期：越界日期 → "-"') : bad('越界日期未兜底: ' + fdt('2026-13-45T99:99:99.000Z'));
+    fdt({}) === '-' ? ok('日期：非字符串（对象）→ "-"') : bad('对象日期未兜底');
+    fdt(null) === '-' ? ok('日期：null → "-"') : bad('null 未兜底');
+    fdtl('not-a-date') === '' ? ok('日期：本地格式无效串 → 空串') : bad('formatDateTimeLocal 未兜底: ' + fdtl('not-a-date'));
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(fdt('2026-09-17T10:30:00.000Z')) ? ok('日期：正常值格式不变') : bad('正常日期格式被破坏: ' + fdt('2026-09-17T10:30:00.000Z'));
+} else { bad('formatDateTime/formatDateTimeLocal 提取失败'); }
+// 9.5b 源码守卫：崩溃上报的「当日」不得用 UTC 日期截断（★2026-09-17 修复④）
+(!/toISOString\(\)\.slice\(0, *10\)/.test(allJs)) ? ok('守卫：无 UTC 日期截断（当日去重已用本地日期）') : bad('仍存在 toISOString().slice(0,10)（时区会差一天）');
+// 9.5c 源码守卫：搜索匹配必须过 lowerText（★2026-09-17 修复②：裸 .toLowerCase() 在字段类型异常时抛 TypeError）
+(!/(?<!String)\(r\.(name|notes|mood|weather|companions) *\|\| *''\)\.toLowerCase/.test(allJs)) ? ok('守卫：搜索匹配已归一化（无裸 toLowerCase）') : bad('搜索出现裸 toLowerCase（类型异常会崩）');
+(!/\(t\.name *\|\| *''\)\.toLowerCase/.test(allJs)) ? ok('守卫：计划页搜索已归一化') : bad('计划页搜索出现裸 toLowerCase');
+// 9.5d 源码守卫：保存校验必须是归一化而非严格 filter（★2026-09-17 修复①：严格 filter 会静默删用户记录）
+(/function normalizeRecordFields/.test(allJs) && /normalizeRecordFields\(record\)/.test(allJs) && /normalizeRecordFields\(trip\)/.test(allJs)) ? ok('守卫：保存走归一化（记录+计划）') : bad('保存校验未走归一化（会静默删记录）');
+(!/typeof (record|trip)\.difficulty === 'number' &&/.test(allJs)) ? ok('守卫：旧的严格 filter 已移除（加载+保存）') : bad('旧严格 filter 仍存在（会静默丢记录）');
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

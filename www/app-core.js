@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.1.3': '【修复】\n- 数据更稳妥：从外部导入备份时，个别记录如果字段格式稍有出入（比如海拔、难度被存成了文字），以前可能被静默丢弃 —— 现在会自动修正后保留下来\n- 搜索更可靠：个别记录字段格式不标准时，搜索不会再整体失效\n- 记录日期异常时，列表里不会再出现「NaN」字样（年份分组也一并修好了）\n\nMade by XiXi 💛',
     'v1.2.1.2': '【修复】\n- 编辑记录时，「天气 / 心情」弹窗里的「清空」按钮和下面的「取消 / 确定」贴在一起了（真机上看着像重合）—— 现在中间留出正常间距\n- 顺带把同族的另外三个选择弹窗也统一了：「难度」、「日期时间」、「年月（热力图）」的内容与按钮之间同样拉开了间距，看着更整齐\n\nMade by XiXi 💛',
     'v1.2.1.1': '【修复】\n- 从别的页面切回概览时，统计卡的渐入动画不见了（点一下当前页面再切回来，就更容易遇到）—— 现在恢复正常\n- 顺带修好：鼠标移到统计卡上时那点轻微抬起效果，之前也被同一处问题压住了，一起恢复\n\nMade by XiXi 💛',
     'v1.2.1.0': '【优化】\n- 更省电了：切到后台（锁屏 / 切去别的 App）时，背景的流光和图标呼吸动画会自动暂停，回到前台继续 —— 动效一个没少\n- 「云端备份」相关提示更稳妥：云端返回的文字和备份文件名都会先做安全处理，不会再被奇怪字符撑乱界面\n\n【修复】\n- 设置页的分组卡片和开关，玻璃质感与全 App 统一（之前透明浓度、模糊程度和别处不一样，放一起看有差别）\n\nMade by XiXi 💛',
@@ -558,7 +559,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.1.2';
+var APP_VERSION = '1.2.1.3';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -1423,6 +1424,8 @@ function formatDateTime(isoString) {
     if (!isoString) return '-';
     try {
         const date = new Date(isoString);
+        if (isNaN(date.getTime())) return '-';
+        // ★2026-09-17 无效日期兜底：new Date('x') 返回 Invalid Date 而不抛异常，catch 永远进不来 → 会输出 NaN-NaN-NaN
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -1439,6 +1442,8 @@ function formatDateTimeLocal(isoString) {
     if (!isoString) return '';
     try {
         const date = new Date(isoString);
+        if (isNaN(date.getTime())) return '';
+        // ★2026-09-17 无效日期兜底：new Date('x') 返回 Invalid Date 而不抛异常，catch 永远进不来 → 会输出 NaN-NaN-NaN
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');

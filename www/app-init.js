@@ -120,16 +120,11 @@ async function init() {
         
         if (storageData.status === 'fulfilled' && storageData.value && Array.isArray(storageData.value.records)) {
             // ★2026-09-05 P0-2 记录数据先过 schema 迁移链（老数据 v0 自动透传）
-            records = applySchemaMigrations(storageData.value.records, RECORD_SCHEMA_MIGRATIONS).filter(record => {
-                return record && 
-                       typeof record.id === 'string' &&
-                       typeof record.name === 'string' &&
-                       typeof record.difficulty === 'number' &&
-                       typeof record.elevation === 'number' &&
-                       record.difficulty >= 1 && 
-                       record.difficulty <= 5 &&
-                       record.elevation >= 0;
-            }).map(record => ({
+            // ★2026-09-17 加载也走归一化：原先的严格 filter 会在启动时静默丢掉类型不符的记录（比保存路径更早生效）
+            records = applySchemaMigrations(storageData.value.records, RECORD_SCHEMA_MIGRATIONS)
+                .map(record => normalizeRecordFields(record))
+                .filter(record => record !== null)
+                .map(record => ({
                 ...record,
                 name: record.name.trim(),
                 difficulty: Math.min(5, Math.max(1, Math.round(record.difficulty))),
@@ -640,17 +635,22 @@ function setupEventListeners() {
                         }
                     });
                 });
-                const fadeTargets = document.querySelectorAll('#tab-overview .glass-stat-card, #heatmapPanel, #milestoneEntry');
+                const fadeTargets = document.querySelectorAll('#tab-overview .glass-stat-card, #tab-overview .ov-mini, #heatmapPanel, #milestoneEntry');
                 fadeTargets.forEach(el => {
                     if (typeof el.animate === 'function') {
                         try {
+                            // ★2026-09-17 连续点击同 tab：先清掉上一枚未播完的反馈动画，避免两枚叠加（透明度越点越深、观感像抖动）
+                            if (typeof el.getAnimations === 'function') {
+                                el.getAnimations().forEach(a => { if (a.id === 'ovRefresh') { try { a.cancel(); } catch (e) { /* 忽略 */ } } });
+                            }
                             const refreshAnim = el.animate(
                                 [{ opacity: 0.45, transform: 'scale(0.99)' }, { opacity: 1, transform: 'scale(1)' }],
-                                { duration: 380, easing: 'ease-out', fill: 'both' }
+                                { duration: 380, easing: 'ease-out', fill: 'both', id: 'ovRefresh' }
                             );
                             // ★2026-09-16 修复「概览渐入动画大部分失效」：`fill:'both'` 会让这枚 WAAPI 动画**播完后继续生效**，
                             //   而 WAAPI 优先级高于 CSS 动画 → 统计卡/热力图/里程碑卡自身的 fadeInUp 仍在跑却被钉在 opacity:1，
-                            //   用户从别的页面切回概览时“看不见渐入”（.ov-mini 不在本名单里，所以照常渐入）。
+                            //   用户从别的页面切回概览时“看不见渐入”。
+                            // ★2026-09-17 补齐：`.ov-mini`（三个副卡）此前不在本名单里，导致同 tab 刷新时只有它们不动 → 现已纳入。
                             //   播完即取消，交还给 CSS 状态（终态一致，无闪烁）。
                             refreshAnim.onfinish = function () { try { refreshAnim.cancel(); } catch (e) { /* 忽略 */ } };
                         } catch (e) { /* 动画失败静默，不影响刷新 */ }

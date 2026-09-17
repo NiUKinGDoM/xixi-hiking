@@ -316,6 +316,106 @@ function serverUp() {
   ok('概览入场-无 WAAPI 残留覆盖', animCheck.statLeftover === 0 && animCheck.mileLeftover === 0, 'stat=' + animCheck.statLeftover + ' mile=' + animCheck.mileLeftover);
   ok('概览入场-动画播完归位 opacity=1', animCheck.statFinal === 1 && animCheck.mileFinal === 1, 'stat=' + animCheck.statFinal + ' mile=' + animCheck.mileFinal);
 
+  // ★2026-09-17 回归：同 tab 刷新反馈必须覆盖三个副卡 .ov-mini，且「连续点击」不得叠加动画
+  //   旧 bug：fadeTargets 只列了 glass-stat-card/heatmapPanel/milestoneEntry → 三个副卡不跟着刷新；
+  //   且连点时上一枚 380ms 动画未清 → 两枚叠加（透明度越点越深）
+  console.log('== E2E: 同 tab 刷新反馈（副卡 + 连点不叠加）==');
+  const refreshCheck = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const opOf = (el) => (el ? parseFloat(getComputedStyle(el).opacity) : -1);
+    const runCount = (el) => (el && el.getAnimations ? el.getAnimations().filter((a) => a.id === 'ovRefresh' && a.playState === 'running').length : -1);
+    const miniList = () => Array.prototype.slice.call(document.querySelectorAll('#tab-overview .ov-mini'));
+    if (typeof switchTab === 'function') switchTab('overview');
+    await sleep(1300);                                  // 等首屏入场动画全部结束（副卡 delay 0.56s + 0.5s）
+    const card = document.querySelector('#tab-overview .glass-stat-card');
+    const minis = miniList();
+    // ★2026-09-17 结构性灵魂：收集概览页「所有靠 CSS fadeInUp 入场」的元素 —— 刷新反馈必须覆盖全部（防止以后新增卡片又漏进名单）
+    const entranceEls = [];
+    document.querySelectorAll('#tab-overview *').forEach((el) => {
+      const an = getComputedStyle(el).animationName || '';
+      if (an && an.indexOf('fadeInUp') >= 0) {
+        entranceEls.push({ el: el, sig: el.id ? '#' + el.id : '.' + String(el.className).trim().split(/\s+/).join('.') });
+      }
+    });
+    if (typeof switchTab === 'function') switchTab('overview');
+    await sleep(90);                                    // 刷新反馈正在播
+    const mid = { cardOp: opOf(card), miniOp: opOf(minis[0]), cardRun: runCount(card), miniRun: runCount(minis[0]) };
+    mid.entranceTotal = entranceEls.length;
+    mid.stale = entranceEls.filter((x) => opOf(x.el) >= 0.95).map((x) => x.sig);   // 没跟着动的
+    if (typeof switchTab === 'function') switchTab('overview');   // 连点第 2 次
+    await sleep(80);
+    if (typeof switchTab === 'function') switchTab('overview');   // 连点第 3 次
+    await sleep(80);
+    const counts = [runCount(card)].concat(minis.map((m) => runCount(m)));
+    await sleep(700);                                   // 等播完
+    const end = { cardFinal: opOf(card), miniFinal: opOf(minis[0]), cardLeft: runCount(card), miniLeft: runCount(minis[0]) };
+    return { mid: mid, counts: counts, end: end };
+  });
+  ok('刷新反馈-副卡 .ov-mini 也参与（不再只有大卡动）', refreshCheck.mid.miniRun === 1 && refreshCheck.mid.miniOp >= 0 && refreshCheck.mid.miniOp < 0.8, JSON.stringify(refreshCheck.mid));
+  ok('刷新反馈-覆盖全部入场动画元素（防再漏）', refreshCheck.mid.stale.length === 0 && refreshCheck.mid.entranceTotal >= 8, 'total=' + refreshCheck.mid.entranceTotal + ' stale=' + JSON.stringify(refreshCheck.mid.stale));
+  ok('刷新反馈-大卡与副卡同步（opacity 相当）', Math.abs(refreshCheck.mid.cardOp - refreshCheck.mid.miniOp) < 0.08, 'card=' + refreshCheck.mid.cardOp + ' mini=' + refreshCheck.mid.miniOp);
+  ok('刷新反馈-连点 3 次不叠加（每元素恰好 1 枚运行中）', refreshCheck.counts.every((c) => c === 1), JSON.stringify(refreshCheck.counts));
+  ok('刷新反馈-播完无残留且归位 opacity=1', refreshCheck.end.cardLeft === 0 && refreshCheck.end.miniLeft === 0 && refreshCheck.end.cardFinal === 1 && refreshCheck.end.miniFinal === 1, JSON.stringify(refreshCheck.end));
+
+
+  // ★2026-09-17 回归：数据健壮性（无效日期 / 字段类型异常 / 保存自愈）
+  //   修前三个真 bug：①无效日期→列表显示 NaN-NaN-NaN / 年份分组「NaN年」；②搜索对非字符串字段抛 TypeError → 搜索整体失效；③保存校验把类型不符的记录整条静默删除
+  console.log('== E2E: 数据健壮性 ==');
+  const robustCheck = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const bk = JSON.stringify(records || []);
+    const bkLocal = localStorage.getItem('hiking_records');
+    const R = (over) => {
+      const b = { id: 'e2e-r-' + Math.random().toString(36).slice(2, 8), name: '记录', difficulty: 3, elevation: 1000, duration: 60, distance: 5, mood: '轻松', weather: '晴', companions: '', notes: '', photos: [], createdAt: '2026-09-10T02:00:00.000Z', updatedAt: '2026-09-10T02:00:00.000Z' };
+      for (const k in over) b[k] = over[k];
+      return b;
+    };
+    const crash = () => { try { return (window.__getCrashQueue() || []).length; } catch (e) { return -1; } };
+    const clearCrash = () => { try { window.__clearCrashQueue(); } catch (e) {} };
+    const out = {};
+    try {
+      // ① 无效日期不得产生 NaN
+      records = [R({}), R({ name: 'bad', createdAt: 'not-a-date' }), R({ name: 'obj', createdAt: {} })];
+      switchTab('records'); renderTable();
+      await sleep(500);
+      const scope = document.querySelector('#tab-records');
+      out.nanInPage = /NaN/.test(scope.innerText || '');
+      out.yearTexts = [].map.call(scope.querySelectorAll('.year-group-text'), (el) => (el.textContent || '').trim());
+      out.timeTexts = [].map.call(scope.querySelectorAll('.rd-time-cell'), (el) => (el.textContent || '').trim());
+
+      // ② 搜索在字段类型异常时不得抛错
+      clearCrash();
+      records = [R({ name: 12345 }), R({ name: '秦岭', notes: 999 })];
+      searchQuery = ''; renderTable(); await sleep(250);
+      clearCrash();
+      searchQuery = '秦岭'; renderTable(); await sleep(260);
+      const c1 = crash() > 0 ? 1 : 0;
+      clearCrash();
+      searchQuery = 'zzz不存在'; renderTable(); await sleep(260);
+      const c2 = crash() > 0 ? 1 : 0;
+      out.searchCrash = c1 + c2;
+      searchQuery = '';
+
+      // ③ 保存自愈：能修的不丢，只丢非对象
+      clearCrash();
+      records = [R({ name: 'ok' }), R({ name: 'd', difficulty: '3' }), R({ name: 'e', elevation: '1200' }), R({ id: 999, name: 'i' }), null, 'junk'];
+      const before = records.length;
+      saveToStorage();
+      await sleep(800);
+      out.save = { before: before, after: (records || []).length, typesOk: (records || []).every((r) => typeof r.difficulty === 'number' && typeof r.elevation === 'number' && typeof r.id === 'string') };
+      out.saveCrash = crash() > 0 ? 1 : 0;
+    } catch (e) { out.err = String((e && e.message) || e).slice(0, 90); }
+    try { records = JSON.parse(bk); } catch (e) {}
+    if (bkLocal !== null) { try { localStorage.setItem('hiking_records', bkLocal); } catch (e) {} }
+    try { switchTab('records'); renderTable(); await sleep(200); } catch (e) {}
+    clearCrash();
+    return out;
+  });
+  ok('数据健壮性-无效日期不再出现 NaN', robustCheck.nanInPage === false, 'yearTexts=' + JSON.stringify(robustCheck.yearTexts));
+  ok('数据健壮性-日期异常行显示为 -', (robustCheck.timeTexts || []).filter((x) => x === '-').length === 2, JSON.stringify(robustCheck.timeTexts));
+  ok('数据健壮性-搜索在字段类型异常时不崩', robustCheck.searchCrash === 0, 'crash=' + robustCheck.searchCrash + ' err=' + (robustCheck.err || ''));
+  ok('数据健壮性-保存只丢非对象（6→4）', !!(robustCheck.save && robustCheck.save.before === 6 && robustCheck.save.after === 4), JSON.stringify(robustCheck.save));
+  ok('数据健壮性-保存后字段类型归位', !!(robustCheck.save && robustCheck.save.typesOk === true), JSON.stringify(robustCheck.save));
 
   // ★2026-09-16 回归：选择器弹窗的「内容 → 取消/确定」必须有间距（曾有三个是 0~6px，真机上看着像重合）
   //   覆盖：天气 / 心情 / 难度 / 日期时间 / 年月（热力图）
