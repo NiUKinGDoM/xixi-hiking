@@ -260,36 +260,56 @@ if (SELFTEST) {
   const asset = JSON.parse(r2.body);
   console.log('✅ 上传成功: asset id=' + asset.id + ' size=' + asset.size);
 
-  // 3) 下载回来验证 md5 + PK 头（网络受限时降级为 size 校验并明确标注）
-  const raw = fs.readFileSync(apk);
-  const dlFile = path.join(os.tmpdir(), 'ghrel-download.apk');
-  if (fs.existsSync(dlFile)) fs.rmSync(dlFile);
-  const r3 = httpExec({
-    url: 'https://api.github.com/repos/' + REPO + '/releases/assets/' + asset.id,
-    headers: Object.assign({}, H, { Accept: 'application/octet-stream' }),
-    follow: true, outFile: dlFile, timeout: 900,
-  });
-
+  // 3) 校验上传结果（★2026-09-18 改：优先用 GitHub 服务端 digest 比对 sha256）
+  //    为什么要改：原来「下载回来算 md5」。本机网络偶发中断时，下载会被截断，
+  //    而截断的文件仍以 PK 开头 → md5 不等，却被判成「上传内容与本地不一致」并中止
+  //    （v1.2.1.10 真实误报：本地 sha256 与远端 digest 完全一致、大小也一致）。
+  //    现改为：先比对服务端 digest（权威，且省一次 2.4MB 下载）；digest 缺失才退回下载校验，
+  //    并区分「下载不完整（网络问题）」与「真不一致」。
+  const sha256 = (b) => crypto.createHash('sha256').update(b).digest('hex');
   const md5 = (b) => crypto.createHash('md5').update(b).digest('hex');
+  const raw = fs.readFileSync(apk);
   let verified = false;
-  if (ok2xx(r3.code) && fs.existsSync(dlFile)) {
-    const dl = fs.readFileSync(dlFile);
-    const same = md5(dl) === md5(raw);
-    const isPk = dl.slice(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
-    console.log((same ? '✅' : '❌') + ' 下载校验 md5 一致: ' + same);
-    console.log((isPk ? '✅' : '❌') + ' PK 头正确: ' + isPk);
-    verified = same && isPk;
-    if (!verified) { console.error('✗ 上传内容与本地不一致，请人工检查 Release'); process.exit(1); }
-    fs.rmSync(dlFile);
-  } else {
-    // 网络受限（objects.githubusercontent.com 不可达等）→ 退化为 size 校验，不让发布卡死
-    const sizeOk = asset.size === raw.length;
-    console.log('⚠ 下载验证不可用（HTTP ' + r3.code + (r3.stderr ? ' | ' + r3.stderr : '') + '）→ 降级为 size 校验');
-    console.log((sizeOk ? '✅' : '❌') + ' 远端 size 与本地一致: ' + asset.size + ' / ' + raw.length);
-    if (!sizeOk) { console.error('✗ 远端大小与本地不符，请人工检查 Release'); process.exit(1); }
-    console.log('⚠ 注意：本次未做 md5 校验，建议网络恢复后手动下载一次核对');
+  const digest = String(asset.digest || '');
+  if (/^sha256:[0-9a-f]{64}$/i.test(digest)) {
+    const same = digest.slice(7).toLowerCase() === sha256(raw);
+    console.log((same ? '✅' : '❌') + ' 服务端 digest(sha256) 与本地一致: ' + same);
+    if (!same) { console.error('✗ 远端 digest 与本地不符，请人工检查 Release'); process.exit(1); }
+    verified = true;
   }
-
+  if (!verified) {
+    // 兜底：下载回来比 md5 + PK 头（仅在服务端未返回 digest 时走到）
+    const dlFile = path.join(os.tmpdir(), 'ghrel-download.apk');
+    if (fs.existsSync(dlFile)) fs.rmSync(dlFile);
+    const r3 = httpExec({
+      url: 'https://api.github.com/repos/' + REPO + '/releases/assets/' + asset.id,
+      headers: Object.assign({}, H, { Accept: 'application/octet-stream' }),
+      follow: true, outFile: dlFile, timeout: 900,
+    });
+    if (ok2xx(r3.code) && fs.existsSync(dlFile)) {
+      const dl = fs.readFileSync(dlFile);
+      const isPk = dl.slice(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+      if (dl.length !== raw.length) {
+        // ★下载被截断（网络中断）——不能据此判定上传有问题
+        console.log('⚠ 下载不完整（' + dl.length + ' / ' + raw.length + ' B，疑似网络中断）→ 不据此判失败');
+        console.log('⚠ 注意：本次未完成 md5 校验，建议网络恢复后手动下载一次核对');
+      } else {
+        const same = md5(dl) === md5(raw);
+        console.log((same ? '✅' : '❌') + ' 下载校验 md5 一致: ' + same);
+        console.log((isPk ? '✅' : '❌') + ' PK 头正确: ' + isPk);
+        if (!same || !isPk) { console.error('✗ 上传内容与本地不一致，请人工检查 Release'); process.exit(1); }
+        verified = true;
+      }
+      fs.rmSync(dlFile);
+    } else {
+      // 网络受限（objects.githubusercontent.com 不可达等）→ 退化为 size 校验，不让发布卡死
+      const sizeOk = asset.size === raw.length;
+      console.log('⚠ 下载验证不可用（HTTP ' + r3.code + (r3.stderr ? ' | ' + r3.stderr : '') + '）→ 降级为 size 校验');
+      console.log((sizeOk ? '✅' : '❌') + ' 远端 size 与本地一致: ' + asset.size + ' / ' + raw.length);
+      if (!sizeOk) { console.error('✗ 远端大小与本地不符，请人工检查 Release'); process.exit(1); }
+      console.log('⚠ 注意：本次未做 md5 校验，建议网络恢复后手动下载一次核对');
+    }
+  }
   // 4) 清理本地 APK
   if (!KEEP) {
     const dir = path.dirname(apk);
