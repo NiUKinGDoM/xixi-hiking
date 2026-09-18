@@ -127,6 +127,7 @@ const PAIRS = [
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs', 'DEVICE-CHECKLIST.md'), path.join(GH, 'docs', 'DEVICE-CHECKLIST.md')],
     // ★2026-09-18 补漏：与 doc-sync 的配对表保持一致（此前漏了两处双端文件）
     ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs', '方案-换机同步与登录体验.md'), path.join(GH, 'docs', '方案-换机同步与登录体验.md')],
+    ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs', '版本变更记录-存档.md'), path.join(GH, 'docs', '版本变更记录-存档.md')],
 ];
 const dual = [];
 PAIRS.forEach(([n, a, b]) => {

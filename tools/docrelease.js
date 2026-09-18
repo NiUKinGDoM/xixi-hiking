@@ -38,6 +38,17 @@ const today = (() => {
 })();
 
 const note = fs.readFileSync(noteFile, 'utf8').replace(/\r\n/g, '\n').trim();
+
+// ★2026-09-18 超长行提醒：doc 文案**支持多行**（本工具按行原样插入），一条更新建议写成
+//   「第 1 行 = - **正式版 vX**（…）；第 2 行起 = 缩进子条目   - **① 标题** —— 内容」。
+//   历史上有过 1387 字符的单行条目，主文档读起来很痛苦 → 这里只**提醒**，不阻断发布。
+{
+    const longs = note.split('\n').filter((l) => l.length > 400);
+    if (longs.length) {
+        console.log('⚠ doc 文案有 ' + longs.length + ' 行超 400 字符（最长 ' + Math.max.apply(null, longs.map((l) => l.length)) + ' 字符）');
+        console.log('  建议按 PROJECT_STATUS「版本变更记录」段头的格式约定拆成缩进子条目：  - **① 标题** —— 内容');
+    }
+}
 let changed = 0;
 
 // ---------- 1) PROJECT_STATUS 双端 ----------
