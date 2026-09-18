@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.1.9': '【修复】\n- 同步状态的四维展示（网盘数据 / 图片 / 徒步计划 / 徒步记录）上一版直接替换了设置页上那一行状态——现已恢复那一行原样，四维加进点它弹出的「同步状态」小弹窗里：绿色 ✓ = 已同步、绿色 ○ = 正常、红色 ✗ = 超时未同步（开自动同步 3 天 / 没开 7 天）或同步失败\n- 「照片占用」弹窗的宽度也锁定住：以前它只设了最大宽度，宽度会跟着里面的内容变（「统计中…」→ 列表 → 排行，长度一变宽度就跳），现已固定\n\nMade by XiXi 💛',
     'v1.2.1.8': '【新增】\n- 「网盘信息」按钮：绑定后，解绑旁多了个一样大的「网盘信息」小按钮，点开能看当前网盘的类型、服务器地址、账号；应用密码加密脱敏显示（只显示 ••••••••，绝不明文）\n- 同步状态升级成两行四维：网盘数据 + 图片 / 徒步计划 + 徒步记录，一眼看清哪些数据同步了——绿色 ✓ = 已同步、绿色 ○ = 正常（无数据或未超时）、红色 ✗ = 超时未同步或同步失败\n\n【优化】\n- 删掉「立即同步」按钮：它和上方「上传」重复了，避免按钮堆太多\n- 云端上传 / 下载恢复都带上网盘配置（含加密后的密码）：换手机、重装后从云端下载备份，账号密码一键配好，不用再手动填一遍\n- 导入本地备份同样会带上网盘配置，恢复时按你的选择一键配好\n\n【内部】\n- 数据管理说明、隐私政策同步更新（密码加密存储、备份文件里含加密配置的说明）\n\nMade by XiXi 💛',
     'v1.2.1.7': '【修复】\n- 打开「发现新版本」弹窗时，更新日志只显示一小半（被截断在前 400 字，后面看不着）—— 现已显示完整，内容区可上下滚动\n- 弹窗里那行重复的「## v1.x.x 更新内容」标题已去掉，和设置页「更新日志」观感一致\n\n【优化】\n- 全 App 弹窗宽度统一锁定：以前部分弹窗只写了「最大宽度」没写实际宽度，浏览器会按内容自适应、在不同字体/设备下宽度漂移（「绑定账号」弹窗那次跳变就是这类）；现已把 10 处弹窗全部锁定为固定宽度，观感更整齐\n\n【内部】\n- 一轮例行体检：设计四维（圆角 / 字体 / 玻璃 / 层级）全绿、代码零死函数、滚动与动画均已节流、清理 7 张临时截图、全套自检全绿\n\nMade by XiXi 💛',
     'v1.2.1.6': '【修复】\n- 绑定账号弹窗：选「其他 WebDAV」时弹窗会突然变窄（宽度从 340px 缩到 276px，来回跳）—— 根因是弹窗外壳按"内容自适应"定宽，内容一短就跟着缩；现已改成固定宽度，两个网盘选项下一样宽\n- 「发现网盘配置」「发现新版本」两个弹窗也有同样毛病（内容长短一变宽度就变）—— 一并锁定，三个弹窗现在同宽同款\n- 切到「其他 WebDAV」后，账号框里还留着坚果云的邮箱，连提示文字也还写「你的坚果云邮箱」—— 现在账号框的提示与内容都跟着网盘类型走；你自己敲进去的账号不会被清掉，切回坚果云还会自动恢复原值\n- 「应用密码」的输入提示写死了「16 位应用密码」—— 其他 WebDAV 服务商的密码长度并不都是 16 位，现统一为「应用密码，不是登录密码」\n- 切后台再回前台，偶尔会弹一条「出错了：未知错误」（完全看不出发生了什么）—— 已查出根因：这类报错来自系统底层注入的脚本，浏览器对它们不给错误对象，旧代码只读那个对象，于是把真正的原因丢掉了。现在有原因的会照常提示并显示真原因；完全没信息的只记进诊断日志（设置 → 关于应用 → 导出诊断），不再弹窗打扰\n\n【优化】\n- 坚果云选项副标题「推荐 · 免费额度够用」→ 精简为「推荐」\n- 「其他 WebDAV」选项副标题「自建 / 群晖 / 其他网盘」→「自建 / 其他网盘」\n\n【内部】\n- 系统底层的 WebDAV 回调注入加固：调用前先判断回调是否存在、异常一律兜住、回调名做格式校验 —— 从源头不再产生「无错误对象的脚本报错」\n- 全局错误处理新增「静默记录」：无信息量的错误只进诊断日志，不再打扰（有信息量的照旧弹窗）\n- 回归测试 90 → 101 条（新增：弹窗两态等宽、占位随网盘切换、残留账号清理、无信息错误不弹窗等 11 条）\n\nMade by XiXi 💛',
@@ -590,7 +591,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.1.8';
+var APP_VERSION = '1.2.1.9';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -962,7 +963,7 @@ function openPhotoUsageDetailModal() {
     if (document.getElementById('puModal')) return;   // 幂等：委托+行绑定双通道下防弹窗开两份
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" id="puModal" style="max-width:392px;padding:18px 16px 14px;">' +
+    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" id="puModal" style="max-width:392px;width:calc(100vw - 44px);box-sizing:border-box;padding:18px 16px 14px;">' +
         '<div class="confirm-modal-title" style="font-size:16px;"><span class="material-icons" style="color:#667eea;">photo_library</span>照片占用</div>' +
         '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:2px;">' +
         '<div style="max-height:54vh;overflow-y:auto;padding-right:4px;" id="puScroll">' +

@@ -43,6 +43,7 @@ const CASES = [
   { path: 'tools/deepcheck.js', args: [], safe: true, note: '只读深查' },
   { path: 'tools/docaudit.js', args: [], safe: true, note: '只读文档体检' },
   { path: 'tools/designcheck.js', args: [], safe: false, note: '⚠ 需浏览器（4 页扫描）→ 仅语法校验' },
+  { path: 'tools/modalwidth.js', args: ['--quiet'], safe: true, note: '--quiet → 只读扫描内联弹窗宽度写法' },
   { path: 'tools/status.js', args: ['--offline'], safe: true, note: '--offline → 只读状态核对（跳过远程）' },
   { path: 'tools/rollback.js', args: [], safe: true, note: '无参数 → 只列出回退点（预览模式，不写文件）' },
   { path: 'tools/doc-sync.js', args: [], safe: true, note: '无参数 → 只检测双端文档差异（不写文件）' },

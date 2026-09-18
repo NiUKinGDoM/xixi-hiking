@@ -1680,60 +1680,33 @@ function setSyncStatus(text, icon, type) {
 //   未配置灰引导 / 同步中转圈蓝 / 失败红 / 成功绿 / 闲置按天龄（绿≤3 黄4-7 红>7）
 async function updateSyncHealthRow() {
     try {
-        const simple = document.getElementById('syncHealthSimple');
-        const grid = document.getElementById('syncHealthGrid');
         const txt = document.getElementById('syncHealthText');
         const dot = document.getElementById('syncHealthDot');
         if (!txt || !dot) return;
         const url = buildSyncFileUrl();
         const hasCfg = !!(url && syncConfig && syncConfig.username && syncConfig.password);
-        if (!hasCfg) {
-            if (simple) simple.style.display = 'flex';
-            if (grid) grid.style.display = 'none';
-            dot.style.background = '#94a3b8';
-            txt.textContent = '还没连接云端 · 点这里配置备份';
-            return;
-        }
-        // ★2026-09-18 连接态：单行 → 两行四维（网盘数据/图片 · 徒步计划/徒步记录）
-        if (simple) simple.style.display = 'none';
-        if (grid) grid.style.display = 'flex';
-        // 同步中：四维统一灰 sync 旋转
-        if (syncUiBusy) {
-            ['syncDimNet', 'syncDimPhoto', 'syncDimPlan', 'syncDimRecord'].forEach(function (id) {
-                const el = document.getElementById(id);
-                if (el) { el.textContent = 'sync'; el.style.color = '#94a3b8'; }
-            });
-            return;
-        }
+        let color = '#94a3b8';
+        let label = '还没连接云端 · 点这里配置备份';
+        if (!hasCfg) { dot.style.background = color; txt.textContent = label; return; }
+        // 同步中：蓝点 + 文案
+        if (syncUiBusy) { color = '#4f46e5'; label = syncUiState.text || '正在同步…'; dot.style.background = color; txt.textContent = label; return; }
+        // 最近一次失败：红 + 错误提示（点击弹详情）
+        if (syncUiState.status === 'error') { color = '#dc2626'; label = (syncUiState.text || '同步失败') + ' · 点这里查看'; dot.style.background = color; txt.textContent = label; return; }
         let lastSyncAt = '';
         try { const d = await AppStore.getItem(SYNC_STATUS_KEY); if (d && d.lastSyncAt) lastSyncAt = d.lastSyncAt; } catch (e) { /* 忽略 */ }
-        const failed = syncUiState.status === 'error';
-        let diffDays = -1;
-        if (lastSyncAt) diffDays = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 86400000);
-        // 阈值：开了自动同步 3 天没同步=超时；没开 7 天=超时（用户 2026-09-18 定）
-        const thr = syncAuto ? 3 : 7;
-        const synced = !failed && diffDays >= 0 && diffDays <= thr;
-        const overdue = !failed && diffDays > thr;
-        let photoCount = 0;
-        try { const u = await photoGetUsage(); photoCount = (u && u.count) || 0; } catch (e) { /* 忽略 */ }
-        const dims = [
-            { id: 'syncDimNet', has: true },
-            { id: 'syncDimPhoto', has: photoCount > 0 },
-            { id: 'syncDimPlan', has: (plannedTrips || []).length > 0 },
-            { id: 'syncDimRecord', has: (records || []).length > 0 }
-        ];
-        for (let i = 0; i < dims.length; i++) {
-            const el = document.getElementById(dims[i].id);
-            if (!el) continue;
-            let icon, color;
-            if (failed) { icon = 'cancel'; color = '#dc2626'; }
-            else if (!dims[i].has) { icon = 'circle'; color = '#16a34a'; }
-            else if (synced) { icon = 'check_circle'; color = '#16a34a'; }
-            else if (overdue) { icon = 'cancel'; color = '#dc2626'; }
-            else { icon = 'circle'; color = '#16a34a'; }
-            el.textContent = icon;
-            el.style.color = color;
+        if (!lastSyncAt) {
+            color = '#d97706';
+            label = '已连接，还没备份过 · 建议先上传一次';
+        } else {
+            const diffDays = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 86400000);
+            if (diffDays <= 0) { color = '#16a34a'; label = '上次同步：刚刚 · 云端有备份'; }
+            else if (diffDays === 1) { color = '#16a34a'; label = '上次同步：昨天 · 云端有备份'; }
+            else if (diffDays <= 3) { color = '#16a34a'; label = '上次同步：' + diffDays + ' 天前 · 云端有备份'; }
+            else if (diffDays <= 7) { color = '#d97706'; label = '上次同步：' + diffDays + ' 天前 · 快一周了，抽空备份一下'; }
+            else { color = '#dc2626'; label = '上次同步：' + diffDays + ' 天前 · 有点久了，建议立即备份'; }
         }
+        dot.style.background = color;
+        txt.textContent = label;
     } catch (e) { /* 静默 */ }
 }
 function setSyncBusy(busy, label) {
@@ -1782,6 +1755,10 @@ async function showSyncStatusModal() {
         statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:rgba(100,116,139,0.65);">info</span>尚未检测连接</div>';
     }
     const timeHtml = '<div class="sync-status-time">上次同步时间：' + (lastSyncAt || '暂无同步记录') + '</div>';
+    // ★2026-09-18 连接状态下：两行四维同步状态（网盘数据+图片 / 徒步计划+徒步记录）
+    let dimHtml = '';
+    const hasCfg = !!(syncConfig && syncConfig.server && syncConfig.username && syncConfig.password);
+    if (hasCfg) { dimHtml = await renderSyncDimStatus(); }
 
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
@@ -1795,6 +1772,7 @@ async function showSyncStatusModal() {
             <div class="confirm-modal-message" style="margin-bottom: 12px;">
                 ${statusHtml}
                 ${timeHtml}
+                ${dimHtml}
             </div>
             <div class="confirm-modal-buttons">
                 <button class="confirm-btn-cancel ripple-effect" id="sync-status-close">知道了</button>
@@ -1807,6 +1785,47 @@ async function showSyncStatusModal() {
     const closeModal = () => document.body.removeChild(modal);
     closeBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+}
+
+// ★2026-09-18 两行四维同步状态（在「同步状态」弹窗内展示）：
+//   网盘数据 + 图片 / 徒步计划 + 徒步记录；绿勾✓=已同步、绿圈○=正常、红叉✗=超时未同步或失败
+async function renderSyncDimStatus() {
+    try {
+        let lastSyncAt = '';
+        try { const d = await AppStore.getItem(SYNC_STATUS_KEY); if (d && d.lastSyncAt) lastSyncAt = d.lastSyncAt; } catch (e) { /* 忽略 */ }
+        const failed = syncUiState.status === 'error';
+        let diffDays = -1;
+        if (lastSyncAt) diffDays = Math.floor((Date.now() - new Date(lastSyncAt).getTime()) / 86400000);
+        // 阈值：开自动同步 3 天没同步=超时；没开 7 天=超时
+        const thr = syncAuto ? 3 : 7;
+        const synced = !failed && diffDays >= 0 && diffDays <= thr;
+        const overdue = !failed && diffDays > thr;
+        let photoCount = 0;
+        try { const u = await photoGetUsage(); photoCount = (u && u.count) || 0; } catch (e) { /* 忽略 */ }
+        const dims = [
+            { label: '网盘数据', has: true },
+            { label: '图片', has: photoCount > 0 },
+            { label: '徒步计划', has: (plannedTrips || []).length > 0 },
+            { label: '徒步记录', has: (records || []).length > 0 }
+        ];
+        let html = '<div style="margin-top:6px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.25);">';
+        for (let i = 0; i < dims.length; i += 2) {
+            html += '<div style="display:flex;gap:10px;margin-top:8px;">';
+            for (let j = i; j < i + 2 && j < dims.length; j++) {
+                const d = dims[j];
+                let icon, color;
+                if (failed) { icon = 'cancel'; color = '#dc2626'; }
+                else if (!d.has) { icon = 'circle'; color = '#16a34a'; }
+                else if (synced) { icon = 'check_circle'; color = '#16a34a'; }
+                else if (overdue) { icon = 'cancel'; color = '#dc2626'; }
+                else { icon = 'circle'; color = '#16a34a'; }
+                html += '<div class="sync-dim"><span class="material-icons sync-dim-ic" style="color:' + color + ';">' + icon + '</span><span class="sync-dim-tx">' + d.label + '</span></div>';
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    } catch (e) { return ''; }
 }
 
 // 自动检测连接：进入设置页或输入配置后调用，结果展示在同步健康行 + 可选 toast 提示

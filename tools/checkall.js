@@ -29,11 +29,13 @@ const SUITES = [
   { key: 'test-ui', name: 'jsdom UI 自检', file: 'test-ui.js', timeout: 180000 },
   { key: 'p0p3', name: 'P0P3 链路自检', file: '_test_p0p3.js', timeout: 300000 },
   { key: 'e2e', name: 'E2E 真实渲染回归', file: 'e2e/run.js', timeout: 420000 },
+  { key: 'modalw', name: '弹窗内联宽度锁定（源码扫描）', file: 'tools/modalwidth.js', args: ['--quiet'], timeout: 30000 },
 ];
 
 let list = SUITES;
-if (has('fast')) list = SUITES.slice(0, 3);
-else if (has('no-e2e')) list = SUITES.slice(0, 5);
+// ★2026-09-18 改按 key 取（原来用下标 slice，新增套件会把原有套件悄悄挤掉）
+if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test'].indexOf(s.key) >= 0);
+else if (has('no-e2e')) list = SUITES.filter((s) => s.key !== 'e2e');
 if (onlyArg) list = SUITES.filter((s) => s.key === onlyArg);
 
 function parseResult(out) {
