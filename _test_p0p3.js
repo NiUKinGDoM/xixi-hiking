@@ -515,6 +515,48 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         window.recordsViewMode = 'mountain';
         window.applyRecordsView();
         assert('切山册 caption 文案切换', rcTxt.textContent.indexOf('山册视图') === 0, rcTxt.textContent);
+        // ★2026-09-18 山册彩边「颜色说明」入口 + 图例弹窗（新增行为守卫）
+        const rlLink = document.getElementById('ridgeLegendLink');
+        assert('山册视图露出「颜色说明」入口', !!rlLink && rlLink.style.display !== 'none', rlLink ? (rlLink.style.display || 'shown') : 'none');
+        assert('入口是纯文字不引 icon', !!rlLink && !rlLink.querySelector('.material-icons'), rlLink ? rlLink.innerHTML.slice(0, 40) : 'none');
+        assert('弹窗前无图例弹窗（山册顶部常驻图例不算）', document.querySelectorAll('.ridge-legend').length === 0, 'legends=' + document.querySelectorAll('.ridge-legend').length);
+        if (rlLink) rlLink.click();
+        await delay(90);
+        const rlBox = document.querySelector('.confirm-modal .ridge-legend');
+        assert('点入口弹出彩边图例', !!rlBox, rlBox ? 'ok' : 'none');
+        const rlRows = rlBox ? rlBox.querySelectorAll('.ridge-legend-row').length : 0;
+        assert('图例 5 档齐全', rlRows === 5, 'rows=' + rlRows);
+        const rlC = document.querySelector('.confirm-modal .confirm-modal-content');
+        assert('彩边图例弹窗宽度已锁定', !!rlC && rlC.style.width.indexOf('calc(100vw') === 0 && rlC.style.boxSizing === 'border-box', rlC ? rlC.style.width : 'none');
+        const rlBars = rlBox ? Array.from(rlBox.querySelectorAll('.ridge-legend-bar')) : [];
+        // 色值与色差的校验在 test.js 源码守卫（jsdom 无 getComputedStyle），此处只校验档位齐全有序
+        const rlCls = rlBars.map(function (b) {
+            const hit = Array.from(b.classList).filter(function (c) { return /^rl-\d$/.test(c); });
+            return hit[0] || '?';
+        });
+        assert('图例档位齐全有序 rl-1…rl-5', rlCls.join(',') === 'rl-1,rl-2,rl-3,rl-4,rl-5', rlCls.join(','));
+        assert('看说明时不收起 caption', rc.style.display !== 'none', rc.style.display || 'shown');
+        document.querySelectorAll('.confirm-modal').forEach(function (m) { if (m.querySelector('.ridge-legend') && m.parentNode) m.parentNode.removeChild(m); });
+        window.recordsViewMode = 'list';
+        window.applyRecordsView();
+        assert('列表视图隐藏「颜色说明」入口', !!rlLink && rlLink.style.display === 'none', rlLink ? (rlLink.style.display || 'shown') : 'none');
+        // ★2026-09-18 山册顶部常驻图例 + 关于页入口
+        window.recordsViewMode = 'mountain';
+        window.applyRecordsView();
+        await delay(90);
+        const mbWrap = document.getElementById('mountainBookView');
+        const mbLegend = mbWrap ? mbWrap.querySelector('.mb-legend') : null;
+        assert('山册顶部常驻色带图例', !!mbLegend, mbLegend ? 'ok' : 'none');
+        const mbItems = mbLegend ? mbLegend.querySelectorAll('.mb-legend-item').length : 0;
+        assert('顶部图例 5 档齐全', mbItems === 5, 'items=' + mbItems);
+        const mbCls = mbLegend ? Array.from(mbLegend.querySelectorAll('.ridge-legend-bar')).map(function (b) {
+            const hit = Array.from(b.classList).filter(function (c) { return /^rl-\d$/.test(c); });
+            return hit[0] || '?';
+        }) : [];
+        assert('顶部图例档位有序 rl-1…rl-5', mbCls.join(',') === 'rl-1,rl-2,rl-3,rl-4,rl-5', mbCls.join(','));
+        document.querySelectorAll('.confirm-modal').forEach(function (m) { if (m.querySelector('.ridge-legend') && m.parentNode) m.parentNode.removeChild(m); });
+        window.recordsViewMode = 'list';
+        window.applyRecordsView();
         window.recordsViewMode = 'list';
         window.applyRecordsView();
         const plTxt = document.getElementById('plansViewCaptionText');
@@ -693,6 +735,15 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         assert('内容含上次版本(' + pVer + ')(无徽章)', pVer && clTxt.indexOf(pVer) >= 0 && clTxt.indexOf('上次更新') < 0, 'no ' + pVer);
         assert('内容含上上次版本(' + p2Ver + ')(无徽章)', p2Ver && clTxt.indexOf(p2Ver) >= 0 && clTxt.indexOf('上上次更新') < 0, 'no ' + p2Ver);
         assert('徽章只出现一次(本次,颜色内联)', (clHtml.match(/本次更新/g) || []).length === 1 && clHtml.indexOf('color:' + (document.body.classList.contains('dark-mode') ? '#a5b4fc' : '#4f46e5')) >= 0, 'badge 异常');
+        // ★2026-09-18 排版守卫：分组标题 + 缩进子条目（此前整段纯文本堆一起，用户报「字都堆在一起」）
+        const clHead = clHtml.match(/【[^】]{1,14}】<\/div>/g) || [];
+        assert('更新日志按分组标题渲染(' + clHead.length + ')', clHead.length >= 3, 'heads=' + clHead.length);
+        const clItems = clHtml.match(/•<\/span>/g) || [];
+        assert('更新日志条目按列表渲染(' + clItems.length + ')', clItems.length >= 5, 'items=' + clItems.length);
+        const clStrong = clHtml.match(/<strong /g) || [];
+        assert('小标题转粗体(' + clStrong.length + ')', clStrong.length >= 3, 'strong=' + clStrong.length);
+        assert('无 markdown 残留(** / ##)', clTxt.indexOf('**') < 0 && !/^##\s/m.test(clTxt), 'md leaked');
+        assert('Made by 只在末尾一次', (clTxt.match(/Made by XiXi/g) || []).length === 1, 'sign=' + (clTxt.match(/Made by XiXi/g) || []).length);
         // 关闭
         const clClose = document.getElementById('changelogClose');
         if (clClose) click(clClose); await delay(20);

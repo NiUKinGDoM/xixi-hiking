@@ -223,7 +223,8 @@ async function init() {
         document.addEventListener('click', function (ev) {
             try {
                 var cap = ev.target && ev.target.closest ? ev.target.closest('.view-caption') : null;
-                if (cap) cap.style.display = 'none';
+                // ★2026-09-18 点「颜色说明」入口不算收起（否则说明行连同弹窗一起消失）
+                if (cap && !(ev.target.closest && ev.target.closest('.view-caption-link'))) cap.style.display = 'none';
             } catch (e) { /* 忽略 */ }
         });
         // ★2026-09-06 分页引导 v3：恢复每卡独立 ✕ 状态（老版整体 seen 兼容四卡全关）→ 绑定 → 显示当前页卡
@@ -440,8 +441,7 @@ function setupEventListeners() {
         privacyPolicyBtn.addEventListener('click', function () {
             if (typeof showPrivacyPolicyModal === 'function') showPrivacyPolicyModal();
         });
-    }
-    // ★2026-08-27 关于页：GitHub 图标 → 外部浏览器打开仓库（原生拦截 http/https 跳转）
+    }    // ★2026-08-27 关于页：GitHub 图标 → 外部浏览器打开仓库（原生拦截 http/https 跳转）
     const githubBtn = document.getElementById('githubBtn');
     if (githubBtn) {
         githubBtn.addEventListener('click', function () {

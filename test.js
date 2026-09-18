@@ -559,5 +559,24 @@ if (fdtSrc && fdtlSrc) {
 // 9.5f 源码守卫：弹窗按钮统一为标准体系（★2026-09-17 去掉 modal-option-btn/modal-cancel-btn 旧类）
 (!/modal-(option|cancel)-btn/.test(allJs + html)) ? ok('守卫：弹窗按钮无旧类残留（已统一 check-go-btn/confirm-btn-cancel）') : bad('仍存在 modal-option-btn/modal-cancel-btn 旧类');
 (/\.check-go-btn \{[^}]*border-radius: 12px/.test(html)) ? ok('守卫：.check-go-btn 基础定义自带圆角（全宽场景不塌成 0px）') : bad('.check-go-btn 缺基础圆角（全宽按钮会变直角）');
+// 9.5g 源码守卫：山册彩边色值（★2026-09-18）——说明图例必须与卡片书脊逐一同色，且档位色差可辨
+const cssBlockOf = (sel) => { const m = html.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}')); return m ? m[1] : null; };
+const legendBg = (sel) => { const b = cssBlockOf(sel); const m = b && b.match(/background:\s*(#[0-9a-f]{6})/i); return m ? m[1].toLowerCase() : null; };
+const ridgeColor = (sel) => { const b = cssBlockOf(sel); const m = b && b.match(/border-(?:right|right-color):\s*(?:4px\s+solid\s+)?(#[0-9a-f]{6})/i); return m ? m[1].toLowerCase() : null; };
+const rgbDist = (a, b) => (a && b) ? Math.sqrt(Math.pow(parseInt(a.slice(1, 3), 16) - parseInt(b.slice(1, 3), 16), 2) + Math.pow(parseInt(a.slice(3, 5), 16) - parseInt(b.slice(3, 5), 16), 2) + Math.pow(parseInt(a.slice(5, 7), 16) - parseInt(b.slice(5, 7), 16), 2)) : -1;
+const legL = [], legD = [], ridgeL = [], ridgeD = [];
+for (let li = 1; li <= 5; li++) {
+    legL.push(legendBg('.rl-' + li));
+    legD.push(legendBg('body.dark-mode .rl-' + li));
+    ridgeL.push(ridgeColor('.mb-card.mb-ridge-' + li));
+    ridgeD.push(ridgeColor('body.dark-mode .mb-card.mb-ridge-' + li));
+}
+const sameAll = (a, b) => a.length === 5 && a.every((v, idx) => v && v === b[idx]);
+const uniqAll = (a) => a.every(Boolean) && new Set(a).size === 5;
+const minDist = (a) => { let mm = 9999; for (let di = 1; di < a.length; di++) { const d = rgbDist(a[di - 1], a[di]); if (d >= 0 && d < mm) mm = d; } return mm; };
+sameAll(legL, ridgeL) ? ok('守卫：彩边图例与山册书脊同色（浅色 5 档）') : bad('彩边图例与书脊不一致(浅色) -> ' + JSON.stringify(legL) + ' vs ' + JSON.stringify(ridgeL));
+sameAll(legD, ridgeD) ? ok('守卫：彩边图例与山册书脊同色（深色 5 档）') : bad('彩边图例与书脊不一致(深色) -> ' + JSON.stringify(legD) + ' vs ' + JSON.stringify(ridgeD));
+uniqAll(legL) && uniqAll(legD) ? ok('守卫：彩边 5 档色值互不相同') : bad('彩边存在重复/缺失色值 -> ' + JSON.stringify(legL));
+(minDist(legL) >= 35 && minDist(legD) >= 35) ? ok('守卫：彩边相邻档色差可辨（浅色 ' + minDist(legL).toFixed(1) + ' / 深色 ' + minDist(legD).toFixed(1) + '）') : bad('彩边相邻档色差过小 -> 浅色 ' + minDist(legL).toFixed(1) + ' 深色 ' + minDist(legD).toFixed(1));
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

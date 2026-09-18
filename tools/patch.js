@@ -80,7 +80,9 @@ for (const p of patches) {
     failed = true;
     continue;
   }
-  entry.next = src.replace(p.old, p.new);
+  // ★2026-09-18 必须用函数式替换：字符串形 replace 会把 new 里的「美元符号 + & / 数字 / 反引号 / 撇号」
+  //   当成替换语法展开（本项目守卫代码含该序列）——曾导致注入内容错乱，靠写后语法校验拦下才没写脏
+  entry.next = src.replace(p.old, () => p.new);
   entry.touched = true;
   console.log('✓ 命中:', p.file, '|', String(p.old).slice(0, 40).replace(/\n/g, '\\n'));
 }

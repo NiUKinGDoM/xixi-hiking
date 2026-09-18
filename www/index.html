@@ -3166,6 +3166,58 @@
         body.dark-mode .view-caption {
             color: #a3b1c6;            /* ★2026-09-04 dark 同 rd-met 标签提亮色 */
         }
+
+        /* ★2026-09-18 山册彩边颜色说明：小灰字里的可点入口 + 图例弹窗色条（深浅色各自真实色值，与 .mb-ridge-* 保持一致） */
+        .view-caption-link {
+            color: #4f46e5;
+            font-weight: 600;
+            flex-shrink: 0;
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-style: dashed;
+            text-underline-offset: 2px;
+            text-decoration-color: rgba(79, 70, 229, 0.5);
+        }
+        body.dark-mode .view-caption-link {
+            color: #a5b4fc;
+            text-decoration-color: rgba(165, 180, 252, 0.55);
+        }
+        .ridge-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 6px; }
+        .ridge-legend-row { display: flex; align-items: center; gap: 9px; font-size: 12.5px; line-height: 1.3; }
+        .ridge-legend-bar { width: 4px; height: 15px; border-radius: 2px; flex-shrink: 0; }
+        .ridge-legend-txt { flex: 1; min-width: 0; color: #334155; font-weight: 600; }
+        .ridge-legend-name { color: #64748b; font-size: 12px; flex-shrink: 0; }
+        body.dark-mode .ridge-legend-txt { color: #e2e8f0; }
+        body.dark-mode .ridge-legend-name { color: #94a3b8; }
+        .rl-1 { background: #0d9488; }
+        .rl-2 { background: #0284c7; }
+        .rl-3 { background: #2563eb; }
+        .rl-4 { background: #4338ca; }
+        .rl-5 { background: #9333ea; }
+        body.dark-mode .rl-1 { background: #2dd4bf; }
+        body.dark-mode .rl-2 { background: #0ea5e9; }
+        body.dark-mode .rl-3 { background: #3b82f6; }
+        body.dark-mode .rl-4 { background: #818cf8; }
+        body.dark-mode .rl-5 { background: #c084fc; }
+
+        /* ★2026-09-18 山册顶部常驻色带图例：轻量小字，窄屏自动折行（复用 .ridge-legend-bar + .rl-N，深浅色自动跟随） */
+        .mb-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 5px 8px;
+            margin: 0 0 10px;
+            padding: 0 2px;
+            font-size: 11px;
+            line-height: 1.3;
+            color: #64748b;
+            letter-spacing: 0.2px;
+        }
+        body.dark-mode .mb-legend { color: #94a3b8; }
+        .mb-legend-label { font-weight: 600; margin-right: 2px; }
+        .mb-legend-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .mb-legend .ridge-legend-bar { height: 11px; }
         .view-toggle-label {
             font-size: 12px;
             font-weight: 600;
@@ -4253,32 +4305,32 @@
             border-bottom: 4px solid #2563eb;
         }
         .mb-card.mb-ridge-4 {
-            border-right: 4px solid #4f46e5;
-            border-bottom: 4px solid #4f46e5;
+            border-right: 4px solid #4338ca;
+            border-bottom: 4px solid #4338ca;
         }
         .mb-card.mb-ridge-5 {
-            border-right: 4px solid #7c3aed;
-            border-bottom: 4px solid #7c3aed;
+            border-right: 4px solid #9333ea;
+            border-bottom: 4px solid #9333ea;
         }
         body.dark-mode .mb-card.mb-ridge-1 {
             border-right-color: #2dd4bf;
             border-bottom-color: #2dd4bf;
         }
         body.dark-mode .mb-card.mb-ridge-2 {
-            border-right-color: #38bdf8;
-            border-bottom-color: #38bdf8;
+            border-right-color: #0ea5e9;
+            border-bottom-color: #0ea5e9;
         }
         body.dark-mode .mb-card.mb-ridge-3 {
-            border-right-color: #60a5fa;
-            border-bottom-color: #60a5fa;
+            border-right-color: #3b82f6;
+            border-bottom-color: #3b82f6;
         }
         body.dark-mode .mb-card.mb-ridge-4 {
             border-right-color: #818cf8;
             border-bottom-color: #818cf8;
         }
         body.dark-mode .mb-card.mb-ridge-5 {
-            border-right-color: #a78bfa;
-            border-bottom-color: #a78bfa;
+            border-right-color: #c084fc;
+            border-bottom-color: #c084fc;
         }
         .mb-head {
             display: flex;
@@ -5989,7 +6041,7 @@
                 </div>
                 <!-- ★2026-09-04 视图小标题说明：告诉新用户当前是什么视图、能干什么（随模式切文案） -->
                 <!-- ★2026-09-04 视图小标题说明：纯文字不带 icon（用户要求） -->
-                <div class="view-caption" id="recordsViewCaption" data-testid="records-view-caption" title="点一下收起这条说明（切换视图后重新出现）"><span id="recordsViewCaptionText">列表视图 · 全部记录按时间排列，点一行可查看</span></div>
+                <div class="view-caption" id="recordsViewCaption" data-testid="records-view-caption" title="点一下收起这条说明（切换视图后重新出现）"><span id="recordsViewCaptionText">列表视图 · 全部记录按时间排列，点一行可查看</span><span class="view-caption-link" id="ridgeLegendLink" data-testid="ridge-legend-link" style="display:none;">颜色说明</span></div>
 
                 <!-- ★2026-09-06 记录页引导（分页提示：记录页讲「记一笔」，仅零记录新用户显示，✕ 才关闭） -->
                 <div id="guideRecords" class="glass-panel wb-guide" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:13px 14px;">
@@ -5997,7 +6049,7 @@
                         <span class="material-icons wb-ic" style="font-size:24px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">landscape</span>
                         <div style="flex:1;min-width:0;">
                             <div class="wb-title" style="font-size:14px;font-weight:600;color:#334155;line-height:1.4;">从这里开始你的第一座山</div>
-                            <div class="wb-sub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">点「＋」添加：名字、海拔、难度、照片都能记，还能写几行小日记。同一座山去过几次，会自动收进右下角的<b>山册</b>。</div>
+                            <div class="wb-sub" style="font-size:12px;color:#52606f;margin-top:3px;line-height:1.6;">点「＋」添加：名字、海拔、难度、照片都能记，还能写几行小日记。同一座山去过几次，会自动收进右下角的<b>山册</b>；卡片右下的彩边，就是这座山的最高海拔。</div>
                             <div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;">
                                 <button id="rGoBtn" class="check-go-btn ripple-effect" type="button" style="padding:7px 16px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">记下第一笔</button>
                                 <button id="rMbBtn" type="button" class="guide-sub-btn" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);color:#4f46e5;cursor:pointer;font-size:13px;font-weight:600;padding:7px 16px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;">去山册看看</button>
@@ -6372,7 +6424,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.2.1.10</div>
+                        <div class="about-version">版本 1.2.2.0</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
