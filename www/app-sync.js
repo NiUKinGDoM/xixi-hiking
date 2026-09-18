@@ -473,6 +473,7 @@ function showUpdateModal(info) {
     modal.className = 'confirm-modal modal-backdrop-animate';
     var bodyText = (info.body || '').trim();   // ★2026-09-18 去掉 400 字符硬截断（更新弹窗日志曾显示不全；内容区已有 max-height+滚动兜底）
     bodyText = bodyText.replace(/^##[^\n]*\n\s*/i, '');   // 去掉 markdown 标题行（弹窗标题已含版本号，且与设置页日志观感一致）
+    var pal = changelogPalette();   // ★2026-09-18 与「更新日志」共用配色
     // ★2026-09-07 直装判定：本地已下载过且版本一致 → 不再重下，直接弹「立即安装」
     const localReady = hasLocalApkFor('v' + info.tag);
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
@@ -480,7 +481,10 @@ function showUpdateModal(info) {
         '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;">' +
         '<div style="font-weight:600;margin-bottom:4px;">当前 v' + APP_VERSION + ' → 新 v' + escapeHtml(info.tag) + '</div>' +
         (localReady ? '<div style="margin-bottom:6px;font-size:12px;color:#16a34a;background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.3);border-radius:10px;padding:7px 10px;">安装包已下载好，点下面按钮直接安装，不用重新下载</div>' : '') +
-        (bodyText ? '<div style="white-space:pre-wrap;">' + escapeHtml(bodyText) + '</div>' : '') +   /* ★v1.1.2.9 更新内容跟随主题色（原固定灰蓝浅色偏淡/深色看不清） */
+        // ★2026-09-18 与「更新日志」统一走 renderChangelogBody（此前纯文本，** 与 - 会原样露出来；用户报「更新弹窗又是 **XX** 形式」）
+        (bodyText ? (typeof renderChangelogBody === 'function'
+            ? renderChangelogBody(bodyText, pal.CL, pal.MUTED)
+            : '<div style="white-space:pre-wrap;">' + escapeHtml(bodyText) + '</div>') : '') +
         '</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="updateLaterBtn">稍后</button>' +
         '<button class="confirm-btn-delete check-go-btn ripple-effect" id="updateNowBtn">' + (localReady ? '立即安装' : '立即更新') + '</button></div></div>';

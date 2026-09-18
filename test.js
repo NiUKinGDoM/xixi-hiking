@@ -225,7 +225,8 @@ try {
     cj.includes('history_edu</span>更新日志</div>') ? ok('更新日志标题去掉版本号') : bad('标题仍带版本号!');
     cj.includes('j === 0') && cj.includes('本次更新') && !cj.includes('上次更新') ? ok('徽章仅本次(上次/上上次无标签)') : bad('徽章逻辑不对!');
     cj.includes('parts.length < 3') ? ok('取最近三个版本逻辑在') : bad('三版截取缺失!');
-    cj.includes('var CL = {') && cj.includes('tagTx: IS_DARK') && cj.includes(">本次更新</span>") ? ok('更新日志颜色内联化(IS_DARK 分支)') : bad('changelog 内联色缺失!');
+    // ★2026-09-18 配色抽成 changelogPalette()（更新弹窗共用）→ 断言改看函数名与分支
+    cj.includes('function changelogPalette') && cj.includes('tagTx: IS_DARK') && cj.includes(">本次更新</span>") ? ok('更新日志颜色内联化(IS_DARK 分支)') : bad('changelog 内联色缺失!');
     ih.includes('function showChangelogModal') || !ih.includes('#changelogBody .clb') ? ok('cl 依赖 CSS 已清(与照片弹窗同防真机失效)') : bad('cl CSS 残留!');
     cj.includes('function showInfoMessage') ? ok('中性信息 toast(showInfoMessage)在') : bad('showInfoMessage 缺失!');
     cj.includes('showInfoMessage(cleanMsgs') ? ok('俏皮话改中性 toast') : bad('俏皮话未用中性!');
@@ -578,5 +579,11 @@ sameAll(legL, ridgeL) ? ok('守卫：彩边图例与山册书脊同色（浅色 
 sameAll(legD, ridgeD) ? ok('守卫：彩边图例与山册书脊同色（深色 5 档）') : bad('彩边图例与书脊不一致(深色) -> ' + JSON.stringify(legD) + ' vs ' + JSON.stringify(ridgeD));
 uniqAll(legL) && uniqAll(legD) ? ok('守卫：彩边 5 档色值互不相同') : bad('彩边存在重复/缺失色值 -> ' + JSON.stringify(legL));
 (minDist(legL) >= 35 && minDist(legD) >= 35) ? ok('守卫：彩边相邻档色差可辨（浅色 ' + minDist(legL).toFixed(1) + ' / 深色 ' + minDist(legD).toFixed(1) + '）') : bad('彩边相邻档色差过小 -> 浅色 ' + minDist(legL).toFixed(1) + ' 深色 ' + minDist(legD).toFixed(1));
+// ★2026-09-18 源码守卫：更新弹窗必须与「更新日志」共用 renderChangelogBody（此前弹窗是纯文本，** 与 - 原样露出）
+const syncJs2 = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+(/function showUpdateModal/.test(syncJs2) && /renderChangelogBody\(bodyText, pal\.CL, pal\.MUTED\)/.test(syncJs2)) ? ok('守卫：更新弹窗共用日志渲染器（不再露出 **）') : bad('更新弹窗未走 renderChangelogBody！');
+/var pal = changelogPalette\(\);/.test(syncJs2) ? ok('守卫：更新弹窗与日志共用配色函数') : bad('更新弹窗未用 changelogPalette！');
+// 条目编号渲染（圆点 → 1. 2. 3.，每组重置）
+/itemNo = 0;/.test(allJs) && /itemNo\+\+/.test(allJs) && /'\.<\/span>'/.test(allJs) ? ok('守卫：更新日志条目按数字编号（每组重置）') : bad('条目编号渲染缺失！');
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

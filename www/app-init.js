@@ -223,8 +223,7 @@ async function init() {
         document.addEventListener('click', function (ev) {
             try {
                 var cap = ev.target && ev.target.closest ? ev.target.closest('.view-caption') : null;
-                // ★2026-09-18 点「颜色说明」入口不算收起（否则说明行连同弹窗一起消失）
-                if (cap && !(ev.target.closest && ev.target.closest('.view-caption-link'))) cap.style.display = 'none';
+                if (cap) cap.style.display = 'none';
             } catch (e) { /* 忽略 */ }
         });
         // ★2026-09-06 分页引导 v3：恢复每卡独立 ✕ 状态（老版整体 seen 兼容四卡全关）→ 绑定 → 显示当前页卡

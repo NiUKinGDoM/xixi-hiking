@@ -1728,48 +1728,6 @@ async function saveAppTitle(title) {
 // v1.4.12.10：区块标题统一弹窗编辑（统计/记录/计划/设置），与顶栏标题同一套交互
 
 /* 2026-08-11 数据管理说明弹窗（i 标识点击显示） */
-// ★2026-09-18 山册彩边颜色说明（记录页山册视图「颜色说明」入口；色值与 .mb-ridge-* 严格对应）
-function showRidgeLegendModal() {
-    try { if (typeof closeOpenModals === 'function') closeOpenModals(); } catch (e) { /* 防重入 */ }
-    var rows = [
-        { c: 'rl-1', r: '低于 1000m', n: '青绿' },
-        { c: 'rl-2', r: '1000 – 1999m', n: '天蓝' },
-        { c: 'rl-3', r: '2000 – 2999m', n: '蓝' },
-        { c: 'rl-4', r: '3000 – 3999m', n: '靛蓝' },
-        { c: 'rl-5', r: '4000m 及以上', n: '紫' }
-    ];
-    var legendHtml = rows.map(function (x) {
-        return '<div class="ridge-legend-row"><span class="ridge-legend-bar ' + x.c + '"></span>' +
-            '<span class="ridge-legend-txt">' + x.r + '</span>' +
-            '<span class="ridge-legend-name">' + x.n + '</span></div>';
-    }).join('');
-    var modal = document.createElement('div');
-    modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">' +
-        '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">palette</span>山册彩边说明</div>' +
-        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:16px;">' +
-        '<div class="dmi-group" style="align-items:flex-start;">' +
-        '<span class="material-icons dmi-ic">legend_toggle</span>' +
-        '<div style="min-width:0;flex:1;"><div class="dmi-title">颜色对应海拔</div>' +
-        '<div class="ridge-legend">' + legendHtml + '</div></div></div>' +
-        '<div class="dmi-group">' +
-        '<span class="material-icons dmi-ic">crop_free</span>' +
-        '<div style="min-width:0;"><div class="dmi-title">彩边画在哪</div>' +
-        '<div class="dmi-body">卡片右下角：右缘 + 下缘各 4px，像一本书的书脊。</div></div></div>' +
-        '<div class="dmi-group">' +
-        '<span class="material-icons dmi-ic">straighten</span>' +
-        '<div style="min-width:0;"><div class="dmi-title">按哪次海拔分档</div>' +
-        '<div class="dmi-body">按这座山<b>去过最高的那一次</b>：同一座山去过几回只看最高的一次。没填海拔的山，卡片不带彩边。</div></div></div>' +
-        '</div>' +
-        '<div class="confirm-modal-buttons">' +
-        '<button class="confirm-btn-cancel ripple-effect" id="ridge-legend-close">知道了</button>' +
-        '</div></div>';
-    document.body.appendChild(modal);
-    var closeModal = function () { try { document.body.removeChild(modal); } catch (e) { /* 忽略 */ } };
-    var closeBtn = document.getElementById('ridge-legend-close');
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
-}
 function showDataInfoModal() {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
@@ -3309,12 +3267,6 @@ function initRecordsView() {
             return;
         }
     });
-    // ★2026-09-18 山册彩边「颜色说明」入口：阻止冒泡（否则会被 .view-caption 的点一下收起吃掉）
-    var ridgeLinkBtn = safeGetElementById('ridgeLegendLink');
-    if (ridgeLinkBtn) ridgeLinkBtn.addEventListener('click', function (ev) {
-        try { ev.stopPropagation(); } catch (e) { /* 忽略 */ }
-        try { showRidgeLegendModal(); } catch (e2) { /* 忽略 */ }
-    });
 }
 function applyRecordsView() {
     var isMb = recordsViewMode === 'mountain';
@@ -3345,10 +3297,7 @@ function applyRecordsView() {
     if (labR) labR.textContent = isMb ? '列表' : '山册';
     var capElR = safeGetElementById('recordsViewCaption');
     var capTxtR = safeGetElementById('recordsViewCaptionText');
-    if (capTxtR) capTxtR.textContent = isMb ? '山册视图 · 按山峰汇总成册' : '列表视图 · 全部记录按时间排列，点一行可查看';
-    // ★2026-09-18 山册彩边「颜色说明」入口：仅山册视图露出（文案缩短给它腾位置，点它看海拔分档图例）
-    var ridgeLinkEl = safeGetElementById('ridgeLegendLink');
-    if (ridgeLinkEl) ridgeLinkEl.style.display = isMb ? '' : 'none';
+    if (capTxtR) capTxtR.textContent = isMb ? '山册视图 · 按山峰汇总成册，一座山一张卡片' : '列表视图 · 全部记录按时间排列，点一行可查看';
     if (capElR) capElR.style.display = '';   // ★2026-09-05 切视图时恢复被收起说明
     var btn = safeGetElementById('recordsViewToggleBtn');
     if (btn) btn.title = isMb ? '切回记录列表' : '查看我的山册';

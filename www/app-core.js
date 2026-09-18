@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.2.1': '【修复】\n- 「发现新版本」弹窗里的更新内容以前是纯文本，`**小标题**` 和前面的短横线会原样显示出来 —— 现在与设置页「更新日志」用同一套排版：分组标题（【新增】【优化】…）加粗，每条带序号 1. 2. 3.（每组从 1 重新排），小标题加粗，长内容照样滚动看完\n\n【优化】\n- 记录页说明行瘦身 —— 去掉了上次加的「颜色说明」入口（山册顶部那行图例已经够用），说明行恢复完整文案：「山册视图 · 按山峰汇总成册，一座山一张卡片」\n\n【内部】\n- 清理失去入口后的残留：图例弹窗函数（约 3 KB）、链接元素、5 组已无引用的样式、1 处事件绑定、9 条相关断言\n- 更新日志与更新弹窗统一走同一个渲染函数；配色抽成公共函数（此前配色写死在更新日志弹窗内部，更新弹窗用不上，只能输出纯文本）\n- 新增回归守卫 3 条（更新弹窗必须共用渲染器 / 必须共用配色函数 / 条目必须按数字编号且每组重置），并修正 1 条因配色抽取而失效的旧断言；test.js 219 → 226\n- 补上一处测试盲区：测试环境里「更新弹窗」相关函数不可用会让断言静默跳过（连条数都不变）→ 现在会明确提示，校验改由源码级守卫承担\n\nMade by XiXi 💛',
     'v1.2.2.0': '【新增】\n- 更新日志看得清了 —— 以前「更新日志」里所有内容挤成一整块：分组标题和正文一样大小、每条前面只是裸短横线、条目之间没有间距；现在分组标题是加粗小标题，每条是真列表（圆点 + 悬挂缩进 + 条目间距），重点词加粗，内容长也能滚动看完。旧版本遗留的 **小标题** 写法会自动转成【】样式，历史版本也一起变整齐\n- 山册的彩边有说明了 —— 山册顶部常驻一行海拔档位图例（由低到高 5 档）；记录页切到山册后，说明行右边多了「颜色说明」，点开是完整弹窗：什么颜色对应什么海拔、彩边画在卡片右下角、按这座山去过最高的那次算。新手引导卡也补了一句\n\n【优化】\n- 山册彩边配色拉开 —— 以前「3000-3999」（靛）和「4000+」（紫）两档颜色太接近，深色模式下几乎分不出来；现在 5 档都看得清（实测相邻档最小色差：深色 38 → 58、浅色 47 → 60），青绿到紫的整体走向不变\n- 山册说明行文案精简 —— 「山册视图 · 按山峰汇总成册，一座山一张卡片」改为「山册视图 · 按山峰汇总成册」（给「颜色说明」入口腾位置，一行放得下）\n\n【内部】\n- 修开发用注入工具（tools/patch.js）：以前补丁内容里若含 JS 替换语法里的特殊符号（美元符号加 & 这类），会被静默展开成别的内容 —— 语法仍然合法、不报错，等于悄悄写坏代码；已改为函数式替换，并做反向验证确认修复有效\n- 新增回归守卫 16 条：test.js 加 4 条（彩边图例与卡片书脊逐一同色、5 档色值不重复、相邻档色差 ≥35）、P0P3 加 12 条（入口显隐 / 图例弹窗 / 档位有序 / 顶部图例）；全套自检 693 → 709 项\n- 源码换行风格统一为 CRLF（app-core.js 曾混入 6 行 LF，是早期补丁留下的）\n\nMade by XiXi 💛',
     'v1.2.1.10': '【修复】\n- **弹窗里的时间显示** —— 「同步状态」弹窗的「上次同步时间」以前是一串原始时间码（像 2026-09-18T01:47:23.295Z），现在和设置页一样说人话：「刚刚 / 20 分钟前 / 5 小时前 / 昨天 / N 天前」\n- **还没同步过时** —— 显示「暂无同步记录」，不再是空白或时间码\n\n【内部】\n- 新增公共函数 syncRelTime() 统一时间显示口径（设置页那行带「云端有备份」等附加提示，文案未动）',
     'v1.2.1.9': '【修复】\n- **四维挪进弹窗、状态行还原** —— 上一版把「网盘数据 / 图片 / 徒步计划 / 徒步记录」四维直接顶掉了设置页那行状态；现已恢复那行原样，四维加进点它弹出的「同步状态」小弹窗里\n- **四维的图标含义** —— 绿色 ✓ = 已同步、绿色 ○ = 正常、红色 ✗ = 超时未同步（开自动同步 3 天 / 没开 7 天）或同步失败\n- **「照片占用」弹窗宽度固定** —— 以前只设了最大宽度，宽度会跟着内容变（「统计中…」→ 列表 → 排行，长度一变宽度就跳）',
@@ -126,6 +127,20 @@ var BUILTIN_CHANGELOG = {
 //   现在：①【分组】→ 靛蓝加粗小标题（带上间距）；②「- 条目」→ 真列表（圆点 + 悬挂缩进 + 条目间距）；
 //   ③ 行内 **粗体** → <strong>；④ 历史格式兼容：## vX 更新内容 标题行丢弃、**小标题** 统一转成【】、
 //   重复的 Made by XiXi 抽出来只在弹窗末尾显示一次。全部内联样式（零 CSS 依赖，同照片弹窗防真机失效）。
+// ★2026-09-18 更新日志 / 更新弹窗共用的配色（深色分支内联，零 CSS 依赖 —— 同照片弹窗做法）
+function changelogPalette() {
+    var IS_DARK = typeof document.body !== 'undefined' && document.body.classList && document.body.classList.contains('dark-mode');
+    return {
+        CL: {
+            v: IS_DARK ? '#f1f5f9' : '#1f2937',
+            b: IS_DARK ? '#cbd5e1' : '#334155',
+            tagTx: IS_DARK ? '#a5b4fc' : '#4f46e5',
+            tagBg: IS_DARK ? 'rgba(99,102,241,0.22)' : 'rgba(99,102,241,0.12)',
+            tagBd: IS_DARK ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.35)'
+        },
+        MUTED: IS_DARK ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.72)'
+    };
+}
 function renderChangelogBody(text, CL, MUTED) {
     var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
     // 行内 **粗体** → <strong>（在转义之后做，杜绝注入）
@@ -133,7 +148,7 @@ function renderChangelogBody(text, CL, MUTED) {
         return esc(s).replace(/\*\*([^*\n]+)\*\*/g, '<strong style="font-weight:700;color:' + CL.v + ';">$1</strong>');
     };
     var lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
-    var html = '', headCount = 0, i, t, mHead, mItem;
+    var html = '', headCount = 0, itemNo = 0, i, t, mHead, mItem;   // ★2026-09-18 itemNo：条目编号
     for (i = 0; i < lines.length; i++) {
         t = lines[i].replace(/^\s+|\s+$/g, '');
         if (!t) continue;                                          // 空行 → 由样式控制间距，不产生空块
@@ -143,14 +158,17 @@ function renderChangelogBody(text, CL, MUTED) {
         if (!mHead) mHead = t.match(/^\*\*([^*]{1,14})\*\*$/);       // 旧格式 **小标题** → 统一成【】
         if (mHead) {
             headCount++;
+            itemNo = 0;   // ★2026-09-18 每组内编号从 1 重新开始
             html += '<div style="font-size:12px;font-weight:700;letter-spacing:0.02em;color:' + CL.tagTx +
                 ';margin:' + (headCount === 1 ? '0' : '14px') + ' 0 7px;">【' + esc(mHead[1]) + '】</div>';
             continue;
         }
         mItem = t.match(/^[-•]\s+(.+)$/);
         if (mItem) {
+            itemNo++;   // ★2026-09-18 圆点改数字编号（用户要求「小标题要列123」）
             html += '<div style="display:flex;gap:7px;margin:0 0 7px 1px;">' +
-                '<span style="flex:0 0 auto;color:' + MUTED + ';line-height:1.7;">•</span>' +
+                '<span style="flex:0 0 auto;min-width:15px;text-align:right;color:' + MUTED +
+                ';line-height:1.7;font-variant-numeric:tabular-nums;">' + itemNo + '.</span>' +
                 '<span style="flex:1 1 auto;min-width:0;line-height:1.7;">' + inline(mItem[1]) + '</span></div>';
             continue;
         }
@@ -187,15 +205,9 @@ function showChangelogModal() {
         }
         // ★2026-09-06 徽章只给「本次更新」；上次/上上次只显示版本号+内容（排版更素净）
         // ★2026-09-07 颜色全部内联（同照片弹窗：动态弹窗依赖 #id CSS 在个别真机失效 → IS_DARK 分支直接内联，零 CSS 依赖）
-        var IS_DARK = typeof document.body !== 'undefined' && document.body.classList && document.body.classList.contains('dark-mode');
-        var CL = {
-            v: IS_DARK ? '#f1f5f9' : '#1f2937',
-            b: IS_DARK ? '#cbd5e1' : '#334155',
-            tagTx: IS_DARK ? '#a5b4fc' : '#4f46e5',
-            tagBg: IS_DARK ? 'rgba(99,102,241,0.22)' : 'rgba(99,102,241,0.12)',
-            tagBd: IS_DARK ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.35)'
-        };
-        var MUTED = IS_DARK ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.72)';
+        // ★2026-09-18 配色改为公共函数（更新弹窗与更新日志共用同一套渲染）
+        var pal = changelogPalette();
+        var CL = pal.CL, MUTED = pal.MUTED;
         var html = '';
         for (var j = 0; j < parts.length; j++) {
             var pt = parts[j];
@@ -637,7 +649,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.2.0';
+var APP_VERSION = '1.2.2.1';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {

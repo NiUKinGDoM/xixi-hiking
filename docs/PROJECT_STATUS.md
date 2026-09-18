@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-18（v1.2.2.0 / vc264）  
+> 最后更新：2026-09-18（v1.2.2.1 / vc265）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -179,7 +179,9 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > 更早的见 `docs/版本变更记录-存档.md`；**小版本进位时（如 1.2.1.x → 1.2.2.x）把上一系列整段搬过去**。
 >
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
-> 第 1 行 `- **正式版 v1.2.2.0**（versionCode 264，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+> 第 1 行 `- **正式版 v1.2.2.1**（versionCode 265，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.2.1 更新（**更新弹窗排版修正（与更新日志统一）+ 记录页说明行瘦身** —— 用户反馈：「更新弹窗的具体内容怎么又是 **XX** 的形式了？但更新日志里不是，统一一下」「除了【】加粗，具体内容的小标题要列123，也加粗」「记录页的『颜色说明』去掉，有山册顶部那行图例就够了」）：**① 两处渲染统一** —— `showUpdateModal`（发现新版本弹窗）此前用 `white-space:pre-wrap` + `escapeHtml` 输出**纯文本**，`**小标题**` 与 `-` 原样露出；现改为与 `showChangelogModal` 共用 `renderChangelogBody(text, CL, MUTED)`；配色抽成公共函数 **`changelogPalette()`**（返回 `{CL, MUTED}`，深色分支内联、零 CSS 依赖 —— 此前 `CL/MUTED` 是更新日志弹窗的局部量，更新弹窗根本用不上）；**② 条目改数字编号** —— `renderChangelogBody` 的列表项由 `•` 改为 **`1. 2. 3.`**（`itemNo` 遇分组标题重置为 0，编号 `min-width:15px + text-align:right + font-variant-numeric:tabular-nums`，两位数不跳动）；**③ 记录页入口移除** —— 删 `#ridgeLegendLink`，连带清理 `showRidgeLegendModal()` 弹窗函数（2971 B）、`.view-caption-link` / `.ridge-legend` / `-row` / `-txt` / `-name` 五组无引用样式、`app-init.js` 的 caption 收起排除逻辑、P0P3 的 9 条入口断言；`.ridge-legend-bar` 基础 height 15→11 并删掉原 `.mb-legend` 覆盖规则；caption 文案还原为「山册视图 · 按山峰汇总成册，一座山一张卡片」（当初为给入口腾位置缩短过）；**④ 测试** —— 新增 3 条源码守卫（更新弹窗共用渲染器 / 共用配色 / 条目按数字编号每组重置）、修正 1 条因配色抽取而失效的旧断言（`cj.includes('var CL = {')` → `cj.includes('function changelogPalette')`）、补一处盲区（jsdom 里 `showUpdateModal`/`renderChangelogBody` 均为 undefined → 断言静默跳过，现加明确提示）；**实测**：更新日志编号 13 条 / 分组 6 / 粗体 6 / 无 `**` 残留，更新弹窗编号 4 条 / 分组 3 / 粗体 3 / 无 `**` 残留；test.js 219→**226**、P0P3 279/0、checkall **702 项全绿**
+- **正式版 v1.2.2.0**（versionCode 264，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.0 更新（**更新日志排版重做 + 山册彩边说明 + 彩边配色拉开** —— 用户三连反馈：「App 里的更新日志字都堆在一起不好看」「山册卡片颜色对应什么海拔没人知道」「3000 和 4000 那两档颜色太接近」）：**① 新增 `renderChangelogBody()`** —— 设置→关于应用→更新日志的正文渲染器，把原来的纯文本原样输出（`white-space:pre-wrap`）改成结构化渲染：`【分组】` → 加粗小标题（靛蓝、上下留白）、`- 条目` → 真列表（圆点 + 悬挂缩进 + 条目间距）、行内 `**粗体**` → 加粗、旧格式的 `**小标题**` **自动转成【】样式**（历史 92 条一并变整齐）、丢掉重复的 `## vX 更新内容` 标题行；**全部内联样式、零 CSS 依赖**；同时把最新 11 条（v1.2.1.0~v1.2.1.10）的长句按「**小标题** —— 说明」拆成子条目；**② 山册彩边说明** —— ① 山册顶部常驻 `.mb-legend` 图例（文案定稿「海拔 ▌<1k ▌1-2k ▌2-3k ▌3-4k ▌4k+」，实测 352×14 **一行不折**，最初写「最高海拔 + 完整区间」在 390px 屏会折成两行故缩短）；② 记录页视图说明行加 `#ridgeLegendLink`（**仅山册视图露出**，点开 `showRidgeLegendModal()`，且点它**不会被「点一下收起说明」吃掉** → `app-init.js` 的 document 点击监听排除 `.view-caption-link`）；③ 记录页引导卡补半句；弹窗复用 `dmi-*` 排版讲清「颜色对应海拔 / 彩边在卡片右下角（右缘+下缘 4px）/ 按这座山去过最高的那次分档，没填海拔不带彩边」；**③ 5 档配色拉开** —— 浅色档 4/5：`#4f46e5→#4338ca`、`#7c3aed→#9333ea`；深色档 2/3/5：`#38bdf8→#0ea5e9`、`#60a5fa→#3b82f6`、`#a78bfa→#c084fc`（`.rl-N` 图例色条与 `.mb-card.mb-ridge-N` 卡片书脊**两处同步**，实测**相邻档最小 RGB 色差：浅色 47.3→60.1 / 深色 38.1→58.5**）；**④ 山册说明行文案精简**为「山册视图 · 按山峰汇总成册」（给入口腾位置）；**⑤ 内部**：修 `tools/patch.js`（字符串形 `replace(old,new)` 会把 `new` 里的替换语法符号展开成 old 内容，**语法仍合法所以静默写坏代码** → 改函数式替换 + 反向验证：旧实现产出错、新实现正确）、新增回归守卫 16 条（test.js：彩边图例与书脊逐一同色 ×2、5 档色值不重复、相邻色差 ≥35；P0P3：入口显隐 / 图例弹窗 / 档位有序 / 顶部图例）、`app-core.js` 换行归一化为 CRLF（曾有 6 行混入的 LF）
 - **正式版 vX**（versionCode N…）—— …`；第 2 行起用**缩进子条目** `  - **① 标题** —— 内容` 逐条写。
 > **别再把整段挤成一行** —— 历史上有过 1387 字符的单行，`docaudit` 会提示「超长行」。
