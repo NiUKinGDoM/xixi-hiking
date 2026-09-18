@@ -23,8 +23,7 @@ function currentGuideCardId() {
     var tab = (typeof currentTabId !== 'undefined') ? currentTabId : 'overview';
     var map = { overview: 'welcomeBanner', records: 'guideRecords', plans: 'guidePlans', settings: 'guideSettings' };
     var id = map[tab] || 'welcomeBanner';
-    // 记录页在山册视图时不弹「记一笔」卡（切回列表再出现）
-    if (id === 'guideRecords' && typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') return null;
+    // ★2026-09-18 用户要求：山册视图也照常显示记录卡（原「切山册就隐藏」与计划页「切日历仍有卡」不一致）
     return id;
 }
 function showTabGuides() {
@@ -310,6 +309,16 @@ async function init() {
         updateSortIcons();
         initGlobalSearch(); // ★2026-08-27 记录/计划搜索（方案A 滚动显示）
         initYearReview(); // ★2026-09-02 年度回顾（入口绑定 + 每年 1/1 自动展示）
+        // ★2026-09-18 同意留存：首次进入「关于应用」所在页（设置）时也征求同意
+        const _legalTab = document.querySelector('.tab-btn[data-tab="settings"]');
+        if (_legalTab && !_legalTab.dataset.legalBound) {
+            _legalTab.dataset.legalBound = '1';
+            _legalTab.addEventListener('click', function () {
+                setTimeout(function () {
+                    if (typeof maybePromptLegalConsent === 'function') maybePromptLegalConsent(true);
+                }, 280);   // 等切页动画起来再弹，避免与页面切换撞在一起
+            });
+        }
         initRecordsView(); // ★2026-09-02 记录页 列表/山册 双视图
         initMilestoneEntry(); // ★2026-09-15 里程碑入口绑定（点开看 8 档与进度）
         
@@ -868,14 +877,24 @@ if (document.readyState === 'loading') {
             init().catch(function(err) {
                 console.error('Init failed:', err);
             });
-            // ★2026-08-19 打开应用自动检测更新（有网大弹窗/没网小提示+恢复重试）
-            setTimeout(autoCheckUpdateOnLaunch, 800);
+            // ★2026-09-18 同意留存：未同意时先征求同意，之后再触发自动检查更新
+            //   （两者都是弹窗，必须串行，否则「发现新版本」会盖住同意弹窗）
+            setTimeout(function () {
+                const _p = (typeof maybePromptLegalConsent === 'function') ? maybePromptLegalConsent() : Promise.resolve(true);
+                _p.then(function () {
+                    // ★2026-08-19 打开应用自动检测更新（有网大弹窗/没网小提示+恢复重试）
+                    setTimeout(autoCheckUpdateOnLaunch, 300);
+                }, function () { setTimeout(autoCheckUpdateOnLaunch, 300); });
+            }, 600);
             // ★2026-09-08 崩溃自动上报（App 内已配 WebDAV 时；无崩溃/当日已上报则跳过）
             setTimeout(function () { if (typeof maybeUploadCrashReport === 'function') maybeUploadCrashReport(); }, 2500);
         }, 100);
     });
 } else {
     init();
-    setTimeout(autoCheckUpdateOnLaunch, 900);
+    setTimeout(function () {
+        const _p = (typeof maybePromptLegalConsent === 'function') ? maybePromptLegalConsent() : Promise.resolve(true);
+        _p.then(function () { setTimeout(autoCheckUpdateOnLaunch, 300); }, function () { setTimeout(autoCheckUpdateOnLaunch, 300); });
+    }, 600);
 
 }

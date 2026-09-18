@@ -27,6 +27,11 @@ const dom = new JSDOM(html, {
         };
         if (!window.URL.createObjectURL) window.URL.createObjectURL = function () { return 'blob:mock'; };
         if (!window.URL.revokeObjectURL) window.URL.revokeObjectURL = function () {};
+        // ★2026-09-18 同意留存：预置「已同意」——否则启动流程会弹同意弹窗，且它带 data-persist
+        //   （closeOpenModals 豁免）会残留，导致「连开两次仅 1 个」类断言 count 多 1
+        try {
+            window.localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: '2026-09-18', at: '2026-01-15T12:00:00.000Z' }));
+        } catch (e) { }
         delete window.Capacitor; // 走网页版路径（无原生桥）
         // canvas mock（jsdom 无 canvas，fitSelectWidth/initHeatmap 需要 2d context）
         window.HTMLCanvasElement.prototype.getContext = function () {

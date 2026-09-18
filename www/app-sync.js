@@ -1605,6 +1605,10 @@ async function buildFullBackupZip(includePhotos, opts) {
         exportedAt: payload.exportedAt,
         records: payload.records,
         plannedTrips: payload.plannedTrips,
+        // ★2026-09-18 修复：此前 dataPayload 逐字段手写、漏了 syncConfig —— 完整备份(zip)导入后网盘配置不生效
+        //   （纯数据备份走 buildBackupHTMLString 直接序列化 payload，所以没这个问题）；云端上传也用本函数
+        //   → 云端「下载恢复一键配置」同样是坏的，一处修复同时救两条链
+        syncConfig: payload.syncConfig,
         photoRefs: photoRefs,
         zip: true
     };
@@ -2018,8 +2022,15 @@ function showSyncDemoModal() {
     showManageBackupsModal(demoFiles);
 }
 // ★2026-08-29 全局弹窗防重入：打开任何弹窗前先移除所有已存在弹窗（导出/导入/管理叠加的根治）
-function closeOpenModals() {
+// ★2026-09-18 支持豁免：带 data-persist 的弹窗不清除。
+//   背景：同意留存弹窗（#legalConsentModal）要「常驻在下层」——用户点《隐私政策》时，
+//   条款弹窗内部第一行就是 closeOpenModals()，若无豁免会把同意弹窗一起清掉
+//   （此前只能靠「临时摘 DOM + MutationObserver 挂回」绕过，见 REFERENCE 2026-09-18）。
+//   有豁免后：带 data-persist 的弹窗留在下层，条款弹窗正常叠在上层，关闭后自然回到它。
+//   需要「连常驻弹窗一起清」时传 force：closeOpenModals(true)（默认不带 → 现有 38 处调用行为不变）
+function closeOpenModals(force) {
     document.querySelectorAll('.confirm-modal').forEach(function (m) {
+        if (!force && m.hasAttribute && m.hasAttribute('data-persist')) return;   // 常驻弹窗豁免
         if (m && m.parentNode) m.parentNode.removeChild(m);
     });
 }

@@ -55,6 +55,13 @@ function serverUp() {
   //   两者都是「真实数据变化」而非代码回归，必须降噪，否则会掩盖真 bug。
   await ctx.addInitScript(() => {
     try { localStorage.setItem('hiking_show_fps', JSON.stringify({ showFps: false })); } catch (e) { }
+    // ★2026-09-18 同意留存：默认预置「已同意」——否则每个用例都会被同意弹窗挡住。
+    //   要测「未同意」态的用例，先置 __e2e_legal_clear 哨兵，本脚本就跳过预置。
+    try {
+      if (!localStorage.getItem('__e2e_legal_clear')) {
+        localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: '2026-09-18', at: '2026-01-15T12:00:00.000Z' }));
+      }
+    } catch (e) { }
     try {
       const FIXED = new Date('2026-01-15T12:00:00+08:00').getTime();
       const Orig = Date;
@@ -199,7 +206,12 @@ function serverUp() {
     await page.locator('#privacyPolicyBtn').click();
     await page.waitForTimeout(400);
     const modalText = await page.locator('.confirm-modal-content').textContent().catch(() => '');
-    ok('隐私弹窗打开(玻璃卡片+条目)', modalText.indexOf('隐私与数据说明') >= 0 && modalText.indexOf('数据存在哪') >= 0 && modalText.indexOf('联网行为') >= 0, modalText.slice(0, 40));
+    ok('隐私弹窗打开(玻璃卡片+条目)', modalText.indexOf('隐私政策') >= 0 && modalText.indexOf('数据存储位置') >= 0 && modalText.indexOf('联网行为') >= 0, modalText.slice(0, 40));
+    // ★2026-09-18 法律要素：生效日期/权利/未成年人/适用法律缺一不可（政策专业化后不得被后续改文案删掉）
+    ok('隐私政策含法律要素(生效日期/你的权利/未成年人/适用法律)',
+       modalText.indexOf('生效日期：2026-09-18') >= 0 && modalText.indexOf('你的权利') >= 0 &&
+       modalText.indexOf('未成年人保护') >= 0 && modalText.indexOf('中华人民共和国法律') >= 0,
+       modalText.length + ' 字');
     await shotAndCheck('04-privacy-modal-light', '.confirm-modal-content');
     // 深色模式隐私弹窗
     await page.evaluate(() => { try { window.AppStore && AppStore.setItem('darkMode', true); } catch (e) {} });
@@ -779,6 +791,132 @@ function serverUp() {
   ok('★红色语义守卫：危险操作确认按钮仍是红色', (dlgUni.dangerOk || '').indexOf('185, 28, 28') >= 0, dlgUni.dangerOk);
   ok('askConfirm 用标准玻璃弹窗外壳', (dlgUni.askModalCls || '').indexOf('confirm-modal') >= 0, dlgUni.askModalCls);
   ok('导出弹窗「取消按钮」配色与全站取消按钮一致', dlgUni.btnWideCancel === dlgUni.btnStdCancel, 'wide=' + dlgUni.btnWideCancel + ' std=' + dlgUni.btnStdCancel);
+
+  // ==================== 同意留存（★2026-09-18）：显式勾选 + 条款版本 + 时间戳 ====================
+  console.log('== E2E: 同意留存（隐私政策 / 免责声明）==');
+  await page.evaluate(() => {
+    try { localStorage.setItem('__e2e_legal_clear', '1'); localStorage.removeItem('hiking_legal_agree'); } catch (e) { }
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1700);   // 等启动自动弹（600ms 触发 + 渐入）
+  const consent0 = await page.evaluate(() => {
+    const m = document.getElementById('legalConsentModal');
+    const c = document.getElementById('legalAgreeChk');
+    return {
+      hasModal: !!m,
+      text: m ? m.textContent : '',
+      chkChecked: c ? c.checked : null,
+      agreed: (typeof hasAgreedLegal === 'function') ? hasAgreedLegal() : null,
+      stored: (function () { try { return localStorage.getItem('hiking_legal_agree'); } catch (e) { return 'ERR'; } })()
+    };
+  });
+  ok('首次启动自动弹出同意弹窗', consent0.hasModal === true, consent0.text.slice(0, 30));
+  ok('同意弹窗含条款链接与勾选框', consent0.text.indexOf('《隐私政策》') >= 0 && consent0.text.indexOf('《免责声明》') >= 0 && consent0.text.indexOf('我已阅读并同意') >= 0);
+  ok('初始未勾选且未记录同意', consent0.chkChecked === false && consent0.agreed === false && !consent0.stored);
+  await shotAndCheck('10-legal-consent-light', '.confirm-modal-content');
+
+  await page.locator('#legalAgree').click();   // 未勾选直接点同意
+  await page.waitForTimeout(250);
+  const consent1 = await page.evaluate(() => ({
+    still: !!document.getElementById('legalConsentModal'),
+    agreed: (typeof hasAgreedLegal === 'function') ? hasAgreedLegal() : null
+  }));
+  ok('未勾选时点「同意并继续」被拦下（弹窗未关、未记录）', consent1.still === true && consent1.agreed === false);
+
+  await page.locator('#legalAgreeChk').click();          // 勾选
+  await page.locator('#legalOpenPrivacy').click();       // 查看隐私政策
+  await page.waitForTimeout(500);
+  const viewing = await page.evaluate(() => {
+    const a = Array.from(document.querySelectorAll('.confirm-modal'));
+    return {
+      privacyOpen: !!document.getElementById('privacy-close'),
+      consentKept: !!document.getElementById('legalConsentModal'),
+      total: a.length,
+      consentFirst: a.length === 2 && a[0].id === 'legalConsentModal',
+      agreed: (typeof hasAgreedLegal === 'function') ? hasAgreedLegal() : null
+    };
+  });
+  ok('点《隐私政策》能叠层查看（条款弹窗在上）', viewing.privacyOpen === true);
+  ok('★同意弹窗免疫 closeOpenModals（data-persist，无需临时摘 DOM）', viewing.consentKept === true && viewing.total === 2 && viewing.consentFirst === true, 'n=' + viewing.total + ' first=' + viewing.consentFirst);
+  ok('查看条款不会误记录同意', viewing.agreed === false);
+  await page.locator('#privacy-close').click();
+  await page.waitForTimeout(450);
+  const restored = await page.evaluate(() => {
+    const m = document.getElementById('legalConsentModal');
+    const c = document.getElementById('legalAgreeChk');
+    return { back: !!m, onlyOne: document.querySelectorAll('.confirm-modal').length === 1, keepChecked: c ? c.checked : null };
+  });
+  ok('关掉条款弹窗后回到同意弹窗（唯一弹窗、无残留）', restored.back === true && restored.onlyOne === true);
+  ok('勾选状态保留（无需重新勾）', restored.keepChecked === true);
+
+  // ★豁免机制本身：普通 closeOpenModals() 不得误清常驻弹窗；force 才清得掉
+  const persistChk = await page.evaluate(() => {
+    closeOpenModals();
+    const kept = !!document.getElementById('legalConsentModal');
+    closeOpenModals(true);
+    return { kept: kept, forceCleared: !document.getElementById('legalConsentModal') };
+  });
+  ok('★closeOpenModals() 豁免 data-persist 弹窗', persistChk.kept === true);
+  ok('closeOpenModals(true) 可强制清理常驻弹窗（保留强制口子）', persistChk.forceCleared === true);
+  await page.evaluate(() => { showLegalConsentModal(); });
+  await page.waitForTimeout(400);
+
+  await page.locator('#legalLater').click();   // 暂不同意
+  await page.waitForTimeout(300);
+  const later = await page.evaluate(() => ({
+    closed: !document.getElementById('legalConsentModal'),
+    agreed: (typeof hasAgreedLegal === 'function') ? hasAgreedLegal() : null
+  }));
+  ok('「暂不同意」关闭弹窗且不记录', later.closed === true && later.agreed === false);
+
+  await page.evaluate(() => { showLegalConsentModal(); });
+  await page.waitForTimeout(400);
+  await page.locator('#legalAgreeChk').click();
+  await page.locator('#legalAgree').click();   // 正式同意
+  await page.waitForTimeout(450);
+  const consent2 = await page.evaluate(() => ({
+    closed: !document.getElementById('legalConsentModal'),
+    agreed: (typeof hasAgreedLegal === 'function') ? hasAgreedLegal() : null,
+    rec: (function () { try { return JSON.parse(localStorage.getItem('hiking_legal_agree')); } catch (e) { return null; } })()
+  }));
+  ok('勾选后同意 → 弹窗关闭且已记录', consent2.closed === true && consent2.agreed === true);
+  ok('同意记录含条款版本 + ISO 时间戳', !!(consent2.rec && consent2.rec.version === '2026-09-18' && /^\d{4}-\d{2}-\d{2}T/.test(consent2.rec.at || '')), JSON.stringify(consent2.rec));
+
+  await page.evaluate(() => { try { localStorage.removeItem('__e2e_legal_clear'); } catch (e) { } });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1700);
+  const after = await page.evaluate(() => ({
+    noModal: !document.getElementById('legalConsentModal'),
+    agreed: (typeof hasAgreedLegal === 'function') ? hasAgreedLegal() : null
+  }));
+  ok('已同意后启动不再打扰（刷新验证）', after.noModal === true && after.agreed === true);
+
+  await page.evaluate(() => { showPrivacyPolicyModal(); });
+  await page.waitForTimeout(450);
+  const stampTxt = await page.locator('.confirm-modal-message').textContent().catch(() => '');
+  ok('隐私政策弹窗展示「同意时间 + 条款版本」（可查证）', stampTxt.indexOf('你已于') >= 0 && stampTxt.indexOf('条款版本') >= 0, (stampTxt.match(/你已于[^）]*）/) || [''])[0]);
+  await page.evaluate(() => { const b = document.getElementById('privacy-close'); if (b) b.click(); });
+  await page.waitForTimeout(300);
+
+  // 未同意时「首次进关于应用（设置页）」也征求同意
+  await page.evaluate(() => {
+    try { localStorage.setItem('__e2e_legal_clear', '1'); localStorage.removeItem('hiking_legal_agree'); } catch (e) { }
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => { try { closeOpenModals(); } catch (e) { } });   // 关掉启动那次
+  await page.evaluate(() => { const b = document.querySelector('.tab-btn[data-tab="settings"]'); if (b) b.click(); });
+  await page.waitForTimeout(800);
+  const tabPrompt = await page.evaluate(() => !!document.getElementById('legalConsentModal'));
+  ok('未同意时首次进入「关于应用」页也征求同意', tabPrompt === true);
+  await page.evaluate(() => {
+    try {
+      const c = document.getElementById('legalAgreeChk'); if (c) c.click();
+      const b = document.getElementById('legalAgree'); if (b) b.click();
+    } catch (e) { }
+  });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => { try { localStorage.removeItem('__e2e_legal_clear'); } catch (e) { } });
 
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');

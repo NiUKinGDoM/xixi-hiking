@@ -1787,29 +1787,59 @@ function showDisclaimerModal() {
                 免责声明
             </div>
             <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">hiking</span>
-                    <div style="min-width:0;"><div class="dmi-title">记录工具，不是领队</div>
-                    <div class="dmi-body">本应用只帮你记录徒步足迹与心情，不提供路线规划、探路、向导或任何户外安全指导——它不是领队，也不是救生员。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">signpost</span>
-                    <div style="min-width:0;"><div class="dmi-title">请走正规路线</div>
-                    <div class="dmi-body">本应用不引导、也不建议前往未开发的野山、保护区或禁止进入的区域。出行请选择正规开放路线，遵守当地规定。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">wb_sunny</span>
-                    <div style="min-width:0;"><div class="dmi-title">出发前做好准备</div>
-                    <div class="dmi-body">先看天气预报与封山公告，结伴而行，带足水、照明与充电宝；不逞强、不走夜路，量力而行，安全永远是第一位的。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">warning</span>
-                    <div style="min-width:0;"><div class="dmi-title">风险自担</div>
-                    <div class="dmi-body">户外活动存在固有风险。记录中的海拔、难度等数据由你自行填写，仅作个人参考，并非专业测量。使用本应用即表示你理解并自行承担相应责任。</div></div>
-                </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">hiking</span>
+                        <div style="min-width:0;"><div class="dmi-title">一、服务性质：记录工具，不是领队</div>
+                            <div class="dmi-body">本应用是一款个人徒步记录工具，用于记录行程、心情与照片。它<b>不提供</b>路线规划、导航、定位救援、天气预警、医疗建议或任何形式的户外安全指导，<b>不能替代</b>专业向导、领队、地图与救援服务——它不是领队，也不是救生员。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">fact_check</span>
+                        <div style="min-width:0;"><div class="dmi-title">二、记录数据仅供参考</div>
+                            <div class="dmi-body">记录中的海拔、距离、用时、难度、天气等均由你自行填写，本应用不做测量与校验，可能存在误差；里程碑、统计与山册展示均基于上述自填数据推算。<b>全部数据仅供个人回顾</b>，不构成专业测量结果，不可用于测绘、赛事认证、保险理赔或任何法律用途。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">signpost</span>
+                        <div style="min-width:0;"><div class="dmi-title">三、请走正规路线</div>
+                            <div class="dmi-body">本应用<b>不引导、也不建议</b>前往未开发的野山、自然保护区或禁止进入的区域。出行请选择正规开放路线，遵守当地法律法规及景区、保护区管理规定，服从现场管理与警示。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">wb_sunny</span>
+                        <div style="min-width:0;"><div class="dmi-title">四、出发前做好准备</div>
+                            <div class="dmi-body">请先查看天气预报与封山公告，结伴而行，带足饮水、照明与充电设备；不逞强、不夜行、不涉险，量力而行。户外安全永远由你本人第一位负责。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">warning</span>
+                        <div style="min-width:0;"><div class="dmi-title">五、风险自担</div>
+                            <div class="dmi-body">户外活动存在固有且无法完全避免的风险。你应在出行前自行评估身体状况、路线难度、天气与装备情况，未成年人须由监护人陪同。<b>因你的出行行为或判断所产生的一切后果，由你自行承担。</b></div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">backup</span>
+                        <div style="min-width:0;"><div class="dmi-title">六、数据安全与备份责任</div>
+                            <div class="dmi-body">你的数据默认仅存于本机。卸载应用、清除数据、设备损坏或丢失均可能导致数据丢失；云备份依赖你自行配置的第三方网盘，其可用性、容量与数据完整性由该服务商负责。请定期导出备份并妥善保存——<b>开发者无法找回你未备份的数据</b>。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">cloud_off</span>
+                        <div style="min-width:0;"><div class="dmi-title">七、第三方服务</div>
+                            <div class="dmi-body">应用内的更新检查依赖 GitHub，云备份依赖你选择的 WebDAV 网盘。上述服务的可用性、内容变更、服务中断或数据处理行为不由开发者控制，开发者不就此承担赔偿责任。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">balance</span>
+                        <div style="min-width:0;"><div class="dmi-title">八、责任限制</div>
+                            <div class="dmi-body">在适用法律允许的最大范围内，开发者不对因使用或无法使用本应用所致的间接、附带或衍生损失（包括但不限于数据丢失、行程延误、人身或财产损害）承担赔偿责任。<b>本条不排除或限制依法不得排除、限制的责任</b>；如相关法律另有强制性规定，以该法律规定为准。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">copyright</span>
+                        <div style="min-width:0;"><div class="dmi-title">九、知识产权</div>
+                            <div class="dmi-body">本应用的界面设计、图标与程序代码归开发者所有；你在应用内创建的记录、备注与照片<b>归你本人所有</b>。请勿对本应用进行反向工程、二次打包或用于商业用途。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">gavel</span>
+                        <div style="min-width:0;"><div class="dmi-title">十、条款变更与适用法律</div>
+                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>，因本声明或使用本应用发生争议的，双方应友好协商解决；协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-09-18。</div></div>
+                    </div>
             </div>
             <div class="confirm-modal-buttons">
-                <button id="disclaimer-close" class="ripple-effect confirm-btn-cancel">知道了</button>
+                <button id="disclaimer-close" class="ripple-effect confirm-btn-cancel">我知道了</button>
             </div>
         </div>`;
     document.body.appendChild(modal);
@@ -1817,70 +1847,202 @@ function showDisclaimerModal() {
     modal.addEventListener('click', function (e) { if (e.target === modal && modal.parentNode) document.body.removeChild(modal); });
 }
 
+// ★2026-09-18 同意留存（隐私政策 / 免责声明）
+//   立法本意：用户「明确同意」必须有痕迹 —— 显式勾选 + 本机记录（条款版本 + 时间戳）。
+//   ★改动政策正文时必须同步 bump LEGAL_VERSION（与正文「生效日期」保持一致）→ 会自动重新征求同意。
+const LEGAL_VERSION = '2026-09-18';
+const LEGAL_AGREE_KEY = 'hiking_legal_agree';
+let _legalPromptedThisSession = false;   // 启动时已主动弹过（同一会话不再打扰）
+let _legalTabPrompted = false;           // 首次进设置页已弹过
+
+function getLegalAgreement() {
+    const rec = AppStore.getItem(LEGAL_AGREE_KEY);
+    return (rec && typeof rec === 'object') ? rec : null;
+}
+// 已同意、且同意的是「当前版本」的条款
+function hasAgreedLegal() {
+    const rec = getLegalAgreement();
+    return !!(rec && rec.at && rec.version === LEGAL_VERSION);
+}
+// 记录同意：写入条款版本 + 本地时间戳（ISO 8601，便于日后查证）
+function saveLegalAgreement() {
+    const rec = { version: LEGAL_VERSION, at: new Date().toISOString() };
+    AppStore.setItem(LEGAL_AGREE_KEY, rec);
+    return rec;
+}
+// 时间戳 → 本地可读时间（YYYY-MM-DD HH:mm）
+function formatLegalStamp(iso) {
+    try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        const p = (n) => (n < 10 ? '0' : '') + n;
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    } catch (e) { return ''; }
+}
+// 征求同意（Promise<boolean>）。★防 Promise 永挂：弹窗被外部 closeOpenModals() 移除时也 resolve(false)
+function showLegalConsentModal() {
+    return new Promise(function (resolve) {
+        if (document.getElementById('legalConsentModal')) { resolve(false); return; }
+        const modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.id = 'legalConsentModal';
+        // ★2026-09-18 声明为常驻弹窗：查看条款时不会被条款弹窗内部的 closeOpenModals() 清掉
+        modal.setAttribute('data-persist', '1');
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width:340px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">verified_user</span> 使用前请确认</div>' +
+            '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">' +
+                '<div class="dmi-group">' +
+                    '<span class="material-icons dmi-ic">shield</span>' +
+                    '<div style="min-width:0;"><div class="dmi-title">关于你的数据</div>' +
+                    '<div class="dmi-body">记录与照片只保存在本机；只有你主动配置网盘后，数据才会同步到<b>你自己的</b>账号。本应用没有开发者服务器，不收集、不上传任何使用数据。</div></div>' +
+                '</div>' +
+                '<div class="dmi-group">' +
+                    '<span class="material-icons dmi-ic">description</span>' +
+                    '<div style="min-width:0;"><div class="dmi-title">请先阅读以下条款</div>' +
+                    '<div class="dmi-body">' +
+                        '<span class="legal-link" id="legalOpenPrivacy">《隐私政策》</span>：数据存在哪、联网做什么、你有哪些权利。<br>' +
+                        '<span class="legal-link" id="legalOpenDisclaimer">《免责声明》</span>：它是记录工具不是领队，户外风险与备份责任由你自负。' +
+                    '</div></div>' +
+                '</div>' +
+                '<label class="chk-row" style="margin-top:6px;">' +
+                    '<input type="checkbox" id="legalAgreeChk">' +
+                    '<span>我已阅读并同意<b>《隐私政策》</b>与<b>《免责声明》</b></span>' +
+                '</label>' +
+                '<div class="legal-stamp">勾选并同意后，会在本机记录同意时间与条款版本，便于日后查证。</div>' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+                '<button class="confirm-btn-cancel ripple-effect" id="legalLater">暂不同意</button>' +
+                '<button class="check-go-btn ripple-effect" id="legalAgree">同意并继续</button>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+
+        const chk = modal.querySelector('#legalAgreeChk');
+        let done = false;
+        const finish = function (v) {
+            if (done) return;
+            done = true;
+            if (modal.parentNode) modal.parentNode.removeChild(modal);
+            resolve(v);
+        };
+        // 兜底：被外部 closeOpenModals() 移除时也 resolve（否则调用方 await 永挂）
+        const obs = new MutationObserver(function () {
+            if (done) return;
+            if (!modal.parentNode) { obs.disconnect(); done = true; resolve(false); }
+        });
+        obs.observe(document.body, { childList: true });
+
+        // 读条款：本弹窗带 data-persist，条款弹窗内部的 closeOpenModals() 会跳过它
+        //   → 条款弹窗直接叠在上层，关闭后自然回到本弹窗（勾选状态原样保留，无需任何挂回逻辑）
+        modal.querySelector('#legalOpenPrivacy').addEventListener('click', function () { showPrivacyPolicyModal(); });
+        modal.querySelector('#legalOpenDisclaimer').addEventListener('click', function () { showDisclaimerModal(); });
+
+        modal.querySelector('#legalAgree').addEventListener('click', function () {
+            if (!chk.checked) {
+                // 未勾选：高亮提示（不用 disabled 态，避免依赖缺失的禁用样式）
+                chk.style.outline = '2px solid rgba(220, 38, 38, 0.5)';
+                chk.style.outlineOffset = '2px';
+                setTimeout(function () { chk.style.outline = ''; chk.style.outlineOffset = ''; }, 1200);
+                if (typeof showToast === 'function') showToast('请先勾选「我已阅读并同意」', 'warn');
+                return;
+            }
+            saveLegalAgreement();
+            if (typeof showToast === 'function') showToast('已记录你的同意', 'success');
+            finish(true);
+        });
+        modal.querySelector('#legalLater').addEventListener('click', function () { finish(false); });
+        modal.addEventListener('click', function (e) { if (e.target === modal) finish(false); });
+    });
+}
+// 按需征求：已同意直接返回；否则弹窗（每个入口每会话最多主动弹一次）
+function maybePromptLegalConsent(fromTab) {
+    if (hasAgreedLegal()) return Promise.resolve(true);
+    if (fromTab) {
+        if (_legalTabPrompted) return Promise.resolve(false);
+        _legalTabPrompted = true;
+    } else {
+        if (_legalPromptedThisSession) return Promise.resolve(false);
+        _legalPromptedThisSession = true;
+    }
+    return showLegalConsentModal();
+}
+
 function showPrivacyPolicyModal() {
     closeOpenModals();
+    // ★2026-09-18 同意留存：已同意则展示「同意时间 + 条款版本」，让记录可见可查
+    const _ag = getLegalAgreement();
+    const AGREEMENT_STAMP = (_ag && _ag.at)
+        ? '<div class="legal-stamp">你已于 ' + escapeHtml(formatLegalStamp(_ag.at)) + ' 同意本政策（条款版本 ' + escapeHtml(String(_ag.version || '-')) + '）</div>'
+        : '';
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
         <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">security</span>
-                隐私与数据说明
+                隐私政策
             </div>
             <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">storage</span>
-                    <div style="min-width:0;"><div class="dmi-title">数据存在哪</div>
-                    <div class="dmi-body">记录与设置存手机本地（网页版存浏览器本地）；照片原图存本地照片库。App 不收集、不上传任何使用数据——无账号、无统计、无广告。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">cloud_done</span>
-                    <div style="min-width:0;"><div class="dmi-title">云备份（可选）</div>
-                    <div class="dmi-body">只有你在设置里主动配置 WebDAV 后，数据才会同步到<b>你自己的</b>网盘账号（全程 HTTPS）；账号与密码只存在本机、加密保存、绝不明文展示。备份文件里会带一份加密后的网盘配置（含密码），用于换机时一键配置——请妥善保管备份文件，不要发给他人。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">schedule</span>
-                    <div style="min-width:0;"><div class="dmi-title">本地自动备份</div>
-                    <div class="dmi-body">App 端每满 7 天自动存一份纯数据备份到手机「下载」目录（网页版不自动备份），无需手动操作。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">photo_library</span>
-                    <div style="min-width:0;"><div class="dmi-title">照片清理</div>
-                    <div class="dmi-body">「照片占用」里的「优化」只删除不属于任何记录的孤立/缓存照片，你记录里的照片一张不受影响。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">delete_forever</span>
-                    <div style="min-width:0;"><div class="dmi-title">抹掉所有足迹</div>
-                    <div class="dmi-body">可一键清空全部本地数据（云端旧备份不受影响，需自行删除）。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">wifi</span>
-                    <div style="min-width:0;"><div class="dmi-title">联网行为</div>
-                    <div class="dmi-body">①「检查更新」会请求 GitHub Releases 查最新版本（国内访问慢属正常网络现象）；②若 App 运行异常，会自动把崩溃报告（仅版本号、出错信息与时间，绝不含记录与照片）经你配置的坚果云上传一次。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">notifications_active</span>
-                    <div style="min-width:0;"><div class="dmi-title">通知与提醒权限</div>
-                    <div class="dmi-body">通知：计划提醒、备份提醒（可在系统设置里关）；精确闹钟：计划当天早上提醒，系统会单独询问一次；开机启动：重启手机后自动恢复你的计划闹钟。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">settings_applications</span>
-                    <div style="min-width:0;"><div class="dmi-title">其它权限</div>
-                    <div class="dmi-body">安装应用：「检查更新」下载新版后帮你完成安装；震动：点按时轻微反馈；旧版安卓存储写入：备份文件存入「下载」目录。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">file_download</span>
-                    <div style="min-width:0;"><div class="dmi-title">你的数据你做主</div>
-                    <div class="dmi-body">随时可「导出完整备份」带走全部记录与照片；抹掉本地后云端旧备份仍在，可到坚果云网页或 App 里手动删除；想彻底退出：先导出备份 → 删除云端 → 抹掉本地 → 卸载即可。</div></div>
-                </div>
-                <div class="dmi-group">
-                    <span class="material-icons dmi-ic">support_agent</span>
-                    <div style="min-width:0;"><div class="dmi-title">更新与联系</div>
-                    <div class="dmi-body">本政策随版本更新，最新内容见本页。有问题反馈给 XiXi。</div></div>
-                </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">info</span>
+                        <div style="min-width:0;"><div class="dmi-title">适用范围与生效</div>
+                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。生效日期：2026-09-18；最近更新：2026-09-18。本政策随版本迭代更新，重大变更会在应用内提示。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">storage</span>
+                        <div style="min-width:0;"><div class="dmi-title">一、数据存储位置与期限</div>
+                            <div class="dmi-body">本应用是<b>纯本地工具</b>：记录、计划、备注、照片全部保存在你的设备上（网页版为浏览器本地存储），本应用<b>不设账号体系</b>，不收集、不上传你的个人身份信息、行为数据、设备标识与位置信息，也未接入任何统计、广告或推送 SDK。存储期限由你决定——卸载应用或使用「抹掉所有足迹」即可清除本机全部数据。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">cloud_done</span>
+                        <div style="min-width:0;"><div class="dmi-title">二、云备份（可选）</div>
+                            <div class="dmi-body">仅当你主动在设置中配置 WebDAV 后，数据才会同步到<b>你本人的</b>网盘账号。服务器地址、账号与应用密码仅保存于本机，采用加密存储，任何界面均不明文展示；与网盘的通信全程 HTTPS，且在你的设备与网盘服务商之间直接进行——<b>本应用没有开发者服务器，数据不经过任何中转</b>。备份文件中可包含一份加密后的网盘配置（便于换机一键恢复），请妥善保管备份文件，避免提供或发送给他人。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">share</span>
+                        <div style="min-width:0;"><div class="dmi-title">三、信息共享、转让与公开披露</div>
+                            <div class="dmi-body">本应用<b>不会</b>向任何第三方出售、出租、共享、转让或公开披露你的数据，也不存在与「合作方共享数据」的情形。开发者不持有你的数据，因此任何第三方（含广告商、数据服务商）均无法通过本应用获取你的记录与照片。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">wifi</span>
+                        <div style="min-width:0;"><div class="dmi-title">四、联网行为与第三方服务</div>
+                            <div class="dmi-body">① <b>检查更新</b>：请求 GitHub Releases 接口查询最新版本号，仅产生常规网络请求信息（IP、User-Agent），由 GitHub 依其自身隐私政策处理；② <b>云备份</b>：依赖你自行选择的 WebDAV 服务商（如坚果云），其数据处理行为适用该服务商的条款与政策；③ <b>崩溃报告</b>：仅在已配置网盘的前提下，应用异常时上传一份不含记录与照片的诊断信息（版本号、错误内容、时间），用于定位问题。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">security</span>
+                        <div style="min-width:0;"><div class="dmi-title">五、数据安全措施</div>
+                            <div class="dmi-body">本应用采用以下措施保护你的数据：本地数据随应用沙箱隔离；网盘凭据加密存储；Android 包经过签名校验，防止被篡改或替换安装；不申请通讯录、短信、通话记录、精确位置等与功能无关的权限。同时请理解：<b>任何存储方式都无法保证绝对安全</b>，请定期导出备份并自行妥善保存。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">rule</span>
+                        <div style="min-width:0;"><div class="dmi-title">六、你的权利</div>
+                            <div class="dmi-body"><b>查阅与更正</b>：全部数据在应用内可见、可改；<b>导出与迁移</b>：随时「导出完整备份」带走记录与照片；<b>删除</b>：单条删除、批量删除、抹掉所有足迹（云端旧备份需你自行在网盘删除）；<b>撤回同意</b>：关闭自动同步、解绑网盘账号或卸载应用。上述权利<b>均无需向开发者申请</b>，你在应用内即可直接行使。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">child_care</span>
+                        <div style="min-width:0;"><div class="dmi-title">七、未成年人保护</div>
+                            <div class="dmi-body">本应用不面向 14 周岁以下儿童单独提供服务。未成年人应在监护人指导下使用；户外活动请务必由成年人陪同，并由监护人承担相应监护责任。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">key</span>
+                        <div style="min-width:0;"><div class="dmi-title">八、权限清单与用途</div>
+                            <div class="dmi-body"><b>通知</b>：计划与备份提醒；<b>精确闹钟</b>：计划当天早上提醒；<b>开机启动</b>：重启手机后恢复你的计划闹钟；<b>震动</b>：点按反馈；<b>安装应用</b>：协助安装已下载的新版本；<b>存储写入</b>（仅旧版安卓）：把备份写入「下载」目录；<b>照片选择</b>：为记录添加照片。以上权限均可拒绝，拒绝仅导致对应功能不可用，不影响其余功能。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">update</span>
+                        <div style="min-width:0;"><div class="dmi-title">九、政策更新</div>
+                            <div class="dmi-body">本政策随功能迭代更新，最新内容始终在本页展示。若更新涉及你的权利或数据处理方式的重大变化，本应用会在应用内以提示方式告知。</div></div>
+                    </div>
+                    <div class="dmi-group">
+                        <span class="material-icons dmi-ic">gavel</span>
+                        <div style="min-width:0;"><div class="dmi-title">十、适用法律与联系方式</div>
+                            <div class="dmi-body">如对本政策有疑问、意见或投诉，可通过「关于应用 → GitHub」提交 Issue，或经应用内反馈渠道联系开发者，我们将在合理期限内答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>。</div></div>
+                    </div>
+                ${AGREEMENT_STAMP}
             </div>
             <div class="confirm-modal-buttons">
-                <button class="confirm-btn-cancel ripple-effect" id="privacy-close">知道了</button>
+                <button class="confirm-btn-cancel ripple-effect" id="privacy-close">我知道了</button>
             </div>
         </div>
     `;

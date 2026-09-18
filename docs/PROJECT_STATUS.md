@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-18（v1.2.2.1 / vc265）  
+> 最后更新：2026-09-18（v1.2.2.2 / vc266）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -179,7 +179,25 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > 更早的见 `docs/版本变更记录-存档.md`；**小版本进位时（如 1.2.1.x → 1.2.2.x）把上一系列整段搬过去**。
 >
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
-> 第 1 行 `- **正式版 v1.2.2.1**（versionCode 265，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+> 第 1 行 `- **正式版 v1.2.2.2**（versionCode 266，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.2.2 更新（**三件报障修复 + 法务文本专业化 + 同意留存 + 弹窗豁免根治** —— 用户反馈：「完整备份导出导入后网盘配置无效」「山册视图引导没了，固定一下」「引导说明改成右上角/彩边半包」「更新一下隐私政策和免责声明，更专业一点，最好有法律效应」「把（临时摘 DOM 那个）坑填了」）：
+  - **① 完整备份(zip)导入后网盘配置失效（真 bug）** —— 根因：`buildFullBackupZip` 里构造 zip 内 `xixi-data.json` 的 `dataPayload` 是**逐字段手写**的，v1.2.1.8 加备份配置时只改了全量载荷 `buildFullBackupPayload`，**zip 链漏了 `syncConfig`**。
+    - 症状：导入时 `payload.syncConfig` 为 undefined → `importFullBackupPayloadWithConfigAsk` 直接按「只恢复记录」处理（连询问都不弹）；纯数据备份走 `buildBackupHTMLString(payload)` 无此问题 —— 与用户「只导数据那份是好的」完全吻合。
+    - **云端 `uploadSyncBackup` 同样调该函数** → 云端「下载恢复一键配置」也是坏的，一处修复救两条链。
+    - 端到端验证：造含配置 zip → 清空本机配置 → `importZipBackup` → 弹出恢复询问（「坚果云 · probe@example.com」）→ 点恢复 → server/username/密码全部恢复、存储里密码仍加密、账号卡显示「已绑定」。
+  - **② 引导卡两处** —— 文案「右下角」→「**右上角**」（山册切换按钮确实在记录页标题行最右），后半句定为「山册卡右下半包的彩边，就是这座山的最高海拔」；`app-init.js` 的 `currentGuideCardId()` 里删掉特例「山册视图 return null」（与计划页切日历仍显示卡的行为对齐）。
+  - **③ 隐私政策 / 免责声明专业化（含法律要素）** —— 隐私政策 8 条 → **11 条**（1482 字，标题改「隐私政策」、按钮「我知道了」）：新增 适用范围与生效 / 数据存储位置与期限 / 云备份 / 信息共享转让与公开披露 / 联网行为与第三方服务 / 数据安全措施 / **你的权利** / **未成年人保护** / 权限清单与用途 / 政策更新 / **适用法律与联系方式**。
+    - 免责声明 4 条 → **10 条**（1117 字）：新增 服务性质（不是领队）/ 记录数据仅供参考 / 请走正规路线 / 出发前做好准备 / 风险自担 / **数据安全与备份责任** / 第三方服务 / **责任限制 + 「不排除依法不得排除、限制的责任」兜底** / 知识产权 / **条款变更与适用法律**（生效日期 2026-09-18）。
+  - **④ 同意留存（新增功能）** —— `app-data.js` 新增 `LEGAL_VERSION` + `LEGAL_AGREE_KEY='hiking_legal_agree'` + `getLegalAgreement/hasAgreedLegal/saveLegalAgreement/formatLegalStamp/showLegalConsentModal/maybePromptLegalConsent`；记录 `{version, at(ISO)}`。
+    - **条款版本与政策正文「生效日期」同步 → 改正文必须 bump 常量，届时自动重新征求同意**；未勾选点同意 → 高亮勾选框 + toast 拒绝。
+    - 触发：启动 600ms（并把自动检查更新改为「同意后 300ms」，避免两弹窗叠加）+ 首次进设置页（关于应用）280ms，两个入口各自每会话只弹一次；隐私政策弹窗底部展示「你已于 YYYY-MM-DD HH:mm 同意本政策（条款版本 X）」。
+  - **⑤ 弹窗豁免机制（根治「临时摘 DOM」绕法）** —— `closeOpenModals(force)` 改为**跳过带 `data-persist` 的弹窗**（38 处无参调用行为不变，新增 `force` 作强制清理口子）；同意弹窗声明 `data-persist` 即常驻下层，点条款时条款弹窗正常叠上层、关掉自然回到同意弹窗（勾选保留）。
+    - 删掉 `detached` 标志 + `openDoc()` 的摘/挂逻辑 + 嵌套 MutationObserver（约 -20 行），并加「不得回退成临时摘 DOM」的守卫。
+  - **⑥ 原生外观收口（设计统一性体检）** —— `index.html` 新增收口段：`input[type=number]` 原生上下箭头、`::-ms-reveal/::-ms-clear`（密码框小眼睛）、`:-webkit-autofill`（自动填充系统浅黄底，用**超长 transition** 而非 inset 大阴影，避免盖掉 :focus 光晕）；`.sync-input` 补齐 `appearance:none`（iOS textfield 内阴影）。另加 `.legal-link` / `.legal-stamp`（含 dark 变体，次要文字用 #334155 级 —— 浅色玻璃卡叠深遮罩后 #64748b 仅约 2:1 对比度）。
+  - **⑦ 测试与工具** —— test.js 226 → **247**（+21：原生外观 5 / 法务要素 4 / 同意留存 8 / 弹窗豁免 3 等，含 1 条过时断言修正）、E2E 102 → **121**（+19：同意留存 13 条含刷新验证与视觉基线、豁免 2 条、法务要素 1 条等）、P0P3 281/0、test-ui 30/0。
+    - **三处测试文件均预置「已同意」**（test-ui / P0P3 用 `beforeParse`、E2E 用 `addInitScript` + `__e2e_legal_clear` 哨兵反转）；弹窗宽度守卫自动纳入新弹窗 36 → **37**；视觉基线 10 张（隐私弹窗文案重写刷新 + 新增同意弹窗）。
+  - **实测**：同意留存探针 25 项 + 豁免探针 20 项全通过；原生控件实测（number spinner 伪元素 `none`、focus `outline: 3px none`、tap-highlight 全局透明、textarea `resize:none`、字体 SimSun）；隐私弹窗文案重写致视觉基线 diff 9.0% → 差异区域分析（边界框在卡片内、22 条等距文字行带、标题/按钮零差异）确认非破版后刷新；checkall **746 项全绿**。
+- **正式版 v1.2.2.1**（versionCode 265，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.1 更新（**更新弹窗排版修正（与更新日志统一）+ 记录页说明行瘦身** —— 用户反馈：「更新弹窗的具体内容怎么又是 **XX** 的形式了？但更新日志里不是，统一一下」「除了【】加粗，具体内容的小标题要列123，也加粗」「记录页的『颜色说明』去掉，有山册顶部那行图例就够了」）：**① 两处渲染统一** —— `showUpdateModal`（发现新版本弹窗）此前用 `white-space:pre-wrap` + `escapeHtml` 输出**纯文本**，`**小标题**` 与 `-` 原样露出；现改为与 `showChangelogModal` 共用 `renderChangelogBody(text, CL, MUTED)`；配色抽成公共函数 **`changelogPalette()`**（返回 `{CL, MUTED}`，深色分支内联、零 CSS 依赖 —— 此前 `CL/MUTED` 是更新日志弹窗的局部量，更新弹窗根本用不上）；**② 条目改数字编号** —— `renderChangelogBody` 的列表项由 `•` 改为 **`1. 2. 3.`**（`itemNo` 遇分组标题重置为 0，编号 `min-width:15px + text-align:right + font-variant-numeric:tabular-nums`，两位数不跳动）；**③ 记录页入口移除** —— 删 `#ridgeLegendLink`，连带清理 `showRidgeLegendModal()` 弹窗函数（2971 B）、`.view-caption-link` / `.ridge-legend` / `-row` / `-txt` / `-name` 五组无引用样式、`app-init.js` 的 caption 收起排除逻辑、P0P3 的 9 条入口断言；`.ridge-legend-bar` 基础 height 15→11 并删掉原 `.mb-legend` 覆盖规则；caption 文案还原为「山册视图 · 按山峰汇总成册，一座山一张卡片」（当初为给入口腾位置缩短过）；**④ 测试** —— 新增 3 条源码守卫（更新弹窗共用渲染器 / 共用配色 / 条目按数字编号每组重置）、修正 1 条因配色抽取而失效的旧断言（`cj.includes('var CL = {')` → `cj.includes('function changelogPalette')`）、补一处盲区（jsdom 里 `showUpdateModal`/`renderChangelogBody` 均为 undefined → 断言静默跳过，现加明确提示）；**实测**：更新日志编号 13 条 / 分组 6 / 粗体 6 / 无 `**` 残留，更新弹窗编号 4 条 / 分组 3 / 粗体 3 / 无 `**` 残留；test.js 219→**226**、P0P3 279/0、checkall **702 项全绿**
 - **正式版 v1.2.2.0**（versionCode 264，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.0 更新（**更新日志排版重做 + 山册彩边说明 + 彩边配色拉开** —— 用户三连反馈：「App 里的更新日志字都堆在一起不好看」「山册卡片颜色对应什么海拔没人知道」「3000 和 4000 那两档颜色太接近」）：**① 新增 `renderChangelogBody()`** —— 设置→关于应用→更新日志的正文渲染器，把原来的纯文本原样输出（`white-space:pre-wrap`）改成结构化渲染：`【分组】` → 加粗小标题（靛蓝、上下留白）、`- 条目` → 真列表（圆点 + 悬挂缩进 + 条目间距）、行内 `**粗体**` → 加粗、旧格式的 `**小标题**` **自动转成【】样式**（历史 92 条一并变整齐）、丢掉重复的 `## vX 更新内容` 标题行；**全部内联样式、零 CSS 依赖**；同时把最新 11 条（v1.2.1.0~v1.2.1.10）的长句按「**小标题** —— 说明」拆成子条目；**② 山册彩边说明** —— ① 山册顶部常驻 `.mb-legend` 图例（文案定稿「海拔 ▌<1k ▌1-2k ▌2-3k ▌3-4k ▌4k+」，实测 352×14 **一行不折**，最初写「最高海拔 + 完整区间」在 390px 屏会折成两行故缩短）；② 记录页视图说明行加 `#ridgeLegendLink`（**仅山册视图露出**，点开 `showRidgeLegendModal()`，且点它**不会被「点一下收起说明」吃掉** → `app-init.js` 的 document 点击监听排除 `.view-caption-link`）；③ 记录页引导卡补半句；弹窗复用 `dmi-*` 排版讲清「颜色对应海拔 / 彩边在卡片右下角（右缘+下缘 4px）/ 按这座山去过最高的那次分档，没填海拔不带彩边」；**③ 5 档配色拉开** —— 浅色档 4/5：`#4f46e5→#4338ca`、`#7c3aed→#9333ea`；深色档 2/3/5：`#38bdf8→#0ea5e9`、`#60a5fa→#3b82f6`、`#a78bfa→#c084fc`（`.rl-N` 图例色条与 `.mb-card.mb-ridge-N` 卡片书脊**两处同步**，实测**相邻档最小 RGB 色差：浅色 47.3→60.1 / 深色 38.1→58.5**）；**④ 山册说明行文案精简**为「山册视图 · 按山峰汇总成册」（给入口腾位置）；**⑤ 内部**：修 `tools/patch.js`（字符串形 `replace(old,new)` 会把 `new` 里的替换语法符号展开成 old 内容，**语法仍合法所以静默写坏代码** → 改函数式替换 + 反向验证：旧实现产出错、新实现正确）、新增回归守卫 16 条（test.js：彩边图例与书脊逐一同色 ×2、5 档色值不重复、相邻色差 ≥35；P0P3：入口显隐 / 图例弹窗 / 档位有序 / 顶部图例）、`app-core.js` 换行归一化为 CRLF（曾有 6 行混入的 LF）

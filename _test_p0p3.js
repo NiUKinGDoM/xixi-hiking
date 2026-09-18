@@ -23,6 +23,10 @@ const dom = new JSDOM(html, {
         };
         if (!window.URL.createObjectURL) window.URL.createObjectURL = function () { return 'blob:mock'; };
         if (!window.URL.revokeObjectURL) window.URL.revokeObjectURL = function () {};
+        // ★2026-09-18 同意留存：预置「已同意」，否则启动流程会弹出同意弹窗干扰其他断言
+        try {
+            window.localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: '2026-09-18', at: '2026-01-15T12:00:00.000Z' }));
+        } catch (e) { }
         delete window.Capacitor;
         window.HTMLCanvasElement.prototype.getContext = function () {
             return {
@@ -122,9 +126,11 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
     click(rmB);
     await delay(80);
     assert('直达：切到山册视图', window.recordsViewMode === 'mountain', 'mode=' + window.recordsViewMode);
-    assert('山册视图下记录卡隐藏(不打扰)', gRec && gRec.style.display === 'none', gRec ? gRec.style.display : 'no');
+    assert('山册视图下记录卡照常显示(与计划页日历一致)', gRec && gRec.style.display === 'block', gRec ? gRec.style.display : 'no');
     window.recordsViewMode = 'list'; window.applyRecordsView(); await delay(40);
-    assert('切回列表视图记录卡重现', gRec && gRec.style.display === 'block', gRec ? gRec.style.display : 'no');
+    assert('切回列表视图记录卡仍在', gRec && gRec.style.display === 'block', gRec ? gRec.style.display : 'no');
+    assert('记录卡文案：山册在右上角', (gRec.textContent || '').indexOf('右上角的') >= 0, '文案未更新');
+    assert('记录卡文案：彩边半包说明', (gRec.textContent || '').indexOf('右下半包的彩边') >= 0, '文案未更新');
     // 4) 切计划页 → 计划卡；主按钮「添加一条计划」→ 直达计划编辑弹窗
     if (tabBtnP) { click(tabBtnP); await delay(60); }
     assert('计划页显示计划引导卡', gPl && gPl.style.display === 'block', gPl ? gPl.style.display : 'no');

@@ -342,7 +342,13 @@ try {
     ih.includes('id="privacyPolicyBtn"') && ih.includes('隐私政策') ? ok('关于卡隐私政策入口在') : bad('隐私入口缺失!');
     dj.includes('function showPrivacyPolicyModal') && dj.includes('dmi-group') ? ok('隐私弹窗(玻璃条目式)在') : bad('隐私弹窗缺失!');
     dj.includes('id="privacy-close"') && dj.includes('联网行为') ? ok('隐私含联网披露(崩溃上报)') : bad('隐私联网说明缺失!');
-    dj.includes('通知与提醒权限') && dj.includes('你的数据你做主') && dj.includes('有问题反馈给 XiXi') ? ok('隐私权限说明/数据自主/联系行在') : bad('隐私补充条目缺失!');
+    dj.includes('权限清单与用途') && dj.includes('计划与备份提醒') ? ok('隐私权限清单在(逐项说明用途)') : bad('隐私权限清单缺失!');
+    // ★2026-09-18 隐私政策专业化：法律要素守卫（生效日期 / 用户权利 / 未成年人 / 适用法律 / 第三方披露）
+    dj.includes('生效日期：2026-09-18') && dj.includes('你的权利') && dj.includes('未成年人保护') && dj.includes('中华人民共和国法律') ? ok('隐私政策含法律要素(生效日期/权利/未成年人/适用法律)') : bad('隐私政策法律要素缺失!');
+    dj.includes('信息共享、转让与公开披露') && dj.includes('不会</b>向任何第三方出售') ? ok('隐私政策含第三方共享披露条款') : bad('隐私政策缺少共享/披露条款!');
+    // ★2026-09-18 免责声明：必须有责任限制 + 「法定责任优先」兜底（否则条款可能整体无效）
+    dj.includes('责任限制') && dj.includes('不排除或限制依法不得排除') && dj.includes('中华人民共和国法律') ? ok('免责声明含责任限制+法定优先兜底条款') : bad('免责声明缺少责任限制/法定优先条款!');
+    dj.includes('数据安全与备份责任') && dj.includes('开发者无法找回你未备份的数据') ? ok('免责声明含备份责任划分') : bad('免责声明缺少备份责任条款!');
     dj.includes('function showDisclaimerModal') && dj.includes('免责声明') && dj.includes('野山') && dj.includes('风险自担') && dj.includes('不是领队') ? ok('免责声明弹窗+户外安全条目在(野山/风险自担)') : bad('免责声明缺失!');
     ih.includes('id="disclaimerBtn"') && ih.includes('>免责声明<') ? ok('关于卡免责声明入口在') : bad('免责声明入口缺失!');
     ij.includes("disclaimerBtn") && ij.includes('showDisclaimerModal') ? ok('app-init 免责声明绑定在') : bad('免责声明绑定缺失!');
@@ -585,5 +591,33 @@ const syncJs2 = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8')
 /var pal = changelogPalette\(\);/.test(syncJs2) ? ok('守卫：更新弹窗与日志共用配色函数') : bad('更新弹窗未用 changelogPalette！');
 // 条目编号渲染（圆点 → 1. 2. 3.，每组重置）
 /itemNo = 0;/.test(allJs) && /itemNo\+\+/.test(allJs) && /'\.<\/span>'/.test(allJs) ? ok('守卫：更新日志条目按数字编号（每组重置）') : bad('条目编号渲染缺失！');
+// ★2026-09-18 源码守卫：zip 备份必须带网盘配置（曾漏字段 → 完整备份导入后配置无效）
+const syncJs3 = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+const initJs3 = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+/syncConfig: payload\.syncConfig,/.test(syncJs3) ? ok('守卫：zip 备份含网盘配置（完整备份/云端恢复都能配好）') : bad('zip 备份漏 syncConfig！导入后网盘配置会失效');
+(!/recordsViewMode === 'mountain'\) return null/.test(initJs3)) ? ok('守卫：山册视图不再隐藏记录引导卡') : bad('山册视图仍会隐藏引导卡！');
+// ★2026-09-18 源码守卫：原生外观收口（Chromium/Edge/iOS 系统控件外观不得残留）
+const syncBlockCss = cssBlockOf('.sync-input') || '';
+/appearance:\s*none/.test(syncBlockCss) ? ok('守卫：同步输入框已去原生外观（appearance:none）') : bad('.sync-input 缺 appearance:none（iOS 会露原生内阴影）');
+(/input\[type="number"\]::-webkit-inner-spin-button/.test(html) && /input\[type="number"\]::-webkit-outer-spin-button/.test(html)) ? ok('守卫：数字框原生上下箭头已关闭') : bad('数字框未关原生 spinner（桌面 hover 会露箭头）');
+(/::-ms-reveal/.test(html) && /::-ms-clear/.test(html)) ? ok('守卫：密码框原生「显示密码」按钮已隐藏') : bad('密码框未隐藏 ::-ms-reveal/::-ms-clear（Edge/WebView 会露小眼睛）');
+(/-webkit-autofill/.test(html) && /body\.dark-mode input:-webkit-autofill/.test(html)) ? ok('守卫：自动填充底色已玻璃化（浅色+深色）') : bad('未处理自动填充底色（浏览器会刷系统浅黄底）');
+(!/<select[\s>]/.test(html + allJs)) ? ok('守卫：全站无原生 <select>（统一自绘选择器弹窗）') : bad('出现原生 <select>，会露系统下拉框');
+// ★2026-09-18 源码守卫：同意留存（隐私政策/免责声明需显式勾选 + 留存条款版本与时间戳）
+const dataJsLegal = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+const initJsLegal = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+(/const LEGAL_VERSION = '\d{4}-\d{2}-\d{2}'/.test(dataJsLegal)) ? ok('同意留存：条款版本常量在') : bad('LEGAL_VERSION 缺失!');
+(/LEGAL_AGREE_KEY = 'hiking_legal_agree'/.test(dataJsLegal) && /function saveLegalAgreement/.test(dataJsLegal) && /new Date\(\)\.toISOString\(\)/.test(dataJsLegal)) ? ok('同意留存：记录条款版本 + ISO 时间戳') : bad('同意记录写入缺失!');
+(/function showLegalConsentModal/.test(dataJsLegal) && /id="legalAgreeChk"/.test(dataJsLegal) && /id="legalAgree"/.test(dataJsLegal) && /id="legalLater"/.test(dataJsLegal)) ? ok('同意弹窗：显式勾选 + 同意/暂不同意按钮在') : bad('同意弹窗结构缺失!');
+(/MutationObserver/.test(dataJsLegal) && /resolve\(false\)/.test(dataJsLegal)) ? ok('同意弹窗：防 Promise 永挂（脱离 DOM 即 resolve 兜底）') : bad('同意弹窗缺少永挂兜底!');
+(/function hasAgreedLegal/.test(dataJsLegal) && /rec\.version === LEGAL_VERSION/.test(dataJsLegal)) ? ok('同意留存：条款版本变更会自动重新征求同意') : bad('同意版本校验缺失!');
+(/你已于/.test(dataJsLegal) && /formatLegalStamp/.test(dataJsLegal)) ? ok('隐私政策弹窗展示同意时间（可查证）') : bad('同意记录未展示!');
+(/maybePromptLegalConsent\(\)/.test(initJsLegal) && /maybePromptLegalConsent\(true\)/.test(initJsLegal)) ? ok('同意触发：启动 + 首次进关于应用') : bad('同意触发时机缺失!');
+// ★2026-09-18 源码守卫：closeOpenModals 豁免机制（同意弹窗常驻下层，无需临时摘 DOM）
+const syncJsPersist = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+const dataJsPersist = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+(/function closeOpenModals\(force\)/.test(syncJsPersist) && /hasAttribute\('data-persist'\)/.test(syncJsPersist)) ? ok('closeOpenModals 支持 data-persist 豁免 + force 强制清理') : bad('closeOpenModals 豁免机制缺失!');
+(/modal\.setAttribute\('data-persist', '1'\)/.test(dataJsPersist)) ? ok('同意弹窗声明 data-persist（免被条款弹窗的 closeOpenModals 清掉）') : bad('同意弹窗未声明 data-persist!');
+(!/detached/.test(dataJsPersist)) ? ok('同意弹窗不再依赖「临时摘 DOM + 挂回」的绕法') : bad('同意弹窗回退成了临时摘 DOM 的老方案!');
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);
