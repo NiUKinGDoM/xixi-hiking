@@ -134,6 +134,14 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
     // 4) 切计划页 → 计划卡；主按钮「添加一条计划」→ 直达计划编辑弹窗
     if (tabBtnP) { click(tabBtnP); await delay(60); }
     assert('计划页显示计划引导卡', gPl && gPl.style.display === 'block', gPl ? gPl.style.display : 'no');
+    // ★2026-09-18 计划页引导卡须讲清「日历 / 列表」可切换（右上角），否则新用户不知道能切视图
+    {
+        const pSub = gPl ? gPl.querySelector('.wb-sub') : null;
+        const pTxt = pSub ? pSub.textContent : '';
+        assert('计划页引导卡含视图切换说明（日历/列表 + 右上角）',
+            pTxt.indexOf('日历') >= 0 && pTxt.indexOf('列表') >= 0 && pTxt.indexOf('右上角') >= 0,
+            pTxt.slice(0, 44));
+    }
     click(document.getElementById('pGoBtn'));
     await delay(90);
     const pPlans = window.__getStateAll().plannedTrips;
@@ -715,7 +723,7 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         assert('内容含本次版本(' + cVer + ')+本次徽章', cVer && clTxt.indexOf(cVer) >= 0 && clTxt.indexOf('本次更新') >= 0, clTxt.slice(0, 60));
         assert('内容含上次版本(' + pVer + ')(无徽章)', pVer && clTxt.indexOf(pVer) >= 0 && clTxt.indexOf('上次更新') < 0, 'no ' + pVer);
         assert('内容含上上次版本(' + p2Ver + ')(无徽章)', p2Ver && clTxt.indexOf(p2Ver) >= 0 && clTxt.indexOf('上上次更新') < 0, 'no ' + p2Ver);
-        assert('徽章只出现一次(本次,颜色内联)', (clHtml.match(/本次更新/g) || []).length === 1 && clHtml.indexOf('color:' + (document.body.classList.contains('dark-mode') ? '#a5b4fc' : '#4f46e5')) >= 0, 'badge 异常');
+        assert('徽章只出现一次(本次,颜色内联)', (clHtml.match(/本次更新/g) || []).length === 1 && clHtml.indexOf('color:' + (document.body.classList.contains('dark-mode') ? '#a5b4fc' : '#3730a3'   /* 2026-09-18 浅色 tagTx 加深：#4f46e5 在弹窗合成底上仅 3.17:1 */)) >= 0, 'badge 异常');
         // ★2026-09-18 排版守卫：分组标题 + 缩进子条目（此前整段纯文本堆一起，用户报「字都堆在一起」）
         const clHead = clHtml.match(/【[^】]{1,14}】<\/div>/g) || [];
         assert('更新日志按分组标题渲染(' + clHead.length + ')', clHead.length >= 3, 'heads=' + clHead.length);

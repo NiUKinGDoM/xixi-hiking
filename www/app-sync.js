@@ -782,7 +782,8 @@ function showSyncInfoModal() {
     const hasPwd = !!(syncConfig && syncConfig.password);
     const prov = syncProviderOf(srv);
     const IS_DARK = typeof document.body !== 'undefined' && document.body.classList && document.body.classList.contains('dark-mode');
-    const LB = IS_DARK ? 'rgba(255,255,255,0.5)' : '#52606f';
+    // 2026-09-18 对比度实测：#52606f 在浅色弹窗合成底（≈#B8B8B8）上仅 3.25:1 → #334155（5.2:1）
+    const LB = IS_DARK ? 'rgba(255,255,255,0.5)' : '#334155'
     const VL = IS_DARK ? '#f1f5f9' : '#1e293b';
     const row = function (k, v, wrap) {
         return '<div style="display:flex;justify-content:space-between;gap:14px;font-size:13px;line-height:1.6;">' +

@@ -467,14 +467,14 @@ function recordViewBodyHTML(r) {
         '</div>' +
         photosHtml +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">' +
-        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">最高海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
-        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">里程</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + kmTxt + '</div></div>' +
-        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">用时</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + durTxt + '</div></div>' +
-        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">同行人</div><div style="font-size:13px;font-weight:700;color:#1e293b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + mateTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">最高海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">里程</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + kmTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">用时</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + durTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">同行人</div><div style="font-size:13px;font-weight:700;color:#1e293b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + mateTxt + '</div></div>' +
         '</div>' +
         // ★2026-09-05 小日记：记录弹窗里的回忆段落（编辑时写的 notes；有内容才展示）
-        // ★2026-09-06 小日记字色提亮：标签/图标加深至 #52606f（原 #64748b 偏浅）、正文加深 #1e293b；dark 由 .jd-lab/.jd-body CSS 覆盖
-        (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons jd-ic" style="font-size:14px;color:#52606f;">edit_note</span><span class="jd-lab" style="font-size:12px;color:#52606f;letter-spacing:0.3px;">小日记</span></div><div class="jd-body" style="font-size:13px;color:#1e293b;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
+        // ★2026-09-06 小日记字色提亮：标签/图标加深至 #334155（原 #64748b 偏浅）、正文加深 #1e293b；dark 由 .jd-lab/.jd-body CSS 覆盖
+        (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons jd-ic" style="font-size:14px;color:#334155;">edit_note</span><span class="jd-lab" style="font-size:12px;color:#334155;letter-spacing:0.3px;">小日记</span></div><div class="jd-body" style="font-size:13px;color:#1e293b;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
         '<button id="rd-edit-btn" class="check-go-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
 }
 
@@ -512,10 +512,10 @@ function recordEditBodyHTML(r) {
         // 日期时间（★2026-09-04 移至末位：时/分/里程下方整行）
         '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         // ★2026-09-05 小日记：编辑时可写（notes 字段，textarea 玻璃同 edit-input；dark 由 .dark-mode .edit-input 覆盖）
-        '<div style="display:flex;flex-direction:column;gap:6px;"><div style="display:flex;align-items:center;gap:4px;"><span class="material-icons" style="font-size:14px;color:#64748b;">edit_note</span><span class="rd-ph-lab" style="font-size:12px;color:#52606f;">小日记（可选）</span></div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;"><div style="display:flex;align-items:center;gap:4px;"><span class="material-icons" style="font-size:14px;color:#64748b;">edit_note</span><span class="rd-ph-lab" style="font-size:12px;color:#334155;">小日记（可选）</span></div>' +
         '<textarea id="edit-notes-' + r.id + '" class="edit-input input-glow" rows="3" maxlength="2000" placeholder="写点这天的见闻、心情、路上故事…（保存后显示在记录里）" style="width:100%;box-sizing:border-box;resize:none;border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.7;min-height:66px;font-family:inherit;">' + escapeHtml(r.notes || '') + '</textarea></div>' +
         // 照片区（层叠卡 + 灯箱管理）
-        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="display:flex;flex-direction:column;align-items:flex-start;margin-right:4px;"><span class="rd-ph-lab" style="font-size:12px;color:#52606f;line-height:1.3;">照片</span><span class="rd-ph-hint">最多 24 张</span></span>' +
+        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"><span style="display:flex;flex-direction:column;align-items:flex-start;margin-right:4px;"><span class="rd-ph-lab" style="font-size:12px;color:#334155;line-height:1.3;">照片</span><span class="rd-ph-hint">最多 24 张</span></span>' +
         '<div id="photo-thumbs-' + r.id + '" style="display:flex;align-items:center;">' + photoThumbsHTML(editingPhotoIds, r.id) + '</div>' +
         '</div>' +
         // 操作按钮
@@ -545,7 +545,7 @@ function openRecordDetailModal(id, startMode) {
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#4f46e5;">' + (detailModalMode === 'edit' ? 'edit_note' : 'landscape') + '</span>' +
             '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (detailModalMode === 'edit' ? '编辑记录' : '记录详情') + '</span>' +
-            (detailModalMode === 'edit' ? '' : '<button id="rd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>') +
+            (detailModalMode === 'edit' ? '' : '<button id="rd-close" style="background:transparent;border:none;color:#334155;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>') +
             '</div><div id="rd-body" style="margin-top:8px;"></div></div>';
         modal.innerHTML = modalInner;
         document.body.appendChild(modal);
@@ -4152,8 +4152,8 @@ function plannedViewBodyHTML(t) {
         '<span class="rd-chip" style="font-size:12px;font-weight:600;padding:2px 10px;border-radius:99px;color:' + rdDifficultyColorDeep(Number(t.difficulty)) + ';border:1px solid ' + dColor + '66;background:' + dColor + '14;">难度 ' + t.difficulty + ' 级 · ' + diffName + '</span>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">' +
-        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">目标海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
-        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#52606f;">难度</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + t.difficulty + ' 级</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">目标海拔</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + elTxt + '</div></div>' +
+        '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">难度</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + t.difficulty + ' 级</div></div>' +
         '</div>' +
         '<div style="display:flex;gap:10px;">' +
         '<button id="pd-edit-btn" class="check-go-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑计划</button>' +
@@ -4196,7 +4196,7 @@ function openPlannedDetailModal(id, startMode) {
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#4f46e5;">' + (isEdit ? 'edit_note' : 'hiking') + '</span>' +
             '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (isEdit ? '编辑计划' : '计划详情') + '</span>' +
-            (isEdit ? '' : '<button id="pd-close" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>') +
+            (isEdit ? '' : '<button id="pd-close" style="background:transparent;border:none;color:#334155;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>') +
             '</div><div id="pd-body" style="margin-top:8px;"></div></div>';
         document.body.appendChild(modal);
         var bodyEl = modal.querySelector('#pd-body');
@@ -4672,7 +4672,7 @@ function showMilestoneList() {
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#f59e0b;">emoji_events</span>' +
             '<span style="font-size:15px;font-weight:700;flex:1;color:' + (dark ? '#fff' : '#334155') + ';">我的里程碑</span>' +
-            '<button id="msListClose" style="background:transparent;border:none;color:#52606f;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
+            '<button id="msListClose" style="background:transparent;border:none;color:#334155;cursor:pointer;font-size:20px;line-height:1;padding:2px;">✕</button>' +
             '</div>' +
             '<div style="font-size:12px;color:' + sub + ';margin-bottom:6px;">已达成 ' + got + ' / ' + MILESTONES.length + ' 项</div>' +
             '<div class="ms-scroll" style="overflow-y:auto;flex:1;min-height:0;">' + rows + '</div></div>';

@@ -67,6 +67,20 @@ if (!noteFile || !fs.existsSync(noteFile)) {
   process.exit(1);
 }
 
+// ★2026-09-18 禁用词校验：“本次更新”是更新日志里的徽章文本，而 P0P3 有
+// 「徽章只出现一次」断言（按渲染出的 HTML 数字符串计数）—— 文案里若写了同样这几个字，
+// 会被渲染进 HTML 把计数变成 2 条 → prepare 跑到 checkall 才失败（而 prepare 不幂等，只能手动补跑）。
+// v1.2.2.3 真实踩过：文案写了「更新日志「本次更新」标签」。
+const BANNED = ['本次更新', '上次更新', '上上次更新'];
+const rawPre = fs.readFileSync(noteFile, 'utf8').replace(/\r\n/g, '\n');
+const bannedHit = BANNED.filter(function (w) { return rawPre.indexOf(w) >= 0; });
+if (bannedHit.length) {
+  console.error('✗ 文案含徽章文本（' + bannedHit.join('、') + '）—— 渲染后会让 P0P3「徽章只出现一次」断言失败。');
+  console.error('  请改写：指代徽章位置时用「本次」「上次」（如「更新日志顶部的「本次」标签」），不要写出完整的徽章文字。');
+  process.exit(1);
+}
+
+
 const core = fs.readFileSync(CORE, 'utf8');
 const E = eolOf(core);
 

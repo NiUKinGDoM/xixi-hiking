@@ -135,6 +135,9 @@ try {
     dj.includes('function loadSampleData') ? ok('loadSampleData 示例函数存在') : bad('loadSampleData 缺失!');
     ij.includes('function showTabGuides') && ij.includes('GUIDE_CARDS') ? ok('分页引导逻辑在') : bad('showTabGuides 缺失!');
     ih.includes('id="guideRecords"') && ih.includes('id="guidePlans"') && ih.includes('id="guideSettings"') && ih.includes('id="welcomeDemoBtn"') ? ok('四页引导卡 DOM 在位') : bad('引导卡 DOM 缺失!');
+    // ★2026-09-18 计划页引导卡必须说明「日历 / 列表」两种视图可切换、入口在右上角
+    //   （此前只写了「日历上看清」——新用户不知道还能切列表；记录页引导卡早有「右上角的山册」对照）
+    (/把下一个山头定好日子/.test(ih) && /右上角可切换/.test(ih) && /<b>日历<\/b>/.test(ih) && /<b>列表<\/b>/.test(ih)) ? ok('守卫：计划页引导卡说明视图可切换（日历/列表 + 右上角）') : bad('计划页引导卡缺少视图切换说明!');
     ih.includes('wb-guide-close') && ij.includes('function dismissGuide(cardId)') ? ok('引导 ✕ 逐卡关闭机制在') : bad('✕ 关闭缺失!');
     sj.includes('function autoLocalBackupIfDue') ? ok('每周自动备份函数存在') : bad('autoLocalBackupIfDue 缺失!');
     !sj.includes('localBackupBtn') ? ok('手动「立即本地备份」按钮已移除（用户要求）') : bad('localBackupBtn 残留!');
@@ -202,7 +205,7 @@ try {
     ih.includes('id="totalDistance"') && ih.includes('stat-unit">km') && ih.includes('id="maxElevation"') && ih.includes('stat-unit">m') ? ok('总里程km/最高海拔m 单位小字化') : bad('km/m 单位未拆!');
     dj.includes('var durationHTML = function') && dj.includes('<span class=\"stat-unit\">h</span>') ? ok('时长 h/m 单位小字渲染函数在') : bad('durationHTML 缺失!');
     ih.includes('.about-logo') && ih.includes('font-size: 60px') ? ok('App 主 logo 放大至 60px(用户定稿)') : bad('logo 未放大!');
-    dj.includes('jd-lab') && dj.includes('jd-body') && dj.includes('color:#52606f') ? ok('小日记 view 标签/正文加深') : bad('小日记色加深缺失!');
+    dj.includes('jd-lab') && dj.includes('jd-body') && dj.includes('color:#334155') ? ok('小日记 view 标签/正文加深（2026-09-18 再提一档到 #334155）') : bad('小日记色加深缺失!');
     ih.includes('.record-detail-modal .jd-body') && ih.includes('body.dark-mode .record-detail-modal .jd-body { color: #e5e7eb !important; }') ? ok('小日记 dark 适配 CSS') : bad('jd dark CSS 缺失!');
     dj.includes('margin-bottom:16px') && dj.includes('数据管理说明') ? ok('i 弹窗内容与按钮间距拉开(16px)') : bad('i 弹窗间距未改!');
 } catch (e) { bad('5h 检查失败: ' + e.message); }
@@ -619,5 +622,32 @@ const dataJsPersist = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), '
 (/function closeOpenModals\(force\)/.test(syncJsPersist) && /hasAttribute\('data-persist'\)/.test(syncJsPersist)) ? ok('closeOpenModals 支持 data-persist 豁免 + force 强制清理') : bad('closeOpenModals 豁免机制缺失!');
 (/modal\.setAttribute\('data-persist', '1'\)/.test(dataJsPersist)) ? ok('同意弹窗声明 data-persist（免被条款弹窗的 closeOpenModals 清掉）') : bad('同意弹窗未声明 data-persist!');
 (!/detached/.test(dataJsPersist)) ? ok('同意弹窗不再依赖「临时摘 DOM + 挂回」的绕法') : bad('同意弹窗回退成了临时摘 DOM 的老方案!');
+// ★2026-09-18 源码守卫：浅色弹窗内文字对比度
+//   依据：弹窗卡片背景仅 rgba(255,255,255,0.08)，叠遮罩后**实测合成底色 ≈ rgb(184,184,184)**，
+//   所以浅灰文字（#64748b 2.40:1 / #52606f 3.25:1 / #94a3b8 1.29:1）在这套玻璃卡上都不合格。
+//   规则：卡片内的正文/标签色，按合成底色算 WCAG 对比度必须 ≥ 4.5:1。
+const _linC = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+const _relLum = (r, g, b) => 0.2126 * _linC(r) + 0.7152 * _linC(g) + 0.0722 * _linC(b);
+const _DLG_BG = _relLum(184, 184, 184);   // 实测合成底色（截图取像素）
+const _crOf = (hex) => {
+    if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return -1;
+    const n = parseInt(hex.slice(1), 16);
+    const l = _relLum((n >> 16) & 255, (n >> 8) & 255, n & 255);
+    const a = Math.max(l, _DLG_BG), b = Math.min(l, _DLG_BG);
+    return (a + 0.05) / (b + 0.05);
+};
+const _colorIn = (sel) => { const b = cssBlockOf(sel); const m = b && b.match(/color:\s*(#[0-9a-f]{6})/i); return m ? m[1].toLowerCase() : null; };
+const _crCheck = (name, hex) => {
+    const r = _crOf(hex);
+    if (r < 0) { bad('弹窗文字对比度取色失败：' + name + '（' + hex + '）'); return; }
+    (r >= 4.5) ? ok('弹窗文字对比度 ' + name + ' ' + hex + '（' + r.toFixed(2) + ':1）')
+               : bad('弹窗文字对比度过低：' + name + ' ' + hex + ' 仅 ' + r.toFixed(2) + ':1（需 ≥4.5）');
+};
+[['dmi-title', _colorIn('.dmi-title')], ['dmi-body', _colorIn('.dmi-body')],
+ ['legal-link', _colorIn('.legal-link')], ['sync-bind-steps b', _colorIn('.sync-bind-steps b')]].forEach(([n, h]) => _crCheck(n, h));
+[['更新日志 MUTED', (allJs.match(/MUTED: IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]],
+ ['更新日志 tagTx', (allJs.match(/tagTx: IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]],
+ ['照片占用 sub', (allJs.match(/sub: IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]],
+ ['网盘信息 LB', (allJs.match(/const LB = IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]]].forEach(([n, h]) => _crCheck(n, h));
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);
