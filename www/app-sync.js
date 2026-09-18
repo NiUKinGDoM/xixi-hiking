@@ -1735,6 +1735,21 @@ let syncUiState = { status: 'idle', text: '', icon: 'info', lastSyncAt: '' };
 let syncUiBusy = false;
 
 // 2026-08-12 i 标识点击弹窗：上次同步时间 + 连接状态（成功✓绿/失败✗红/同步中转圈）
+// ★2026-09-18 同步时间人性化（弹窗里原本直接显示 ISO 串 `2026-09-18T01:47:23.295Z`，
+//   与设置页那行的「刚刚 / 昨天 / N 天前」不一致 → 抽成公共函数，两处口径统一）
+function syncRelTime(iso) {
+    if (!iso) return '暂无同步记录';
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return '暂无同步记录';
+    const mins = Math.floor((Date.now() - t) / 60000);
+    if (mins < 1) return '刚刚';
+    if (mins < 60) return mins + ' 分钟前';
+    if (mins < 1440) return Math.floor(mins / 60) + ' 小时前';
+    const days = Math.floor(mins / 1440);
+    if (days === 1) return '昨天';
+    return days + ' 天前';
+}
+
 async function showSyncStatusModal() {
     let lastSyncAt = '';
     try {
@@ -1754,7 +1769,7 @@ async function showSyncStatusModal() {
     } else {
         statusHtml = '<div class="sync-status-line"><span class="material-icons" style="color:rgba(100,116,139,0.65);">info</span>尚未检测连接</div>';
     }
-    const timeHtml = '<div class="sync-status-time">上次同步时间：' + (lastSyncAt || '暂无同步记录') + '</div>';
+    const timeHtml = '<div class="sync-status-time">上次同步时间：' + syncRelTime(lastSyncAt) + '</div>';
     // ★2026-09-18 连接状态下：两行四维同步状态（网盘数据+图片 / 徒步计划+徒步记录）
     let dimHtml = '';
     const hasCfg = !!(syncConfig && syncConfig.server && syncConfig.username && syncConfig.password);

@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-18（v1.2.1.9 / vc262）  
+> 最后更新：2026-09-18（v1.2.1.10 / vc263）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -174,6 +174,8 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > **★探针踩坑（已记入 MEMORY）**：`records`/`plannedTrips` 是**脚本作用域**变量（`window.records` 为 undefined）→ 注入必须**裸赋值** `records = arr`，否则探针静默假阴性。
 ## 当前版本状态（2026-09-11）
 
+- **正式版 v1.2.1.10**（versionCode 263，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.1.10 更新（**「同步状态」弹窗时间显示人性化** —— v1.2.1.9 验收时用浏览器探针实测弹窗，发现弹窗内「上次同步时间」原样显示了存储里的 ISO 串 `2026-09-18T01:47:23.295Z`，而设置页那行早已是「刚刚 / 昨天 / N 天前」→ 同一功能两套口径）：**① 新增 `syncRelTime(iso)`** —— 《1 分钟 → 刚刚；<60 分 → N 分钟前；<24 时 → N 小时前；1 天 → 昨天；否则 → N 天前；空值/非法时间 → 暂无同步记录》；**② `showSyncStatusModal` 的 `timeHtml` 改用该函数**（原来 `lastSyncAt` 直接拼字符串）；**③ 实测各分支**：空值→暂无同步记录、非法→暂无同步记录、30 秒→刚刚、20 分→20 分钟前、5 小时→5 小时前、30 小时→昨天、12 天→12 天前，弹窗实测显示「上次同步时间：3 分钟前」、**无原始 ISO 外露**、弹窗宽 320.0（宽度锁定仍生效）；**④ 顺带核实** `syncDimNet`/`syncDimPhoto`/`syncDimPlan`/`syncDimRecord` 四个 id 已随 v1.2.1.8 设置页网格一并移除，弹窗版四维不带 id（按 DOM 顺序渲染），E2E 无依赖、零破坏
 - **正式版 v1.2.1.9**（versionCode 262，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.1.9 更新（**同步状态四维挪进「同步状态」弹窗 + 设置页状态行还原 + 弹窗宽度守卫工具化** —— 用户 2026-09-18 09:0x 纠正 v1.2.1.8 的理解偏差：「是在之前的自动同步小弹窗里加，不是直接替换了，恢复上一版的，然后把我说的加进去」）：**① 设置页状态行还原** —— v1.2.1.8 把 `syncHealthRow` 连接态改成了 `syncHealthGrid` 两行四维（直接顶掉了原来那行），现按用户要求还原为 v1.2.1.7 的单行形态（`syncHealthDot` 灰/蓝/红/绿点 + `syncHealthText`「上次同步：N 天前 · 云端有备份」+ 右箭头），`updateSyncHealthRow` 同步回退到单行逻辑；**② 四维移入弹窗** —— 新增 `renderSyncDimStatus()`，在点击状态行弹出的「同步状态」小弹窗（`showSyncStatusModal`）里插入「网盘数据 + 图片」「徒步计划 + 徒步记录」两行四维；图标语义：绿勾 `check_circle` = 已同步、绿圈 `circle` = 正常（无数据或未超时）、红叉 `cancel` = 超时未同步或同步失败；超时阈值沿用开自动同步 3 天 / 没开 7 天；`.sync-dim` 系列 CSS 保留在 index.html（供弹窗使用）；**③ 照片占用弹窗宽度补齐** —— `#puModal` 原写法 `max-width:392px;padding:18px 16px 14px;` **只设了最大宽度**（因多带 padding，v1.2.1.7 那轮按 `max-width: Npx;` 精确 grep 时漏掉了），而其内容是动态的（「统计中…」→ 列表 → 排行），宽度会随之漂移 → 补 `width: calc(100vw - 44px); box-sizing: border-box;`；**④ 新增 `tools/modalwidth.js`（弹窗宽度锁定体检）** —— 同一类坑已踩两次（v1.2.1.6 绑定弹窗 340↔276.6 用户报障、v1.2.1.7 手工 grep 才扫出 10 处），遂固化为体检项：扫 `confirm-modal-content` 标签，① 有 `max-width` 必须有显式 `width`；② 有 `width: calc(100vw - N)` 必须有 `box-sizing: border-box`（否则 padding 撑破）；支持 `--quiet/--list`，输出 `N 通过 / M 失败` 并带退出码，已通过「对修复前版本反向验证确认会报红」；**⑤ 纳入自检链** —— `checkall.js` 新增 `modalw` 套件、`smoke.js` 安全执行清单同步加入；并把 checkall 的 `--fast/--no-e2e` 由**下标切片改成按 key 过滤**（原 `slice(0,5)` 会被新套件挤掉 P0P3）；**⑥ 兼容** —— P0P3 同步健康行断言（`syncHealthText`/`syncHealthDot` id + 未配置分支）零改动即通过
 - **正式版 v1.2.1.8**（versionCode 261，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
