@@ -10,7 +10,7 @@
 
 ## ⚡ 开工前 30 秒（新会话 / 换模型，必做，别跳）
 
-1. **读三份**：本文件 → `.workbuddy/memory/MEMORY.md` → `.workbuddy/memory/` 最新日期日志（别凭记忆开工，文档里踩过的坑不要再踩一遍）
+1. **读四份**：本文件 → `.workbuddy/memory/MEMORY.md`（铁律）→ `.workbuddy/memory/REFERENCE.md`（细节备查）→ `.workbuddy/memory/` 最新日期日志（别凭记忆开工，文档里踩过的坑不要再踩一遍）
 2. **核对版本三处一致**：`android/app/build.gradle` versionCode/Name ↔ `www/app-core.js` APP_VERSION ↔ `index.html` 关于页显示；再核远程 `releases/latest`（防并行会话/自动化抢先发布）
 3. **复述确认**：当前版本号 / 主工程路径 / 最近发版 / 发布流程顺序 → 说给用户听，一致才动手
 4. 只在用户说「**同步**」后才 bump/构建/push；改完 www **直接部署网页版**给用户先看（不用问）
@@ -26,17 +26,17 @@ NODE="C:/Users/NIU-XC/.workbuddy/binaries/node/versions/22.22.2-3/node.exe"   # 
 node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一校验+写后语法校验+失败还原
 
 # ② 跑测试：一条命令跑全部（替代反复单跑）
-node tools/checkall.js            # smoke + iOS适配 + test + test-ui + P0P3 + E2E 汇总
+node tools/checkall.js            # 7 套 / 687 项 汇总（smoke 20 + iOS 10 + test 219 + test-ui 30 + P0P3 271 + E2E 101 + 弹窗宽度 36）
 node tools/checkall.js --fast     # 只跑前三套（秒级，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
-node tools/smoke.js               # 工具链冒烟（14 工具语法+安全执行；已并入 checkall 第一套）
+node tools/smoke.js               # 工具链冒烟（20 项：语法+安全执行；已并入 checkall 第一套）
 
 # ③ 浏览器实测（替代每次新写 playwright 脚本）
 node e2e/inspect.js --inline "return typeof showInfoMessage"
 node e2e/inspect.js --file tools/snippets/x.js [--dark] [--shot x.png]
 
 # ④ 视觉回归 / 刷基线
-node e2e/run.js            # 24 项，像素差 ≤0.5%
+node e2e/run.js            # 101 项，像素差 ≤0.5%
 node e2e/run.js --update   # 界面确属预期变化时刷基线
 
 # ⑤ 发布构建：一条命令（同步9文件+assets → obf → hash → 原生文件 → gradle）
@@ -52,6 +52,7 @@ node tools/audit.js
 node tools/deepcheck.js     # 死代码 / XSS / 泄漏 / 全局污染 / 调试残留
 node tools/docaudit.js      # 文档格式 / 版本号 / 路径 / 双端一致
 node tools/designcheck.js   # ★设计一致性（2026-09-14 新增，09-16 扩维）：实测每个可见元素的**圆角/字体/玻璃配方/层级**与规范表比对，列出漂移
+node tools/modalwidth.js    # ★弹窗内联宽度锁定体检（2026-09-18 新增）：有 max-width 必须有显式 width、calc(100vw-N) 必须有 box-sizing（已并入 checkall）
 node tools/status.js        # ★开工核对一条命令（2026-09-14 新增）：版本三处/BUILTIN/本地git/副本差异/远程latest；--offline 跳过远程
 node tools/rollback.js      # ★一键回退（2026-09-14 新增）：无参数=列出回退点；<版本>=预览差异；<版本> --apply=执行（先自动备份当前）
 node tools/doc-sync.js      # ★双端文档同步（2026-09-14 新增）：无参数=只检测；--apply=主工程→副本；--reverse=副本→主工程
@@ -172,7 +173,7 @@ node e2e/inspect.js --file tools/snippets/offline-check.js --offline
 XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<svg onload>`/`<iframe>` 均未执行 —— 首版探针报的 "RAW-HTML" 是**假阳性**，`innerText` 会显示转义后的字面文本）；搜索无正则注入（`indexOf`）；1000 条记录 渲染/搜索/统计 ≈10ms、DOM 563 节点；photos 字段异常不崩；翻页监听有 `cleanupEventListeners()` 兜底不累积；批量模式/主题切换正常；空数据、零值、未来日期、300 字超长名称均不崩。
 
 > **★探针踩坑（已记入 MEMORY）**：`records`/`plannedTrips` 是**脚本作用域**变量（`window.records` 为 undefined）→ 注入必须**裸赋值** `records = arr`，否则探针静默假阴性。
-## 当前版本状态（2026-09-11）
+## 版本变更记录（倒序 · 最新在上；发版时由 `tools/docrelease.js` 自动插入）
 
 - **正式版 v1.2.1.10**（versionCode 263，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.1.10 更新（**「同步状态」弹窗时间显示人性化** —— v1.2.1.9 验收时用浏览器探针实测弹窗，发现弹窗内「上次同步时间」原样显示了存储里的 ISO 串 `2026-09-18T01:47:23.295Z`，而设置页那行早已是「刚刚 / 昨天 / N 天前」→ 同一功能两套口径）：**① 新增 `syncRelTime(iso)`** —— 《1 分钟 → 刚刚；<60 分 → N 分钟前；<24 时 → N 小时前；1 天 → 昨天；否则 → N 天前；空值/非法时间 → 暂无同步记录》；**② `showSyncStatusModal` 的 `timeHtml` 改用该函数**（原来 `lastSyncAt` 直接拼字符串）；**③ 实测各分支**：空值→暂无同步记录、非法→暂无同步记录、30 秒→刚刚、20 分→20 分钟前、5 小时→5 小时前、30 小时→昨天、12 天→12 天前，弹窗实测显示「上次同步时间：3 分钟前」、**无原始 ISO 外露**、弹窗宽 320.0（宽度锁定仍生效）；**④ 顺带核实** `syncDimNet`/`syncDimPhoto`/`syncDimPlan`/`syncDimRecord` 四个 id 已随 v1.2.1.8 设置页网格一并移除，弹窗版四维不带 id（按 DOM 顺序渲染），E2E 无依赖、零破坏
@@ -318,7 +319,7 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 4. **发布前建回滚点**：`node prev-snapshot.js` → `backups/prev-<版本>/`（www 9 文件（含 assets/ 收款码 2 + 字体 + vendor） + build.gradle + MainActivity.java + AndroidManifest.xml），bump/构建/发布事故可整体还原
 5. **复杂度"三问"过滤器**：新功能先问——能放进现有页面内部吗（不加平级入口）？能复用现有组件吗？删掉旧的什么来换？
 
-## 功能清单（当前全部，v1.1.8.7）
+## 功能清单（当前全部）
 
 - 📊 概览：统计卡片（总记录数/平均海拔/最高海拔/平均难度/**总里程/总用时**）、**难度分布柱状图（独立卡片，图标标题）**、**年度足迹热力图**（GitHub 风格，点格看当天详情：心情/天气/同行/全部照片/分享，底部「累计爬升 X 米」）、**年度回顾入口**（v1.1.8.4：全屏玻璃回顾：6 指标+月度柱状+年度之最条件化+每年 1/1 自动展示；v1.1.8.5：「和去年比」开关 → 去年划线值+增幅+自然语言一年小结，关闭在右下操作区）
 - 📝 记录：增删改、行内编辑（**心情/天气统一玻璃弹窗（v1.1.7.10，替换原生下拉）**/同行人/里程 km/用时 h 单位/照片层叠卡片）、难度 1-5（徽章玻璃化）、记录行名称后天气图标 + 照片按钮（玻璃版）、**★自定义日期时间选择器（v1.1.7.8：玻璃弹窗日历选日期+时分步进器，替换系统原生 picker）**、**★列表/山册双视图（v1.1.8.4：按山聚合卡片，点 ↗ 直达记录，支持搜索过滤）**、**★＋添加弹「添加徒步记录」选择卡（v1.1.8.5：最近记录单选填充或直接新建，编辑旧记录不打扰）**
@@ -341,8 +342,7 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
    - **bump 用 `node bump.js` 一键**（vc+1 + 版本名满10进位 + build.gradle/APP_VERSION/版本显示四处同步 + 校验），**汇报版本号以 bump.js 输出为准**（2026-08-24 教训：1.1.2.10 → 1.1.3.0，不许说 1.1.2.11）
    - ⚠️ 历史错位：v1.1.1.0~~1.1.1.4（vc132~~136）比公式 +1，已发布固定，bump.js 延续序列
    - ⚠️ 已发布版本号不可复用，修复版也必须 bump
-   - 测试版 `1.X.test-X`（当前 1.4.test-12）
-2. **★发布流程**：①部署 www → **网页确认（★2026-09-09 起 iOS 网页适配＝发 APK 时同步做；**★2026-09-14 起机器守护 `node tools/ioscheck.js`**——无 iOS 真机，改为代码级体检：①**版本对齐**（本地三处 / 线上 pages.dev / Release latest 必须同一版本，这是「iOS 页面与 APK 一起更新」的直接判据）②**能力守卫**（差异 API 必有降级：震动→guarded 静默、保存→长按引导、原生桥/系统通知→降级、a[download]→isIOSWeb 分支；**新增功能漏适配会在这里被抓出**）③iOS CSS（safe-area / text-size-adjust / 100dvh）④模拟实测（无桥 + 无 vibrate 跑全部能力，未捕获错误须 0）。已并入 `checkall` 第二套（秒级）与发布门禁），无白屏错乱、sw 正常，随 push 自动部署）** → ②\*\*★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点\*\*（backups/prev-<版本>/ 存 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor）+build.gradle+MainActivity+Manifest，事故可整体还原；
+2. **★发布流程**（**下面这段是演进史**；**现行流程以顶部「🧰 常用命令速查」⑧⑨ 为准**＝`tools/ship.js prepare/publish`）：①部署 www → **网页确认（★2026-09-09 起 iOS 网页适配＝发 APK 时同步做；**★2026-09-14 起机器守护 `node tools/ioscheck.js`**——无 iOS 真机，改为代码级体检：①**版本对齐**（本地三处 / 线上 pages.dev / Release latest 必须同一版本，这是「iOS 页面与 APK 一起更新」的直接判据）②**能力守卫**（差异 API 必有降级：震动→guarded 静默、保存→长按引导、原生桥/系统通知→降级、a[download]→isIOSWeb 分支；**新增功能漏适配会在这里被抓出**）③iOS CSS（safe-area / text-size-adjust / 100dvh）④模拟实测（无桥 + 无 vibrate 跑全部能力，未捕获错误须 0）。已并入 `checkall` 第二套（秒级）与发布门禁），无白屏错乱、sw 正常，随 push 自动部署）** → ②\*\*★2026-09-03 发布前先跑 `node prev-snapshot.js` 建回滚点\*\*（backups/prev-<版本>/ 存 www 9 文件（含 assets/ 收款码 2 + 字体 + vendor）+build.gradle+MainActivity+Manifest，事故可整体还原；
   v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ **★2026-09-10 起一条命令：`node tools/release.js`**（内部=同步 9 文件+assets → obf 混淆 temp → hash 生成 ResGuard → cp build.gradle/ResGuard/MainActivity/Manifest → gradle --rerun-tasks 构建；
   `--skip-build` 只做前四步）。原理备忘：混淆只对 temp assets 副本，www 源与测试永远明文，ResGuard=APK 内混淆版哈希 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
@@ -419,7 +419,7 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - \*\*网页版正式通道：<https://xixi-hiking.pages.dev\*\*（Cloudflare> Pages + GitHub Git 集成，push master 自动部署，Root=www，长期稳定）｜发版前验收预览用 workbuddy_sites_deploy 临时链接（会漂移，仅临时）
 
 
-## 近期版本要点（v1.1.0.7 ~ v1.1.8.5）
+## 历史版本要点存档（v1.1.0.7 ~ v1.1.8.5 · 完整版本史见 `CHANGELOG.md`）
 
 - v1.1.0.7~~1.1.1.4（vc129~~136）：inset 兼容、震动反馈、WebDAV 上传超时修复等（注意 vc132 起版本名错位）
 - v1.1.1.5（vc137）：去灵光化（36处 storage→AppStore + 删死搜索）+ toast 玻璃修复 + **bump.js/test.js 脚本** + 旧 WebView 兜底 + 照片占用 + 启动懒加载 + README 重写
@@ -515,10 +515,10 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 
 ## 待办/新功能方案（2026-09-08 更新）
 
-- 📋 **「联网登录」方案评估（2026-09-17，**未动手**）**：需求实为「换机不用重填同步配置」+ **APK 为主** → 建议**零后端三件套**（同步配置码 / 预设服务商 / 入口「登录化」）；**不建议真账号**（平台云服务按访问域名精确校验，APK 本地包是 localhost 用不了）。完整方案与待拍板 4 点：`docs/方案-换机同步与登录体验.md`
+- 📋 **「联网登录」方案评估（2026-09-17）**：**②预设服务商 / ③入口登录化 / ④备份含配置 均已在 v1.2.1.8 落地；① 同步配置码未做**：需求实为「换机不用重填同步配置」+ **APK 为主** → 建议**零后端三件套**（同步配置码 / 预设服务商 / 入口「登录化」）；**不建议真账号**（平台云服务按访问域名精确校验，APK 本地包是 localhost 用不了）。完整方案与待拍板 4 点：`docs/方案-换机同步与登录体验.md`
 
-- ✅ **隐私政策页**（v1.1.10.6 待发）：关于卡「隐私政策」入口 → showPrivacyPolicyModal（confirm 玻璃弹窗 dmi-* 条目排版，README 隐私段整理 + 崩溃上报联网披露）
-- ✅ **崩溃日志自动采集+上报**（v1.1.10.6 待发）：JS 持久队列 hiking_crash_queue（20 条/同错 1 分钟去重/重启不丢/并入导出诊断）+ 原生 xixi_crash.log 读取桥 getNativeCrashLog/clearNativeCrashLog；App 启动有 WebDAV 时自动 PUT xixi_crash\_*.txt（仅版本/错误/时间，当日一次，成功清队列）
+- ✅ **隐私政策页**（v1.1.10.6 已发布）：关于卡「隐私政策」入口 → showPrivacyPolicyModal（confirm 玻璃弹窗 dmi-* 条目排版，README 隐私段整理 + 崩溃上报联网披露）
+- ✅ **崩溃日志自动采集+上报**（v1.1.10.6 已发布）：JS 持久队列 hiking_crash_queue（20 条/同错 1 分钟去重/重启不丢/并入导出诊断）+ 原生 xixi_crash.log 读取桥 getNativeCrashLog/clearNativeCrashLog；App 启动有 WebDAV 时自动 PUT xixi_crash\_*.txt（仅版本/错误/时间，当日一次，成功清队列）
 - ✅ **真实渲染回归 E2E**（e2e/ 2026-09-08）：playwright-core + 系统 Edge 免下载；自起 127.0.0.1:8123 静态服务；核心链路（概览/计划日历/记录+示例/隐私弹窗深浅）+ 截图像素差视觉回归（阈值 0.5%，基线 e2e/shots/baseline/）+ JS 错误监听；node e2e/run.js（--update 刷基线）；真机 UI 自动化待 USB 设备接 Appium（脚本可复用链路）
 - ⚠️ 待办区原内容（2026-09-01）
 - 分享卡 ✅ 定版（v1.1.3.0）；照片层叠 ✅、灯箱添加删除 ✅、WebDAV 密码加密 ✅（11 项优化 v1.1.3.1 全含）

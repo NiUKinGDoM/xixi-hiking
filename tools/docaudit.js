@@ -53,7 +53,9 @@ DOCS.concat(LOGS).forEach((d) => {
         if (/^\s*```/.test(ln)) { inCode = !inCode; return; }
         if (inCode) return;
         if (/^\s*\|.*\|\s*$/.test(ln)) {
-            const cols = ln.trim().replace(/^\||\|$/g, '').split('|').length;
+            // ★2026-09-18 先去掉**转义管道** `\|` 再数列：单元格里写 `a \|\| b`（逻辑或）时，
+            //   朴素 split('|') 会把转义符也当分隔符 → 误报「表格列数不一致」（PROJECT_STATUS L153/154 真实误报）。
+            const cols = ln.trim().replace(/\\\|/g, '\u0000').replace(/^\||\|$/g, '').split('|').length;
             tableRows.push({ i: i + 1, cols, ln });
         } else {
             if (tableRows.length > 2) {
@@ -123,6 +125,8 @@ const PAIRS = [
     // ★2026-09-14 补漏：本文件同样是双端的，此前未纳入检查
     ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs', '给新模型的提示词.md')],
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs', 'DEVICE-CHECKLIST.md'), path.join(GH, 'docs', 'DEVICE-CHECKLIST.md')],
+    // ★2026-09-18 补漏：与 doc-sync 的配对表保持一致（此前漏了两处双端文件）
+    ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs', '方案-换机同步与登录体验.md'), path.join(GH, 'docs', '方案-换机同步与登录体验.md')],
 ];
 const dual = [];
 PAIRS.forEach(([n, a, b]) => {
@@ -145,5 +149,5 @@ if (JSON_OUT) {
     });
     console.log('\n【J 双端一致性】');
     if (dual.length) dual.forEach((x) => console.log('  ⚠ ' + x + '  （同步：node tools/doc-sync.js --apply）'));
-    else console.log('  ✅ 主工程与 GH 副本 5 组文档完全一致');
+    else console.log('  ✅ 主工程与 GH 副本 ' + PAIRS.length + ' 组文档完全一致');
 }

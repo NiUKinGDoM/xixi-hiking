@@ -32,6 +32,8 @@ const PAIRS = [
     ['docs/PROJECT_STATUS.md', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'docs/PROJECT_STATUS.md')],
     ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs/给新模型的提示词.md')],
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs/DEVICE-CHECKLIST.md'), path.join(GH, 'docs/DEVICE-CHECKLIST.md')],
+    // ★2026-09-18 补漏：本文件同样是双端的，此前未纳入（用户「整理所有文档」时发现）
+    ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs/方案-换机同步与登录体验.md'), path.join(GH, 'docs/方案-换机同步与登录体验.md')],
 ];
 
 console.log('== doc-sync ==  ' + (APPLY ? '同步模式' : REVERSE ? '反向同步模式' : '检测模式') + '\n');
