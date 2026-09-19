@@ -326,6 +326,23 @@ try {
     ih.includes('.pl-today {') && ih.includes('.pl-tomorrow {') && ih.includes('.dark-mode .pl-today') ? ok('pl-today/tomorrow CSS 在(含 dark)') : bad('徽章 CSS 缺失!');
 } catch (e) { bad('5o 检查失败: ' + e.message); }
 
+// 5o2. 2026-09-20 日历「完成/延期」（用户需求）+ 崩溃上报提示改静默（用户反馈打扰）
+console.log('-- 5o2. 日历「完成/延期」+ 崩溃静默 --');
+try {
+    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+    dj.includes('function planIsDueOrOverdue') ? ok('守卫：「已到期」判定函数在') : bad('已到期判定函数缺失!');
+    /function planIsDueOrOverdue[\s\S]{0,600}86400000\) <= 0/.test(dj) ? ok('守卫：已到期判定与徽章同口径（本地零点日差 <= 0）') : bad('判定口径与徽章不一致!');
+    (dj.match(/planIsDueOrOverdue\(t\.createdAt\)/g) || []).length === 2 ? ok('守卫：日历明细双处接入（整月+单日）') : bad('日历接入处数不对!');
+    dj.includes('function showCompleteOrDelayModal') ? ok('守卫：「完成/延期」弹窗函数在') : bad('弹窗函数缺失!');
+    /showCompleteOrDelayModal[\s\S]{0,2200}markPlannedComplete\(tripId, tripName\)/.test(dj) ? ok('守卫：「完成」走既有 markPlannedComplete（转记录页+庆祝卡）') : bad('「完成」未接既有流程!');
+    /showCompleteOrDelayModal[\s\S]{0,2200}openPlannedDetailModal\(tripId, 'edit'\)/.test(dj) ? ok('守卫：「延期」打开既有编辑计划弹窗') : bad('「延期」未打开编辑弹窗!');
+    (dj.match(/data-complete-delay/g) || []).length >= 6 ? ok('守卫：「完成/延期」渲染与事件绑定齐全') : bad('按钮/事件缺失!');
+    /data-complete="' \+ t\.id/.test(dj) ? ok('守卫：未过期计划保留原「完成」按钮（不受影响）') : bad('未过期计划按钮被改动!');
+    dj.includes('width:calc(100vw - 44px);max-width:400px;box-sizing:border-box;') ? ok('守卫：「完成/延期」弹窗宽度显式锁定') : bad('弹窗宽度未锁（会随内容跳）!');
+    (!/showInfoMessage\('已自动上报/.test(sj) && /\[静默\] 已自动上报崩溃报告/.test(sj)) ? ok('守卫：崩溃上报不再弹提示（改静默 + 留诊断日志）') : bad('崩溃上报提示仍在弹!');
+} catch (e) { bad('5o2 检查失败: ' + e.message); }
+
 // 5p. 2026-09-08 崩溃采集/上报 + 隐私政策（设计语言内）
 console.log('-- 5p. 崩溃上报与隐私 --');
 try {

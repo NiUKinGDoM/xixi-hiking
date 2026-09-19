@@ -153,6 +153,102 @@ function serverUp() {
   ok('计划日历渲染(#plannedCalendarView 可见非空)', calState.mode === 'calendar' && calState.calDisp !== 'none' && calState.calLen > 100, JSON.stringify(calState));
   await shotAndCheck('02-plans-calendar-light', '#plannedCalendarView');
 
+  // ★2026-09-20 日历「完成/延期」：过期/当天=「完成/延期」、未过期=「完成」（用户需求）
+  const codBtnState = await page.evaluate(() => {
+    try {
+      const iso = (n) => { const d = new Date(); const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x.toISOString(); };
+      plannedTrips = [
+        { id: 'cod_ov', name: '过期计划E2E', elevation: 1000, difficulty: 2, createdAt: iso(-2) },
+        { id: 'cod_td', name: '今天计划E2E', elevation: 1100, difficulty: 3, createdAt: iso(0) },
+        { id: 'cod_fu', name: '未来计划E2E', elevation: 1200, difficulty: 4, createdAt: iso(6) }
+      ];
+      calendarViewYear = new Date().getFullYear();
+      calendarViewMonth = new Date().getMonth();
+      calendarSelKey = null;
+      try { switchTab('plans'); } catch (e) { }
+      renderPlannedCalendar();
+      const box = document.getElementById('calDayDetail');
+      const out = [];
+      if (box) {
+        box.querySelectorAll('[data-complete], [data-complete-delay]').forEach((b) => {
+          out.push({ txt: b.textContent.trim(), delay: b.hasAttribute('data-complete-delay') });
+        });
+      }
+      return out;
+    } catch (e) { return 'err:' + e.message; }
+  });
+  ok('日历「完成/延期」：过期+当天为「完成/延期」、未过期为「完成」',
+    Array.isArray(codBtnState) && codBtnState.length === 3
+      && codBtnState.filter((x) => x.delay && x.txt === '完成/延期').length === 2
+      && codBtnState.filter((x) => !x.delay && x.txt === '完成').length === 1,
+    JSON.stringify(codBtnState));
+  const codModalState = await page.evaluate(() => {
+    try {
+      const b = document.querySelector('[data-complete-delay="cod_ov"]');
+      if (!b) return { err: 'no-btn' };
+      b.click();
+      const r = {
+        hasComplete: !!document.getElementById('cod-complete'),
+        hasDelay: !!document.getElementById('cod-delay'),
+        hasCancel: !!document.getElementById('cod-cancel'),
+        msg: (document.querySelector('.confirm-modal-message') || {}).textContent || ''
+      };
+      document.getElementById('cod-delay').click();
+      const ttl = Array.from(document.querySelectorAll('.rd-tt')).some((n) => n.textContent.indexOf('编辑计划') >= 0);
+      r.editOpen = !!document.getElementById('pd-body') && ttl;
+      try { closeOpenModals(); } catch (e) { }
+      return r;
+    } catch (e) { return { err: e.message }; }
+  });
+  ok('点「完成/延期」→ 弹窗三按钮；选「延期」→ 打开编辑计划弹窗',
+    !codModalState.err && codModalState.hasComplete && codModalState.hasDelay && codModalState.hasCancel
+      && codModalState.editOpen && codModalState.msg.indexOf('过期计划E2E') >= 0,
+    JSON.stringify(codModalState));
+  const codDoneState = await page.evaluate(() => {
+    try {
+      const before = (records || []).length;
+      showCompleteOrDelayModal('cod_ov', '过期计划E2E');
+      document.getElementById('cod-complete').click();
+      const t = document.querySelector('[data-testid="tab-records"]');
+      return {
+        before: before,
+        after: (records || []).length,
+        plans: (plannedTrips || []).length,
+        tabActive: t ? (t.className || '').indexOf('active') >= 0 : false,
+        recName: (records || []).length ? records[records.length - 1].name : ''
+      };
+    } catch (e) { return { err: e.message }; }
+  });
+  ok('点「完成」→ 记录 +1、计划移除、自动切到记录页',
+    !codDoneState.err && codDoneState.after === codDoneState.before + 1 && codDoneState.tabActive
+      && codDoneState.plans === 2 && codDoneState.recName === '过期计划E2E',
+    JSON.stringify(codDoneState));
+
+  // ★本段自造数据且触发了「完成→庆祝卡」，必须收尾恢复干净状态：
+  //   否则庆祝卡会遮住后续用例的点击 → Playwright 超时 → E2E 以异常退出（exit 2，非断言失败，排查时极易误导）。
+  await page.evaluate(() => {
+    // 三类残留层都**不在 closeOpenModals 管辖内**，必须逐个清：
+    //   ① 庆祝卡 #celebrateOverlay（完成计划时弹）
+    //   ② 计划编辑弹窗 .record-detail-modal（点「延期」会打开；它是“独立层、子弹窗可叠加”设计 → 不归 closeOpenModals）
+    //   ③ 普通确认弹窗 .confirm-modal
+    //   漏掉任何一个都会遮住后续点击（intercepts pointer events）→ Playwright 超时 → E2E 以 exit 2 异常退出（非断言失败，排查时极易误读）
+    try { if (typeof plannedEditingId !== 'undefined' && plannedEditingId) cancelPlannedEdit(); } catch (e) { }
+    try { closeOpenModals(true); } catch (e) { }
+    const celOv = document.getElementById('celebrateOverlay');
+    if (celOv) { try { celOv.remove(); } catch (e) { } }
+    document.querySelectorAll('.confirm-modal, .record-detail-modal').forEach((n) => { try { n.remove(); } catch (e) { } });
+    try {
+      records = (records || []).filter((r) => r.name !== '过期计划E2E');
+      plannedTrips = [];
+      saveToStorage();
+      savePlannedTripsToStorage();
+      renderTable();
+      updateStatistics();
+      renderPlannedTripsTable();
+    } catch (e) { }
+  });
+  await page.waitForTimeout(500);
+
   console.log('== E2E: 记录 tab + 示例数据 ==');
   await page.locator('[data-testid="tab-records"]').click().catch(async () => { await page.evaluate(() => { try { switchTab('records'); } catch (e) {} }); });
   await page.waitForTimeout(500);

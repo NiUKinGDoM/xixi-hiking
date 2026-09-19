@@ -441,7 +441,9 @@ function maybeUploadCrashReport() {
                     if (window.XixiFileBridge && typeof window.XixiFileBridge.clearNativeCrashLog === 'function') window.XixiFileBridge.clearNativeCrashLog();
                     AppStore.setItem('hiking_crash_uploaded', today);
                 } catch (e3) { /* 忽略 */ }
-                if (typeof showInfoMessage === 'function') showInfoMessage('已自动上报一次崩溃报告');
+                // ★2026-09-20 用户反馈「有时打开应用会弹『已自动上报一次崩溃报告』」打扰 → 改为静默：
+                //   自动上报属于「事后通知」，不该打断用户正在做的事；上报记录仍留在诊断里（设置 → 关于应用 → 导出诊断），需要排查时再查。
+                try { console.error('[静默] 已自动上报崩溃报告（' + today + '）'); } catch (e6) { /* 忽略 */ }
             }
         }).catch(function () { /* 静默：网络/目录失败下轮再试 */ });
     } catch (e5) { /* 上报异常不影响启动 */ }

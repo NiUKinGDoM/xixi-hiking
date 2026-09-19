@@ -2932,6 +2932,20 @@ function renderPlannedCalendar() {
     }
 }
 
+// ★2026-09-20 计划「已到期」判定（日历明细「完成/延期」按钮用）：
+//   与下条 planRelBadgeHtml 同一套「按本地零点算日差」的算法 —— 过期(<0) 或 当天(=0) 视为已到期。
+//   为什么抽成函数：按钮文案与徽章必须同一口径，否则会出现「标着已过期 3 天、按钮却还是普通完成」的不一致。
+function planIsDueOrOverdue(createdAt) {
+    try {
+        if (!createdAt) return false;
+        var dd = new Date(createdAt);
+        if (isNaN(dd.getTime())) return false;
+        var now0 = new Date();
+        var t0 = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
+        var d0 = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()).getTime();
+        return Math.round((d0 - t0) / 86400000) <= 0;
+    } catch (e) { return false; }
+}
 // ★2026-09-07 计划相对今天状态徽章（列表行/日历整月/日历单日三处通用）：过期=红「已过期 N 天」、今天=靛蓝「今天」、明天=天蓝「明天」，后天起无徽章
 function planRelBadgeHtml(createdAt) {
     try {
@@ -2988,7 +3002,9 @@ function renderCalMonthDetail() {
                 '<div style="min-width:0;"><div style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">' + escapeHtml(t.name) + '</span>' + planRelBadgeHtml(t.createdAt) + '</div>' +
                 '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-                '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>' +
+                (planIsDueOrOverdue(t.createdAt)
+                    ? '<button class="check-go-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
+                    : '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
                 '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
                 '</div></div>';
         });
@@ -2999,6 +3015,14 @@ function renderCalMonthDetail() {
             var id = b.getAttribute('data-complete');
             var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
             showConfirmCompleteModal(id, t2 ? t2.name : '');
+        });
+    });
+    // ★2026-09-20 已到期（过期/当天）→「完成/延期」：先问一句再决定，避免日期到了但还没走就被转成记录
+    box.querySelectorAll('[data-complete-delay]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = b.getAttribute('data-complete-delay');
+            var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
+            showCompleteOrDelayModal(id, t2 ? t2.name : '');
         });
     });
     box.querySelectorAll('[data-del]').forEach(function (b) {
@@ -3049,7 +3073,9 @@ function renderCalDayDetail(key) {
             '</div>' +
             '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
             '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-            '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>' +
+            (planIsDueOrOverdue(t.createdAt)
+                ? '<button class="check-go-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
+                : '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
             '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
             '</div></div>';
     });
@@ -3067,6 +3093,14 @@ function renderCalDayDetail(key) {
             var id = b.getAttribute('data-complete');
             var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
             showConfirmCompleteModal(id, t2 ? t2.name : '');
+        });
+    });
+    // ★2026-09-20 已到期（过期/当天）→「完成/延期」：先问一句再决定（与整月明细同款）
+    box.querySelectorAll('[data-complete-delay]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var id = b.getAttribute('data-complete-delay');
+            var t2 = (plannedTrips || []).find(function (x) { return x.id === id; });
+            showCompleteOrDelayModal(id, t2 ? t2.name : '');
         });
     });
     box.querySelectorAll('[data-del]').forEach(function (b) {
@@ -4306,6 +4340,35 @@ function addNewPlannedTrip() {
     openPlannedDetailModal(newTrip.id, 'edit');
 }
 
+// ★2026-09-20 「完成 / 延期」二选一弹窗（用户需求）：日历视图里**已到期**（过期或当天）的计划，
+//   按钮从「完成」改为「完成/延期」—— 先问一句再决定，避免「日子到了但实际还没走」被一键转成记录。
+//   完成 → 走既有 markPlannedComplete（切记录页 + 庆祝卡 + 可继续补全）；延期 → 打开既有编辑计划弹窗改日期。
+function showCompleteOrDelayModal(tripId, tripName) {
+    closeOpenModals();
+    var modal = document.createElement('div');
+    modal.className = 'confirm-modal modal-backdrop-animate';
+    modal.innerHTML =
+        '<div class="confirm-modal-content modal-fade-scale" style="width:calc(100vw - 44px);max-width:400px;box-sizing:border-box;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event_repeat</span>完成 / 延期</div>' +
+        '<div class="confirm-modal-message">「' + escapeHtml(tripName || '未命名计划') + '」的日子到了。已经走完就点「完成」，会转入徒步记录；还没走就点「延期」，改个新日期。</div>' +
+        '<div style="display:flex;gap:10px;margin-top:12px;">' +
+        '<button class="glass-btn ripple-effect" id="cod-complete" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">完成</button>' +
+        '<button class="glass-btn ripple-effect" id="cod-delay" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">延期</button>' +
+        '</div>' +
+        '<div class="confirm-modal-buttons" style="margin-top:12px;">' +
+        '<button class="confirm-btn-cancel ripple-effect" id="cod-cancel" style="flex:1;">取消</button>' +
+        '</div>' +
+        '</div>';
+    document.body.appendChild(modal);
+    var close = function () { try { document.body.removeChild(modal); } catch (e) { /* 已移除 */ } };
+    var cBtn = document.getElementById('cod-complete');
+    var dBtn = document.getElementById('cod-delay');
+    var xBtn = document.getElementById('cod-cancel');
+    if (cBtn) cBtn.addEventListener('click', function () { close(); markPlannedComplete(tripId, tripName); });
+    if (dBtn) dBtn.addEventListener('click', function () { close(); openPlannedDetailModal(tripId, 'edit'); });
+    if (xBtn) xBtn.addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+}
 function showConfirmCompleteModal(tripId, tripName) {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');

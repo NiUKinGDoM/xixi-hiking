@@ -58,6 +58,13 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
             window.__getStateAll = function () { return { records: (records || []), plannedTrips: (plannedTrips || []) }; };
             window.__setSearch = function (q) { searchQuery = q; };
             window.__testSetPlanned = function (a) { plannedTrips = a; };
+            // ★2026-09-20 日历「完成/延期」探针桥（脚本作用域函数只能在 eval 上下文里调）
+            window.__codCalc = function (iso) { return planIsDueOrOverdue(iso); };
+            window.__codShow = function (id, name) { showCompleteOrDelayModal(id, name); };
+            window.__codRenderCal = function (y, m) { calendarViewYear = y; calendarViewMonth = m; calendarSelKey = null; try { switchTab('plans'); } catch (e) {} renderPlannedCalendar(); };
+            window.__codButtons = function () { var box = document.getElementById('calDayDetail'); var r = []; if (box) { box.querySelectorAll('[data-complete], [data-complete-delay]').forEach(function (b) { r.push({ txt: (b.textContent || '').trim(), delay: b.hasAttribute('data-complete-delay') }); }); } return r; };
+            window.__codClose = function () { try { closeOpenModals(); } catch (e) {} };
+            window.__codClick = function (sel) { var e = document.querySelector(sel); if (e) e.click(); };
 
             window.__getState = function () {
                 return { editingId: editingId, editingPhotoIds: (editingPhotoIds || []).slice(), records: (records || []).slice() };
@@ -1105,6 +1112,45 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         window.localStorage.removeItem('hiking_milestones');
         window.localStorage.removeItem('hiking_milestones_seen');
     } catch (e) { console.log('ERR-ms3:', e.message); }
+
+    // ---- 2026-09-20 日历「完成/延期」（用户需求）----
+    try {
+        const isoDay = (n) => { const d = new Date(); const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x.toISOString(); };
+        assert('到期判定：昨天=已到期', window.__codCalc(isoDay(-1)) === true, '');
+        assert('到期判定：今天=已到期', window.__codCalc(isoDay(0)) === true, '');
+        assert('到期判定：明天=未到期', window.__codCalc(isoDay(1)) === false, '');
+        assert('到期判定：空值/无效值安全返回 false', window.__codCalc('') === false && window.__codCalc('not-a-date') === false, '');
+        const dNow = new Date();
+        window.__testSetPlanned([
+            { id: 'cod_ov', name: '过期测试山', elevation: 1000, difficulty: 2, createdAt: isoDay(-2) },
+            { id: 'cod_fu', name: '未来测试山', elevation: 1100, difficulty: 3, createdAt: isoDay(6) }
+        ]);
+        window.__codRenderCal(dNow.getFullYear(), dNow.getMonth());
+        const codBtns = window.__codButtons();
+        assert('日历明细按钮数正确(2 条计划)', codBtns.length === 2, JSON.stringify(codBtns));
+        const codOv = codBtns.filter((b) => b.delay)[0];
+        const codFu = codBtns.filter((b) => !b.delay)[0];
+        assert('过期计划按钮=「完成/延期」', !!codOv && codOv.txt === '完成/延期', JSON.stringify(codBtns));
+        assert('未来计划按钮仍为「完成」', !!codFu && codFu.txt === '完成', JSON.stringify(codBtns));
+        window.__codShow('cod_ov', '过期测试山');
+        assert('弹窗三按钮在(完成/延期/取消)', !!document.getElementById('cod-complete') && !!document.getElementById('cod-delay') && !!document.getElementById('cod-cancel'), '');
+        assert('弹窗文案带计划名', text('.confirm-modal-message').indexOf('过期测试山') >= 0, text('.confirm-modal-message').slice(0, 40));
+        window.__codClick('#cod-cancel');
+        assert('点取消后弹窗关闭', !document.getElementById('cod-complete'), '');
+        window.__codShow('cod_ov', '过期测试山');
+        window.__codClick('#cod-delay');
+        let codEditTitle = false;
+        document.querySelectorAll('.rd-tt').forEach(function (n) { if ((n.textContent || '').indexOf('编辑计划') >= 0) codEditTitle = true; });
+        assert('点「延期」→ 打开「编辑计划」弹窗', !!document.getElementById('pd-body') && codEditTitle, 'pd-body=' + !!document.getElementById('pd-body'));
+        window.__codClose();
+        const codRecBefore = window.__getStateAll().records.length;
+        window.__codShow('cod_ov', '过期测试山');
+        window.__codClick('#cod-complete');
+        const codSt = window.__getStateAll();
+        assert('点「完成」→ 记录 +1 且计划移除', codSt.records.length === codRecBefore + 1 && codSt.plannedTrips.length === 1, 'rec=' + codSt.records.length + ' plans=' + codSt.plannedTrips.length);
+        window.__codClose();
+    } catch (e) { console.log('ERR-cod:', e.message); }
+
     console.log('\n===== 结果: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
     process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL:', e.message); process.exit(1); });
