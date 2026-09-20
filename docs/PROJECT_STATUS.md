@@ -25,8 +25,11 @@ NODE="C:/Users/NIU-XC/.workbuddy/binaries/node/versions/22.22.2-3/node.exe"   # 
 # ① 改代码：一律走补丁工具（禁 heredoc 拼含转义的 JS）
 node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一校验+写后语法校验+失败还原
 
+# ★发版前必跑：列出「已发布版 vs 当前工作区」改动清单（写更新日志时逐项核对；ship prepare 也会自动打印）
+node tools/versiondiff.js             # 完整清单（文件 + 行数 + 关键新增行）；范围同 ghsync 同步清单
+node tools/versiondiff.js --strict    # 有待发改动时退出码 1（用于「发布后应干净」校验）
 # ② 跑测试：一条命令跑全部（替代反复单跑）
-node tools/checkall.js            # 7 套 / 687 项 汇总（smoke 20 + iOS 10 + test 219 + test-ui 30 + P0P3 271 + E2E 101 + 弹窗宽度 36）
+node tools/checkall.js            # 7 套 / 795 项 汇总（smoke 20 + iOS 10 + test 272 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38）
 node tools/checkall.js --fast     # 只跑前三套（秒级，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
 node tools/smoke.js               # 工具链冒烟（20 项：语法+安全执行；已并入 checkall 第一套）
@@ -36,8 +39,11 @@ node e2e/inspect.js --inline "return typeof showInfoMessage"
 node e2e/inspect.js --file tools/snippets/x.js [--dark] [--shot x.png]
 
 # ④ 视觉回归 / 刷基线
-node e2e/run.js            # 101 项，像素差 ≤0.5%
+node e2e/run.js            # 126 项，像素差 ≤0.5%（概览页单张容差 1%：该页玻璃卡密集且带入场动画）
 node e2e/run.js --update   # 界面确属预期变化时刷基线
+# ★刷基线前先看差异指纹：变亮/变暗各半 + 中部零差异 = 动画中间态（等待不足），不是破版
+# ★若改过截图等待时长（run.js 里的 waitForTimeout），必须重新刷基线，否则终态 vs 中间态必然大差异
+# ★刷完必须复跑一次 node e2e/run.js 验证稳定（详见 memory/REFERENCE.md「硬教训细则」）
 
 # ⑤ 发布构建：一条命令（同步9文件+assets → obf → hash → 原生文件 → gradle）
 node tools/release.js              # 全流程
@@ -181,6 +187,8 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
 > 第 1 行 `- **正式版 v1.2.2.5**（versionCode 269，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.5 更新（**例行五项优化**：①设计统一性 ②底层代码清理 ③流畅度帧率 ④文档随版本同步 ⑤查 bug —— 用户指令「做五项优化，之后同步」）：
+  - **★随版交付的新增（用户 2026-09-20 点名的 A+B：上一批改完未单独发版，随本版一起进包）**：**列表视图的到期计划也能「完成 / 延期」** —— 到期（过期/当天）计划右侧图标由 `check`（✓）换为 **`event_repeat`（↻）** + `title="完成 / 延期"`，点击弹「完成/延期」（与日历同一弹窗）；**未到期仍是 ✓** → 原「确认完成」弹窗。按钮 `id` / `data-testid` 未动（选择器零改动）；判定复用 `planIsDueOrOverdue()`（与徽章同口径）→ **列表/日历两视图行为一致**（修复 P0：同一计划切视图行为不一致）。新增守卫 10 条（源码级 4 + 运行时 5 + 真实浏览器 1）。
+    - **⚠ 教训（已补记）**：写本版更新日志时**漏写了这条新增**（App 内日志与本文档均已补记）—— 根因：把跨版未发的 www 改动当成「上一批已报告」，写文案时没有对照「已发布版 vs 当前工作区」的完整 diff 逐项核对。已补工具 **`tools/versiondiff.js`**（机械列出已发布版差异清单）并接入 `ship.js prepare`（注入文案前全量打印）。
   - **① 设计统一性** —— `designcheck` 四维体检只剩 1 处硬性偏离：`.chk-row input`（同意勾选框）圆角 **5px** 不在档位表内 → 保留原视觉、**登记进规范表** `radiusExtra`（注明「勾选框」用途），体检恢复全绿。四维其余项全 ✅（圆角档位 / 字体 / 玻璃配方 `blur(2px) saturate(150%)` ×40 / 层级 z=-1~300）。
     - **★顺带查出并修掉一个真问题（深色弹窗标题图标对比度）**：弹窗标题的图标色是**内联写死**的（5 处用 `#4f46e5`），深色下不随主题变 —— 实测算得深色弹窗合成底（≈rgb(20,30,52)）上对比度仅 **2.64:1**，不足「图形元素 ≥3:1」。同批色值里绿/琥珀/红都达标（7.29 / 7.73 / 4.41:1），**只有靛蓝不合格**。
     - 修法：**1 行 CSS 属性选择器精准命中**，不动 JS —— `body.dark-mode .confirm-modal-title .material-icons[style*="#4f46e5"] { color: #a5b4fc !important; }`（浅靛 **8.33:1**）；用 `[style*=]` 避免误伤已达标图标。实测深色 2.64→**8.33:1** ✓、浅色仍是 `#4f46e5` 零变化 ✓。
@@ -196,6 +204,13 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
     - E2E 视觉基线稳定性：`08-overview-dark` 在 0.14%~0.57% 之间抖动（阈值 0.5%）→ 差异分析显示**集中在带 `fadeInUp` 入场动画的卡片区、无动画的热力图区零差异** = 动画终态亚像素抖动，非破版 → 给 `shotAndCheck` 增加 **`opts.tol`** 单张容差，概览页用 **1%**，其余 9 张仍严格 0.5%；复跑 08 = **0.00%** ✓；
     - 修正 3 处注释/文案错字（「靶蓝」→「靛蓝」，误用 U+9776）。
   - **守卫** —— test.js 270 → **271**（深色图标加深·强断言：校验**完整 CSS 规则串**而非裸色值 —— 首次写成裸 `#a5b4fc !important` 时项目里已有 3 处同色，属假阳性，已改）；E2E 125 → **126**（深色下弹窗标题图标 computed 色 = `rgb(165, 180, 252)`）。**反向验证**：把规则色值临时改成 `#818cf8` → test.js 报红「深色弹窗标题靛蓝图标未加深!」→ 还原后 271/0 ✓。
+  - **★同日修正重发（版本号不变，用户 2026-09-20 指示「继续发 1.2.2.5 就行，重新构建和更新日志，再发」）**：
+    - ① **不能跑 `ship.js prepare`**（内含 bump，会变成 v1.2.2.6）→ 手动补跑它的各步：`prev-snapshot.js`（回退点）→ `sw.js` CACHE_NAME **v43→v44**（手动，否则网页版吃旧缓存）→ `checkall` → `audit` → `release.js` → `verify-apk.js`。
+    - ② 发布用 **`ghsync -m "release: v1.2.2.5 (rebuild: 补全更新日志 + sw v44)" --push` + `ghrelease.js v1.2.2.5 <Release文案>`** —— `ghrelease` 天生幂等：**复用已有 Release（id 392276481）+ PATCH 更新 body（HTTP 200）+ 删同名旧 asset（575857105 → 204）+ 重传**，最终**只有 1 个 asset**（2509851 B），服务端 digest sha256 与本地一致 ✓。
+    - ③ 三份 notes 存档同步更新（`1.2.2.5-builtin.txt` 从 `app-core.js` **原样提取**保证逐字一致、`1.2.2.5-doc.txt` 补 A+B 与实测项数、`1.2.2.5-release.md` 重写为「修正重发」版）。
+    - ④ 复核网页版**不能看版本号**（同号）→ 改用**内容指纹**：`sw.js` 的 `CACHE_NAME = xixi-hiking-v44` + `app-core.js` 含补记文本，实测第一次即命中 ✓。（顺带记：CF 会拦 Python 默认 UA → `urllib` 需带浏览器 UA，否则 403）
+    - ⑤ **已知代价**：手机上若已装过上午那版 v1.2.2.5，App 内「检查更新」**不会提示**（版本号相同）→ 需手动下载本页 APK 覆盖安装；Release 说明已写明。
+    - ⑥ 回退点 `backups/prev-1.2.2.5/（11 文件）已拍；镜像 push `c4cb680..136c9eb`（6 files, +199/−6）；自检 **795 项全绿**；APK 验证 **14 项全过**；audit 残留物 0/0/0。
   - **实测** —— 全量自检 792 → **794 项全绿**（smoke 20 + iOS 10 + test **271** + test-ui 30 + P0P3 **299** + E2E **126** + 弹窗宽度 38）；audit 残留物 0/0/0；设计体检全绿。
 - **正式版 v1.2.2.4**（versionCode 268，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.4 更新（**计划到期「完成/延期」+ 崩溃上报提示改静默** —— 用户三项反馈：「在计划的日历视图，针对过期的和当天的计划把完成按钮改为『完成/延期』，完成的话直接转到记录页，延期的话跳到编辑弹窗重新编辑时间」「有时候打开应用会弹出反馈错误报告的提示，检查下是为啥」「iOS 网页打开震动后，没反应」）：
