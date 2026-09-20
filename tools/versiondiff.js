@@ -17,6 +17,7 @@
  *   node tools/versiondiff.js            # 完整清单（文件 + 行数 + 关键新增行提示）
  *   node tools/versiondiff.js --brief    # 只列文件级清单（ship.js prepare 调用这个）
  *   node tools/versiondiff.js --strict   # 有差异时退出码 1（用于「发布后应干净」校验）
+ *   node tools/versiondiff.js --notes    # 同时把清单留档到 tools/notes/<当前版本>-diff.txt（发版留档，事后可回溯「当时清单 vs 当时文案」）
  *
  * 退出码：0 = 已列出；1 = --strict 且有差异
  *
@@ -32,6 +33,7 @@ const GH = path.join(PROJ, 'backups/github-同步目录/xixi-hiking');
 
 const BRIEF = process.argv.includes('--brief');
 const STRICT = process.argv.includes('--strict');
+const NOTES = process.argv.includes('--notes');
 
 // ---- 同步清单：**必须与 tools/ghsync.js 保持一致**（那里是唯一权威）----
 const WWW_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
@@ -168,6 +170,17 @@ if (!total) {
 console.log(out.join('\n').replace(/\n+$/, ''));
 console.log('\n' + '='.repeat(64));
 console.log('共 ' + total + ' 个文件有差异，其中**应用代码 www/ ' + appChanged + ' 个**');
+if (NOTES) {
+    // ★2026-09-20 留档：把本次清单存成 tools/notes/<当前版本>-diff.txt
+    //   用途：事后可对照「当时的清单」与「当时的文案」，查出是否有整条漏写（v1.2.2.5 漏写 A+B 就是这类）。
+    const diffNote = path.join(__dirname, 'notes', 'v' + ver(path.join(ROOT, 'www/app-core.js')) + '-diff.txt');
+    const head = ['本次发版改动清单（tools/versiondiff.js --notes 自动生成），写更新日志时需逐行核对',
+        '甲方：已发布版 v' + ver(path.join(GH, 'www/app-core.js')) + '  乙方：当前工作区 v' + ver(path.join(ROOT, 'www/app-core.js')),
+        '清单来源时间：' + new Date().toISOString().slice(0, 16).replace('T', ' '),
+        '★规则：下面每一行都要能对应到文案里的一条；对不上就要么补文案、要么在【内部】里说明为何不用写。', ''];
+    fs.writeFileSync(diffNote, head.concat(out.map((l) => l.replace(/\s+$/, ''))).join('\n') + '\n', 'utf8');
+    console.log('清单已留档：' + path.relative(PROJ, diffNote).replace(/\\/g, '/'));
+}
 if (appChanged) {
     console.log('⚠ 写更新日志前请逐项核对下面两问：');
     console.log('   ① www/ 每个改动文件，在本版文案里都有对应条目吗？');

@@ -66,6 +66,11 @@ node tools/ioscheck.js      # ★iOS 网页版同步适配体检（2026-09-14 �
 # ⑧ 发布编排（一条命令串起全流程，任一步失败即停）
 node tools/ship.js prepare --builtin <BUILTIN文案> --doc <文档条目文案>   # 核对→快照→bump→BUILTIN→文档→自检→审计→构建→APK验证
 node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同步push→建Release+上传+下载验证→校验 pages.dev
+# ★补正类改动（文案 / 日志 / 文档 / 守卫；不影响用户可见功能行为）→ **一律「同号修正重发」，不升号**（用户 2026-09-20 定：「以后像这种的，都同号修正重发」）
+#   ★禁跑 prepare（含 bump）→ 手动：prev-snapshot → sw CACHE_NAME+1 → checkall → audit（先清 .latest.png）→ release.js → verify-apk.js
+#   ★发布：ghsync -m "release: vX (开发者可读的修正说明)" --push  +  ghrelease.js vX <Release文案>（幂等：复用 Release + PATCH body + 删旧 asset 重传）
+#   ★网页版复核看**内容指纹**（sw CACHE_NAME + 新增文本）而非版本号；手机同号不会提示更新 → Release 说明里必写“请手动下载覆盖安装”
+#   细则：memory/REFERENCE.md「同号修正重发流程」
 
 # ⑨ 发布子工具（可单独用）
 node tools/builtin.js <版本> <文案文件>        # BUILTIN 更新日志注入（读真实换行、内部转字面 \n，防坑；幂等）

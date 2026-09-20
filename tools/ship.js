@@ -110,9 +110,10 @@ if (mode === 'prepare') {
   // ★2026-09-20 写更新日志前的核对清单（纪律：每版必看）
   //   背景：v1.2.2.5 的 A+B「列表视图 完成/延期」随包交付了，但写文案时漏记（已事后补记）。
   //   这里把「已发布版 vs 当前工作区」的完整 diff 全量打出，请逐项确认文案都覆盖到。
+  //   同时自动留档成 tools/notes/<版本>-diff.txt（事后可回溯「当时清单 vs 当时文案」）。
   if (!DRY) {
     console.log('\n▶ 本版改动清单（对照已发布版 · 写更新日志需逐项核对）');
-    const vd = spawnSync(NODE, ['tools/versiondiff.js'], { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 });
+    const vd = spawnSync(NODE, ['tools/versiondiff.js', '--notes'], { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 });
     const vout = ((vd.stdout || '') + (vd.stderr || '')).trim();
     console.log(vout ? vout.split('\n').map((l) => '   ' + l).join('\n') : '   (无输出)');
   }
