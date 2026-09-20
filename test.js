@@ -351,6 +351,14 @@ try {
     (function () {
         const ih2 = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
         ih2.includes('body.dark-mode .confirm-modal-title .material-icons[style*="#4f46e5"] { color: #a5b4fc !important; }') ? ok('守卫：深色弹窗标题靛蓝图标已加深（属性选择器精准命中）') : bad('深色弹窗标题靛蓝图标未加深!');
+
+        // ★2026-09-20 更新日志「v1.2.2.5 条目」必须写明随版交付的列表视图「完成 / 延期」
+        //   背景：A+B 随 v1.2.2.5 一起进包，但写文案时漏记 → 事后补记；本守卫防止以后编辑该条目时又把这半句删掉
+        //   ★首版断言只查「列表视图」三个字 → 条目正文里本来就有（「以前列表视图只有…」），删掉小标题也能通过 = **假阳性**；现改为校验「完整小标题 + 【新增】分组」，反向验证已报红
+        const ac5 = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+        const mC = ac5.match(/'v1\.2\.2\.5': '([\s\S]*?)',\s*\n\s*'v1\.2\.2\.4'/);
+        const tC = mC ? mC[1] : '';
+        tC.includes('【新增】') && tC.includes('- **列表视图的到期计划也能「完成 / 延期」了**') ? ok('守卫：v1.2.2.5 更新日志含列表视图「完成 / 延期」补记') : bad('v1.2.2.5 更新日志缺列表视图补记！');
     })();
 } catch (e) { bad('5o2 检查失败: ' + e.message); }
 

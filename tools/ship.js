@@ -107,6 +107,15 @@ if (mode === 'prepare') {
     console.log('   ✓ xixi-hiking-v' + swM[1] + ' → ' + nextCache + '（强制用户浏览器 SW 缓存失效，避免看到旧版）');
   }
   console.log('   → 新版本: v' + next.ver + ' (vc' + next.vc + ')');
+  // ★2026-09-20 写更新日志前的核对清单（纪律：每版必看）
+  //   背景：v1.2.2.5 的 A+B「列表视图 完成/延期」随包交付了，但写文案时漏记（已事后补记）。
+  //   这里把「已发布版 vs 当前工作区」的完整 diff 全量打出，请逐项确认文案都覆盖到。
+  if (!DRY) {
+    console.log('\n▶ 本版改动清单（对照已发布版 · 写更新日志需逐项核对）');
+    const vd = spawnSync(NODE, ['tools/versiondiff.js'], { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 });
+    const vout = ((vd.stdout || '') + (vd.stderr || '')).trim();
+    console.log(vout ? vout.split('\n').map((l) => '   ' + l).join('\n') : '   (无输出)');
+  }
 
   // ④ BUILTIN
   run('BUILTIN 更新日志注入', NODE, ['tools/builtin.js', next.ver, bAbs]);
