@@ -29,7 +29,7 @@ node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一�
 node tools/versiondiff.js             # 完整清单（文件 + 行数 + 关键新增行）；范围同 ghsync 同步清单
 node tools/versiondiff.js --strict    # 有待发改动时退出码 1（用于「发布后应干净」校验）
 # ② 跑测试：一条命令跑全部（替代反复单跑）
-node tools/checkall.js            # 7 套 / 795 项 汇总（smoke 20 + iOS 10 + test 272 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38）
+node tools/checkall.js            # 7 套 / 810 项 汇总（smoke 20 + iOS 10 + test 287 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38）
 node tools/checkall.js --fast     # 只跑前三套（秒级，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
 node tools/smoke.js               # 工具链冒烟（20 项：语法+安全执行；已并入 checkall 第一套）
