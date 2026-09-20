@@ -2463,7 +2463,11 @@ function importBackup() {
                     // ★2026-08-25 zip 压缩包备份（PK 头检测）
                     const u8 = new Uint8Array(ev.target.result);
                     if (u8.length > 4 && u8[0] === 0x50 && u8[1] === 0x4b && (u8[2] === 0x03 || u8[2] === 0x05)) {
-                        importZipBackup(u8);
+                        // ★2026-09-20 导入失败必须有反馈：此前 async 无 catch → 用户点「导入」后毫无反应
+                        importZipBackup(u8).catch(function (err2) {
+                            console.error('导入备份失败:', err2);
+                            showErrorMessage('备份文件已损坏，无法导入（可换一个备份文件重试）');
+                        });
                     } else {
                         const txt = new TextDecoder().decode(u8);
                         const payload = extractBackupData(txt);
@@ -2490,7 +2494,10 @@ async function importZipBackup(u8) {
         showErrorMessage('压缩包解析失败，缺少数据文件');
         return;
     }
-    const payload = JSON.parse(new TextDecoder().decode(files['xixi-data.json']));
+    // ★2026-09-20 包内数据文件可能损坏 → 明确提示（不再抛到 unhandledrejection 静默）
+    let payload = null;
+    try { payload = JSON.parse(new TextDecoder().decode(files['xixi-data.json'])); }
+    catch (eJ) { showErrorMessage('压缩包内的数据文件已损坏，无法导入'); return; }
     if (!payload || !Array.isArray(payload.records)) {
         showErrorMessage('压缩包数据格式不正确');
         return;

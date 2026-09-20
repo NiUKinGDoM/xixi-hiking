@@ -490,7 +490,7 @@ function recordEditBodyHTML(r) {
         // 海拔 + 难度 一行（★2026-09-04 1:1 均分，难度框显示「N级 档名」）
         '<div style="display:flex;gap:8px;">' +
         '<input type="number" id="edit-elevation-' + r.id + '" value="' + (r.elevation || 0) + '" data-testid="edit-elevation-' + r.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
-        '<input type="text" id="edit-difficulty-' + r.id + '" data-testid="edit-difficulty-' + r.id + '" value="' + diffLabel(r.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (r.difficulty || 3) + '" readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(r.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(r.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-difficulty-' + r.id + '\')" title="点击选择难度" enterkeyhint="done">' +
+        '<input type="text" id="edit-difficulty-' + r.id + '" data-testid="edit-difficulty-' + r.id + '" value="' + diffLabel(r.difficulty || 3) + '" class="edit-input input-glow difficulty-color"' + ' readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(r.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(r.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-difficulty-' + r.id + '\')" title="点击选择难度" enterkeyhint="done">' +
         '</div>' +
         // 心情/天气/同行人 一行
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
@@ -1585,7 +1585,7 @@ function saveRecord(id) {
     
     nameInput.classList.remove('border-red-500');   // ★2026-09-10 校验通过清红边（原来只加不删）
     record.name = nameInput.value.trim();
-    record.difficulty = parseInt(difficultyInput.value, 10) || 3;   // ★2026-09-17 NaN 兜底（空值会存成 NaN → JSON 变 null → 下轮被误删）
+    record.difficulty = Math.min(5, Math.max(1, parseInt(difficultyInput.value, 10) || 3));   // ★2026-09-17 NaN 兜底（空值会存成 NaN → JSON 变 null → 下轮被误删）★2026-09-20 与计划路径统一补 1~5 钳制
     record.elevation = Math.max(0, parseInt(elevationInput.value) || 0); // ★2026-08-29 与新增记录一致：负数防护
     
     // 保存记录时间
@@ -1613,13 +1613,15 @@ function saveRecord(id) {
 
     // ★2026-09-01 里程/用时（可选）：distance=km 数字（保留两位小数），duration=分钟（时/分双框换算）
     const distanceInput = document.getElementById(`edit-distance-${id}`);
-    if (distanceInput) record.distance = Math.round((parseFloat(distanceInput.value) || 0) * 100) / 100;
+    // ★2026-09-20 距离补下限/上限（此前只有 `|| 0` → 负数能进库；海拔/用时早已有防护）
+    if (distanceInput) record.distance = Math.min(10000, Math.max(0, Math.round((parseFloat(distanceInput.value) || 0) * 100) / 100));
     const durationHInput = document.getElementById(`edit-duration-h-${id}`);
     const durationMInput = document.getElementById(`edit-duration-m-${id}`);
     if (durationHInput || durationMInput) {
-        const hh = Math.max(0, parseInt((durationHInput ? durationHInput.value : '0'), 10) || 0);
+        // ★2026-09-20 时长加上限：小时框 0~23（与 input max 一致）、总时长 ≤1440 分钟（24 小时）
+        const hh = Math.min(23, Math.max(0, parseInt((durationHInput ? durationHInput.value : '0'), 10) || 0));
         const mm = Math.max(0, parseInt((durationMInput ? durationMInput.value : '0'), 10) || 0);
-        record.duration = hh * 60 + mm;
+        record.duration = Math.min(1440, hh * 60 + mm);
     }
 
     // ★2026-08-26 最后修改时间：每次保存记录都更新（合并取新用，区分于徒步日期 createdAt）
@@ -2865,7 +2867,7 @@ function renderPlannedCalendar() {
     var first = new Date(calendarViewYear, calendarViewMonth, 1);
     var startWeekday = first.getDay(); // 0=周日
     var daysInMonth = new Date(calendarViewYear, calendarViewMonth + 1, 0).getDate();
-    var todayKey = fmtPlanDateKey(new Date().toISOString());
+    var todayKey = fmtPlanDateKey(new Date());   // ★2026-09-20 直接传 Date：原写法绕 toISOString 一圈（结论相同，易被误读成 UTC 问题）
 
     var html = '';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
@@ -3668,7 +3670,7 @@ function wipeConfirmSecond() {
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>最后确认</div>' +
-            '<div class="confirm-modal-message" style="line-height:1.7;">这一步会<b>永久删除全部徒步数据与照片</b>，任何云端备份都不受影响（坚果云里的旧备份还在，需要时仍可恢复）。确定要抹掉吗？</div>' +
+            '<div class="confirm-modal-message" style="line-height:1.7;">这一步会<b>永久删除全部徒步数据与照片</b>，并<b>解除网盘绑定</b>；<b>云端备份文件不受影响</b>（坚果云里的旧备份还在，需要时仍可恢复）。确定要抹掉吗？</div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="wipe-cancel2">返回</button>' +
             '<button class="check-go-btn ripple-effect" id="wipe-go2" style="font-weight:700;">彻底抹掉</button></div></div>';
@@ -3688,10 +3690,25 @@ function wipeAllDataExecute() {
     try { savePlannedTripsToStorage(); } catch (e2) { /* 忽略 */ }
     // records 已空 → 全部照片成孤儿，一次清库（photoCollectOrphans 删除全部）
     try { photoCollectOrphans().catch(function () { /* 照片清理失败不强求 */ }); } catch (e3) { /* 忽略 */ }
-    // 引导/提醒/备份时间等本地标记也清（抹掉=全新开始，5 步引导会再次出现）
-    ['welcome_seen_v1', 'hiking_overdue_remind_date', 'hiking_overdue_care_date', 'hiking_local_backup_at'].forEach(function (k) {
+    // ★2026-09-20 抹除补全（此前只清 4 个键，与「全新开始」的承诺不符）：
+    //   ① 固定键：引导/提醒/备份时间 + 崩溃队列 + 里程碑（含"已看过"标记）+ 年度回顾标记 + 网盘绑定与同步状态
+    //   ② 前缀键：hiking_guide_seen_*（各页引导卡）、hiking_yr_auto_*（年度回顾自动展示）
+    //   ③ 网盘绑定一并解除（凭据不再留在设备上）；坚果云里的备份文件不受影响，需要时仍可恢复
+    ['welcome_seen_v1', 'hiking_overdue_remind_date', 'hiking_overdue_care_date', 'hiking_local_backup_at',
+        'hiking_crash_queue', 'hiking_milestones', 'hiking_milestones_seen',
+        'hiking_sync_config', 'hiking_sync_status', 'hiking_sync_files', 'hiking_pending_apk_tag'].forEach(function (k) {
         try { AppStore.removeItem(k); } catch (e4) { /* 忽略 */ }
     });
+    try {
+        var _wipePrefixes = ['hiking_guide_seen_', 'hiking_yr_auto_'];
+        var _wipeKeys = [];
+        for (var _wi = 0; _wi < localStorage.length; _wi++) { var _wk = localStorage.key(_wi); if (_wk) _wipeKeys.push(_wk); }
+        _wipeKeys.forEach(function (wk) {
+            if (_wipePrefixes.some(function (p) { return wk.indexOf(p) === 0; })) {
+                try { AppStore.removeItem(wk); } catch (e4b) { /* 忽略 */ }
+            }
+        });
+    } catch (e4c) { /* 忽略 */ }
     try { showSuccessMessage('已抹掉所有足迹，欢迎重新开始'); } catch (e5) { /* 忽略 */ }
     setTimeout(function () { try { location.reload(); } catch (e6) { /* 忽略 */ } }, 600);
 }
@@ -4210,7 +4227,7 @@ function plannedEditBodyHTML(t) {
         // ★2026-09-04 海拔+难度 1:1 提前（与记录页同构），日期时间移到其后
         '<div style="display:flex;gap:8px;">' +
         '<input type="number" id="edit-planned-elevation-' + t.id + '" value="' + (t.elevation || 0) + '" data-testid="edit-planned-elevation-' + t.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
-        '<input type="text" id="edit-planned-difficulty-' + t.id + '" data-testid="edit-planned-difficulty-' + t.id + '" value="' + diffLabel(t.difficulty || 3) + '" class="edit-input input-glow difficulty-color" data-diff="' + (t.difficulty || 3) + '" readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(t.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(t.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-planned-difficulty-' + t.id + '\')" title="点击选择难度" enterkeyhint="done">' +
+        '<input type="text" id="edit-planned-difficulty-' + t.id + '" data-testid="edit-planned-difficulty-' + t.id + '" value="' + diffLabel(t.difficulty || 3) + '" class="edit-input input-glow difficulty-color"' + ' readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(t.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(t.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-planned-difficulty-' + t.id + '\')" title="点击选择难度" enterkeyhint="done">' +
         '</div>' +
         '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         '<div style="display:flex;gap:10px;margin-top:2px;">' +
@@ -4933,7 +4950,8 @@ async function savePlannedTripsToStorage() {
                 plannedTrips = validTrips;
             }
             
-            await AppStore.setItem(PLANNED_TRIPS_KEY, { version: DATA_SCHEMA_VERSION, trips: validTrips });   // ★P0-2 写 schema 版本
+            const _okPlan = await AppStore.setItem(PLANNED_TRIPS_KEY, { version: DATA_SCHEMA_VERSION, trips: validTrips });   // ★P0-2 写 schema 版本
+            if (_okPlan === false) { showErrorMessage('计划保存失败（本机存储异常），请检查可用空间后重试'); return; }
             // ★2026-08-30 计划变更（增删改/完成）后同步系统闹钟：不打开 App 也能提醒
             syncPlanAlarmsBridge();
             // ★2026-08-31 计划数据变更后日历视图同步重绘
@@ -4990,6 +5008,17 @@ function normalizeRecordFields(rec) {
     var el = rec.elevation;
     if (typeof el !== 'number' || !isFinite(el)) el = parseFloat(el);
     rec.elevation = (isFinite(el) && el >= 0) ? el : 0;
+    // ★2026-09-20 补距离/用时净化（此前只净化难度/海拔 → 负数距离能一路进存储，污染总里程/统计/分享卡）
+    if (rec.distance !== undefined && rec.distance !== null) {
+        var ds = rec.distance;
+        if (typeof ds !== 'number' || !isFinite(ds)) ds = parseFloat(ds);
+        rec.distance = (isFinite(ds) && ds >= 0) ? Math.min(10000, Math.round(ds * 100) / 100) : 0;
+    }
+    if (rec.duration !== undefined && rec.duration !== null) {
+        var du = rec.duration;
+        if (typeof du !== 'number' || !isFinite(du)) du = parseInt(du, 10);
+        rec.duration = (isFinite(du) && du >= 0) ? Math.min(1440, Math.round(du)) : 0;
+    }
     return rec;
 }
 
@@ -5015,7 +5044,9 @@ async function saveToStorage() {
                 records = validRecords;
             }
             
-            await AppStore.setItem(STORAGE_KEY, { version: DATA_SCHEMA_VERSION, records: validRecords });   // ★P0-2 写 schema 版本
+            const _okRec = await AppStore.setItem(STORAGE_KEY, { version: DATA_SCHEMA_VERSION, records: validRecords });   // ★P0-2 写 schema 版本
+            // ★2026-09-20 写入失败必须让用户知道：此前下层吞异常 → 这里的提示是死代码，用户以为已保存 → 静默丢数据
+            if (_okRec === false) { showErrorMessage('数据保存失败（本机存储异常），请检查可用空间后重试'); return; }
             // ★自动同步（v1.4.10.1）：数据变更后若开启自动同步，延迟自动上传备份
             maybeAutoUploadAfterChange();
         } catch (error) {

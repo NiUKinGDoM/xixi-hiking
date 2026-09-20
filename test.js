@@ -685,5 +685,26 @@ const _crCheck = (name, hex) => {
  ['更新日志 tagTx', (allJs.match(/tagTx: IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]],
  ['照片占用 sub', (allJs.match(/sub: IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]],
  ['网盘信息 LB', (allJs.match(/const LB = IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]]].forEach(([n, h]) => _crCheck(n, h));
+// ★2026-09-20 彻查修复守卫（P1×3 + P2×3 + P3×4）—— 每一条都对应一个实测确认过的真问题
+const _fixData = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+const _fixCore = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+const _fixSync = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
+const _fixInit = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
+
+(/\u8ddd\u79bb\u8865\u4e0b\u9650\/\u4e0a\u9650/.test(_fixData) && /Math\.min\(10000, Math\.max\(0, Math\.round\(\(parseFloat\(distanceInput\.value\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u8bb0\u5f55\u8ddd\u79bb\u5df2\u52a0\u4e0b\u9650/\u4e0a\u9650\uff08\u8d1f\u6570\u4e0d\u518d\u5165\u5e93\uff09') : bad('\u8ddd\u79bb\u7f3a\u4e0b\u9650\u9632\u62a4\uff01');
+(/Math\.min\(1440, hh \* 60 \+ mm\)/.test(_fixData) && /Math\.min\(23, Math\.max\(0, parseInt\(\(durationHInput/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u7528\u65f6\u5df2\u52a0\u4e0a\u9650\uff08\u5c0f\u65f6\u226423\u3001\u603b\u65f6\u957f\u22641440\u5206\u949f\uff09') : bad('\u7528\u65f6\u7f3a\u4e0a\u9650\uff01');
+(/record\.difficulty = Math\.min\(5, Math\.max\(1, parseInt\(difficultyInput\.value, 10\) \|\| 3\)\);/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u8bb0\u5f55\u96be\u5ea6\u4e0e\u8ba1\u5212\u8def\u5f84\u53e3\u5f84\u7edf\u4e00\uff081~5 \u94b3\u5236\uff09') : bad('\u8bb0\u5f55\u96be\u5ea6\u7f3a 1~5 \u94b3\u5236\uff01');
+(/rec\.distance = \(isFinite\(ds\) && ds >= 0\)/.test(_fixData) && /rec\.duration = \(isFinite\(du\) && du >= 0\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u7edf\u4e00\u51c0\u5316\u5c42\u5df2\u8986\u76d6\u8ddd\u79bb/\u7528\u65f6\uff08\u9632\u810f\u6570\u636e\u4e0e\u65e7\u5907\u4efd\u5bfc\u5165\uff09') : bad('\u51c0\u5316\u5c42\u672a\u8986\u76d6\u8ddd\u79bb/\u7528\u65f6\uff01');
+(/setItem: function \(key, value\) \{[\s\S]{0,400}?return true;/.test(_fixCore) && /return false; \}/.test(_fixCore)) ? ok('\u5b88\u536b\uff1aAppStore.setItem \u8fd4\u56de\u5e03\u5c14\uff08\u4e0d\u518d\u541e\u5f02\u5e38\uff09') : bad('setItem \u4ecd\u5728\u541e\u5f02\u5e38\uff01');
+(/if \(_okRec === false\)\s*\{\s*showErrorMessage/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u8bb0\u5f55\u4fdd\u5b58\u5931\u8d25\u4f1a\u63d0\u793a\u7528\u6237\uff08\u9759\u9ed8\u4e22\u6570\u636e\u5df2\u4fee\uff09') : bad('\u4fdd\u5b58\u5931\u8d25\u4ecd\u65e0\u63d0\u793a\uff01');
+(/if \(_okPlan === false\)\s*\{\s*showErrorMessage/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u8ba1\u5212\u4fdd\u5b58\u5931\u8d25\u4f1a\u63d0\u793a\u7528\u6237') : bad('\u8ba1\u5212\u4fdd\u5b58\u5931\u8d25\u65e0\u63d0\u793a\uff01');
+(/hiking_sync_config/.test(_fixData) && /hiking_guide_seen_/.test(_fixData) && /hiking_yr_auto_/.test(_fixData) && /hiking_crash_queue/.test(_fixData) && /hiking_milestones_seen/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u62b9\u9664\u5df2\u8865\u6e05\u7f51\u76d8\u7ed1\u5b9a/\u5f15\u5bfc\u6807\u8bb0/\u91cc\u7a0b\u7891/\u5d29\u6e83\u961f\u5217') : bad('\u62b9\u9664\u6e05\u7406\u4e0d\u5b8c\u6574\uff01');
+(/\u89e3\u9664\u7f51\u76d8\u7ed1\u5b9a/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u62b9\u9664\u786e\u8ba4\u6587\u6848\u5df2\u8bf4\u660e\u4f1a\u89e3\u9664\u7f51\u76d8\u7ed1\u5b9a') : bad('\u62b9\u9664\u6587\u6848\u672a\u8bf4\u660e\u7f51\u76d8\u7ed1\u5b9a\uff01');
+(/importZipBackup\(u8\)\.catch\(/.test(_fixSync)) ? ok('\u5b88\u536b\uff1azip \u5bfc\u5165\u5931\u8d25\u4f1a\u63d0\u793a\uff08\u4e0d\u518d\u9759\u9ed8\uff09') : bad('zip \u5bfc\u5165\u4ecd\u65e0\u53cd\u9988\uff01');
+(/catch \(eJ\) \{ showErrorMessage\('\u538b\u7f29\u5305\u5185\u7684\u6570\u636e\u6587\u4ef6\u5df2\u635f\u574f/.test(_fixSync)) ? ok('\u5b88\u536b\uff1azip \u5185\u6570\u636e\u6587\u4ef6\u635f\u574f\u6709\u660e\u786e\u63d0\u793a') : bad('zip \u5185 JSON \u635f\u574f\u65e0\u515c\u5e95\uff01');
+(/key \+ '_corrupt'/.test(_fixCore)) ? ok('\u5b88\u536b\uff1a\u89e3\u6790\u5931\u8d25\u7684\u539f\u59cb\u4e32\u4f1a\u9694\u79bb\u4fdd\u5b58\uff08\u4e0d\u9759\u9ed8\u4e22\uff09') : bad('\u5b58\u50a8\u635f\u574f\u672a\u9694\u79bb\uff01');
+(/hiking_records_corrupt/.test(_fixInit)) ? ok('\u5b88\u536b\uff1a\u542f\u52a8\u65f6\u4f1a\u63d0\u793a\u300c\u6570\u636e\u8bfb\u53d6\u5f02\u5e38\u5df2\u4fdd\u7559\u300d') : bad('\u542f\u52a8\u672a\u63d0\u793a\u9694\u79bb\u5907\u4efd\uff01');
+(!/data-diff/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u6b7b\u5c5e\u6027 data-diff \u5df2\u6e05\u7406') : bad('data-diff \u6b7b\u5c5e\u6027\u4ecd\u5728\uff01');
+(/fmtPlanDateKey\(new Date\(\)\)/.test(_fixData) && !/fmtPlanDateKey\(new Date\(\)\.toISOString\(\)\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u65e5\u5386 todayKey \u5df2\u4e0d\u518d\u7ed5 toISOString') : bad('todayKey \u4ecd\u5728\u7ed5 toISOString\uff01');
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

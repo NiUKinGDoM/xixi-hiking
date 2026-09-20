@@ -4,11 +4,11 @@ package com.xixi.hiking;
 // 内容：核心资源 SHA-256 清单，供 MainActivity.verifyAssetsIntegrity 软校验（防篡改纵深）
 public final class ResGuard {
     public static final String[][] HASHES = {
-        {"index.html", "173c2b2342c5dce3e24b4c3cfb30bf7b422271dabdc8a99dc12e60e1a79ef4f3"},
-        {"app-core.js", "85390b80465c4dd59dcda7b92606552ae6df68737aec75eb703ea09c6a58a8e4"},
-        {"app-data.js", "7714c63c9a3e347362de9e26b29f4749c02427b302a6054792e0cf810288d67a"},
-        {"app-sync.js", "c150412b6cbb8ab88e63f36500f645ad38282b56f901c85e9a09b6626d0d495c"},
-        {"app-init.js", "9abf3ddd57608a50e419baea50dc6543a9acc6a847c1777c373c6ce83b634393"},
+        {"index.html", "da97b7a6006e72621a93501f2a123792e758df257857464810f2a63c57648c47"},
+        {"app-core.js", "71830ab5aac539c6245c77759117bafa71f24a8f396a83838586a9b9ade4843b"},
+        {"app-data.js", "49dfaad55b302fcd0bcdfd6b5b76712179d0ec247248dd248beff41aa6902658"},
+        {"app-sync.js", "a60946a89080c9546a7bd9731606d26dc9738da99bdb5f126383daf9e810c0b2"},
+        {"app-init.js", "b665275d840279cc5252c81d0d759771b7e6bff40f408d4819e037b8f58290e2"},
         {"assets/support-qr-wechat.jpg", "5c8684a31825a0563d2052a2d83da47f0e6974462a5c38745bc09d4b7e923445"},
         {"assets/support-qr-alipay.jpg", "3b8548df274255a6bd153985d06ccf2c1006d2936a69865ab981d6c1ecf02c77"},
         {"assets/fonts/material-icons.woff2", "8265f64786397d6b832d1ca0aafdf149ad84e72759fffa9f7272e91a0fb015d1"},

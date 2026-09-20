@@ -131,6 +131,15 @@ async function init() {
             }));
         }
         
+        // ★2026-09-20 上次读取数据若发现损坏，已把原始串隔离保存 → 明确告知用户（不静默、不丢数据）
+        try {
+            if (localStorage.getItem('hiking_records_corrupt')) {
+                setTimeout(function () {
+                    try { showErrorMessage('本地数据读取异常：原始数据已备份保留，未丢失'); } catch (eW) { /* 忽略 */ }
+                }, 900);
+            }
+        } catch (eW2) { /* 忽略 */ }
+
         // 主题模式加载（v1.4.10.2 三态：优先读新 themeMode，兼容旧 isDarkMode 布尔）
         let loadedTheme = null;
         if (themeModeData.status === 'fulfilled' && themeModeData.value && typeof themeModeData.value.mode === 'string') {
