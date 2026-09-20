@@ -3298,6 +3298,10 @@
             background: rgba(255, 255, 255, 0.14);
             border-color: rgba(148, 163, 184, 0.7);
         }
+        /* ★2026-09-20 深色下弹窗标题的靛蓝图标加深（实测）：内联 #4f46e5 在深色弹窗合成底（≈rgb(20,30,52)）
+           上对比度仅 2.64:1，不足「图形元素 ≥ 3:1」；改用浅靛 #a5b4fc（8.33:1）。
+           用属性选择器精准命中这一个内联色，避免影响已经达标的绿/琥珀/红标题图标（7.29 / 7.73 / 4.41:1）。 */
+        body.dark-mode .confirm-modal-title .material-icons[style*="#4f46e5"] { color: #a5b4fc !important; }
         
         .glass-btn:active {
             transform: translateY(0) scale(0.97);
@@ -6458,7 +6462,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.2.2.4</div>
+                        <div class="about-version">版本 1.2.2.5</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>

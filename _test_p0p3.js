@@ -65,6 +65,9 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
             window.__codButtons = function () { var box = document.getElementById('calDayDetail'); var r = []; if (box) { box.querySelectorAll('[data-complete], [data-complete-delay]').forEach(function (b) { r.push({ txt: (b.textContent || '').trim(), delay: b.hasAttribute('data-complete-delay') }); }); } return r; };
             window.__codClose = function () { try { closeOpenModals(); } catch (e) {} };
             window.__codClick = function (sel) { var e = document.querySelector(sel); if (e) e.click(); };
+            // ★2026-09-20 列表视图 A+B 探针桥（渲染走 rAF，断言侧需 await delay）
+            window.__abRenderList = function () { plansViewMode = 'list'; try { applyPlansView(); } catch (e) {} renderPlannedTripsTable(); };
+            window.__abBtnInfo = function (id) { var b = document.querySelector('#complete-planned-btn-' + id); if (!b) return null; var ic = b.querySelector('.material-icons'); return { icon: ic ? ic.textContent.trim() : null, title: b.getAttribute('title') }; };
 
             window.__getState = function () {
                 return { editingId: editingId, editingPhotoIds: (editingPhotoIds || []).slice(), records: (records || []).slice() };
@@ -1150,6 +1153,33 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         assert('点「完成」→ 记录 +1 且计划移除', codSt.records.length === codRecBefore + 1 && codSt.plannedTrips.length === 1, 'rec=' + codSt.records.length + ' plans=' + codSt.plannedTrips.length);
         window.__codClose();
     } catch (e) { console.log('ERR-cod:', e.message); }
+
+    // ---- 2026-09-20 列表视图 A+B（图标换 + 点击分岔）----
+    try {
+        const isoDay2 = (n) => { const d = new Date(); const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x.toISOString(); };
+        window.__testSetPlanned([
+            { id: 'ab_ov', name: '过期测试山2', elevation: 1000, difficulty: 2, createdAt: isoDay2(-2) },
+            { id: 'ab_fu', name: '未来测试山2', elevation: 1100, difficulty: 3, createdAt: isoDay2(6) }
+        ]);
+        window.__abRenderList();
+        await delay(140);
+        const abOv = window.__abBtnInfo('ab_ov');
+        const abFu = window.__abBtnInfo('ab_fu');
+        assert('列表-到期按钮图标换成「日历循环」', !!abOv && abOv.icon === 'event_repeat', JSON.stringify(abOv));
+        assert('列表-到期按钮 title 提示「完成 / 延期」', !!abOv && abOv.title === '完成 / 延期', JSON.stringify(abOv));
+        assert('列表-未到期按钮仍是对号 + 原 title', !!abFu && abFu.icon === 'check' && abFu.title === '标记为已完成', JSON.stringify(abFu));
+        window.__codClick('#complete-planned-btn-ab_ov');
+        assert('列表-点到期 ✓ → 弹「完成 / 延期」', !!document.getElementById('cod-complete'), '');
+        window.__codClose();
+        document.querySelectorAll('.confirm-modal').forEach(function (n) { try { n.remove(); } catch (e) { } });
+        window.__codClick('#complete-planned-btn-ab_fu');
+        assert('列表-点未到期 ✓ → 弹原「确认完成」', !!document.getElementById('confirm-complete-ok') && !document.getElementById('cod-complete'), '');
+        window.__codClose();
+        document.querySelectorAll('.confirm-modal').forEach(function (n) { try { n.remove(); } catch (e) { } });
+        window.__testSetPlanned([]);
+        window.__abRenderList();
+        await delay(80);
+    } catch (e) { console.log('ERR-ab:', e.message); }
 
     console.log('\n===== 结果: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
     process.exit(fail ? 1 : 0);

@@ -2932,30 +2932,33 @@ function renderPlannedCalendar() {
     }
 }
 
-// ★2026-09-20 计划「已到期」判定（日历明细「完成/延期」按钮用）：
-//   与下条 planRelBadgeHtml 同一套「按本地零点算日差」的算法 —— 过期(<0) 或 当天(=0) 视为已到期。
-//   为什么抽成函数：按钮文案与徽章必须同一口径，否则会出现「标着已过期 3 天、按钮却还是普通完成」的不一致。
-function planIsDueOrOverdue(createdAt) {
+// ★2026-09-20 计划日差公共函数（消除重复）：按本机零点算「计划日期 − 今天」的天数差，`null` = 日期为空/无效。
+//   为什么抽出来：到期判定（planIsDueOrOverdue）与状态徽章（planRelBadgeHtml）此前**各自复制了一遍**
+//   同一套日差算法（各含 4 次 `new Date` 构造）—— 改口径得改两处、易漏；且列表每渲染一条计划就多构造 8 个 Date 对象。
+//   ★守卫：test.js 5o2 断言「两者共用 planDayDiff」—— 防止以后又各自拷一份。
+function planDayDiff(createdAt) {
     try {
-        if (!createdAt) return false;
+        if (!createdAt) return null;
         var dd = new Date(createdAt);
-        if (isNaN(dd.getTime())) return false;
+        if (isNaN(dd.getTime())) return null;
         var now0 = new Date();
         var t0 = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
         var d0 = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()).getTime();
-        return Math.round((d0 - t0) / 86400000) <= 0;
-    } catch (e) { return false; }
+        return Math.round((d0 - t0) / 86400000);
+    } catch (e) { return null; }
+}
+
+// ★2026-09-20 计划「已到期」判定（日历与列表的「完成/延期」按钮用）：与徽章**同口径**（各自参与同一个日差）—— 过期(≤ -1) 或 当天(= 0) 视为已到期。
+function planIsDueOrOverdue(createdAt) {
+    var diff = planDayDiff(createdAt);
+    return diff !== null && diff <= 0;
 }
 // ★2026-09-07 计划相对今天状态徽章（列表行/日历整月/日历单日三处通用）：过期=红「已过期 N 天」、今天=靛蓝「今天」、明天=天蓝「明天」，后天起无徽章
+//   ★2026-09-20 日差改走 planDayDiff（与到期判定同一口径，消除重复算法）
 function planRelBadgeHtml(createdAt) {
+    var diff = planDayDiff(createdAt);
+    if (diff === null) return '';
     try {
-        if (!createdAt) return '';
-        var dd = new Date(createdAt);
-        if (isNaN(dd.getTime())) return '';
-        var now0 = new Date();
-        var t0 = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate()).getTime();
-        var d0 = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()).getTime();
-        var diff = Math.round((d0 - t0) / 86400000);
         if (diff < 0) return '<span class="pl-overdue">已过期 ' + Math.abs(diff) + ' 天</span>';
         if (diff === 0) return '<span class="pl-today">今天</span>';
         if (diff === 1) return '<span class="pl-tomorrow">明天</span>';
@@ -3879,13 +3882,10 @@ function maybeShowOverdueCare() {
         var now = new Date();
         var todayStr = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
         if (AppStore.getItem('hiking_overdue_care_date') === todayStr) return;
-        var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        // ★2026-09-20 复用 planDayDiff：口径与徽章/到期判定/提醒统一，不再本地重复一套日差算法
         var overdue = plannedTrips.filter(function (t) {
-            if (!t.createdAt) return false;
-            var d = new Date(t.createdAt);
-            if (isNaN(d.getTime())) return false;
-            var d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-            return Math.round((d0 - t0) / 86400000) < 0;
+            var diff = planDayDiff(t.createdAt);
+            return diff !== null && diff < 0;
         });
         if (!overdue.length) return;
         try { AppStore.setItem('hiking_overdue_care_date', todayStr); } catch (e0) { /* 忽略 */ }
@@ -3915,14 +3915,12 @@ function maybeShowOverdueCare() {
 function checkPlannedTripReminders() {
     try {
         var now = new Date();
-        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         var overdue = [], todayList = [], tomorrowList = [], dayAfterList = [], thirdDayList = [];
         (plannedTrips || []).forEach(function (t) {
-            if (!t.createdAt || !t.name) return;
-            var d = new Date(t.createdAt);
-            if (isNaN(d.getTime())) return;
-            var day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-            var diff = Math.round((day - today) / 86400000);
+            if (!t.name) return;
+            // ★2026-09-20 复用 planDayDiff（口径与徽章/到期判定/过期关怀统一）
+            var diff = planDayDiff(t.createdAt);
+            if (diff === null) return;
             if (diff < 0) overdue.push({ name: t.name, diff: diff });
             else if (diff === 0) todayList.push(t.name);
             else if (diff === 1) tomorrowList.push(t.name);
@@ -4080,6 +4078,8 @@ function renderPlannedTripsTable() {
             const rowDelayStyle2 = plannedRowsAnimated ? '' : ('animation-delay: ' + (Math.min(idx, 6) * 0.05) + 's;');   // ★2026-09-07 限幅同记录表
             // ★2026-09-07 状态徽章统一走 planRelBadgeHtml：过期红/今天靛蓝/明天天蓝（v1.1.9.5 起仅过期红标，今天/明天为本次扩展，与日历明细同款）
             const _ovBadge = planRelBadgeHtml(trip.createdAt);
+            // ★2026-09-20 A+B：列表视图里**已到期**的计划——图标换成「日历循环」、title 提示「完成 / 延期」，点击后弹同一个「完成 / 延期」弹窗（与日历明细同口径）
+            const _planDue = planIsDueOrOverdue(trip.createdAt);
             return `
                 <tr class="table-row-advanced ${rowAnimCls2}border-b border-white/10 hover:bg-white/10 transition-colors cursor-pointer" id="planned-row-${trip.id}" style="${rowDelayStyle2}">
                     <td class="p-2 font-medium text-white text-base" data-label="名称" data-testid="planned-name-cell-${trip.id}">
@@ -4087,7 +4087,7 @@ function renderPlannedTripsTable() {
                 </td>
                 <td class="rd-time-cell" data-label="计划时间">${formatDateTime(trip.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                        ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="标记为已完成"><span class="material-icons" style="font-size:18px;">check</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                        ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="' + (_planDue ? '完成 / 延期' : '标记为已完成') + '"><span class="material-icons" style="font-size:18px;">' + (_planDue ? 'event_repeat' : 'check') + '</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                     </td>
                 </tr>
             `;
@@ -4159,7 +4159,12 @@ function attachPlannedTripsEventListeners() {
         
         const completeBtn = safeGetElementById(`complete-planned-btn-${trip.id}`);
         if (completeBtn) {
-            completeBtn.addEventListener('click', () => showConfirmCompleteModal(trip.id, trip.name));
+            // ★2026-09-20 A+B：到期的计划点 ✓ 先问「完成 / 延期」（与日历明细同一个弹窗）；未到期仍走原「确认完成」。
+            //   为什么不在按钮上写字：那格只有 28px 宽，写「完成/延期」会把计划名挤掉一大截。
+            completeBtn.addEventListener('click', () => {
+                if (planIsDueOrOverdue(trip.createdAt)) showCompleteOrDelayModal(trip.id, trip.name);
+                else showConfirmCompleteModal(trip.id, trip.name);
+            });
         }
     });
 }

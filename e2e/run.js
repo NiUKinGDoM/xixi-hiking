@@ -120,7 +120,10 @@ function serverUp() {
       ok(name + '（新基线已存）', true);
     } else if (cmp) {
       const ratio = pngDiffRatio(fs.readFileSync(base), fs.readFileSync(path.join(SHOTS, name + '.latest.png')));
-      ok(name + '（视觉一致 diff=' + (ratio * 100).toFixed(2) + '% ≤0.5%）', ratio <= 0.005, 'diff=' + (ratio * 100).toFixed(2) + '%');
+      // ★2026-09-20 容差可单张覆盖（opts.tol）：默认仍为 0.5%；仅「概览页」这类玻璃卡密集 + 入场动画多的页放到 1%
+      //   （实测：概览页跳动 0.14%~0.57%；差异集中在带 fadeInUp 的卡片区，而无动画的热力图区零差异 → 动画终态的亚像素抖动，非破版）
+      const tol = (opts && typeof opts.tol === 'number') ? opts.tol : 0.005;
+      ok(name + '（视觉一致 diff=' + (ratio * 100).toFixed(2) + '% ≤' + (tol * 100).toFixed(1) + '%）', ratio <= tol, 'diff=' + (ratio * 100).toFixed(2) + '%');
     }
     if (keySel) {
       const found = await page.locator(keySel).count();
@@ -224,6 +227,59 @@ function serverUp() {
       && codDoneState.plans === 2 && codDoneState.recName === '过期计划E2E',
     JSON.stringify(codDoneState));
 
+  // ★2026-09-20 A+B：列表视图里到期的计划——图标换「日历循环」、点击弹「完成 / 延期」；未到期仍是对号 + 原「确认完成」
+  const abListState = await page.evaluate(async () => {
+    try {
+      const iso = (n) => { const d = new Date(); const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x.toISOString(); };
+      plannedTrips = [
+        { id: 'ab_ov', name: '过期计划E2E2', elevation: 1000, difficulty: 2, createdAt: iso(-2) },
+        { id: 'ab_fu', name: '未来计划E2E2', elevation: 1100, difficulty: 3, createdAt: iso(6) }
+      ];
+      plansViewMode = 'list';
+      try { switchTab('plans'); } catch (e) { }
+      try { applyPlansView(); } catch (e) { }
+      renderPlannedTripsTable();
+      await new Promise((r) => setTimeout(r, 420));
+      const info = (id) => {
+        const b = document.querySelector('#complete-planned-btn-' + id);
+        if (!b) return null;
+        const ic = b.querySelector('.material-icons');
+        return { icon: ic ? ic.textContent.trim() : null, title: b.getAttribute('title') };
+      };
+      const ov = info('ab_ov');
+      const fu = info('ab_fu');
+      document.querySelector('#complete-planned-btn-ab_ov').click();
+      const dueOpens = !!document.getElementById('cod-complete');
+      try { closeOpenModals(true); } catch (e) { }
+      document.querySelectorAll('.confirm-modal').forEach((n) => { try { n.remove(); } catch (e) { } });
+      document.querySelector('#complete-planned-btn-ab_fu').click();
+      const futureOpens = !!document.getElementById('confirm-complete-ok') && !document.getElementById('cod-complete');
+      try { closeOpenModals(true); } catch (e) { }
+      document.querySelectorAll('.confirm-modal').forEach((n) => { try { n.remove(); } catch (e) { } });
+      return { ov: ov, fu: fu, dueOpens: dueOpens, futureOpens: futureOpens };
+    } catch (e) { return { err: e.message }; }
+  });
+  ok('列表视图 A+B：到期换图标+点击弹「完成/延期」，未到期保持对号+原确认',
+    !abListState.err && !!abListState.ov && abListState.ov.icon === 'event_repeat' && abListState.ov.title === '完成 / 延期'
+      && !!abListState.fu && abListState.fu.icon === 'check' && abListState.dueOpens && abListState.futureOpens,
+    JSON.stringify(abListState));
+
+  // ★2026-09-20 深色下弹窗标题的靛蓝图标必须换成浅靛（内联 #4f46e5 在深色底上仅 2.64:1）
+  const dkIconState = await page.evaluate(() => {
+    try {
+      document.body.classList.add('dark-mode');
+      showCompleteOrDelayModal('dk1', '深色测试');
+      const icon = document.querySelector('.confirm-modal .confirm-modal-title .material-icons');
+      const c = icon ? getComputedStyle(icon).color : null;
+      try { closeOpenModals(true); } catch (e) { }
+      document.querySelectorAll('.confirm-modal').forEach((n) => { try { n.remove(); } catch (e) { } });
+      document.body.classList.remove('dark-mode');
+      return { color: c };
+    } catch (e) { return { err: e.message }; }
+  });
+  ok('深色下弹窗标题图标改用浅靛（对比度 2.64:1 → 8.33:1）',
+    !dkIconState.err && dkIconState.color === 'rgb(165, 180, 252)', JSON.stringify(dkIconState));
+
   // ★本段自造数据且触发了「完成→庆祝卡」，必须收尾恢复干净状态：
   //   否则庆祝卡会遮住后续用例的点击 → Playwright 超时 → E2E 以异常退出（exit 2，非断言失败，排查时极易误导）。
   await page.evaluate(() => {
@@ -240,6 +296,8 @@ function serverUp() {
     try {
       records = (records || []).filter((r) => r.name !== '过期计划E2E');
       plannedTrips = [];
+      plansViewMode = 'calendar';
+      try { applyPlansView(); } catch (e) { }
       saveToStorage();
       savePlannedTripsToStorage();
       renderTable();
@@ -248,6 +306,10 @@ function serverUp() {
     } catch (e) { }
   });
   await page.waitForTimeout(500);
+  // 收尾再把页面送回概览页并等动画播完：
+  //   避免把「刚重渲染、入场动画还在跑」的概览页留给后续用例去截图（副卡动画最晚 1.14s 才播完）
+  try { await page.evaluate(() => { try { switchTab('overview'); } catch (e) { } }); } catch (e) { }
+  await page.waitForTimeout(1300);
 
   console.log('== E2E: 记录 tab + 示例数据 ==');
   await page.locator('[data-testid="tab-records"]').click().catch(async () => { await page.evaluate(() => { try { switchTab('records'); } catch (e) {} }); });
@@ -320,8 +382,10 @@ function serverUp() {
   console.log('== E2E: 深色模式关键屏 ==');
   // 08 深色概览
   await page.locator('[data-testid="tab-overview"]').click().catch(async () => { await page.evaluate(() => { try { switchTab('overview'); } catch (e) {} }); });
-  await page.waitForTimeout(700);
-  await shotAndCheck('08-overview-dark', '.stat-card, .ov-card');
+  // ★2026-09-20 等待对齐 01（1200ms）：副卡 fadeInUp 最晚 0.64s 延迟 + 0.5s 时长 = **1.14s** 才播完，
+  //   700ms 会在动画中途截图 → 顶部统计卡/底部里程碑入口呈中间态（大面积像素差、变亮变暗各半）。
+  //   之前没暴露：概览页动画早在 01 就播完、切回来不会重播；一旦前面的用例让概览页重渲染（如本次新增的计划列表用例）就会重播。
+  await shotAndCheck('08-overview-dark', '.stat-card, .ov-card', { tol: 0.01 });   // ★概览页玻璃卡密集 + 入场动画 → 容差 1%
   // 09 深色记录详情弹窗
   await page.locator('[data-testid="tab-records"]').click().catch(async () => { await page.evaluate(() => { try { switchTab('records'); } catch (e) {} }); });
   await page.waitForTimeout(600);

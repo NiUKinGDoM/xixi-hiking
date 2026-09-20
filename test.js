@@ -332,7 +332,8 @@ try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     dj.includes('function planIsDueOrOverdue') ? ok('守卫：「已到期」判定函数在') : bad('已到期判定函数缺失!');
-    /function planIsDueOrOverdue[\s\S]{0,600}86400000\) <= 0/.test(dj) ? ok('守卫：已到期判定与徽章同口径（本地零点日差 <= 0）') : bad('判定口径与徽章不一致!');
+    // ★2026-09-20 口径统一改为「共用 planDayDiff」：两个函数都调它，不再各自复制日差算法
+    (/function planDayDiff[\s\S]{0,700}86400000\)/.test(dj) && /function planIsDueOrOverdue[\s\S]{0,200}planDayDiff\(createdAt\)/.test(dj) && /function planRelBadgeHtml[\s\S]{0,200}planDayDiff\(createdAt\)/.test(dj)) ? ok('守卫：到期判定与徽章同口径（共用 planDayDiff·无重复算法）') : bad('判定口径不一致或日差算法重复!');
     (dj.match(/planIsDueOrOverdue\(t\.createdAt\)/g) || []).length === 2 ? ok('守卫：日历明细双处接入（整月+单日）') : bad('日历接入处数不对!');
     dj.includes('function showCompleteOrDelayModal') ? ok('守卫：「完成/延期」弹窗函数在') : bad('弹窗函数缺失!');
     /showCompleteOrDelayModal[\s\S]{0,2200}markPlannedComplete\(tripId, tripName\)/.test(dj) ? ok('守卫：「完成」走既有 markPlannedComplete（转记录页+庆祝卡）') : bad('「完成」未接既有流程!');
@@ -341,6 +342,16 @@ try {
     /data-complete="' \+ t\.id/.test(dj) ? ok('守卫：未过期计划保留原「完成」按钮（不受影响）') : bad('未过期计划按钮被改动!');
     dj.includes('width:calc(100vw - 44px);max-width:400px;box-sizing:border-box;') ? ok('守卫：「完成/延期」弹窗宽度显式锁定') : bad('弹窗宽度未锁（会随内容跳）!');
     (!/showInfoMessage\('已自动上报/.test(sj) && /\[静默\] 已自动上报崩溃报告/.test(sj)) ? ok('守卫：崩溃上报不再弹提示（改静默 + 留诊断日志）') : bad('崩溃上报提示仍在弹!');
+    // ★2026-09-20 A+B：列表视图也接入（图标换 + 点击分岔）
+    /const _planDue = planIsDueOrOverdue\(trip\.createdAt\)/.test(dj) ? ok('守卫：列表视图已接入到期判定') : bad('列表视图未接入!');
+    /_planDue \? 'event_repeat' : 'check'/.test(dj) ? ok('守卫：列表到期按钮图标按状态切换') : bad('列表图标未切换!');
+    /_planDue \? '完成 \/ 延期' : '标记为已完成'/.test(dj) ? ok('守卫：列表到期按钮 title 提示「完成 / 延期」') : bad('列表 title 未切换!');
+    /complete-planned-btn[\s\S]{0,1400}planIsDueOrOverdue\(trip\.createdAt\)\) showCompleteOrDelayModal/.test(dj) ? ok('守卫：列表点 ✓ 按状态分岔到两个弹窗') : bad('列表点击未分岔!');
+    // ★2026-09-20 深色下弹窗标题靛蓝图标加深（实测：内联 #4f46e5 在深色弹窗底上仅 2.64:1 → 浅靛 8.33:1）
+    (function () {
+        const ih2 = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+        ih2.includes('body.dark-mode .confirm-modal-title .material-icons[style*="#4f46e5"] { color: #a5b4fc !important; }') ? ok('守卫：深色弹窗标题靛蓝图标已加深（属性选择器精准命中）') : bad('深色弹窗标题靛蓝图标未加深!');
+    })();
 } catch (e) { bad('5o2 检查失败: ' + e.message); }
 
 // 5p. 2026-09-08 崩溃采集/上报 + 隐私政策（设计语言内）
