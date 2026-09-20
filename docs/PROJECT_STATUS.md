@@ -413,7 +413,7 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   v1.1.8.0 灵动事故同类救回）→ bump.js + **★2026-08-31 内置 BUILTIN_CHANGELOG（app-core.js 加本次 Release body 摘要，更新日志纯本地断网可看）** + `node test.js`（60项数据层/语法自检）+ `node test-ui.js`（26项 jsdom UI 自检，2026-08-28 起）→ **★2026-09-10 起一条命令：`node tools/release.js`**（内部=同步 9 文件+assets → obf 混淆 temp → hash 生成 ResGuard → cp build.gradle/ResGuard/MainActivity/Manifest → gradle --rerun-tasks 构建；
   `--skip-build` 只做前四步）。原理备忘：混淆只对 temp assets 副本，www 源与测试永远明文，ResGuard=APK 内混淆版哈希 → push master + CHANGELOG 顶部加版本号一行 + Release（body 只写更新内容 + `Made by XiXi 💛`）→ ③用户 App 检查更新
    - **CHANGELOG 只加版本号一行**（`### vX（vcN · 日期）`），更新内容以 Release body 为准
-   - **★写更新日志前必跑 `node tools/versiondiff.js`**（列出「已发布版 vs 当前工作区」全部改动；`prepare` 会自动全量打印并留档 `tools/notes/<版本>-diff.txt`），**逐行核对：每一行都要能对应到文案里的一条**（对不上 → 补文案，或在【内部】里说明为何不用写）。**★ 2026-09-20 教训**：跨版未发的改动被当成「已报告过」→ 漏写了整条【新增】
+   - **★写更新日志前必跑 `node tools/versiondiff.js`**（列出「已发布版 vs 当前工作区」全部改动；`prepare` 会自动全量打印并留档 `tools/notes/<版本>-diff.txt`），**逐行核对：www/ 每一行都要能对应到更新日志里的一条**（对不上 → 补文案，或确认它属于开发侧 → 记入「开发侧改动记录.md」）。**★2026-09-20 用户定：日志只写用户能感知的内容，禁【内部】与开发侧词（`builtin.js` 硬拦）**。**★ 2026-09-20 教训**：跨版未发的改动被当成「已报告过」→ 漏写了整条【新增】
    - **绝不主动展示/交付 APK 卡片**（只给网页链接）
 3. **图标约定**：导入=download、导出=upload
 4. **底栏**：图标上文字下（column）；fixed 悬浮；激活按钮靛蓝描边（非激活无框）

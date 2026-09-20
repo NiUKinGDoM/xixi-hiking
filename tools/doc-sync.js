@@ -34,6 +34,8 @@ const PAIRS = [
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs/DEVICE-CHECKLIST.md'), path.join(GH, 'docs/DEVICE-CHECKLIST.md')],
     // ★2026-09-18 补漏：本文件同样是双端的，此前未纳入（用户「整理所有文档」时发现）
     ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs/方案-换机同步与登录体验.md'), path.join(GH, 'docs/方案-换机同步与登录体验.md')],
+    // ★ 2026-09-20 新增：用户要求「开发侧的事写在别处、但要我能看得着」→ 开发侧改动记录（根 ↔ GH docs/ 双端）
+    ['docs/开发侧改动记录.md', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, 'docs/开发侧改动记录.md')],
     ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs/版本变更记录-存档.md'), path.join(GH, 'docs/版本变更记录-存档.md')],
 ];
 

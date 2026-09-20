@@ -128,6 +128,8 @@ const PAIRS = [
     // ★2026-09-18 补漏：与 doc-sync 的配对表保持一致（此前漏了两处双端文件）
     ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs', '方案-换机同步与登录体验.md'), path.join(GH, 'docs', '方案-换机同步与登录体验.md')],
     ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs', '版本变更记录-存档.md'), path.join(GH, 'docs', '版本变更记录-存档.md')],
+    // ★2026-09-20 新增：开发侧改动记录（用户：「开发侧的你告诉我就行，要我能看得着」）
+    ['docs/开发侧改动记录.md', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, 'docs', '开发侧改动记录.md')],
 ];
 const dual = [];
 PAIRS.forEach(([n, a, b]) => {

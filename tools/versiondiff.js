@@ -139,8 +139,8 @@ for (const [name, a, b] of PAIRS) {
 
 const TITLES = {
     app: '应用代码 www/  ← ★每一项都要能在更新日志里找到对应描述',
-    native: '原生与构建 android/（影响 App 行为，需写【内部】或用户可见条目）',
-    tool: '测试与工具链（通常写【内部】或不必写）',
+    native: '原生与构建 android/（只写用户能感知的部分；纯构建/签名类不写）',
+    tool: '测试与工具链（用户不可见 → 不进更新日志）',
     doc: '文档（发布时由 docrelease 同步，一般不必逐条写）',
 };
 console.log('== versiondiff ==  已发布版 v' + ver(path.join(GH, 'www/app-core.js'))
@@ -177,7 +177,8 @@ if (NOTES) {
     const head = ['本次发版改动清单（tools/versiondiff.js --notes 自动生成），写更新日志时需逐行核对',
         '甲方：已发布版 v' + ver(path.join(GH, 'www/app-core.js')) + '  乙方：当前工作区 v' + ver(path.join(ROOT, 'www/app-core.js')),
         '清单来源时间：' + new Date().toISOString().slice(0, 16).replace('T', ' '),
-        '★规则：下面每一行都要能对应到文案里的一条；对不上就要么补文案、要么在【内部】里说明为何不用写。', ''];
+        '★规则：www/ 每一行都要能对应到更新日志里的一条（只写用户能感知的内容）；',
+        '  测试/工具/文档类改动不进更新日志（开发侧内容 → 写进 doc 文案与「开发侧改动记录.md」）。', ''];
     fs.writeFileSync(diffNote, head.concat(out.map((l) => l.replace(/\s+$/, ''))).join('\n') + '\n', 'utf8');
     console.log('清单已留档：' + path.relative(PROJ, diffNote).replace(/\\/g, '/'));
 }

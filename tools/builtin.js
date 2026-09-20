@@ -80,6 +80,28 @@ if (bannedHit.length) {
   process.exit(1);
 }
 
+// ★2026-09-20 用户定规矩（原话：「以后更新日志里只纯净写内容，不用体现 app 后端弄了些啥」）：
+//   App 内更新日志只写【用户能感知的内容】—— 禁出现【内部】分组，也禁写代码清理/守卫条数/
+//   测试项数/构建与性能实测/工具链修复这类开发侧的事。技术细节改写到两处（用户可见）：
+//     ① PROJECT_STATUS 版本变更记录（项目文档）；② 项目根「开发侧改动记录.md」（用户随时可打开）。
+//   若某版本确实没有用户可见变化，就写一句「本版为稳定性维护，界面与功能无变化」。
+const INTERNAL_TAG = '【内部】';
+if (rawPre.indexOf(INTERNAL_TAG) >= 0) {
+  console.error('✗ 文案含【内部】分组 —— 更新日志只写用户能感知的内容，不写开发侧（后端）做的事。');
+  console.error('  请删掉整段【内部】：技术细节写进 doc 文案（PROJECT_STATUS）与「开发侧改动记录.md」；');
+  console.error('  若本版没有用户可见变化，就写一句「本版为稳定性维护，界面与功能无变化」。');
+  process.exit(1);
+}
+// 开发侧词汇（用户视角不会出现）→ 出现即拦，避免把内部工作写成日志条目
+const DEV_WORDS = ['全量自检', '自检', 'P0P3', 'E2E', 'test.js', '守卫', '断言', '反向验证',
+  '重构', '死代码', '视觉基线', '代码审计', '性能实测', '抽成公共函数', 'ResGuard', 'schema'] ;
+const devHit = DEV_WORDS.filter(function (w) { return rawPre.indexOf(w) >= 0; });
+if (devHit.length) {
+  console.error('✗ 文案含开发侧词（' + devHit.join('、') + '）—— 更新日志只写用户能感知的内容。');
+  console.error('  请改写为用户视角的说法，或把这条移到 doc 文案 /「开发侧改动记录.md」。');
+  process.exit(1);
+}
+
 
 const core = fs.readFileSync(CORE, 'utf8');
 const E = eolOf(core);
