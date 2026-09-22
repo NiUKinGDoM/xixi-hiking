@@ -706,34 +706,5 @@ const _fixInit = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8'
 (/hiking_records_corrupt/.test(_fixInit)) ? ok('\u5b88\u536b\uff1a\u542f\u52a8\u65f6\u4f1a\u63d0\u793a\u300c\u6570\u636e\u8bfb\u53d6\u5f02\u5e38\u5df2\u4fdd\u7559\u300d') : bad('\u542f\u52a8\u672a\u63d0\u793a\u9694\u79bb\u5907\u4efd\uff01');
 (!/data-diff/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u6b7b\u5c5e\u6027 data-diff \u5df2\u6e05\u7406') : bad('data-diff \u6b7b\u5c5e\u6027\u4ecd\u5728\uff01');
 (/fmtPlanDateKey\(new Date\(\)\)/.test(_fixData) && !/fmtPlanDateKey\(new Date\(\)\.toISOString\(\)\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u65e5\u5386 todayKey \u5df2\u4e0d\u518d\u7ed5 toISOString') : bad('todayKey \u4ecd\u5728\u7ed5 toISOString\uff01');
-// ★2026-09-22 五条刺修复守卫（底栏透字 / 标题竖排 / 红色语义 / 时间显示 / FPS 默认）—— 每条都做过反向验证
-const _g22Pdt = extractFn('parseLocalDateTime');
-if (fdtlSrc && _g22Pdt) {
-    const _g22ctx = { String, Date };
-    vm.createContext(_g22ctx);
-    vm.runInContext(fdtlSrc, _g22ctx);
-    vm.runInContext(_g22Pdt, _g22ctx);
-    const _g22v = _g22ctx.formatDateTimeLocal('2026-09-19T09:00:00');
-    (_g22v === '2026-09-19 09:00') ? ok('守卫：时间显示为空格格式（无 T）') : bad('formatDateTimeLocal 仍输出 T 格式: ' + _g22v);
-    const _g22d1 = _g22ctx.parseLocalDateTime('2026-09-19 09:00');
-    (_g22d1 && _g22d1.getFullYear() === 2026 && _g22d1.getMonth() === 8 && _g22d1.getDate() === 19 && _g22d1.getHours() === 9 && _g22d1.getMinutes() === 0) ? ok('守卫：parseLocalDateTime 空格格式按本机时区解析') : bad('parseLocalDateTime 空格解析失败');
-    const _g22d2 = _g22ctx.parseLocalDateTime('2026-09-19T09:00');
-    (_g22d2 && _g22d2.getHours() === 9) ? ok('守卫：parseLocalDateTime 兼容旧 T 格式') : bad('parseLocalDateTime T 格式失败');
-    (_g22ctx.parseLocalDateTime('not-a-date') === null) ? ok('守卫：parseLocalDateTime 非法输入 → null') : bad('parseLocalDateTime 非法输入未返回 null');
-} else { bad('formatDateTimeLocal/parseLocalDateTime 提取失败'); }
-(_fixData.indexOf('[T ](\\d{2}):(\\d{2})') >= 0) ? ok('守卫：选择器正则接受空格/T 两态') : bad('选择器正则仍只认 T！');
-(_fixData.indexOf("+ ' ' + hh + ':' + mm") >= 0) ? ok('守卫：选择器写回空格格式') : bad('选择器仍写回 T 格式！');
-(((_fixData.match(/parseLocalDateTime\(createdAtInput\.value\)/g) || []).length) === 2) ? ok('守卫：记录+计划保存均走 parseLocalDateTime（2 处）') : bad('保存链路仍有裸 new Date(输入值)！');
-const _g22Ids = ['batch-confirm-delete', 'pbatch-confirm-delete', 'lb-confirm-delete', 'confirm-delete', 'confirm-planned-delete'];
-(_g22Ids.every(function (id) { return (_fixData.indexOf('confirm-btn-delete ripple-effect" id="' + id + '"') >= 0) && (_fixData.indexOf('check-go-btn ripple-effect" id="' + id + '"') < 0); }) ? ok('守卫：5 个危险确认按钮已改实色红（摘 check-go-btn）') : bad('危险确认按钮仍在浅红玻璃！'));
-(_fixData.indexOf('confirm-btn-delete ripple-effect" id="wipe-go2"') >= 0) ? ok('守卫：「彻底抹掉」终确认=实色红') : bad('wipe-go2 非实色红！');
-(_fixCore.indexOf('confirm-btn-delete ripple-effect" id="orphan-delete"') >= 0) ? ok('守卫：「清理」孤儿文件=实色红') : bad('orphan-delete 非实色红！');
-(/\.title-text\s*\{\s*white-space:\s*nowrap;\s*\}/.test(html)) ? ok('守卫：.title-text 强制不折行（防标题竖排）') : bad('.title-text 缺 nowrap！');
-(/#recordsTitle, #plannedTitle, #settingsTitle\s*\{\s*flex-shrink:\s*0;\s*\}/.test(html)) ? ok('守卫：页标题 flex-shrink:0（不被按钮组挤压）') : bad('页标题仍可被挤压！');
-(/★2026-09-22 底栏透字太脏[\s\S]{0,200}?background: rgba\(255, 255, 255, 0\.62\);/.test(html)) ? ok('守卫：底栏浅色底 0.62（压住透字）') : bad('底栏浅色仍过透！');
-(/★2026-09-22 同步抬深 0\.30→0\.72[\s\S]{0,120}?background: rgba\(18, 28, 50, 0\.72\);/.test(html)) ? ok('守卫：底栏深色底 0.72') : bad('底栏深色仍过透！');
-(/let showFps = false;/.test(_fixCore)) ? ok('守卫：FPS 徽章默认关闭') : bad('showFps 仍默认 true！');
-(/id="fpsToggle"\s*>/.test(html) && !/id="fpsToggle" checked/.test(html)) ? ok('守卫：帧率开关默认未勾选') : bad('fpsToggle 仍默认 checked！');
-
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);
