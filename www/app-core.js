@@ -684,7 +684,7 @@ var AppStore = {
 var UPDATE_MIRROR_PREFIX = 'https://ghfast.top/';
 const PLANNED_TRIPS_KEY = 'planned_trips';
 const SHOW_FPS_KEY = 'hiking_show_fps';
-let showFps = true;
+let showFps = false; // ★2026-09-22 默认不显示 FPS 徽章（常驻徽章对用户是噪音；设置→显示帧率可再开）
 const HAPTIC_KEY = 'hiking_haptic'; // ★2026-08-21 v1.1.1.1 震动反馈开关
 let hapticEnabled = true; // 默认开（用户指定）
 // ★主题三态（v1.4.10.2）：'auto' 跟随系统 / 'light' 白天 / 'dark' 夜间
@@ -1160,7 +1160,7 @@ function confirmDeleteOrphanPhotos() {
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">cleaning_services</span>清理孤立照片</div>' +
             '<div class="confirm-modal-message">发现 ' + o.count + ' 张<b>没用的缓存照片</b>（已不属于任何记录，约 ' + sizeTxt + '）。<br>记录里保存的照片不受影响。删除后释放空间，此操作不可撤销。</div>' +
             '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="orphan-cancel">取消</button>' +
-            '<button class="check-go-btn ripple-effect" id="orphan-delete">清理</button></div></div>';
+            '<button class="confirm-btn-delete ripple-effect" id="orphan-delete">清理</button></div></div>';
         document.body.appendChild(modal);
         document.getElementById('orphan-cancel').addEventListener('click', function () { document.body.removeChild(modal); });
         document.getElementById('orphan-delete').addEventListener('click', function () {
@@ -1541,7 +1541,8 @@ function formatDateTime(isoString) {
     }
 }
 
-// 格式化日期时间为输入框格式（YYYY-MM-DDTHH:mm，与自定义日期时间选择器兼容）
+// 格式化日期时间为输入框显示格式（YYYY-MM-DD HH:mm 空格分隔；★2026-09-22 原 T 分隔是工程格式，爹点单改友好显示）
+// 选择器正则兼容 [T ] 两态；保存走 parseLocalDateTime 手工解析（不依赖 new Date(字符串) 的引擎差异）
 function formatDateTimeLocal(isoString) {
     if (!isoString) return '';
     try {
@@ -1553,8 +1554,17 @@ function formatDateTimeLocal(isoString) {
         const day = String(date.getDate()).padStart(2, '0');
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
     } catch (e) {
         return '';
     }
+}
+
+// ★2026-09-22 本地日期时间解析：接受 YYYY-MM-DD HH:mm 与 YYYY-MM-DDTHH:mm，按本机时区构造；失败返回 null
+function parseLocalDateTime(str) {
+    if (!str) return null;
+    const m2 = String(str).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+    if (!m2) return null;
+    const dt = new Date(parseInt(m2[1], 10), parseInt(m2[2], 10) - 1, parseInt(m2[3], 10), parseInt(m2[4], 10), parseInt(m2[5], 10));
+    return isNaN(dt.getTime()) ? null : dt;
 }

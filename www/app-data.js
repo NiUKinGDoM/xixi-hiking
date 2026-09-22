@@ -753,7 +753,7 @@ function deleteBatchSelected() {
         '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>批量删除</div>' +
         '<div class="confirm-modal-message">确定删除选中的 ' + ids.length + ' 条记录？照片将一并删除，此操作无法撤销。</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="batch-confirm-cancel">取消</button>' +
-        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="batch-confirm-delete">删除</button></div></div>';
+        '<button class="confirm-btn-delete ripple-effect" id="batch-confirm-delete">删除</button></div></div>';
     document.body.appendChild(modal);
     document.getElementById('batch-confirm-cancel').addEventListener('click', function () { document.body.removeChild(modal); });
     document.getElementById('batch-confirm-delete').addEventListener('click', function () {
@@ -818,7 +818,7 @@ function deletePlannedBatchSelected() {
         '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>批量删除</div>' +
         '<div class="confirm-modal-message">确定删除选中的 ' + ids.length + ' 条计划？此操作无法撤销。</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="pbatch-confirm-cancel">取消</button>' +
-        '<button class="confirm-btn-delete check-go-btn ripple-effect" id="pbatch-confirm-delete">删除</button></div></div>';
+        '<button class="confirm-btn-delete ripple-effect" id="pbatch-confirm-delete">删除</button></div></div>';
     document.body.appendChild(modal);
     document.getElementById('pbatch-confirm-cancel').addEventListener('click', function () { document.body.removeChild(modal); });
     document.getElementById('pbatch-confirm-delete').addEventListener('click', function () {
@@ -1254,7 +1254,7 @@ function lbDeleteCurrent() {
                 <button class="confirm-btn-cancel ripple-effect" id="lb-confirm-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete check-go-btn ripple-effect" id="lb-confirm-delete">
+                <button class="confirm-btn-delete ripple-effect" id="lb-confirm-delete">
                     删除
                 </button>
             </div>
@@ -1310,7 +1310,7 @@ function saveCurrentPhoto() {
 }
 
 // ★2026-09-01 自定义日期时间选择弹窗（替换系统原生 picker，统一玻璃设计语言）
-// 值格式保持 YYYY-MM-DDTHH:mm（与 formatDateTimeLocal 一致，保存逻辑 new Date(value) 兼容）
+// 值格式 YYYY-MM-DD HH:mm（与 formatDateTimeLocal 一致；正则兼容旧 T 分隔；保存走 parseLocalDateTime 手工解析）
 let dtpState = null; // { inputId, year, month(0-11), day, hour, minute }
 function openDateTimePicker(inputId, currentValue) {
     try {
@@ -1319,7 +1319,7 @@ function openDateTimePicker(inputId, currentValue) {
         const now = new Date();
         let y = now.getFullYear(), m = now.getMonth(), d = now.getDate(), h = now.getHours(), mi = now.getMinutes();
         if (currentValue) {
-            const m2 = String(currentValue).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+            const m2 = String(currentValue).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
             if (m2) {
                 y = parseInt(m2[1], 10); m = parseInt(m2[2], 10) - 1; d = parseInt(m2[3], 10);
                 h = parseInt(m2[4], 10); mi = parseInt(m2[5], 10);
@@ -1362,7 +1362,7 @@ function openDateTimePicker(inputId, currentValue) {
                 const dd = String(dtpState.day).padStart(2, '0');
                 const mo = String(dtpState.month + 1).padStart(2, '0');
                 const input = document.getElementById(dtpState.inputId);
-                if (input) input.value = dtpState.year + '-' + mo + '-' + dd + 'T' + hh + ':' + mm;
+                if (input) input.value = dtpState.year + '-' + mo + '-' + dd + ' ' + hh + ':' + mm;
                 document.body.removeChild(modal);
             } catch (e) { /* 忽略 */ }
         });
@@ -1590,7 +1590,8 @@ function saveRecord(id) {
     
     // 保存记录时间
     if (createdAtInput && createdAtInput.value) {
-        record.createdAt = new Date(createdAtInput.value).toISOString();
+        const _dt = parseLocalDateTime(createdAtInput.value); // ★2026-09-22 手工解析本地时间（与显示格式、引擎差异解耦）
+        if (_dt) record.createdAt = _dt.toISOString();
     }
     
     // ★2026-08-20 照片：编辑结果写回记录
@@ -2165,7 +2166,7 @@ function showDeleteConfirmModal(recordId, recordName) {
                 <button class="confirm-btn-cancel ripple-effect" id="confirm-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-delete">
+                <button class="confirm-btn-delete ripple-effect" id="confirm-delete">
                     删除
                 </button>
             </div>
@@ -3673,7 +3674,7 @@ function wipeConfirmSecond() {
             '<div class="confirm-modal-message" style="line-height:1.7;">这一步会<b>永久删除全部徒步数据与照片</b>，并<b>解除网盘绑定</b>；<b>云端备份文件不受影响</b>（坚果云里的旧备份还在，需要时仍可恢复）。确定要抹掉吗？</div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="wipe-cancel2">返回</button>' +
-            '<button class="check-go-btn ripple-effect" id="wipe-go2" style="font-weight:700;">彻底抹掉</button></div></div>';
+            '<button class="confirm-btn-delete ripple-effect" id="wipe-go2" style="font-weight:700;">彻底抹掉</button></div></div>';
         document.body.appendChild(modal);
         document.getElementById('wipe-cancel2').addEventListener('click', function () { document.body.removeChild(modal); });
         document.getElementById('wipe-go2').addEventListener('click', function () {
@@ -4332,7 +4333,8 @@ function savePlannedTrip(id) {
         
         // 保存记录时间
         if (createdAtInput && createdAtInput.value) {
-            plannedTrips[tripIndex].createdAt = new Date(createdAtInput.value).toISOString();
+            const _dt = parseLocalDateTime(createdAtInput.value); // ★2026-09-22 同记录保存
+            if (_dt) plannedTrips[tripIndex].createdAt = _dt.toISOString();
         }
         // ★2026-08-26 最后修改时间
         plannedTrips[tripIndex].updatedAt = new Date().toISOString();
@@ -4864,7 +4866,7 @@ function showDeletePlannedTripConfirmModal(tripId, tripName) {
                 <button class="confirm-btn-cancel ripple-effect" id="confirm-planned-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-planned-delete">
+                <button class="confirm-btn-delete ripple-effect" id="confirm-planned-delete">
                     删除
                 </button>
             </div>

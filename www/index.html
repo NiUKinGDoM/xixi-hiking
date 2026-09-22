@@ -892,7 +892,8 @@
             border-radius: 999px;
             /* ★2026-08-23 v10 用户定稿：干净透明玻璃（无弧带/无色散）+ 浮动 + 玻璃边 */
             /* ★2026-08-26 浅色模式可见性微调：白背景上 0.08 几乎不可见 → 0.2（一点点，不厚重） */
-            background: rgba(255, 255, 255, 0.2);
+            /* ★2026-09-22 底栏透字太脏（爹点单）：0.2→0.62，只抬底色、玻璃配方不动 */
+            background: rgba(255, 255, 255, 0.62);
             backdrop-filter: blur(2px) saturate(150%);   /* ★2026-08-23 v12 更透更轻：blur 4→2px，alpha 0.12→0.08 */
             -webkit-backdrop-filter: blur(2px) saturate(150%);   /* ★五项优化①：-webkit 与标准属性统一 2px */
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -988,7 +989,8 @@
         }
         body.dark-mode .bottom-tabbar {
             /* ★v10 深色干净透明玻璃 */
-            background: rgba(18, 28, 50, 0.30);
+            /* ★2026-09-22 同步抬深 0.30→0.72（压住透字，与浅色一档观感） */
+            background: rgba(18, 28, 50, 0.72);
             border-color: rgba(180, 205, 255, 0.30);
             /* ★2026-08-25 底栏底部阴影删除（与浅色一致） */
             box-shadow:
@@ -1817,6 +1819,19 @@
             color: #a5b4fc !important;
         }
         
+/* ★2026-09-22 页标题防挤竖排：右侧按钮组过宽时 h2 被压到 36px、「记录」折成两行（计划/设置页同结构却是横排） */
+        .title-text {
+            white-space: nowrap;
+        }
+        #recordsTitle, #plannedTitle, #settingsTitle {
+            flex-shrink: 0;
+        }
+        #recordsTotalBadge, #plannedTotalBadge {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         /* 2026-08-12 记录/计划页"总计"徽标：样式同柱状图右上角，颜色深浅色自适应（浅色深灰/暗色白） */
         .total-badge {
             color: rgba(30, 41, 59, 0.62);
@@ -6411,7 +6426,7 @@
                             <div class="settings-item-desc">在顶栏显示实时帧率监控</div>
                         </div>
                         <label class="settings-switch">
-                            <input type="checkbox" id="fpsToggle" checked>
+                            <input type="checkbox" id="fpsToggle">
                             <span class="switch-slider"></span>
                         </label>
                     </div>
