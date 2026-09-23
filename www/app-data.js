@@ -390,7 +390,7 @@ function renderTable() {
                 </td>
                 <td class="rd-time-cell" data-label="记录时间">${formatDateTime(record.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="check-go-btn ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                 </td>
             </tr>
         `;
@@ -475,7 +475,7 @@ function recordViewBodyHTML(r) {
         // ★2026-09-05 小日记：记录弹窗里的回忆段落（编辑时写的 notes；有内容才展示）
         // ★2026-09-06 小日记字色提亮：标签/图标加深至 #334155（原 #64748b 偏浅）、正文加深 #1e293b；dark 由 .jd-lab/.jd-body CSS 覆盖
         (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons jd-ic" style="font-size:14px;color:#334155;">edit_note</span><span class="jd-lab" style="font-size:12px;color:#334155;letter-spacing:0.3px;">小日记</span></div><div class="jd-body" style="font-size:13px;color:#1e293b;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
-        '<button id="rd-edit-btn" class="check-go-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
+        '<button id="rd-edit-btn" class="glass-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
 }
 
 // 编辑态弹窗 body（与行内编辑同 id 体系：保存/照片/日期/难度/心情/天气全复用）
@@ -500,17 +500,17 @@ function recordEditBodyHTML(r) {
         '</div>' +
         // 用时 + 里程 一行（★2026-09-04 均匀分布）
         '<div style="display:flex;gap:8px;align-items:center;">' +
-        '<div class="edit-merge-box" style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 6px;">' +
+        '<div class="edit-merge-box" style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.42);-webkit-backdrop-filter:blur(2px) saturate(150%);backdrop-filter:blur(2px) saturate(150%);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 6px;">' +
         '<input type="number" id="edit-duration-h-' + r.id + '" placeholder="时" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.duration ? Math.floor(Number(r.duration) / 60) : '') + '" min="0" max="23" step="1" inputmode="numeric" title="小时">' +
         '<span class="edit-unit">时</span>' +
         '<input type="number" id="edit-duration-m-' + r.id + '" placeholder="分" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.duration ? Number(r.duration) % 60 : '') + '" min="0" max="59" step="1" inputmode="numeric" title="分钟">' +
         '<span class="edit-unit">分</span></div>' +
-        '<div class="edit-merge-box" style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 8px;">' +
+        '<div class="edit-merge-box" style="display:flex;flex:1;min-width:0;align-items:center;gap:2px;background:rgba(255,255,255,0.42);-webkit-backdrop-filter:blur(2px) saturate(150%);backdrop-filter:blur(2px) saturate(150%);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:0 8px;">' +
         '<input type="number" id="edit-distance-' + r.id + '" placeholder="里程" class="edit-input input-glow" style="flex:1;min-width:0;border:none;background:transparent;padding:8px 2px;text-align:center;" value="' + (r.distance || '') + '" min="0" step="0.01" inputmode="decimal" title="里程（公里，最多两位小数）">' +
         '<span class="edit-unit">km</span></div>' +
         '</div>' +
         // 日期时间（★2026-09-04 移至末位：时/分/里程下方整行）
-        '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
+        '<input type="text" id="edit-created-at-' + r.id + '" value="' + formatDateTimeLocal(r.createdAt).replace('T', ' ') + '" data-iso="' + formatDateTimeLocal(r.createdAt) + '" data-testid="edit-created-at-' + r.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         // ★2026-09-05 小日记：编辑时可写（notes 字段，textarea 玻璃同 edit-input；dark 由 .dark-mode .edit-input 覆盖）
         '<div style="display:flex;flex-direction:column;gap:6px;"><div style="display:flex;align-items:center;gap:4px;"><span class="material-icons" style="font-size:14px;color:#64748b;">edit_note</span><span class="rd-ph-lab" style="font-size:12px;color:#334155;">小日记（可选）</span></div>' +
         '<textarea id="edit-notes-' + r.id + '" class="edit-input input-glow" rows="3" maxlength="2000" placeholder="写点这天的见闻、心情、路上故事…（保存后显示在记录里）" style="width:100%;box-sizing:border-box;resize:none;border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.7;min-height:66px;font-family:inherit;">' + escapeHtml(r.notes || '') + '</textarea></div>' +
@@ -521,7 +521,7 @@ function recordEditBodyHTML(r) {
         // 操作按钮
         '<div style="display:flex;gap:10px;margin-top:2px;">' +
         '<button id="cancel-btn-' + r.id + '" data-testid="cancel-button-' + r.id + '" class="ripple-effect btn-click-effect confirm-btn-cancel" style="' + recordCancelStyle2 + '">取消</button>' +
-        '<button id="save-btn-' + r.id + '" data-testid="save-button-' + r.id + '" class="ripple-effect btn-click-effect check-go-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
+        '<button id="save-btn-' + r.id + '" data-testid="save-button-' + r.id + '" class="ripple-effect btn-click-effect glass-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
         '</div>' +
         '</div>';
 }
@@ -1319,7 +1319,7 @@ function openDateTimePicker(inputId, currentValue) {
         const now = new Date();
         let y = now.getFullYear(), m = now.getMonth(), d = now.getDate(), h = now.getHours(), mi = now.getMinutes();
         if (currentValue) {
-            const m2 = String(currentValue).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+            const m2 = String(currentValue).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);   // ★2026-09-22 兼容人话显示「2026-09-21 18:23」与 ISO
             if (m2) {
                 y = parseInt(m2[1], 10); m = parseInt(m2[2], 10) - 1; d = parseInt(m2[3], 10);
                 h = parseInt(m2[4], 10); mi = parseInt(m2[5], 10);
@@ -1351,7 +1351,7 @@ function openDateTimePicker(inputId, currentValue) {
             '</div></div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="dtpCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
-            '<button class="check-go-btn ripple-effect" id="dtpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '<button class="glass-btn ripple-effect" id="dtpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         document.getElementById('dtpCancel').addEventListener('click', function () { document.body.removeChild(modal); });
@@ -1362,7 +1362,12 @@ function openDateTimePicker(inputId, currentValue) {
                 const dd = String(dtpState.day).padStart(2, '0');
                 const mo = String(dtpState.month + 1).padStart(2, '0');
                 const input = document.getElementById(dtpState.inputId);
-                if (input) input.value = dtpState.year + '-' + mo + '-' + dd + 'T' + hh + ':' + mm;
+                                if (input) {
+                    // ★2026-09-22 显示人话、真值存 data-iso（保存与再次解析都以 data-iso 为准）
+                    var _iso = dtpState.year + '-' + mo + '-' + dd + 'T' + hh + ':' + mm;
+                    input.value = _iso.replace('T', ' ');
+                    input.setAttribute('data-iso', _iso);
+                }
                 document.body.removeChild(modal);
             } catch (e) { /* 忽略 */ }
         });
@@ -1590,7 +1595,7 @@ function saveRecord(id) {
     
     // 保存记录时间
     if (createdAtInput && createdAtInput.value) {
-        record.createdAt = new Date(createdAtInput.value).toISOString();
+        record.createdAt = new Date(createdAtInput.dataset.iso || createdAtInput.value).toISOString();   // ★2026-09-22 优先用 data-iso（显示是人话）
     }
     
     // ★2026-08-20 照片：编辑结果写回记录
@@ -3010,7 +3015,7 @@ function renderCalMonthDetail() {
                 (planIsDueOrOverdue(t.createdAt)
                     ? '<button class="check-go-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
                     : '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
-                '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+                '<button class="check-go-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
                 '</div></div>';
         });
     });
@@ -3081,7 +3086,7 @@ function renderCalDayDetail(key) {
             (planIsDueOrOverdue(t.createdAt)
                 ? '<button class="check-go-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
                 : '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
-            '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+            '<button class="check-go-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
             '</div></div>';
     });
     box.innerHTML = html;
@@ -4229,7 +4234,7 @@ function plannedEditBodyHTML(t) {
         '<input type="number" id="edit-planned-elevation-' + t.id + '" value="' + (t.elevation || 0) + '" data-testid="edit-planned-elevation-' + t.id + '" class="edit-input input-glow" style="flex:1;min-width:0;" min="0" placeholder="海拔" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next">' +
         '<input type="text" id="edit-planned-difficulty-' + t.id + '" data-testid="edit-planned-difficulty-' + t.id + '" value="' + diffLabel(t.difficulty || 3) + '" class="edit-input input-glow difficulty-color"' + ' readonly style="flex:1;min-width:0;cursor:pointer;font-weight:600;text-align:center;--dfc-light:' + getDifficultyColor(t.difficulty || 3) + ';--dfc-dark:' + getDifficultyColorDark(t.difficulty || 3) + ';" onclick="openDifficultyPicker(\'edit-planned-difficulty-' + t.id + '\')" title="点击选择难度" enterkeyhint="done">' +
         '</div>' +
-        '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
+        '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt).replace('T', ' ') + '" data-iso="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         '<div style="display:flex;gap:10px;margin-top:2px;">' +
         '<button id="cancel-planned-btn-' + t.id + '" data-testid="cancel-planned-button-' + t.id + '" class="ripple-effect btn-click-effect confirm-btn-cancel" style="' + pCancel + '">取消</button>' +
         '<button id="save-planned-btn-' + t.id + '" data-testid="save-planned-button-' + t.id + '" class="ripple-effect btn-click-effect check-go-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
@@ -4332,7 +4337,7 @@ function savePlannedTrip(id) {
         
         // 保存记录时间
         if (createdAtInput && createdAtInput.value) {
-            plannedTrips[tripIndex].createdAt = new Date(createdAtInput.value).toISOString();
+            plannedTrips[tripIndex].createdAt = new Date(createdAtInput.dataset.iso || createdAtInput.value).toISOString();   // ★2026-09-22 优先用 data-iso
         }
         // ★2026-08-26 最后修改时间
         plannedTrips[tripIndex].updatedAt = new Date().toISOString();

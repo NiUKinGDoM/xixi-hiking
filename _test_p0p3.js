@@ -790,11 +790,11 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         assert('警示条在位(未超限隐藏)', !!puSc && !!puSc.querySelector('.pu-warn') && puSc.querySelector('.pu-warn').className.indexOf('on') < 0, 'no warn');
         assert('TOP10 排行已移除(无 pu-tr)', !puSc || !puSc.querySelector('.pu-tr'), 'top still here');
         assert('无榜单标题(最占空间的记录已删)', !puM2 || puM2.textContent.indexOf('最占空间的记录') < 0, puM2 ? puM2.textContent.slice(0, 60) : '');
-        // 底部双钮：知道了=灰蓝关闭；优化=check-go 红（只删孤立缓存，动作走 confirmDeleteOrphanPhotos）
+        // 底部双钮：知道了=灰蓝关闭；优化=中性玻璃（★2026-09-22 红色只给危险操作）（只删孤立缓存，动作走 confirmDeleteOrphanPhotos）
         const puCloseB = document.getElementById('puClose');
         const puOptB = document.getElementById('puOpt');
         assert('知道了=灰蓝次钮', !!puCloseB && puCloseB.className.indexOf('confirm-btn-cancel') >= 0 && puCloseB.textContent.indexOf('知道了') >= 0, puCloseB ? puCloseB.className : 'no close');
-        assert('优化=check-go 红钮', !!puOptB && puOptB.className.indexOf('check-go-btn') >= 0 && puOptB.textContent.indexOf('优化') >= 0 && puOptB.textContent.indexOf('去清理') < 0, puOptB ? puOptB.textContent : 'no opt');
+        assert('优化=中性玻璃钮', !!puOptB && puOptB.className.indexOf('glass-btn') >= 0 && puOptB.className.indexOf('check-go-btn') < 0 && puOptB.textContent.indexOf('优化') >= 0 && puOptB.textContent.indexOf('去清理') < 0, puOptB ? puOptB.textContent : 'no opt');
         if (puOptB) click(puOptB); await delay(120);
         // ★2026-09-08 断言放宽：俏皮话随机五连（文案不锁死），只验证 弹窗关 + 中性 info toast 出现
         assert('点优化(无孤立)→弹窗关+俏皮中性提示', !document.querySelector('#puScroll') && !!document.querySelector('.info-message'), document.body.textContent.slice(0, 60));

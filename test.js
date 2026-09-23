@@ -691,6 +691,87 @@ const _fixCore = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8'
 const _fixSync = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
 const _fixInit = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
 
+// ★2026-09-22 语义与一致性守卫（红色只给危险操作 / 标题不折行 / 输入框玻璃化 / 时间显示人话）
+//   背景：用户 2026-09-22 实测反馈三条 —— ① 红色（.check-go-btn）被 9 处非危险操作误用；
+//   ② 记录页标题被右侧按钮挤窄（窄屏折成竖排）；③ 编辑弹窗输入框是不透明白块 + 时间显示裸 ISO。
+const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+{
+  const _cases = [
+    ['保存', /id="save-btn-' \+ r\.id \+ '" data-testid="save-button-' \+ r\.id \+ '" class="ripple-effect btn-click-effect glass-btn"/],
+    ['编辑这条记录', /id="rd-edit-btn" class="glass-btn ripple-effect"/],
+    ['引导·去记录页', /id="welcomeGoBtn" class="glass-btn ripple-effect"/],
+    ['引导·记下第一笔', /id="rGoBtn" class="glass-btn ripple-effect"/],
+    ['引导·添加一条计划', /id="pGoBtn" class="glass-btn ripple-effect"/],
+    ['引导·去看看导出', /id="sGoBtn" class="glass-btn ripple-effect"/],
+    ['绑定账号', /id="syncBindOpenBtn" class="glass-btn ripple-effect"/],
+    ['支持作者', /id="supportAuthorBtn" class="ripple-effect glass-btn"/],
+    ['选择器·确定', /class="glass-btn ripple-effect" id="dtpOk"/],
+    ['照片弹窗·优化', /class="glass-btn ripple-effect" type="button" id="puOpt"/],
+  ];
+  _cases.forEach(function (c) {
+    var re = new RegExp(c[1].source);
+    re.test(_fixData) || re.test(_fixCore) || re.test(_semH)
+      ? ok('守卫：「' + c[0] + '」已改中性（红色只给危险操作）')
+      : bad('「' + c[0] + '」仍是危险红 —— .check-go-btn 只能用于危险操作!');
+  });
+}
+
+// 危险操作必须保留红色
+[/id="wipeAllBtn" class="ripple-effect check-go-btn"/,
+ /class="check-go-btn ripple-effect" id="orphan-delete"/,
+ /id="batchDeleteBtn" class="check-go-btn ripple-effect"/,
+ /id="plannedBatchDeleteBtn" class="check-go-btn ripple-effect"/,
+ // ★2026-09-22 行内删除钮也必须是红（此前是中性灰 → 与「保存」长同一张脸）
+ /data-testid="delete-button-' \+ record\.id \+ '" class="check-go-btn ripple-effect"/,
+ /'<button class="check-go-btn ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>'/].every(function (re) { return re.test(_semH) || re.test(_fixData) || re.test(_fixCore); })   // ★orphan-delete 在 app-core.js
+  ? ok('守卫：危险操作（抹掉足迹 / 清理 / 批量删除）仍为红色')
+  : bad('危险操作的红色被误改!');
+
+// 标题不折行 + 不参与收缩（窄屏防竖排）
+// 标题不折行 + 不参与收缩 + 标题行防挤压（窄屏不竖排 / 不横溢；实测 360 单行、320 换行兜底）
+(/\.title-text \{ white-space: nowrap; \}/.test(_semH) && _semH.indexOf("#statsTitle, #heatmapTitle, #recordsTitle, #plannedTitle, #settingsTitle { flex-shrink: 0; }") >= 0 && _semH.indexOf("#plansTitle") < 0 && _semH.indexOf("#overviewTitle") < 0)
+  ? ok('守卫：页标题 nowrap + 不收缩（防挤成竖排）')
+  : bad('页标题防挤护缺失!');
+(_semH.match(/class="panel-hdr flex /g) || []).length === 3
+  ? ok('守卫：3 个页面标题行已挂 .panel-hdr')
+  : bad('.panel-hdr 未挂到 3 个标题行!');
+(/\.panel-hdr \{ flex-wrap: wrap; row-gap: 8px; \}/.test(_semH) && /\.panel-hdr > div:last-child \{ margin-left: auto; \}/.test(_semH))
+  ? ok('守卫：标题行换行兜底（空间不足时控件组换行并右对齐）')
+  : bad('标题行换行兜底缺失!');
+(/@media \(max-width: 430px\) \{[\s\S]{0,400}?\.panel-hdr \.glass-btn \{ padding-left: 8px; padding-right: 8px; \}/.test(_semH))
+  ? ok('守卫：窄屏标题行收紧（保持单行）')
+  : bad('窄屏标题行收紧缺失!');
+
+// 输入框玻璃化（不再是 0.95 不透明白块）
+// ★2026-09-22 修正：原断言写死「background: rgba(255, 255, 255, 0.95)」（逗号后带空格），
+//   而 .edit-merge-box 的内联样式是 background:rgba(255,255,255,0.95)（无空格）→ 断言漏判，
+//   于是「时 / 分 · 里程」那两个白盒一直没跟着玻璃化（靠对比度像素实测才抓出来）。
+//   → 断言一律用 \s* 容错空格，且必须覆盖 JS 模板里的内联样式。
+(/background: rgba\(255, 255, 255, 0\.42\);/.test(_semH) && /backdrop-filter: blur\(2px\) saturate\(150%\);/.test(_semH) && !/background\s*:\s*rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*0?\.95\s*\)/.test(_semH))
+  ? ok('守卫：输入框已玻璃化（半透明 + 全站玻璃配方）')
+  : bad('输入框仍是不透明白块!');
+// ★2026-09-22 复合白盒（时/分 · 里程）也必须是玻璃；浅色占位符必须够深（改玻璃底后像素实测对比度）
+((_fixData.match(/class="edit-merge-box" style="[^"]*background:rgba\(255,255,255,0\.42\)[^"]*backdrop-filter:blur\(2px\) saturate\(150%\)/g) || []).length === 2)
+  ? ok('守卫：时/分·里程复合框已玻璃化（不再是不透明白盒）')
+  : bad('edit-merge-box 仍是不透明白盒!');
+(_semH.indexOf('.edit-input::placeholder { color: rgba(51, 65, 85, 0.85); opacity: 1; }') >= 0 && _semH.indexOf('color: rgba(51, 65, 85, 0.85);') >= 0)
+  ? ok('守卫：浅色占位符已提档（玻璃底上对比度达标）')
+  : bad('浅色占位符太淡（玻璃底上看不清）!');
+(!/body\.dark-mode \.edit-input::placeholder[^}]*#94a3b8/.test(_semH) && /body\.dark-mode \.edit-input::placeholder[^}]*#cbd5e1/.test(_semH) && _semH.indexOf('color: rgba(203, 213, 225, 0.9);') >= 0)
+  ? ok('守卫：深色占位符已提亮（时/分复合框上也达 AA）')
+  : bad('深色占位符太暗（时/分空框看不清）!');
+
+// 时间字段：显示人话 + data-iso 存真值
+(/formatDateTimeLocal\(r\.createdAt\)\.replace\('T', ' '\)/.test(_fixData) && /formatDateTimeLocal\(t\.createdAt\)\.replace\('T', ' '\)/.test(_fixData) && /data-iso="' \+ formatDateTimeLocal\(r\.createdAt\) \+ '"/.test(_fixData))
+  ? ok('守卫：时间显示人话 + data-iso 存 ISO 真值')
+  : bad('时间显示人话/data-iso 缺失!');
+
+// picker 兼容空格格式 + 写回 data-iso + 保存优先读 data-iso
+(/\[T \]\(\\d\{2\}\):\(\\d\{2\}\)/.test(_fixData) && /input\.setAttribute\('data-iso', _iso\);/.test(_fixData) && (_fixData.match(/createdAtInput\.dataset\.iso \|\| createdAtInput\.value/g) || []).length === 2)
+  ? ok('守卫：选择器写回/保存读取均走 data-iso（人话显示不会丢真值）')
+  : bad('data-iso 链路不完整!');
+
+
 (/\u8ddd\u79bb\u8865\u4e0b\u9650\/\u4e0a\u9650/.test(_fixData) && /Math\.min\(10000, Math\.max\(0, Math\.round\(\(parseFloat\(distanceInput\.value\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u8bb0\u5f55\u8ddd\u79bb\u5df2\u52a0\u4e0b\u9650/\u4e0a\u9650\uff08\u8d1f\u6570\u4e0d\u518d\u5165\u5e93\uff09') : bad('\u8ddd\u79bb\u7f3a\u4e0b\u9650\u9632\u62a4\uff01');
 (/Math\.min\(1440, hh \* 60 \+ mm\)/.test(_fixData) && /Math\.min\(23, Math\.max\(0, parseInt\(\(durationHInput/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u7528\u65f6\u5df2\u52a0\u4e0a\u9650\uff08\u5c0f\u65f6\u226423\u3001\u603b\u65f6\u957f\u22641440\u5206\u949f\uff09') : bad('\u7528\u65f6\u7f3a\u4e0a\u9650\uff01');
 (/record\.difficulty = Math\.min\(5, Math\.max\(1, parseInt\(difficultyInput\.value, 10\) \|\| 3\)\);/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u8bb0\u5f55\u96be\u5ea6\u4e0e\u8ba1\u5212\u8def\u5f84\u53e3\u5f84\u7edf\u4e00\uff081~5 \u94b3\u5236\uff09') : bad('\u8bb0\u5f55\u96be\u5ea6\u7f3a 1~5 \u94b3\u5236\uff01');
