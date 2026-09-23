@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-23（v1.2.2.8 / vc272）  
+> 最后更新：2026-09-23（v1.2.2.9 / vc273）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -190,7 +190,16 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > 更早的见 `docs/版本变更记录-存档.md`；**小版本进位时（如 1.2.1.x → 1.2.2.x）把上一系列整段搬过去**。
 >
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
-> 第 1 行 `- **正式版 v1.2.2.8**（versionCode 272，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+> 第 1 行 `- **正式版 v1.2.2.9**（versionCode 273，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.2.9 更新（**用户 v1.2.2.8 实测两条**；共 2 处补丁 + 2 条新守卫 + 1 次切片踩坑修复）：
+  - **① 「使用前确认」弹窗两个按钮一大一小**（用户原话：「暂不同意和同意并继续的弹窗大小不一样」）—— **★根因是我 v1.2.2.7~08 那轮「红色只给危险操作」的 class 替换漏了配套规则**：弹窗底部按钮尺寸由一条 `.confirm-modal-buttons .confirm-btn-cancel, .confirm-btn-delete, .check-go-btn { padding:10px 24px !important; border-radius:12px !important; font-size:14px !important; min-width:96px !important; font-weight:600 !important; display:inline-flex !important; … }` 统一，把「同意并继续」从 `check-go-btn` 换成 `glass-btn` 后**不再命中** → 回落到 `.glass-btn` 自身内边距 → 与旁边「暂不同意」一大一小。**同类共 4 个按钮**（同意并继续 `legalAgree` / 日期选择器「确定」`dtpOk` / 保存二维码 `support-save` / 分享 `hm-share`；其中前两个是 v1.2.2.7 就留下的、用户当时没发现）。**修法**：把 `.glass-btn`（含 `:disabled` —— `apOk` 的置灰态也丢了）一并纳入该规则，与语义改造配套。
+  - **② 记录页删除按钮改成与计划页同款**（用户原话：「记录页的红色删除垃圾桶，换为和计划页一样的灰色删除按钮」）—— 记录页原来是**图标钮**（`padding:6px` 方形 + `material-icons delete` 红垃圾桶），计划页是**文字钮**「删除」（`padding:6px 12px;font-size:12px`）。**修法**：`recordDelStyle` 改成与计划页 `delStyle` **逐字一致**，按钮内 `material-icons` 图标 → 文字「删除」。两处现在完全同款。
+  - **★修 ② 时踩的坑（新铁律已入记忆）** —— 用 `S.index(';', k)` 给「样式块」定界做切片 → 撞上字符串字面量里的 `;`（`'padding:6px;…'`）**提前截断** → 替换只落到半行，**留下两行残码 → 语法错**。改用**行边界**（`S.index(NL, 行首)`）精确清除残码后 `node --check` 通过。**教训：目标块内含字符串字面量时，不能用 `;` 当结束标记。**
+  - **守卫与反向验证** —— `test.js` 310 → **312/0**（+2 条：①「弹窗底部 .glass-btn 已纳入尺寸统一规则」②「记录页删除按钮＝文字『删除』，非图标」）；**反向验证 2/2**：分别撤掉任一处修复 → **各自精确报红 1 条** → 逐字节还原后 312/0 ✓。
+  - **实测** —— `test` **312/0** · `test-ui` **30/0** · `P0P3` **299/0** · 弹窗宽度 **38/0** · iOS 适配 **10/0** —— 共 **689 项全绿**。⚠ **`smoke`(20) 与 `e2e`(126) 仍未跑**：本机 **node 子进程 `EBUSY` 环境故障未恢复**（所有 spawn 型工具仍失效，playwright 启不了浏览器）→ 视觉基线**本版未刷新**，恢复后需补跑。
+  - **★用户新定规矩（已入记忆）** —— **Release 正文 = App 更新弹窗显示的内容**（更新弹窗读的就是 GitHub 的 `release.body`）→ `tools/notes/<版本>-release.md` **只放更新日志本身**，**禁放「📱 安装说明 / 🌐 网页版链接」这类元信息**。已改掉 `1.2.2.8` / `1.2.2.7` 两个模板，并把**两个已发布 Release 的正文**用 API `PATCH /releases/{id}` 修掉（回读确认无这两行，不动 APK）。
+  - **发布链路**：回退点 `backups/prev-1.2.2.8/` → sw 缓存 **v48 → v49** → 构建 **2.40 MB** → 验包 **14 项全过** → 镜像 push → Release 新建 + APK 上传 + 服务端 digest 校验 + 下载回验 → 网页版复核。
+- **正式版 v1.2.2.8**（versionCode 272，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.8 更新（**用户点定 3 件事 + 自查揪出 5 处「写死版本号」连带问题**；共 6 处补丁 + 1 条新守卫 + 5 个测试文件版本绑定改造）：
   - **① 行内删除改「淡红图标」**（用户问「记录列表 29 行全是红删除钮，你想怎么改？」，我提 A/B/C 三案，用户回「按照你想的弄吧」→ 取 **方案 A**）—— 新增 `.danger-subtle-btn`：`background/border transparent !important`、`color:#b91c1c`（深色 `#fca5a5`）、hover/active 才给极淡红底。**★根因**：3 处行内删除的内联灰蓝样式是**死代码** —— `.check-go-btn` 带 `!important`，CSS `!important` 优先级高于内联样式，所以内联写的 `background:rgba(100,116,139,0.14)` 一直被压掉、显示成红框按钮。改法：3 处（记录列表 / 计划列表 / 日历明细）class 改 `danger-subtle-btn`，内联样式保留（仍负责 padding/尺寸）。
   - **② 「完成 / 编辑 / 保存 / 确定 / 分享」等 17 处非危险按钮去红**（用户原话：「计划列表/日历的『完成』按钮也是红的，修一下」）—— v1.2.2.7 只收了 9 处，本轮扫全量后补齐 **17 处**（`dfOk`/`mwpOk`/`legalAgree`/`support-save`/`hmyp-ok`/`hm-share`/`完成·延期`×2/`apOk`/`oc-go`/`pd-edit-btn`/`pd-complete-btn`/`save-planned-btn`/`confirm-complete-ok`/`celebrateOkBtn`×3）→ 全部 `.glass-btn`。**顺带发现**：「确认完成」还挂着 `.confirm-btn-delete`（**实色红** `rgba(239,68,68,.85)`），只换按钮 class 不够 → 该类一并摘掉。

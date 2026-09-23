@@ -745,6 +745,16 @@ const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
  /\.danger-subtle-btn\s*\{[^}]*background:\s*transparent\s*!important/].every(function (re) { return re.test(_fixData) || re.test(_semH); })
   ? ok('守卫：行内删除已改「淡红图标」（去红底/红边框）')
   : bad('行内删除又变回红框按钮 —— 每行都红等于没有警示力!');
+// 弹窗底部按钮尺寸统一：.glass-btn 必须与取消 / 危险按钮同规则
+//   ★2026-09-23 补漏：中性改造（check-go-btn → glass-btn）后漏掉 .glass-btn，
+//   没内联尺寸的几个（日期「确定」/ 保存二维码 / 同意并继续 / 分享）与旁边取消按钮一大一小
+(/\n\s*\.confirm-modal-buttons \.glass-btn\s*\{/.test(_semH) && _semH.indexOf(".confirm-modal-buttons .glass-btn:disabled") >= 0)
+  ? ok('守卫：弹窗底部按钮尺寸统一（.glass-btn 已纳入，不再一大一小）')
+  : bad('弹窗底部 .glass-btn 未纳入尺寸统一规则 —— 会与旁边的取消按钮一大一小!');
+// 记录页删除按钮＝文字「删除」（与计划页同款；★2026-09-23 用户要求：不要红色垃圾桶图标）
+/data-testid="delete-button-' \+ record\.id \+ '"[^>]*>删除<\/button>/.test(_fixData)
+  ? ok('守卫：记录页删除按钮与计划页同款（文字「删除」，非图标）')
+  : bad('记录页删除按钮又变回图标钮 —— 用户要求与计划页一致!');
 
 // 标题不折行 + 不参与收缩（窄屏防竖排）
 // 标题不折行 + 不参与收缩 + 标题行防挤压（窄屏不竖排 / 不横溢；实测 360 单行、320 换行兜底）
