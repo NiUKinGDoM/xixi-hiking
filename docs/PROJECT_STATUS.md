@@ -504,6 +504,16 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - \*\*网页版正式通道：<https://xixi-hiking.pages.dev\*\*（Cloudflare> Pages + GitHub Git 集成，push master 自动部署，Root=www，长期稳定）｜发版前验收预览用 workbuddy_sites_deploy 临时链接（会漂移，仅临时）
 
 
+
+## 官网（site/）· 2026-09-23 新增
+
+- **独立静态站**（首页 + 隐私政策 + 免责声明）：`hiking-app3/site/`，纯静态、零依赖、**零外部 CDN**
+- **独立 Cloudflare Pages 项目（Root=`site`）**：与 App 的 PWA 站点（Root=`www`）**刻意隔离** —— 放进 `www/` 会被 `sw.js` 接管，用户打开官网会被拉进 App 本体
+- **★首次部署需用户在 CF 控制台操作**：Pages → Connect to Git → 选本仓库 → Build command 留空 / Build output directory `site`（详细步骤见 `site/README.md`）
+- 已纳入 `tools/ghsync.js` 同步清单（DIRS + diff 核对 15 项）→ `ghsync --push` 即上远端，push master 后 CF 自动部署
+- **★政策正文是两份拷贝**：App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`），官网在 `site/privacy.html` / `site/terms.html` → **改一处必须同步另一处**，并 bump `LEGAL_VERSION` + 官网页「生效日期」
+- 界面截图（统计概览 / 徒步足迹 / 山册）为**真实 App 渲染 + 演示数据**；想换自己的真机图，替换 `site/assets/shots/` 同名文件即可（建议 390×844、2 倍图）
+- **★已知环境问题（2026-09-23 遇到）**：本机一度出现「node 的 `child_process` spawn 全部 EBUSY」→ `ghsync`/`ship`/`patch.js` 的写后校验集体失效（表现为「取 token 失败」「syntax error」假报错）。绕法：**从 shell 直接跑 git/ghtoken.py** 完成提交与推送（token 只进变量、输出打码）
 ## 待办/新功能方案（2026-09-08 更新）
 
 - 📋 **「联网登录」方案评估（2026-09-17）**：**②预设服务商 / ③入口登录化 / ④备份含配置 均已在 v1.2.1.8 落地；① 同步配置码未做**：需求实为「换机不用重填同步配置」+ **APK 为主** → 建议**零后端三件套**（同步配置码 / 预设服务商 / 入口「登录化」）；**不建议真账号**（平台云服务按访问域名精确校验，APK 本地包是 localhost 用不了）。完整方案与待拍板 4 点：`docs/方案-换机同步与登录体验.md`
