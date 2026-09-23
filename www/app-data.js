@@ -363,9 +363,9 @@ function renderTable() {
     // ★2026-09-01 行内删除按钮统一：confirm-btn-cancel 灰蓝玻璃（与计划页/日历明细/弹窗同款；浅色下用可见灰蓝底防白边不可见）
     const recordDark = document.body.classList.contains('dark-mode');
     const recordDelStyle = recordDark
-        ? 'padding:6px 12px;border-radius:10px;font-size:12px;'
-        : 'padding:6px 12px;border-radius:10px;font-size:12px;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
-    // ★2026-09-23 用户要求：记录页删除按钮与计划页完全一致（此前是 6px 方形的图标钮）
+        ? 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;'
+        : 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(100,116,139,0.14);border:1px solid rgba(100,116,139,0.6);color:#334155;font-weight:600;';
+    // ★2026-09-23 用户两次纠正后定稿：与「计划列表」的删除**同款** —— confirm-btn-cancel + 灰色垃圾桶图标（不是文字、不是红）
     // ★2026-09-01 编辑行取消按钮：尺寸硬锁定 + 浅色下可见灰蓝底（根治 confirm-btn-cancel 白玻璃底在浅色不可见）
     const recordCancelStyle = recordDark
         ? 'padding:6px 14px;border-radius:10px;font-size:12px;min-width:56px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;'
@@ -391,7 +391,7 @@ function renderTable() {
                 </td>
                 <td class="rd-time-cell" data-label="记录时间">${formatDateTime(record.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="danger-subtle-btn ripple-effect" style="' + recordDelStyle + '" title="删除">删除</button>'}
+                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="confirm-btn-cancel ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                 </td>
             </tr>
         `;
@@ -3016,7 +3016,7 @@ function renderCalMonthDetail() {
                 (planIsDueOrOverdue(t.createdAt)
                     ? '<button class="glass-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
                     : '<button class="glass-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
-                '<button class="danger-subtle-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+                '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
                 '</div></div>';
         });
     });
@@ -3087,7 +3087,7 @@ function renderCalDayDetail(key) {
             (planIsDueOrOverdue(t.createdAt)
                 ? '<button class="glass-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
                 : '<button class="glass-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
-            '<button class="danger-subtle-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
             '</div></div>';
     });
     box.innerHTML = html;

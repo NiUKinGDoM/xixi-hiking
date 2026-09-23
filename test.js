@@ -727,34 +727,35 @@ const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
  /class="check-go-btn ripple-effect" id="orphan-delete"/,
  /id="batchDeleteBtn" class="check-go-btn ripple-effect"/,
  /id="plannedBatchDeleteBtn" class="check-go-btn ripple-effect"/,
- // ★2026-09-22 行内删除钮曾要求为红；★2026-09-23 用户定案改「淡红图标」(.danger-subtle-btn)：去红底与红边框，只留红色图标/文字 —— 一列几十行红框会让红色失去警示力
+ // ★2026-09-23 用户两次纠正后定稿：三处行内删除＝中性灰（confirm-btn-cancel，含可见边框），不再是红色 —— 红色只留给确认弹窗 / 抹掉足迹 / 批量删除
  // ★2026-09-23 二次收口：确认真实危险操作也必须红（此前有 16 处非危险按钮误用红，已全部改中性）
  /class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-delete"/,
  /class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-planned-delete"/,
  /class="confirm-btn-delete check-go-btn ripple-effect" id="batch-confirm-delete"/,
  /class="confirm-btn-delete check-go-btn ripple-effect" id="pbatch-confirm-delete"/,
  /class="check-go-btn ripple-effect" id="wipe-go2"/,
- /class="check-go-btn ripple-effect" id="wipe-next1"/,
- /data-testid="delete-button-' \+ record\.id \+ '" class="danger-subtle-btn ripple-effect"/,
- /'<button class="danger-subtle-btn ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>'/].every(function (re) { return re.test(_semH) || re.test(_fixData) || re.test(_fixCore); })   // ★orphan-delete 在 app-core.js
+ /class="check-go-btn ripple-effect" id="wipe-next1"/].every(function (re) { return re.test(_semH) || re.test(_fixData) || re.test(_fixCore); })   // ★orphan-delete 在 app-core.js
   ? ok('守卫：危险操作（抹掉足迹 / 清理 / 批量删除 / 确认删除）仍为红色')
   : bad('危险操作的红色被误改!');
-// 行内删除＝「淡红图标」（不再是红框按钮；★2026-09-23 用户定案）
-[/'<button class="danger-subtle-btn ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>'/,
- /data-testid="delete-button-' \+ record\.id \+ '" class="danger-subtle-btn ripple-effect"/,
- /\.danger-subtle-btn\s*\{[^}]*background:\s*transparent\s*!important/].every(function (re) { return re.test(_fixData) || re.test(_semH); })
-  ? ok('守卫：行内删除已改「淡红图标」（去红底/红边框）')
-  : bad('行内删除又变回红框按钮 —— 每行都红等于没有警示力!');
+// 三处行内删除＝中性灰（confirm-btn-cancel）+ 可见灰蓝边框
+//   ★2026-09-23 用户两次纠正定稿：① 记录页要与「计划列表」同款（灰色垃圾桶图标，不是文字、不是红）
+//   ② 日历明细不能丢边框（此前 .danger-subtle-btn 的 border:transparent !important 把它吃掉了）
+[/class="confirm-btn-cancel ripple-effect" style="' \+ recordDelStyle \+ '" title="删除"><span class="material-icons" style="font-size:18px;">delete<\/span><\/button>/,
+ /<button class="confirm-btn-cancel ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>/,
+ /: 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba\(100,116,139,0\.14\);border:1px solid rgba\(100,116,139,0\.6\);/].every(function (re) { return re.test(_fixData); })
+  && _semH.indexOf('.danger-subtle-btn') < 0
+  ? ok('守卫：行内删除＝中性灰 + 可见边框（记录页灰垃圾桶 / 日历明细有边框）')
+  : bad('行内删除丢了中性灰或边框（用户已两次纠正）!');
 // 弹窗底部按钮尺寸统一：.glass-btn 必须与取消 / 危险按钮同规则
 //   ★2026-09-23 补漏：中性改造（check-go-btn → glass-btn）后漏掉 .glass-btn，
 //   没内联尺寸的几个（日期「确定」/ 保存二维码 / 同意并继续 / 分享）与旁边取消按钮一大一小
 (/\n\s*\.confirm-modal-buttons \.glass-btn\s*\{/.test(_semH) && _semH.indexOf(".confirm-modal-buttons .glass-btn:disabled") >= 0)
   ? ok('守卫：弹窗底部按钮尺寸统一（.glass-btn 已纳入，不再一大一小）')
   : bad('弹窗底部 .glass-btn 未纳入尺寸统一规则 —— 会与旁边的取消按钮一大一小!');
-// 记录页删除按钮＝文字「删除」（与计划页同款；★2026-09-23 用户要求：不要红色垃圾桶图标）
-/data-testid="delete-button-' \+ record\.id \+ '"[^>]*>删除<\/button>/.test(_fixData)
-  ? ok('守卫：记录页删除按钮与计划页同款（文字「删除」，非图标）')
-  : bad('记录页删除按钮又变回图标钮 —— 用户要求与计划页一致!');
+// 热力图弹窗「分享」按钮字色必须随主题（★2026-09-23 修：浅色弹窗上写死 #ffffff → 白字看不见）
+(/\.hm-share-btn\s*\{[^}]*color:\s*#334155\s*!important/.test(_semH) && /body\.dark-mode\s+\.hm-share-btn\s*\{[^}]*color:\s*#e5e7eb\s*!important/.test(_semH))
+  ? ok('守卫：热力图分享按钮字色随主题（浅色深字 / 深色浅字）')
+  : bad('热力图分享按钮字色写死了 —— 浅色弹窗上会看不见!');
 
 // 标题不折行 + 不参与收缩（窄屏防竖排）
 // 标题不折行 + 不参与收缩 + 标题行防挤压（窄屏不竖排 / 不横溢；实测 360 单行、320 换行兜底）
@@ -785,7 +786,7 @@ const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
   : bad('edit-merge-box 仍是不透明白盒!');
 (_semH.indexOf('.edit-input::placeholder { color: rgba(51, 65, 85, 0.85); opacity: 1; }') >= 0 && _semH.indexOf('color: rgba(51, 65, 85, 0.85);') >= 0)
   ? ok('守卫：浅色占位符已提档（玻璃底上对比度达标）')
-  : bad('浅色占位符太淡（玻璃底上看不清）!');
+  : bad('浅色占位符太淡（玻璃底上看不清）!');
 // ★2026-09-23 非危险按钮必须中性（「完成 / 编辑 / 保存 / 分享 / 同意 / 确定」等一律 glass-btn；红色只给会丢数据的操作）
 //   背景：用户实测反馈「计划列表/日历的完成按钮也是红的」→ 复查发现共 16 处非危险按钮误用 check-go-btn
 //   （完成/完成·延期 ×4、行内完成图标钮、计划详情 编辑/完成、计划编辑「保存」、确认完成、庆祝卡 ×3、分享、

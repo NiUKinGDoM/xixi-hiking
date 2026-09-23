@@ -455,8 +455,10 @@
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(2px) saturate(150%);
             -webkit-backdrop-filter: blur(2px) saturate(150%);
-            border: 1px solid rgba(255, 255, 255, 0.5);   /* ★设计语言统一：白边白字（与关闭按钮一致） */
-            color: #ffffff !important;
+            border: 1px solid rgba(100, 116, 139, 0.45);   /* ★2026-09-23 改为与关闭按钮同款中性边（白边在浅色弹窗上也不可见） */
+            /* ★2026-09-23 修：原写死 color:#ffffff（为深色弹窗设计），浅色弹窗上白字看不见；
+               此前是 .check-go-btn 的红字 !important 恰好压在后面才显红，换成 .glass-btn 后就露出来了 */
+            color: #334155 !important;
             border-radius: 12px;   /* ★v5 尺寸对齐关闭按钮 */
             padding: 8px 16px;
             font-size: 16px;
@@ -468,7 +470,7 @@
         body.dark-mode .hm-share-btn {
             background: rgba(16, 26, 48, 0.32);
             border-color: rgba(148, 180, 255, 0.35) !important;   /* ★2026-08-25 暗色统一为关闭按钮边框色（原 rgba(255,255,255,0.5)） */
-            color: #ffffff !important;
+            color: #e5e7eb !important;   /* ★2026-09-23 与 .dark-mode .confirm-btn-cancel 同值 */
         }
         
         /* ★2026-08-23 热力图弹窗 meta 项（心情/天气/同行）：标签式 + 浅色深字可读 */
@@ -606,25 +608,6 @@
             color: #fecaca !important;
         }
 
-        /* 2026-09-23 行内删除改「淡红图标」：去掉红底与红边框，只保留红色图标/文字
-           —— 列表里每行都挂红框会让红色失去警示力（29 行全红 = 哪儿都不红）；
-           红色语义留在图标上，真正的红色按钮只留给确认弹窗与批量删除。
-           内联样式里的灰蓝底/边由本类的 !important 覆盖（内联样式仍负责内边距与尺寸）。 */
-        .danger-subtle-btn {
-            background: transparent !important;
-            border: 1px solid transparent !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            color: #b91c1c !important;
-            cursor: pointer;
-            transition: background .16s ease, color .16s ease;
-        }
-        @media (hover: hover) {
-            .danger-subtle-btn:hover { background: rgba(220, 38, 38, 0.08) !important; }
-        }
-        .danger-subtle-btn:active { background: rgba(220, 38, 38, 0.12) !important; }
-        body.dark-mode .danger-subtle-btn { color: #fca5a5 !important; }
-        body.dark-mode .danger-subtle-btn:active { background: rgba(248, 113, 113, 0.16) !important; }
         /* ★2026-09-04 批量多选框：appearance:none 玻璃自绘——选中态=浅红玻璃+红勾（与 .check-go-btn 删除语义同设计语言），
            不再用原生 accent-color 深红块；未选=白玻璃+灰蓝可见边，dark 对应暗玻璃+亮边 */
         .batch-check,
