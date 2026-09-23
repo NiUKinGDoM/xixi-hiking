@@ -42,6 +42,8 @@ const DIRS = [
   { src: 'tools', dst: 'tools', filter: (f) => f.endsWith('.js') || f.endsWith('.py') },
   { src: 'e2e', dst: 'e2e', filter: (f) => f.endsWith('.js') },
   { src: 'docs', dst: 'docs', filter: (f) => f.endsWith('.md') },
+  // ★2026-09-23 官网（独立静态站，CF Pages 以 Root=site 部署；与 www 隔离，不被 App 的 SW 接管）
+  { src: 'site', dst: 'site', filter: null },
 ];
 
 function walkCopy(srcDir, dstDir, filter, plan) {
@@ -79,7 +81,7 @@ function listAssets(dir, base, out) {
 }
 const CHECK = WWW_FILES.map((f) => 'www/' + f)
   .concat(listAssets(assetsDir, '', []))
-  .concat(['docs/PROJECT_STATUS.md']);
+  .concat(['docs/PROJECT_STATUS.md', 'site/index.html', 'site/privacy.html', 'site/terms.html']);
 
 console.log(`== ghsync ${DRY ? '(DRY-RUN) ' : ''}==`);
 console.log(`主工程: ${ROOT}`);
