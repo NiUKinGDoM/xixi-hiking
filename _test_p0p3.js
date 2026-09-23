@@ -12,6 +12,8 @@ html = html.replace(/<style>[\s\S]*?<\/style>/gi, '');
 const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]).filter(s => s.trim());
 ['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')));
 const allJs = scripts.join('\n;\n');
+// ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都会连锁失败）
+const LEGAL_V = (allJs.match(/LEGAL_VERSION\s*=\s*'([^']+)'/) || [])[1] || '';
 
 const dom = new JSDOM(html, {
     runScripts: 'outside-only',
@@ -25,7 +27,7 @@ const dom = new JSDOM(html, {
         if (!window.URL.revokeObjectURL) window.URL.revokeObjectURL = function () {};
         // ★2026-09-18 同意留存：预置「已同意」，否则启动流程会弹出同意弹窗干扰其他断言
         try {
-            window.localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: '2026-09-18', at: '2026-01-15T12:00:00.000Z' }));
+            window.localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: LEGAL_V, at: '2026-01-15T12:00:00.000Z' }));
         } catch (e) { }
         delete window.Capacitor;
         window.HTMLCanvasElement.prototype.getContext = function () {

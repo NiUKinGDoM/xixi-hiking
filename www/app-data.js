@@ -390,7 +390,7 @@ function renderTable() {
                 </td>
                 <td class="rd-time-cell" data-label="记录时间">${formatDateTime(record.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="check-go-btn ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                    ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelected.has(record.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="delete-btn-' + record.id + '" data-testid="delete-button-' + record.id + '" class="danger-subtle-btn ripple-effect" style="' + recordDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                 </td>
             </tr>
         `;
@@ -1446,7 +1446,7 @@ function openDifficultyPicker(inputId) {
             '</div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="dfCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
-            '<button class="check-go-btn ripple-effect" id="dfOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '<button class="glass-btn ripple-effect" id="dfOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         let selected = current;
@@ -1504,7 +1504,7 @@ function openMoodWeatherPicker(type, recordId) {
             '</div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="mwpCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
-            '<button class="check-go-btn ripple-effect" id="mwpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '<button class="glass-btn ripple-effect" id="mwpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         let selected = current;
@@ -1842,7 +1842,7 @@ function showDisclaimerModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">gavel</span>
                         <div style="min-width:0;"><div class="dmi-title">十、条款变更与适用法律</div>
-                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>，因本声明或使用本应用发生争议的，双方应友好协商解决；协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-09-18。</div></div>
+                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>，因本声明或使用本应用发生争议的，双方应友好协商解决；协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-09-23。</div></div>
                     </div>
             </div>
             <div class="confirm-modal-buttons">
@@ -1857,7 +1857,7 @@ function showDisclaimerModal() {
 // ★2026-09-18 同意留存（隐私政策 / 免责声明）
 //   立法本意：用户「明确同意」必须有痕迹 —— 显式勾选 + 本机记录（条款版本 + 时间戳）。
 //   ★改动政策正文时必须同步 bump LEGAL_VERSION（与正文「生效日期」保持一致）→ 会自动重新征求同意。
-const LEGAL_VERSION = '2026-09-18';
+const LEGAL_VERSION = '2026-09-23';
 const LEGAL_AGREE_KEY = 'hiking_legal_agree';
 let _legalPromptedThisSession = false;   // 启动时已主动弹过（同一会话不再打扰）
 let _legalTabPrompted = false;           // 首次进设置页已弹过
@@ -1920,7 +1920,7 @@ function showLegalConsentModal() {
             '</div>' +
             '<div class="confirm-modal-buttons">' +
                 '<button class="confirm-btn-cancel ripple-effect" id="legalLater">暂不同意</button>' +
-                '<button class="check-go-btn ripple-effect" id="legalAgree">同意并继续</button>' +
+                '<button class="glass-btn ripple-effect" id="legalAgree">同意并继续</button>' +
             '</div>' +
             '</div>';
         document.body.appendChild(modal);
@@ -1994,7 +1994,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">info</span>
                         <div style="min-width:0;"><div class="dmi-title">适用范围与生效</div>
-                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。生效日期：2026-09-18；最近更新：2026-09-18。本政策随版本迭代更新，重大变更会在应用内提示。</div></div>
+                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。生效日期：2026-09-23；最近更新：2026-09-23。本政策随版本迭代更新，重大变更会在应用内提示。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">storage</span>
@@ -2044,7 +2044,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">gavel</span>
                         <div style="min-width:0;"><div class="dmi-title">十、适用法律与联系方式</div>
-                            <div class="dmi-body">如对本政策有疑问、意见或投诉，可通过「关于应用 → GitHub」提交 Issue，或经应用内反馈渠道联系开发者，我们将在合理期限内答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>。</div></div>
+                            <div class="dmi-body">如对本政策有疑问、意见或投诉，可通过「关于应用 → GitHub」提交 Issue、发邮件至 <a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a>，或经应用内反馈渠道联系开发者，我们将在合理期限内答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>。</div></div>
                     </div>
                 ${AGREEMENT_STAMP}
             </div>
@@ -2139,7 +2139,7 @@ function showSupportModal() {
             '</div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="support-back">返回</button>' +
-            '<button class="check-go-btn ripple-effect" id="support-save">保存二维码</button>' +
+            '<button class="glass-btn ripple-effect" id="support-save">保存二维码</button>' +
             '</div>';
         box.querySelector('#support-back').addEventListener('click', function () {
             if (modal.parentNode) document.body.removeChild(modal);
@@ -2448,7 +2448,7 @@ function openHmYmPicker() {
             '</div>' +
             '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="hmyp-cancel" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">取消</button>' +
-            '<button class="check-go-btn ripple-effect" id="hmyp-ok" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">确定</button>' +
+            '<button class="glass-btn ripple-effect" id="hmyp-ok" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         const yrsEl = modal.querySelector('#hmypYrs');
@@ -2663,7 +2663,7 @@ function showHeatmapDayDetail(year, month, day) {
     modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">local_fire_department</span>' + year + '年' + month + '月' + day + '日</div>' +
         '<div class="confirm-modal-message" style="text-align:left;">' + items + '</div>' +
-        '<div class="confirm-modal-buttons"><button class="ripple-effect hm-share-btn check-go-btn" id="hm-share" data-share="' + dayRecords[0].id + '">分享</button><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
+        '<div class="confirm-modal-buttons"><button class="ripple-effect hm-share-btn glass-btn" id="hm-share" data-share="' + dayRecords[0].id + '">分享</button><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
     document.body.appendChild(modal);
     // 异步加载照片缩略图
     modal.querySelectorAll('.hm-day-photo').forEach(function (box) {
@@ -3013,9 +3013,9 @@ function renderCalMonthDetail() {
                 '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
                 '<div style="display:flex;gap:6px;flex-shrink:0;">' +
                 (planIsDueOrOverdue(t.createdAt)
-                    ? '<button class="check-go-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
-                    : '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
-                '<button class="check-go-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+                    ? '<button class="glass-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
+                    : '<button class="glass-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
+                '<button class="danger-subtle-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
                 '</div></div>';
         });
     });
@@ -3084,9 +3084,9 @@ function renderCalDayDetail(key) {
             '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
             '<div style="display:flex;gap:6px;flex-shrink:0;">' +
             (planIsDueOrOverdue(t.createdAt)
-                ? '<button class="check-go-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
-                : '<button class="check-go-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
-            '<button class="check-go-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
+                ? '<button class="glass-btn ripple-effect" data-complete-delay="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成/延期</button>'
+                : '<button class="glass-btn ripple-effect" data-complete="' + t.id + '" style="padding:6px 12px;border-radius:10px;font-size:12px;">完成</button>') +
+            '<button class="danger-subtle-btn ripple-effect" data-del="' + t.id + '" style="' + delStyle + '">删除</button>' +
             '</div></div>';
     });
     box.innerHTML = html;
@@ -3793,7 +3793,7 @@ function handleAddRecordFlow() {
             '<div class="hcm-list" data-count="' + srcs.length + '" style="max-height:42vh;">' + items + '</div>' +
             '</div></div></div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="check-go-btn ripple-effect" id="apOk" disabled type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;margin-top:2px;">填充</button>' +
+            '<button class="glass-btn ripple-effect" id="apOk" disabled type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;margin-top:2px;">填充</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         var field = modal.querySelector('#apField');
@@ -3919,7 +3919,7 @@ function maybeShowOverdueCare() {
             '<div class="confirm-modal-title" style="font-size:15px;"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;font-size:13px;">到日子没去的：<b>' + escapeHtml(label) + '</b>。<br>去计划页改个日期或删掉吧。</div>' +
             '<div style="display:flex;gap:8px;margin-top:16px;">' +
-            '<button class="check-go-btn ripple-effect" id="oc-go" style="flex:1;padding:10px 0;border-radius:10px;font-size:13px;font-weight:600;">去处理</button>' +
+            '<button class="glass-btn ripple-effect" id="oc-go" style="flex:1;padding:10px 0;border-radius:10px;font-size:13px;font-weight:600;">去处理</button>' +
             '<button class="confirm-btn-cancel ripple-effect" id="oc-ignore" style="flex:1;padding:10px 0;border-radius:10px;font-size:13px;">忽略</button></div></div>';
         document.body.appendChild(modal);
         var closeCare = function () { try { if (modal.parentNode) document.body.removeChild(modal); } catch (e3) { /* 忽略 */ } };
@@ -4076,7 +4076,7 @@ function renderPlannedTripsTable() {
             groupedTrips.push(t);
         });
 
-        // ★2026-09-01 行内操作按钮统一：完成=check-go-btn 浅红玻璃、删除=confirm-btn-cancel 灰蓝（与日历明细/弹窗同款；浅色下删除按钮用可见灰蓝底防白边不可见）
+        // ★2026-09-01 行内操作按钮统一：完成/编辑/保存=glass-btn 中性玻璃、删除=check-go-btn 描边红（★2026-09-23 二次收口）（与日历明细/弹窗同款；浅色下删除按钮用可见灰蓝底防白边不可见）
         const plannedDark = document.body.classList.contains('dark-mode');
         const plannedDelStyle = plannedDark
             ? 'padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;'
@@ -4109,7 +4109,7 @@ function renderPlannedTripsTable() {
                 </td>
                 <td class="rd-time-cell" data-label="计划时间">${formatDateTime(trip.createdAt)}</td>
                 <td class="p-2 text-center" data-label="操作">
-                        ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="check-go-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="' + (_planDue ? '完成 / 延期' : '标记为已完成') + '"><span class="material-icons" style="font-size:18px;">' + (_planDue ? 'event_repeat' : 'check') + '</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
+                        ${plannedBatchMode ? '<input type="checkbox" class="planned-batch-check" data-id="' + trip.id + '"' + (plannedBatchSelected.has(trip.id) ? ' checked' : '') + ' title="勾选删除">' : '<button id="complete-planned-btn-' + trip.id + '" data-testid="complete-planned-button-' + trip.id + '" class="glass-btn ripple-effect" style="padding:6px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-right:4px;" title="' + (_planDue ? '完成 / 延期' : '标记为已完成') + '"><span class="material-icons" style="font-size:18px;">' + (_planDue ? 'event_repeat' : 'check') + '</span></button><button id="delete-planned-btn-' + trip.id + '" data-testid="delete-planned-button-' + trip.id + '" class="confirm-btn-cancel ripple-effect" style="' + plannedDelStyle + '" title="删除"><span class="material-icons" style="font-size:18px;">delete</span></button>'}
                     </td>
                 </tr>
             `;
@@ -4217,8 +4217,8 @@ function plannedViewBodyHTML(t) {
         '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">难度</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + t.difficulty + ' 级</div></div>' +
         '</div>' +
         '<div style="display:flex;gap:10px;">' +
-        '<button id="pd-edit-btn" class="check-go-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑计划</button>' +
-        '<button id="pd-complete-btn" class="check-go-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;background:rgba(22,163,74,0.16);border:1px solid rgba(22,163,74,0.5);color:#15803d;" onclick="showConfirmCompleteModal(\'' + t.id + '\',\'' + escapeHtml(t.name).replace(/'/g, "\\'") + '\')">完成了 ✓</button>' +
+        '<button id="pd-edit-btn" class="glass-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑计划</button>' +
+        '<button id="pd-complete-btn" class="glass-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;background:rgba(22,163,74,0.16);border:1px solid rgba(22,163,74,0.5);color:#15803d;" onclick="showConfirmCompleteModal(\'' + t.id + '\',\'' + escapeHtml(t.name).replace(/'/g, "\\'") + '\')">完成了 ✓</button>' +
         '</div>';
 }
 // 计划编辑态 body（id 沿用 edit-planned-*，保存/取消复用 savePlannedTrip/cancelPlannedEdit）
@@ -4237,7 +4237,7 @@ function plannedEditBodyHTML(t) {
         '<input type="text" id="edit-planned-created-at-' + t.id + '" value="' + formatDateTimeLocal(t.createdAt).replace('T', ' ') + '" data-iso="' + formatDateTimeLocal(t.createdAt) + '" data-testid="edit-planned-created-at-' + t.id + '" class="edit-input input-glow" readonly style="cursor:pointer;font-weight:400;text-align:center;color:' + (document.body.classList.contains('dark-mode') ? '#e5e7eb' : '#334155') + ';" onclick="openDateTimePicker(this.id, this.value)" enterkeyhint="done" title="点击选择日期时间">' +
         '<div style="display:flex;gap:10px;margin-top:2px;">' +
         '<button id="cancel-planned-btn-' + t.id + '" data-testid="cancel-planned-button-' + t.id + '" class="ripple-effect btn-click-effect confirm-btn-cancel" style="' + pCancel + '">取消</button>' +
-        '<button id="save-planned-btn-' + t.id + '" data-testid="save-planned-button-' + t.id + '" class="ripple-effect btn-click-effect check-go-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
+        '<button id="save-planned-btn-' + t.id + '" data-testid="save-planned-button-' + t.id + '" class="ripple-effect btn-click-effect glass-btn" style="flex:1;padding:10px 0;border-radius:10px;font-size:14px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;">保存</button>' +
         '</div>' +
         '</div>';
 }
@@ -4413,7 +4413,7 @@ function showConfirmCompleteModal(tripId, tripName) {
                 <button class="confirm-btn-cancel ripple-effect" id="confirm-complete-cancel">
                     取消
                 </button>
-                <button class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-complete-ok">
+                <button class="glass-btn ripple-effect" id="confirm-complete-ok">
                     确认完成
                 </button>
             </div>
@@ -4666,7 +4666,7 @@ function showMilestoneCelebration(ms, st) {
             '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">' + escapeHtml(ms.title) + '</div>' +
             '<div style="font-size:14px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';">' + escapeHtml(ms.desc) + '</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
-            '<button id="celebrateOkBtn" class="check-go-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">收下</button>';
+            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">收下</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var escHandler = function (e) { if (e.key === 'Escape') close(); };
@@ -4798,7 +4798,7 @@ function showMilestoneSummary(list, st) {
             '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">解锁了 ' + list.length + ' 个</div>' +
             '<div style="font-size:13px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';line-height:1.7;">' + names + '</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
-            '<button id="celebrateOkBtn" class="check-go-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">去看看</button>';
+            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">去看看</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var escHandler = function (e) { if (e.key === 'Escape') close(); };
@@ -4833,7 +4833,7 @@ function showPlanCompleteCelebration(tripName, onContinue) {   // ★2026-09-04 
             '<div style="font-size:20px;font-weight:800;margin:10px 0 6px;color:' + (dark ? '#fff' : '#0f172a') + ';">完成！</div>' +
             '<div style="font-size:15px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.92)' : '#334155') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">「' + escapeHtml(tripName || '未命名计划') + '」已加入徒步记录</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:8px;line-height:1.7;">新的足迹已点亮，期待下一座山 🏔️</div>' +
-            '<button id="celebrateOkBtn" class="check-go-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">继续补全</button>';
+            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">继续补全</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var close = function () {

@@ -12,6 +12,8 @@ const BASE = 'http://127.0.0.1:8123/index.html';
 const SHOTS = path.resolve(__dirname, 'shots');
 const BASELINE = path.join(SHOTS, process.env.E2E_BASELINE || 'baseline');   // E2E_BASELINE=baseline-obf 验证混淆副本
 const UPDATE = process.argv.includes('--update');
+// ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都连锁失败）
+const LEGAL_V = (fs.readFileSync(path.join(__dirname, '..', 'www', 'app-data.js'), 'utf8').match(/LEGAL_VERSION\s*=\s*'([^']+)'/) || [])[1] || '';
 let pass = 0, fail = 0;
 const fails = [];
 
@@ -53,13 +55,13 @@ function serverUp() {
   //   ① 固定「今天」——概览热力图高亮在当天格子，随真实日期移动 → 每跨一天跑 E2E 都误报（9/11、9/14 各一次）
   //   ② 关闭 FPS 显示——右上角数字秒变，同样造成噪音
   //   两者都是「真实数据变化」而非代码回归，必须降噪，否则会掩盖真 bug。
-  await ctx.addInitScript(() => {
+  await ctx.addInitScript((legalV) => {
     try { localStorage.setItem('hiking_show_fps', JSON.stringify({ showFps: false })); } catch (e) { }
     // ★2026-09-18 同意留存：默认预置「已同意」——否则每个用例都会被同意弹窗挡住。
     //   要测「未同意」态的用例，先置 __e2e_legal_clear 哨兵，本脚本就跳过预置。
     try {
       if (!localStorage.getItem('__e2e_legal_clear')) {
-        localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: '2026-09-18', at: '2026-01-15T12:00:00.000Z' }));
+        localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: legalV, at: '2026-01-15T12:00:00.000Z' }));
       }
     } catch (e) { }
     try {
@@ -76,7 +78,7 @@ function serverUp() {
       FakeDate.UTC = Orig.UTC;
       window.Date = FakeDate;
     } catch (e) { }
-  });
+  }, LEGAL_V);
 
   const page = await ctx.newPage();
   const errors = [];
@@ -367,7 +369,7 @@ function serverUp() {
     ok('隐私弹窗打开(玻璃卡片+条目)', modalText.indexOf('隐私政策') >= 0 && modalText.indexOf('数据存储位置') >= 0 && modalText.indexOf('联网行为') >= 0, modalText.slice(0, 40));
     // ★2026-09-18 法律要素：生效日期/权利/未成年人/适用法律缺一不可（政策专业化后不得被后续改文案删掉）
     ok('隐私政策含法律要素(生效日期/你的权利/未成年人/适用法律)',
-       modalText.indexOf('生效日期：2026-09-18') >= 0 && modalText.indexOf('你的权利') >= 0 &&
+       modalText.indexOf('生效日期：' + LEGAL_V) >= 0 && modalText.indexOf('你的权利') >= 0 &&
        modalText.indexOf('未成年人保护') >= 0 && modalText.indexOf('中华人民共和国法律') >= 0,
        modalText.length + ' 字');
     await shotAndCheck('04-privacy-modal-light', '.confirm-modal-content');
@@ -1040,7 +1042,7 @@ function serverUp() {
     rec: (function () { try { return JSON.parse(localStorage.getItem('hiking_legal_agree')); } catch (e) { return null; } })()
   }));
   ok('勾选后同意 → 弹窗关闭且已记录', consent2.closed === true && consent2.agreed === true);
-  ok('同意记录含条款版本 + ISO 时间戳', !!(consent2.rec && consent2.rec.version === '2026-09-18' && /^\d{4}-\d{2}-\d{2}T/.test(consent2.rec.at || '')), JSON.stringify(consent2.rec));
+  ok('同意记录含条款版本 + ISO 时间戳', !!(consent2.rec && consent2.rec.version === LEGAL_V && /^\d{4}-\d{2}-\d{2}T/.test(consent2.rec.at || '')), JSON.stringify(consent2.rec));
 
   await page.evaluate(() => { try { localStorage.removeItem('__e2e_legal_clear'); } catch (e) { } });
   await page.reload({ waitUntil: 'load' });

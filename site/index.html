@@ -13,6 +13,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/site.css">
+<script>document.documentElement.className += ' js';</script>
 </head>
 <body>
 
@@ -57,12 +58,20 @@
         <span class="chip">不收集任何数据</span>
         <span class="chip">离线可用</span>
       </div>
+      <div class="ridge">
+        <svg viewBox="0 0 1200 128" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 128 L96 68 L170 98 L256 34 L332 84 L424 50 L524 104 L624 56 L716 94 L812 40 L902 82 L1012 54 L1104 90 L1200 128 Z" fill="rgba(129,140,248,0.20)"/>
+          <path d="M0 128 L124 96 L214 112 L306 76 L406 104 L508 80 L610 112 L712 86 L814 108 L916 78 L1016 104 L1112 90 L1200 128 Z" fill="rgba(56,189,248,0.14)"/>
+        </svg>
+      </div>
     </div>
   </section>
 
   <section class="section" id="what">
     <div class="wrap">
-      <div class="sec-head"><h2>它是什么</h2></div>
+      <div class="sec-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7"/><path d="M8 11h7"/></svg><span>它是什么</span></h2>
+      </div>
       <p class="sub">不是徒步数据平台，也不是轨迹工具 —— 就是一本你自己的日记本。</p>
       <div class="grid grid-3">
         <div class="card">
@@ -86,7 +95,10 @@
 
   <section class="section" id="shots">
     <div class="wrap">
-      <div class="sec-head"><h2>界面</h2></div>
+      <div class="sec-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 18h4"/></svg><span>界面</span></h2>
+        <span class="eyebrow">真实界面 · 演示数据</span>
+      </div>
       <p class="sub">下面是 App 的真实界面（演示数据）。</p>
       <div class="shots">
         <figure>
@@ -107,7 +119,9 @@
 
   <section class="section" id="features">
     <div class="wrap">
-      <div class="sec-head"><h2>功能</h2></div>
+      <div class="sec-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>功能</span></h2>
+      </div>
       <p class="sub">够用就好，不做多余的事。</p>
       <div class="grid grid-auto">
         <div class="card feat">
@@ -140,7 +154,10 @@
 
   <section class="section" id="privacy">
     <div class="wrap">
-      <div class="sec-head"><h2>隐私与数据</h2></div>
+      <div class="sec-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span>隐私与数据</span></h2>
+        <span class="eyebrow">无账号 · 无服务器</span>
+      </div>
       <p class="sub">这一块写得直白一点，因为它值得。</p>
       <div class="policy-note">
         <p><b>没有账号，也没有开发者服务器。</b>记录、计划、备注、照片全部存在你的设备上；App 不收集、不上传你的身份信息、行为数据、设备标识与位置信息，也没有接入任何统计、广告或推送 SDK。</p>
@@ -156,9 +173,27 @@
 
   <section class="section" id="changelog">
     <div class="wrap">
-      <div class="sec-head"><h2>更新日志</h2></div>
+      <div class="sec-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>更新日志</span></h2>
+        <span class="eyebrow">最新 v1.2.2.8</span>
+      </div>
       <p class="sub">App 内「关于应用」也能看到同一份内容。</p>
       <div class="card rel">
+        <span class="tag">v1.2.2.8</span>
+        <div style="flex:1;min-width:260px;">
+          <ul>
+            <li><b>红色只留给会删数据的操作</b> —— 以前「完成」「编辑」「保存」「确定」「分享」这些普通按钮跟「删除」是同一种红，光看颜色分不出哪个动作有风险；现在它们回到中性玻璃，红色只属于删除。</li>
+            <li><b>列表里的删除按钮变轻了</b> —— 从红框按钮改成一枚淡红小图标：一列几十行红框会让红色失去警示力，现在一眼扫过去是干净的，需要删的时候又找得到。</li>
+            <li><b>《隐私政策》补充了联系邮箱</b> —— 反馈问题可以直接发邮件，不必绕到 GitHub。</li>
+            <li><b>同一版的第 7 号版本</b> —— 删除类操作的红色语义、小屏标题挤成竖排、时间显示格式、输入框玻璃化，见下方历史版本。</li>
+          </ul>
+          <div class="link-row">
+            <a href="https://github.com/NiUKinGDoM/xixi-hiking/releases" target="_blank" rel="noopener">查看完整更新日志与历史版本</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rel" style="margin-top:18px;">
         <span class="tag">v1.2.2.7</span>
         <div style="flex:1;min-width:260px;">
           <ul>
@@ -167,9 +202,6 @@
             <li><b>编辑记录的时间显示更清爽</b> —— 「2026-01-05T08:30」变成「2026-01-05 08:30」。</li>
             <li><b>编辑弹窗的输入框统一成玻璃质感</b> —— 空白字段的提示文字也更清楚好读。</li>
           </ul>
-          <div class="link-row">
-            <a href="https://github.com/NiUKinGDoM/xixi-hiking/releases" target="_blank" rel="noopener">查看完整更新日志与历史版本</a>
-          </div>
         </div>
       </div>
     </div>
@@ -179,15 +211,86 @@
 
 <footer class="foot">
   <div class="wrap foot-in">
-    <p>© 2026 XiXiの徒步小记 · Made by XiXi<br>个人作品，免费使用。喜欢的话，可以在 App 内「支持作者」。</p>
+    <p>© 2026 XiXiの徒步小记 · Made by XiXi<br>个人作品，免费使用。喜欢的话，可以在 App 内「支持作者」。<br>联系我：<a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a></p>
     <div class="foot-links">
       <a href="https://github.com/NiUKinGDoM/xixi-hiking" target="_blank" rel="noopener">GitHub 仓库</a>
       <a href="privacy.html">隐私政策</a>
       <a href="terms.html">免责声明</a>
       <a href="https://github.com/NiUKinGDoM/xixi-hiking/issues" target="_blank" rel="noopener">问题反馈</a>
+      <a href="mailto:Xixihiking@foxmail.com">邮件联系</a>
     </div>
   </div>
 </footer>
+
+<svg class="trail" id="trailSvg" aria-hidden="true">
+  <path class="trail-base" id="trailBase" d=""></path>
+  <path class="trail-done" id="trailDone" d=""></path>
+  <circle class="trail-halo" id="trailHalo" r="12" cx="-99" cy="-99"></circle>
+  <circle class="trail-dot" id="trailDot" r="5" cx="-99" cy="-99"></circle>
+</svg>
+
+<script>
+(function () {
+  var svg = document.getElementById('trailSvg');
+  if (!svg) return;
+  var base = document.getElementById('trailBase');
+  var done = document.getElementById('trailDone');
+  var dot = document.getElementById('trailDot');
+  var halo = document.getElementById('trailHalo');
+  if (!base || !done || !dot || !halo) return;
+  var reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
+  var LEN = 0;
+
+  function build() {
+    var h = svg.clientHeight || 0;
+    if (!h) { LEN = 0; return; }
+    svg.setAttribute('viewBox', '0 0 104 ' + h);
+    var s = h / 3.4;
+    var d = 'M52 -12 C 14 ' + (s * 0.55).toFixed(1) + ', 92 ' + (s * 1.15).toFixed(1) + ', 50 ' + (s * 1.7).toFixed(1) +
+            ' S 12 ' + (s * 2.3).toFixed(1) + ', 54 ' + (h * 0.86).toFixed(1) +
+            ' S 86 ' + (h - 26).toFixed(1) + ', 50 ' + (h + 12).toFixed(1);
+    base.setAttribute('d', d);
+    done.setAttribute('d', d);
+    LEN = done.getTotalLength ? done.getTotalLength() : 0;
+    if (!LEN) return;
+    done.style.strokeDasharray = LEN;
+    done.style.strokeDashoffset = reduce ? 0 : LEN;
+    if (reduce) hideDot(); else paint();
+  }
+  function hideDot() {
+    dot.setAttribute('cx', -99); dot.setAttribute('cy', -99);
+    halo.setAttribute('cx', -99); halo.setAttribute('cy', -99);
+  }
+  function paint() {
+    if (!LEN) { hideDot(); return; }
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var p = max > 0 ? (window.pageYOffset || document.documentElement.scrollTop || 0) / max : 0;
+    p = p < 0 ? 0 : (p > 1 ? 1 : p);
+    done.style.strokeDashoffset = (LEN * (1 - p)).toFixed(1);
+    var pt = done.getPointAtLength(LEN * p);
+    dot.setAttribute('cx', pt.x.toFixed(1)); dot.setAttribute('cy', pt.y.toFixed(1));
+    halo.setAttribute('cx', pt.x.toFixed(1)); halo.setAttribute('cy', pt.y.toFixed(1));
+  }
+  var raf = null;
+  window.addEventListener('scroll', function () {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = null; paint(); });
+  }, { passive: true });
+  window.addEventListener('resize', function () { LEN = 0; build(); });
+  build();
+
+  var els = document.querySelectorAll('.section, .foot');
+  if ('IntersectionObserver' in window && !reduce) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+    Array.prototype.forEach.call(els, function (el) { el.classList.add('reveal'); io.observe(el); });
+  }
+})();
+</script>
 
 </body>
 </html>

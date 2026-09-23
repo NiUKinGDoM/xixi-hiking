@@ -383,7 +383,13 @@ try {
     dj.includes('id="privacy-close"') && dj.includes('联网行为') ? ok('隐私含联网披露(崩溃上报)') : bad('隐私联网说明缺失!');
     dj.includes('权限清单与用途') && dj.includes('计划与备份提醒') ? ok('隐私权限清单在(逐项说明用途)') : bad('隐私权限清单缺失!');
     // ★2026-09-18 隐私政策专业化：法律要素守卫（生效日期 / 用户权利 / 未成年人 / 适用法律 / 第三方披露）
-    dj.includes('生效日期：2026-09-18') && dj.includes('你的权利') && dj.includes('未成年人保护') && dj.includes('中华人民共和国法律') ? ok('隐私政策含法律要素(生效日期/权利/未成年人/适用法律)') : bad('隐私政策法律要素缺失!');
+    // ★2026-09-23 生效日期与 LEGAL_VERSION 强绑定（不再写死日期 —— 既防忘 bump，也防 bump 了没改正文）
+(function () {
+    var _lv = (dj.match(/const LEGAL_VERSION = '([^']+)'/) || [])[1];
+    _lv && dj.includes('生效日期：' + _lv) && dj.includes('你的权利') && dj.includes('未成年人保护') && dj.includes('中华人民共和国法律')
+      ? ok('隐私政策含法律要素(生效日期=LEGAL_VERSION/权利/未成年人/适用法律)')
+      : bad('隐私政策法律要素缺失，或生效日期与 LEGAL_VERSION 不同步!');
+})();
     dj.includes('信息共享、转让与公开披露') && dj.includes('不会</b>向任何第三方出售') ? ok('隐私政策含第三方共享披露条款') : bad('隐私政策缺少共享/披露条款!');
     // ★2026-09-18 免责声明：必须有责任限制 + 「法定责任优先」兜底（否则条款可能整体无效）
     dj.includes('责任限制') && dj.includes('不排除或限制依法不得排除') && dj.includes('中华人民共和国法律') ? ok('免责声明含责任限制+法定优先兜底条款') : bad('免责声明缺少责任限制/法定优先条款!');
@@ -721,11 +727,24 @@ const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
  /class="check-go-btn ripple-effect" id="orphan-delete"/,
  /id="batchDeleteBtn" class="check-go-btn ripple-effect"/,
  /id="plannedBatchDeleteBtn" class="check-go-btn ripple-effect"/,
- // ★2026-09-22 行内删除钮也必须是红（此前是中性灰 → 与「保存」长同一张脸）
- /data-testid="delete-button-' \+ record\.id \+ '" class="check-go-btn ripple-effect"/,
- /'<button class="check-go-btn ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>'/].every(function (re) { return re.test(_semH) || re.test(_fixData) || re.test(_fixCore); })   // ★orphan-delete 在 app-core.js
-  ? ok('守卫：危险操作（抹掉足迹 / 清理 / 批量删除）仍为红色')
+ // ★2026-09-22 行内删除钮曾要求为红；★2026-09-23 用户定案改「淡红图标」(.danger-subtle-btn)：去红底与红边框，只留红色图标/文字 —— 一列几十行红框会让红色失去警示力
+ // ★2026-09-23 二次收口：确认真实危险操作也必须红（此前有 16 处非危险按钮误用红，已全部改中性）
+ /class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-delete"/,
+ /class="confirm-btn-delete check-go-btn ripple-effect" id="confirm-planned-delete"/,
+ /class="confirm-btn-delete check-go-btn ripple-effect" id="batch-confirm-delete"/,
+ /class="confirm-btn-delete check-go-btn ripple-effect" id="pbatch-confirm-delete"/,
+ /class="check-go-btn ripple-effect" id="wipe-go2"/,
+ /class="check-go-btn ripple-effect" id="wipe-next1"/,
+ /data-testid="delete-button-' \+ record\.id \+ '" class="danger-subtle-btn ripple-effect"/,
+ /'<button class="danger-subtle-btn ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>'/].every(function (re) { return re.test(_semH) || re.test(_fixData) || re.test(_fixCore); })   // ★orphan-delete 在 app-core.js
+  ? ok('守卫：危险操作（抹掉足迹 / 清理 / 批量删除 / 确认删除）仍为红色')
   : bad('危险操作的红色被误改!');
+// 行内删除＝「淡红图标」（不再是红框按钮；★2026-09-23 用户定案）
+[/'<button class="danger-subtle-btn ripple-effect" data-del="' \+ t\.id \+ '" style="' \+ delStyle \+ '">删除<\/button>'/,
+ /data-testid="delete-button-' \+ record\.id \+ '" class="danger-subtle-btn ripple-effect"/,
+ /\.danger-subtle-btn\s*\{[^}]*background:\s*transparent\s*!important/].every(function (re) { return re.test(_fixData) || re.test(_semH); })
+  ? ok('守卫：行内删除已改「淡红图标」（去红底/红边框）')
+  : bad('行内删除又变回红框按钮 —— 每行都红等于没有警示力!');
 
 // 标题不折行 + 不参与收缩（窄屏防竖排）
 // 标题不折行 + 不参与收缩 + 标题行防挤压（窄屏不竖排 / 不横溢；实测 360 单行、320 换行兜底）
@@ -756,7 +775,28 @@ const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
   : bad('edit-merge-box 仍是不透明白盒!');
 (_semH.indexOf('.edit-input::placeholder { color: rgba(51, 65, 85, 0.85); opacity: 1; }') >= 0 && _semH.indexOf('color: rgba(51, 65, 85, 0.85);') >= 0)
   ? ok('守卫：浅色占位符已提档（玻璃底上对比度达标）')
-  : bad('浅色占位符太淡（玻璃底上看不清）!');
+  : bad('浅色占位符太淡（玻璃底上看不清）!');
+// ★2026-09-23 非危险按钮必须中性（「完成 / 编辑 / 保存 / 分享 / 同意 / 确定」等一律 glass-btn；红色只给会丢数据的操作）
+//   背景：用户实测反馈「计划列表/日历的完成按钮也是红的」→ 复查发现共 16 处非危险按钮误用 check-go-btn
+//   （完成/完成·延期 ×4、行内完成图标钮、计划详情 编辑/完成、计划编辑「保存」、确认完成、庆祝卡 ×3、分享、
+//    同意并继续、保存二维码、用这条填充、去处理、dfOk/mwpOk/hmyp-ok 确定）
+const _posCases = [
+  /class=\"glass-btn ripple-effect\" data-complete=\"' \+ t\.id \+ '\"/,
+  /class=\"glass-btn ripple-effect\" data-complete-delay=\"' \+ t\.id \+ '\"/,
+  /id="pd-complete-btn" class="glass-btn ripple-effect"/,
+  /id="pd-edit-btn" class="glass-btn ripple-effect"/,
+  /data-testid="save-planned-button-\' \+ t\.id \+ \'" class="ripple-effect btn-click-effect glass-btn"/,
+  /class="glass-btn ripple-effect" id="confirm-complete-ok"/,
+  /class="glass-btn ripple-effect" id="legalAgree"/,
+  /class="glass-btn ripple-effect" id="support-save"/,
+  /ripple-effect hm-share-btn glass-btn" id="hm-share"/,
+  /id="celebrateOkBtn" class="glass-btn ripple-effect"/,
+  /class="glass-btn ripple-effect" id="apOk"/,
+  /class="glass-btn ripple-effect" id="oc-go"/,
+];
+_posCases.every(function (re) { return re.test(_fixData); })
+  ? ok('守卫：非危险按钮均为中性（完成/编辑/保存/分享/同意/确定等 16 处）')
+  : bad('仍有非危险按钮在用危险红 —— .check-go-btn 只能给会丢数据的操作!');
 (!/body\.dark-mode \.edit-input::placeholder[^}]*#94a3b8/.test(_semH) && /body\.dark-mode \.edit-input::placeholder[^}]*#cbd5e1/.test(_semH) && _semH.indexOf('color: rgba(203, 213, 225, 0.9);') >= 0)
   ? ok('守卫：深色占位符已提亮（时/分复合框上也达 AA）')
   : bad('深色占位符太暗（时/分空框看不清）!');

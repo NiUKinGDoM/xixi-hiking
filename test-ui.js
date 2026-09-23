@@ -15,6 +15,9 @@ const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
 // ★2026-08-30 方案A：主 JS 拆外部文件，追加 4 个外部 JS（按加载顺序）
 ['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')));
 const allJs = scripts.join('\n;\n');
+// ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都会连锁失败：
+//   同意弹窗带 data-persist 会残留，导致「连开两次仅 1 个」类断言 count 多 1）
+const LEGAL_V = (allJs.match(/LEGAL_VERSION\s*=\s*'([^']+)'/) || [])[1] || '';
 
 const dom = new JSDOM(html, {
     runScripts: 'outside-only',
@@ -30,7 +33,7 @@ const dom = new JSDOM(html, {
         // ★2026-09-18 同意留存：预置「已同意」——否则启动流程会弹同意弹窗，且它带 data-persist
         //   （closeOpenModals 豁免）会残留，导致「连开两次仅 1 个」类断言 count 多 1
         try {
-            window.localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: '2026-09-18', at: '2026-01-15T12:00:00.000Z' }));
+            window.localStorage.setItem('hiking_legal_agree', JSON.stringify({ version: LEGAL_V, at: '2026-01-15T12:00:00.000Z' }));
         } catch (e) { }
         delete window.Capacitor; // 走网页版路径（无原生桥）
         // canvas mock（jsdom 无 canvas，fitSelectWidth/initHeatmap 需要 2d context）

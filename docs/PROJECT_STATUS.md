@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-23（v1.2.2.7 / vc271）  
+> 最后更新：2026-09-23（v1.2.2.8 / vc272）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -190,7 +190,17 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > 更早的见 `docs/版本变更记录-存档.md`；**小版本进位时（如 1.2.1.x → 1.2.2.x）把上一系列整段搬过去**。
 >
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
-> 第 1 行 `- **正式版 v1.2.2.7**（versionCode 271，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+> 第 1 行 `- **正式版 v1.2.2.8**（versionCode 272，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.2.8 更新（**用户点定 3 件事 + 自查揪出 5 处「写死版本号」连带问题**；共 6 处补丁 + 1 条新守卫 + 5 个测试文件版本绑定改造）：
+  - **① 行内删除改「淡红图标」**（用户问「记录列表 29 行全是红删除钮，你想怎么改？」，我提 A/B/C 三案，用户回「按照你想的弄吧」→ 取 **方案 A**）—— 新增 `.danger-subtle-btn`：`background/border transparent !important`、`color:#b91c1c`（深色 `#fca5a5`）、hover/active 才给极淡红底。**★根因**：3 处行内删除的内联灰蓝样式是**死代码** —— `.check-go-btn` 带 `!important`，CSS `!important` 优先级高于内联样式，所以内联写的 `background:rgba(100,116,139,0.14)` 一直被压掉、显示成红框按钮。改法：3 处（记录列表 / 计划列表 / 日历明细）class 改 `danger-subtle-btn`，内联样式保留（仍负责 padding/尺寸）。
+  - **② 「完成 / 编辑 / 保存 / 确定 / 分享」等 17 处非危险按钮去红**（用户原话：「计划列表/日历的『完成』按钮也是红的，修一下」）—— v1.2.2.7 只收了 9 处，本轮扫全量后补齐 **17 处**（`dfOk`/`mwpOk`/`legalAgree`/`support-save`/`hmyp-ok`/`hm-share`/`完成·延期`×2/`apOk`/`oc-go`/`pd-edit-btn`/`pd-complete-btn`/`save-planned-btn`/`confirm-complete-ok`/`celebrateOkBtn`×3）→ 全部 `.glass-btn`。**顺带发现**：「确认完成」还挂着 `.confirm-btn-delete`（**实色红** `rgba(239,68,68,.85)`），只换按钮 class 不够 → 该类一并摘掉。
+  - **③ 政策正文补联系邮箱 + LEGAL_VERSION bump**（用户给了邮箱 `Xixihiking@foxmail.com`）—— 政策「十、适用法律与联系方式」加 `mailto:` 链接；生效日期 / 最近更新 2026-09-18 → **2026-09-23**；免责声明生效日期同步；`LEGAL_VERSION` `'2026-09-18'` → `'2026-09-23'`。**代价已提前告知用户**：政策正文变更 → 所有用户下次打开会**重新征求一次同意**（用户认可）。新增 `.dmi-body a` 样式（此前无规则 → 浏览器默认蓝，深色下几乎不可读）。
+  - **④（自查揪出）4 个测试文件把条款版本写死** —— 改完 LEGAL_VERSION 后出现 **test-ui.js 4 条失败**（「管理弹窗/下载弹窗连开两次仅 1 个」count=2）：因为预置的「已同意」记录 version 仍是旧值 → 同意弹窗（带 `data-persist`，`closeOpenModals()` 豁免）**残留**，把弹窗计数顶多 1。根因同源：`test.js` 法律要素守卫写死 `生效日期：2026-09-18`、`_test_p0p3.js`/`e2e/run.js`/`test-ui.js` 三处预置写死 `version: '2026-09-18'`。**修法（根治，不再有下次）**：全部改为**从源码取 `LEGAL_VERSION`** —— `test.js` 守卫内联 `dj.match(/const LEGAL_VERSION = '([^']+)'/)` 与该值强绑定（**既防忘 bump，也防 bump 了没改正文**）；`_test_p0p3.js`/`test-ui.js` 由 `allJs` 提取 `LEGAL_V`；`e2e/run.js` 由 `www/app-data.js` 提取 `LEGAL_V` 并经 `addInitScript(fn, LEGAL_V)` 传入。
+  - **⑤ 官网（site/）设计语言对齐 App + 视觉升级**（用户：「网页再改改再上线，不急。整体的设计语言改一下，和 app 一样，你再优化一下」）—— 重写 `site/assets/site.css`：**玻璃配方全站统一为 `blur(2px) saturate(150%)`**（此前混用 10/12/14px，违背 App 铁律）、卡片玻璃底 `0.72 → 0.6`（App 浅色主力取值）、色板对齐（标题 `#0f172a` / 正文 `#334155` / 次要 `#52606f`，均实测 ≥AA）、圆角表补齐（卡 20 / 子 16 / 钮 12 / 输 10 / 滚 4）、滚动条细圆角 4、`focus-visible` 焦点环、`prefers-reduced-motion` 下关平滑滚动。**段落标题改「图标 + 文字」内联写法**（对齐 App 的 `h2 > icon + title-text`），并加信息型 `.eyebrow`（真实界面·演示数据 / 无账号·无服务器 / 最新 v1.2.2.8）。三页生效日期同步 2026-09-23，更新日志段补 v1.2.2.8。**留档**：等高线背景 / 首屏山脊 / 跟随下滑绘制的路线轨迹 / 段落渐显 四项装饰层为上一轮已加，本轮只做令牌对齐与打磨。
+  - **★环境故障（本版全程绕行，已入 project memory）** —— 本机 **node 启动任何子进程一律 `EBUSY`**（`spawnSync` 连 spawn `process.execPath` 都是 EBUSY；shell 里 git/python/node 自身正常）→ **所有「包装型」工具链失效**：`ship prepare/publish`、`checkall`、`smoke`、`patch.js`（写后 `node --check` 校验）、`ghsync`（spawn git 取 token）、`e2e`（playwright 启浏览器）。**绕行方案**：① 注入改「python 唯一命中校验 + 落盘 + shell 侧 `node --check` + 失败还原」等价流程；② 自检按 `checkall` 的 SUITES 清单**逐个直跑**；③ 版本 bump / builtin / docrelease / verify 逐步直跑；④ 构建直接 `gradlew`；⑤ push 手拼 git 命令（token 只进变量 + 打码输出）。**遗留**：`smoke`(20) 与 `e2e`(126) 本版**未能执行**（等 EBUSY 恢复后需补跑 + 刷视觉基线）。
+  - **实测** —— **test 310/0**（309 + 1 条新守卫「行内删除＝淡红图标」；含把「写死日期」的旧守卫改成与 `LEGAL_VERSION` 强绑定）· **test-ui 30/0** · **P0P3 299/0** · **弹窗宽度 38/0** · **iOS 适配 10/0** —— 共 **687 项全绿**；`smoke` 20 + `e2e` 126 因上述环境故障未跑（**明确标注，未伪造**）。
+  - **说明** —— 本版**改了用户可见的界面**（删除按钮观感 / 一批按钮配色语义 / 政策版本号），**不适用「同号修正重发」**，按常规**升号**发布。官网 `site/` **本轮不部署**（用户明确「不急」），代码已推仓库，等用户点头再建 CF Pages 项目。
+- **正式版 v1.2.2.7**（versionCode 271，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.7 更新（**用户实测反馈三条 + 连带自测发现两条**；共 8 处补丁 + 21 条守卫 + 逐条运行时实测复验）：
   - **① 红色语义混用**（用户原话：「红色语义混了……主操作和危险操作长同一张脸，没法靠颜色区分安全与危险」）—— `.check-go-btn`（危险红 `#b91c1c`）被 **9 处非危险操作**使用：保存 / 编辑这条记录 / 绑定账号 / 支持作者 / 照片弹窗「优化」/ 选择器「确定」/ 4 个引导按钮（去记录页 · 记下第一笔 · 添加一条计划 · 去看看导出）。同时**列表行删除反而是中性灰**（记录列表 / 计划列表 / 日历明细 3 处）。修法：9 处 → `.glass-btn`；3 处行内删除 → `.check-go-btn`；危险操作（抹掉足迹 / 清理孤儿照片 / 批量删除）保持红。
   - **② 窄屏标题被挤成竖排**（用户实测标题宽 36px）—— `.title-text{white-space:nowrap}` + `#statsTitle/#heatmapTitle/#recordsTitle/#plannedTitle/#settingsTitle{flex-shrink:0}`。**★实测发现：光靠 nowrap 会把「竖排」换成「整行横溢」**（360px 内容 355 > 可用 322，页面可横向拖动）→ 补 **`.panel-hdr` 体系**：3 个标题行挂类 + `flex-wrap:wrap`（控件组 `margin-left:auto` 右对齐兜底 + `row-gap:8px`）+ `@media(max-width:430px)` 收紧内边距 / 间距 / 徽标字号（12→11px）。**实测 360/390/412 单行、320 自动换行、任何宽度零横溢**。顺带修掉 CSS 里**写错的 id**：`#plansTitle`/`#overviewTitle` 并不存在 → 真值 `#plannedTitle`/`#statsTitle`/`#heatmapTitle`（**计划页 / 统计页此前根本没被这层保护罩住**）。
