@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-23（v1.2.2.9 / vc273）  
+> 最后更新：2026-09-23（v1.2.2.10 / vc274）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -190,7 +190,16 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > 更早的见 `docs/版本变更记录-存档.md`；**小版本进位时（如 1.2.1.x → 1.2.2.x）把上一系列整段搬过去**。
 >
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
-> 第 1 行 `- **正式版 v1.2.2.9**（versionCode 273，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+> 第 1 行 `- **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.2.10 更新（**用户 v1.2.2.9 实测两条反馈**；共 3 处补丁 + 2 条新守卫 + 反向验证 3/3）：
+  - **① 记录页列表删除按钮与计划页列表统一**（用户原话：「记录页列表模式的删除，改的是计划页列表模式的删除按钮，不是文字，就那个灰色垃圾桶」）—— **★上一版 v1.2.2.9 我理解错了目标**：当时把「日历明细那两处 `data-del`」和「记录页」一起动了，记录页还改成了**文字钮**。用户纠正后正确定位：计划页列表模式删除 = `delete-planned-btn`（class `confirm-btn-cancel` + `plannedDelStyle`）→ **灰色垃圾桶图标**（`padding:6px` 方形 + `material-icons delete` + 底 `rgba(100,116,139,0.14)` + 边 `rgba(100,116,139,0.6)`）。**修法**：记录页删除改回同款图标钮，`recordDelStyle` 与 `plannedDelStyle` 逐字一致。
+  - **② 计划页日历明细删除补边框**（用户原话：「日历模式的这个删除按钮怎么没有边框」）—— 根因是我自己加的 `.danger-subtle-btn` 带 `border:transparent !important`，把行内边框吃掉了。**修法**：删掉 `.danger-subtle-btn`（已无引用），日历明细恢复 `confirm-btn-cancel` + 可见边框。
+  - **③ 热力图弹窗「分享」按钮字色**（用户原话：「分享按钮的文字颜色不对」）—— 根因：`.hm-share-btn` 浅色规则写死 `color:#ffffff !important`（注释「白边白字」，本是给深色弹窗设计）；换 class 前 `.check-go-btn` 的 `color:#b91c1c !important` 恰压在其后 → 显示红字可读；换掉后只剩白字 → 浅色弹窗上白字看不见。**修法**：浅色 `color:#334155`（与关闭按钮一致）、深色 `color:#e2e8f0`。
+  - **守卫与反向验证** —— `test.js` 312 条：重写引用 `danger-subtle-btn` 的守卫（危险名单移除行内删除 + 新增「行内删除＝中性灰 + 可见边框」「分享按钮字色随主题」）。**反向验证 3/3**：撤掉任一处修复 → 各自精确报红 → 逐字节还原。
+  - **★踩坑（新铁律已入记忆）** —— ① 切片锚点用 `;` 定界撞上字符串字面量 → 残码（v1.2.2.9 已记，本轮再次复现）；② 拼转义字符串的 python 脚本反复对不上 → 最终改用 **Edit 工具精确替换**（不再靠 python 拼 `\\.` 转义或行偏移）。③ 反向验证脚本锚点撞到「记录页编辑弹窗取消按钮」（同前缀）。
+  - **实测** —— `test` **312/0** · `test-ui` **30/0** · `P0P3` **299/0** · 弹窗宽度 **38/0** · iOS **10/0** —— 共 **689 项全绿**。⚠ `smoke`(20) 与 `e2e`(126) 仍未跑（本机 node 子进程 `EBUSY` 未恢复）。
+  - **发布链路**：回退点 → sw 缓存 v50 → v51 → 构建 → 验包 14 项 → 镜像 push → Release + APK 上传 + digest 校验 + 下载回验 → 网页版复核。
+- **正式版 v1.2.2.9**（versionCode 273，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.9 更新（**用户 v1.2.2.8 实测两条**；共 2 处补丁 + 2 条新守卫 + 1 次切片踩坑修复）：
   - **① 「使用前确认」弹窗两个按钮一大一小**（用户原话：「暂不同意和同意并继续的弹窗大小不一样」）—— **★根因是我 v1.2.2.7~08 那轮「红色只给危险操作」的 class 替换漏了配套规则**：弹窗底部按钮尺寸由一条 `.confirm-modal-buttons .confirm-btn-cancel, .confirm-btn-delete, .check-go-btn { padding:10px 24px !important; border-radius:12px !important; font-size:14px !important; min-width:96px !important; font-weight:600 !important; display:inline-flex !important; … }` 统一，把「同意并继续」从 `check-go-btn` 换成 `glass-btn` 后**不再命中** → 回落到 `.glass-btn` 自身内边距 → 与旁边「暂不同意」一大一小。**同类共 4 个按钮**（同意并继续 `legalAgree` / 日期选择器「确定」`dtpOk` / 保存二维码 `support-save` / 分享 `hm-share`；其中前两个是 v1.2.2.7 就留下的、用户当时没发现）。**修法**：把 `.glass-btn`（含 `:disabled` —— `apOk` 的置灰态也丢了）一并纳入该规则，与语义改造配套。
   - **② 记录页删除按钮改成与计划页同款**（用户原话：「记录页的红色删除垃圾桶，换为和计划页一样的灰色删除按钮」）—— 记录页原来是**图标钮**（`padding:6px` 方形 + `material-icons delete` 红垃圾桶），计划页是**文字钮**「删除」（`padding:6px 12px;font-size:12px`）。**修法**：`recordDelStyle` 改成与计划页 `delStyle` **逐字一致**，按钮内 `material-icons` 图标 → 文字「删除」。两处现在完全同款。

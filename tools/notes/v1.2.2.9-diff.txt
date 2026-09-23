@@ -1,0 +1,27 @@
+本次发版改动清单（tools/versiondiff.js --notes 自动生成），写更新日志时需逐行核对
+甲方：已发布版 v1.2.2.8  乙方：当前工作区 v1.2.2.9
+清单来源时间：2026-09-23 09:38
+★规则：www/ 每一行都要能对应到更新日志里的一条（只写用户能感知的内容）；
+  测试/工具/文档类改动不进更新日志（开发侧内容 → 写进 doc 文案与「开发侧改动记录.md」）。
+
+【应用代码 www/  ← ★每一项都要能在更新日志里找到对应描述】
+  M  www/app-core.js  +1 / -1
+  M  www/app-data.js  +4 / -3
+        · // ★2026-09-23 用户要求：记录页删除按钮与计划页完全一致（此前是 6px 方形的图标钮）
+        · ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelec…
+  M  www/index.html  +9 / -4
+        · 只作用于 .confirm-modal-buttons 内的按钮，行内按钮（内联硬锁定）不受影响
+        · ★2026-09-23 补：把 .glass-btn 一并纳入 —— 中性按钮改造后（check-go-btn → glass-btn）
+        · 没内联尺寸的那几个（日期选择器「确定」/ 保存二维码 / 同意并继续 / 分享）不再命中本规则，
+  M  www/sw.js  +1 / -1
+        · const CACHE_NAME = 'xixi-hiking-v49';   // ★2026-09-20 修正重发（清理更新日志里的开发侧内容）
+
+【原生与构建 android/（只写用户能感知的部分；纯构建/签名类不写）】
+  M  android/app/build.gradle  +2 / -2
+
+【测试与工具链（用户不可见 → 不进更新日志）】
+  M  test.js  +10 / -0
+        · // 弹窗底部按钮尺寸统一：.glass-btn 必须与取消 / 危险按钮同规则
+        · //   ★2026-09-23 补漏：中性改造（check-go-btn → glass-btn）后漏掉 .glass-btn，
+        · //   没内联尺寸的几个（日期「确定」/ 保存二维码 / 同意并继续 / 分享）与旁边取消按钮一大一小
+

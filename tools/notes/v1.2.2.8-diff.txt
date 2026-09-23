@@ -1,0 +1,37 @@
+本次发版改动清单（tools/versiondiff.js --notes 自动生成），写更新日志时需逐行核对
+甲方：已发布版 v1.2.2.7  乙方：当前工作区 v1.2.2.8
+清单来源时间：2026-09-23 09:09
+★规则：www/ 每一行都要能对应到更新日志里的一条（只写用户能感知的内容）；
+  测试/工具/文档类改动不进更新日志（开发侧内容 → 写进 doc 文案与「开发侧改动记录.md」）。
+
+【应用代码 www/  ← ★每一项都要能在更新日志里找到对应描述】
+  M  www/app-core.js  +1 / -1
+  M  www/app-data.js  +28 / -28
+        · ${batchMode ? '<input type="checkbox" class="batch-check" data-id="' + record.id + '"' + (batchSelec…
+        · '<button class="glass-btn ripple-effect" id="dfOk" style="padding:10px 24px;border-radius:12px;font-…
+        · '<button class="glass-btn ripple-effect" id="mwpOk" style="padding:10px 24px;border-radius:12px;font…
+  M  www/index.html  +25 / -1
+        · /* 2026-09-23 行内删除改「淡红图标」：去掉红底与红边框，只保留红色图标/文字
+        · —— 列表里每行都挂红框会让红色失去警示力（29 行全红 = 哪儿都不红）；
+        · 红色语义留在图标上，真正的红色按钮只留给确认弹窗与批量删除。
+  M  www/sw.js  +1 / -1
+        · const CACHE_NAME = 'xixi-hiking-v48';   // ★2026-09-20 修正重发（清理更新日志里的开发侧内容）
+
+【原生与构建 android/（只写用户能感知的部分；纯构建/签名类不写）】
+  M  android/app/build.gradle  +2 / -2
+
+【测试与工具链（用户不可见 → 不进更新日志）】
+  M  _test_p0p3.js  +3 / -1
+        · // ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都会连锁失败）
+  M  e2e/run.js  +7 / -5
+        · // ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都连锁失败）
+        · modalText.indexOf('生效日期：' + LEGAL_V) >= 0 && modalText.indexOf('你的权利') >= 0 &&
+        · ok('同意记录含条款版本 + ISO 时间戳', !!(consent2.rec && consent2.rec.version === LEGAL_V && /^\d{4}-\d{2}-\d{2}…
+  M  test-ui.js  +4 / -1
+        · // ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都会连锁失败：
+        · //   同意弹窗带 data-persist 会残留，导致「连开两次仅 1 个」类断言 count 多 1）
+  M  test.js  +47 / -5
+        · // ★2026-09-23 生效日期与 LEGAL_VERSION 强绑定（不再写死日期 —— 既防忘 bump，也防 bump 了没改正文）
+        · (function () {
+        · _lv && dj.includes('生效日期：' + _lv) && dj.includes('你的权利') && dj.includes('未成年人保护') && dj.includes('中华…
+

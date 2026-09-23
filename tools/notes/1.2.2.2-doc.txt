@@ -1,0 +1,18 @@
+- **正式版 v1.2.2.2**（versionCode 266，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+- v1.2.2.2 更新（**三件报障修复 + 法务文本专业化 + 同意留存 + 弹窗豁免根治** —— 用户反馈：「完整备份导出导入后网盘配置无效」「山册视图引导没了，固定一下」「引导说明改成右上角/彩边半包」「更新一下隐私政策和免责声明，更专业一点，最好有法律效应」「把（临时摘 DOM 那个）坑填了」）：
+  - **① 完整备份(zip)导入后网盘配置失效（真 bug）** —— 根因：`buildFullBackupZip` 里构造 zip 内 `xixi-data.json` 的 `dataPayload` 是**逐字段手写**的，v1.2.1.8 加备份配置时只改了全量载荷 `buildFullBackupPayload`，**zip 链漏了 `syncConfig`**。
+    - 症状：导入时 `payload.syncConfig` 为 undefined → `importFullBackupPayloadWithConfigAsk` 直接按「只恢复记录」处理（连询问都不弹）；纯数据备份走 `buildBackupHTMLString(payload)` 无此问题 —— 与用户「只导数据那份是好的」完全吻合。
+    - **云端 `uploadSyncBackup` 同样调该函数** → 云端「下载恢复一键配置」也是坏的，一处修复救两条链。
+    - 端到端验证：造含配置 zip → 清空本机配置 → `importZipBackup` → 弹出恢复询问（「坚果云 · probe@example.com」）→ 点恢复 → server/username/密码全部恢复、存储里密码仍加密、账号卡显示「已绑定」。
+  - **② 引导卡两处** —— 文案「右下角」→「**右上角**」（山册切换按钮确实在记录页标题行最右），后半句定为「山册卡右下半包的彩边，就是这座山的最高海拔」；`app-init.js` 的 `currentGuideCardId()` 里删掉特例「山册视图 return null」（与计划页切日历仍显示卡的行为对齐）。
+  - **③ 隐私政策 / 免责声明专业化（含法律要素）** —— 隐私政策 8 条 → **11 条**（1482 字，标题改「隐私政策」、按钮「我知道了」）：新增 适用范围与生效 / 数据存储位置与期限 / 云备份 / 信息共享转让与公开披露 / 联网行为与第三方服务 / 数据安全措施 / **你的权利** / **未成年人保护** / 权限清单与用途 / 政策更新 / **适用法律与联系方式**。
+    - 免责声明 4 条 → **10 条**（1117 字）：新增 服务性质（不是领队）/ 记录数据仅供参考 / 请走正规路线 / 出发前做好准备 / 风险自担 / **数据安全与备份责任** / 第三方服务 / **责任限制 + 「不排除依法不得排除、限制的责任」兜底** / 知识产权 / **条款变更与适用法律**（生效日期 2026-09-18）。
+  - **④ 同意留存（新增功能）** —— `app-data.js` 新增 `LEGAL_VERSION` + `LEGAL_AGREE_KEY='hiking_legal_agree'` + `getLegalAgreement/hasAgreedLegal/saveLegalAgreement/formatLegalStamp/showLegalConsentModal/maybePromptLegalConsent`；记录 `{version, at(ISO)}`。
+    - **条款版本与政策正文「生效日期」同步 → 改正文必须 bump 常量，届时自动重新征求同意**；未勾选点同意 → 高亮勾选框 + toast 拒绝。
+    - 触发：启动 600ms（并把自动检查更新改为「同意后 300ms」，避免两弹窗叠加）+ 首次进设置页（关于应用）280ms，两个入口各自每会话只弹一次；隐私政策弹窗底部展示「你已于 YYYY-MM-DD HH:mm 同意本政策（条款版本 X）」。
+  - **⑤ 弹窗豁免机制（根治「临时摘 DOM」绕法）** —— `closeOpenModals(force)` 改为**跳过带 `data-persist` 的弹窗**（38 处无参调用行为不变，新增 `force` 作强制清理口子）；同意弹窗声明 `data-persist` 即常驻下层，点条款时条款弹窗正常叠上层、关掉自然回到同意弹窗（勾选保留）。
+    - 删掉 `detached` 标志 + `openDoc()` 的摘/挂逻辑 + 嵌套 MutationObserver（约 -20 行），并加「不得回退成临时摘 DOM」的守卫。
+  - **⑥ 原生外观收口（设计统一性体检）** —— `index.html` 新增收口段：`input[type=number]` 原生上下箭头、`::-ms-reveal/::-ms-clear`（密码框小眼睛）、`:-webkit-autofill`（自动填充系统浅黄底，用**超长 transition** 而非 inset 大阴影，避免盖掉 :focus 光晕）；`.sync-input` 补齐 `appearance:none`（iOS textfield 内阴影）。另加 `.legal-link` / `.legal-stamp`（含 dark 变体，次要文字用 #334155 级 —— 浅色玻璃卡叠深遮罩后 #64748b 仅约 2:1 对比度）。
+  - **⑦ 测试与工具** —— test.js 226 → **247**（+21：原生外观 5 / 法务要素 4 / 同意留存 8 / 弹窗豁免 3 等，含 1 条过时断言修正）、E2E 102 → **121**（+19：同意留存 13 条含刷新验证与视觉基线、豁免 2 条、法务要素 1 条等）、P0P3 281/0、test-ui 30/0。
+    - **三处测试文件均预置「已同意」**（test-ui / P0P3 用 `beforeParse`、E2E 用 `addInitScript` + `__e2e_legal_clear` 哨兵反转）；弹窗宽度守卫自动纳入新弹窗 36 → **37**；视觉基线 10 张（隐私弹窗文案重写刷新 + 新增同意弹窗）。
+  - **实测**：同意留存探针 25 项 + 豁免探针 20 项全通过；原生控件实测（number spinner 伪元素 `none`、focus `outline: 3px none`、tap-highlight 全局透明、textarea `resize:none`、字体 SimSun）；隐私弹窗文案重写致视觉基线 diff 9.0% → 差异区域分析（边界框在卡片内、22 条等距文字行带、标题/按钮零差异）确认非破版后刷新；checkall **746 项全绿**。

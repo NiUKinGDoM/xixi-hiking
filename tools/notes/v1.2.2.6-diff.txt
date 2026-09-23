@@ -1,0 +1,35 @@
+本次发版改动清单（tools/versiondiff.js --notes 自动生成），写更新日志时需逐行核对
+甲方：已发布版 v1.2.2.5  乙方：当前工作区 v1.2.2.6
+清单来源时间：2026-09-20 05:02
+★规则：下面每一行都要能对应到文案里的一条；对不上就要么补文案、要么在【内部】里说明为何不用写。
+
+【应用代码 www/  ← ★每一项都要能在更新日志里找到对应描述】
+  M  www/app-core.js  +12 / -4
+        · // ★2026-09-20 返回值修复：原先内部 try/catch 吞掉异常 → 上层 saveToStorage 的「数据保存失败」提示永远不触发（静默丢数据）
+        · // ★2026-09-20 解析失败的原始串先隔离保存：此前直接返回 null → 用户看到「数据全没了」，
+        · //   一旦再保存就把损坏内容永久覆盖。隔离一份，至少还能人工捞回。
+  M  www/app-data.js  +43 / -12
+        · '<input type="text" id="edit-difficulty-' + r.id + '" data-testid="edit-difficulty-' + r.id + '" val…
+        · record.difficulty = Math.min(5, Math.max(1, parseInt(difficultyInput.value, 10) || 3));   // ★2026-0…
+        · // ★2026-09-20 距离补下限/上限（此前只有 `|| 0` → 负数能进库；海拔/用时早已有防护）
+  M  www/app-init.js  +9 / -0
+        · // ★2026-09-20 上次读取数据若发现损坏，已把原始串隔离保存 → 明确告知用户（不静默、不丢数据）
+        · setTimeout(function () {
+        · try { showErrorMessage('本地数据读取异常：原始数据已备份保留，未丢失'); } catch (eW) { /* 忽略 */ }
+  M  www/app-sync.js  +9 / -2
+        · // ★2026-09-20 导入失败必须有反馈：此前 async 无 catch → 用户点「导入」后毫无反应
+        · importZipBackup(u8).catch(function (err2) {
+        · console.error('导入备份失败:', err2);
+  M  www/index.html  +1 / -1
+        · <div class="about-version">版本 1.2.2.6</div>
+  M  www/sw.js  +1 / -1
+
+【原生与构建 android/（影响 App 行为，需写【内部】或用户可见条目）】
+  M  android/app/build.gradle  +2 / -2
+
+【测试与工具链（通常写【内部】或不必写）】
+  M  test.js  +21 / -0
+        · // ★2026-09-20 彻查修复守卫（P1×3 + P2×3 + P3×4）—— 每一条都对应一个实测确认过的真问题
+        · (/setItem: function \(key, value\) \{[\s\S]{0,400}?return true;/.test(_fixCore) && /return false; \}…
+        · (!/data-diff/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u6b7b\u5c5e\u6027 data-diff \u5df2\u6e05\u740…
+

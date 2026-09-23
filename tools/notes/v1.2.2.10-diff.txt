@@ -1,0 +1,16 @@
+本次发版改动清单（tools/versiondiff.js --notes 自动生成），写更新日志时需逐行核对
+甲方：已发布版 v1.2.2.9  乙方：当前工作区 v1.2.2.10
+清单来源时间：2026-09-23 10:44
+★规则：www/ 每一行都要能对应到更新日志里的一条（只写用户能感知的内容）；
+  测试/工具/文档类改动不进更新日志（开发侧内容 → 写进 doc 文案与「开发侧改动记录.md」）。
+
+【应用代码 www/  ← ★每一项都要能在更新日志里找到对应描述】
+  M  www/app-core.js  +1 / -1
+  M  www/index.html  +1 / -1
+        · <div class="about-version">版本 1.2.2.10</div>
+  M  www/sw.js  +1 / -1
+        · const CACHE_NAME = 'xixi-hiking-v51';   // ★2026-09-20 修正重发（清理更新日志里的开发侧内容）
+
+【原生与构建 android/（只写用户能感知的部分；纯构建/签名类不写）】
+  M  android/app/build.gradle  +2 / -2
+
