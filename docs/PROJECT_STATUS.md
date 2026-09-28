@@ -533,14 +533,36 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 
 
 
-## 官网（site/）· 2026-09-23 新增 · 2026-09-27 重做（v4）
+## 官网（site/）· 2026-09-23 新增 · 2026-09-27 重做（v4）· 2026-09-28 v9→v10→v11
 
 - **独立静态站**（首页 + 隐私政策 + 免责声明）：`hiking-app3/site/`，纯静态、零依赖、**零外部 CDN**
 - **独立 Cloudflare Pages 项目（Root=`site`）**：与 App 的 PWA 站点（Root=`www`）**刻意隔离** —— 放进 `www/` 会被 `sw.js` 接管，用户打开官网会被拉进 App 本体
 - **★首次部署需用户在 CF 控制台操作**：Pages → Connect to Git → 选本仓库 → Build command 留空 / Build output directory `site`（详细步骤见 `site/README.md`）
 - 已纳入 `tools/ghsync.js` 同步清单（DIRS + diff 核对 15 项）→ `ghsync --push` 即上远端，push master 后 CF 自动部署
 - **★政策正文是两份拷贝**：App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`），官网在 `site/privacy.html` / `site/terms.html` → **改一处必须同步另一处**，并 bump `LEGAL_VERSION` + 官网页「生效日期」
-- 界面截图（统计概览 / 徒步足迹 / 山册）为**真实 App 渲染 + 演示数据**；想换自己的真机图，替换 `site/assets/shots/` 同名文件即可（建议 390×844、2 倍图）
+- 界面截图**一律是真机渲染**（`tools/siteshots.js` 从 `www/` 生成，见下）；想换图就重跑脚本，别手改。
+
+- **★2026-09-28 v11（用户：「再核对一下内容，哪些没有就补充，哪些没有的，就去掉。示例页面全换为真实截图，分享卡那里也一样」）**：
+  - **① 手搓 mock 全部删除** —— 统计主卡面板 / 记录样本 / 照片墙 SVG / 日历 mock / 搜索框打字演示 / 分享卡海报，**六个假界面一个不留**，换成 10 张真机截图（`tools/siteshots.js` 产出）。同时删掉为此写的 JS（热力图生成 / 日历生成 / 数字滚动 / 打字演示，共 4 段）与 **94 条死 CSS**（`site.css` 花括号 405→311）。
+  - **② 内容逐条核对**（事实来源 = `node tools/siteshots.js --dump` 导出的 App 四页真实文案）：
+    - **删**：「概览有年资」（实为「我的里程碑」，年资在设置→关于）、「年度足迹热力图 53 列」（实为「徒步足迹」按月日历 + 回顾）、搜索「按山名匹配」（实际匹配**山名/小日记/心情/天气/同行人**五字段）、分享卡「带难度」（2026-08-25 起不显示）、分享卡「二维码」「落款可关」（无）、分享卡「9:16 / PDF Print」（只有 1080×1440 一种）。
+    - **补**：那年今日、我的里程碑（17 项成就 + 彩屑）、平均三项（海拔/难度/用时）、批量模式、从历史复制、照片回忆、山册彩边含义、自动同步、显示帧率、先看看示例、「分享卡只放你填过的字段」。
+  - **③ 新工具 `tools/siteshots.js`**（10 张图 + `--dump` 导文案）：CDP 驱动 `www/index.html`（390×844 @1.5x），预置 localStorage（37 条演示记录 + 4 条计划 + **源码读出的 `LEGAL_VERSION`** + 四引导卡已关 + FPS 关 + 浅色 + 顶栏标题 + 当日过期提醒已消），把 5 张插画风演示照片画进 canvas 塞进 IndexedDB，最后**拦下 `generateShareCard` 的输出**存成真分享卡。**注意**：`www/` 必须走 http 服务（照片走 IndexedDB，`file://` 不可靠）。
+  - **④ 修两个真 bug**：
+    - **`max-width` + `margin-inline:auto` 放在 grid item 上是收缩而非拉伸**（auto 外边距取消 `stretch`）→ 图片没加载时容器只剩标题宽（实测 110px），加载完跳 352px → **整页 842px 布局抖动**；改 `width:100%` + `max-width` 封顶后，**加载前后 `scrollHeight` 完全相等（17393）**。
+    - **`siteshot.js` 卡死** —— `img.decode()` 对「尚未开始加载」的懒加载图既不 resolve 也不 reject → CDP `awaitPromise` 永久挂起（命令被 SIGTERM）。修法：先把 `loading` 全改 `eager` 再滚一遍，且 `Promise.race` 加 4s 超时。
+  - **自检**：320/360/390/414/768/1024/1440 **七档零横溢**；11 张图全部加载成功且显示比例与 `naturalWidth/naturalHeight` 偏差 < 0.25%（`border` 固有偏差）；加载前后总高一致（零 CLS）。
+  - **镜像侧**：`shot-heatmap.png`、`shot-records-mb.png` 需在主工程与镜像**双端删除**（`ghsync` 只复制不删多余文件）。**未部署**，等「同步」。
+  - **⑤ 量词与定位补正（用户：「怎么能是一座登山记录本？单位不对吧？...还有这是登山徒步一起记录的」）**：`一座…登山记录本` → **`一本只属于你自己的徒步登山记录本`**（`<title>` / meta / 首屏标语 / 页脚 四处统一）。App 自己的关于页写的是「记录每一次**徒步、登山**的足迹」，官网原来只说登山 → 补上徒步：kicker 改 `徒步 · 登山 · 离线优先`、首屏正文改「登完一座山记一座，走过一条线也记一条」、#s02 lede 改「一套字段同时管登山和徒步」并新增 assure 行「登山 · 徒步通用」(#核对源码：唯一必填只有「名称」)、山册表述改「按名称汇总成册 —— 一座山、一条线，各自一张卡」、页脚补「登山、徒步、城郊短线都记」。**顺带修窄屏折行**：新标语 16 字在 360px 会折两行 → `@media (max-width:400px)` 收字号 14.5px + 字距 .1em，复测 320/360/390 全单行零横溢。
+- **★2026-09-28 v10（用户：「徒步足迹的图片，删掉。再优化一下网页，和里边的内容」）**：
+  - ① 删「徒步足迹」截图 + `sec-lede` 改「这两屏」+ 截图说明改「`01 统计概览 / OVERVIEW`」`02 山册 / ALBUM`」编号式；
+  - ② **渐显动画三层兜底**（此前只有 v4 的 4 秒超时，且 v9 重做时**丢了**）—— `<head>` 首行给 `<html>` 加 `.js`，CSS 改写成 `.js .reveal{opacity:0}` / `.js .mask > span{...}`（JS 失效 → 无 `.js` → 内容直接可见）；主脚本整体包 `try/catch`，任何一步抛错即 `classList.remove('js')`；另加「不支持 IO → 全展开」「首屏标题 1.6s 强制升起」「视口内 `.reveal` 2.5s 强制显示」「`beforeprint` 全展开」；
+  - ③ **页脚品牌字折行修复** —— `.f-brand .wm` 38px+.28em 需 387px 而列宽仅 376px → 「XiXiの徒步小 / 记」两行；改 `clamp(20px,2.1vw,29px)` + `.2em` + `white-space:nowrap`（实测单行 55px 高）；
+  - ④ **计划段标题单字孤行修复** —— 「三态徽章」在 32px+.16em 下需 148.5px 而列宽 148px → 挤成「三态徽 / 章」；改 `.tt` `clamp(20px,2.05vw,28px)` + `.12em`，列改 `112px minmax(0,.9fr) minmax(0,1.1fr)`（Range 探针实测 1120/1280/1440 三档全单行）；
+  - ⑤ **横溢清零** —— `.ledger .item::before` 的悬浮高光左右各外扩 28px，窄屏（页边距收到 22px）顶出视口 6px → `@media(max-width:1080px)` 收平；`.sync-quad` 四列在 320px 溢出 5px → `@media(max-width:520px)` 改两列。**实测 320/360/390/414/768/1024/1440 七档 `scrollWidth === clientWidth`**；
+  - ⑥ 内容与可访问性 —— s03 「浏览器 IndexedDB」→「本机 IndexedDB」；截图 `alt` 写全 + `decoding="async"`；`nav` 加 `aria-label`、菜单键加 `aria-controls`/`aria-expanded`、支持 Esc 关闭。
+  - **★新增自检工具链（本机 `spawn` 仍 EBUSY，故走「Chrome 独立起调试端口 + node 只连 WebSocket」）**：`tools/siteshot.js`（整页/分段截图，`captureBeyondViewport`，**必须先整页滚一遍**否则 `loading="lazy"` 图片拍成空白）、`tools/siteeval.js`（单点求值）、`tools/siteprobe.js`（多档宽度批量求值）。用法见 `site/README.md`。命名刻意**不带 `_` 前缀**（防被「`_*` 宽模式清理」误删）。
+  - **未部署**：等用户「同步」指令；`site/README.md` 已同步更新。
 - **★已知环境问题（2026-09-23 遇到）**：本机一度出现「node 的 `child_process` spawn 全部 EBUSY」→ `ghsync`/`ship`/`patch.js` 的写后校验集体失效（表现为「取 token 失败」「syntax error」假报错）。绕法：**从 shell 直接跑 git/ghtoken.py** 完成提交与推送（token 只进变量、输出打码）
 - **★2026-09-27 重做（v4）：纸感极简 / 户外杂志**（用户评 v3「整体页面设计就很低级，所有内容。你自己重新做吧」）—— 推翻 v3 的「**粉紫蓝三色渐变底 + 彩色图标 + 玻璃卡片堆叠**」（诊断：用装饰冒充设计）。新令牌：纸底 `#f7f6f3` / 墨字 `#16181c` / 正文 `#5c6269` / 主色**森林绿 `#1f5c3f`**（与 App 图标同色系，色彩不再打架）；**分隔改「细线 + 留白」**（线为渐变淡出，**去掉卡片堆叠**）；排版**左对齐**、标题 `clamp(27px, 6.6vw, 78px)`、小标签 12px / `letter-spacing .2em`；结构改「eyebrow + 大标题（关键词绿色）+ 编号 fact / 两列 feat / 标签-说明两栏 privacy / 版本-日期 changelog」；装饰保留淡绿山脊 + 宽屏左侧路线（改绿）；**玻璃只留导航条**（配方仍唯一 `blur(2px) saturate(150%)`）。**★修一处严重隐患**：`.reveal` 靠 `IntersectionObserver` 加 `.in` 才 `opacity:1` → 回调不触发即**永久白屏**（headless / 虚拟时间下实测复现；打印、爬虫、JS 部分失败同理）→ 已改「**首屏内区块不挂动画类** + **4 秒超时兜底**」。**自检**：320/360/375/390/412/500/768 **七档 × 三页 = 21 项零横溢**；静态项（脚本语法 / 玻璃配方唯一 / 圆角表 / 类名 100% 覆盖 / 无 emoji / 无外部依赖）全绿。**v3 备份在 `%TEMP%/site-v3-backup`**，可随时回退。
 ## 待办/新功能方案（2026-09-08 更新）
