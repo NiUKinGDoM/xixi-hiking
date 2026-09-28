@@ -838,5 +838,14 @@ _posCases.every(function (re) { return re.test(_fixData); })
 (/hiking_records_corrupt/.test(_fixInit)) ? ok('\u5b88\u536b\uff1a\u542f\u52a8\u65f6\u4f1a\u63d0\u793a\u300c\u6570\u636e\u8bfb\u53d6\u5f02\u5e38\u5df2\u4fdd\u7559\u300d') : bad('\u542f\u52a8\u672a\u63d0\u793a\u9694\u79bb\u5907\u4efd\uff01');
 (!/data-diff/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u6b7b\u5c5e\u6027 data-diff \u5df2\u6e05\u7406') : bad('data-diff \u6b7b\u5c5e\u6027\u4ecd\u5728\uff01');
 (/fmtPlanDateKey\(new Date\(\)\)/.test(_fixData) && !/fmtPlanDateKey\(new Date\(\)\.toISOString\(\)\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u65e5\u5386 todayKey \u5df2\u4e0d\u518d\u7ed5 toISOString') : bad('todayKey \u4ecd\u5728\u7ed5 toISOString\uff01');
+
+// ★2026-09-28：曾发生「清理临时脚本 rm -f _*.js」把 _ 开头的重要测试文件一起删掉
+//   —— P0P3 套件（299 条断言）消失了两版都没被发现（checkall 只静默跳过）→ 守卫文件存在性
+['_test_p0p3.js', '_test_batch3.js'].forEach(function (f) {
+    fs.existsSync(path.join(ROOT, f))
+        ? ok('守卫：测试套件在位 ' + f)
+        : bad('测试套件文件缺失！' + f + '（曾被 _ 前缀清理误删）');
+});
+
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

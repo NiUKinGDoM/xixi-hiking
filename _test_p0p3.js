@@ -1125,18 +1125,24 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         assert('到期判定：今天=已到期', window.__codCalc(isoDay(0)) === true, '');
         assert('到期判定：明天=未到期', window.__codCalc(isoDay(1)) === false, '');
         assert('到期判定：空值/无效值安全返回 false', window.__codCalc('') === false && window.__codCalc('not-a-date') === false, '');
-        const dNow = new Date();
+        // ★两条计划的日期可能落在不同月份（isoDay(±n) 会跨月）→
+        //   分别渲染「过期月」与「未来月」，各自断言该月的按钮形态。
+        //   （旧写法假设两条一定同月 → 到月底必然失败，2026-09-28 实测踩到）
+        const dayOf = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x; };
+        const ovDay = dayOf(-2), fuDay = dayOf(6);
         window.__testSetPlanned([
             { id: 'cod_ov', name: '过期测试山', elevation: 1000, difficulty: 2, createdAt: isoDay(-2) },
             { id: 'cod_fu', name: '未来测试山', elevation: 1100, difficulty: 3, createdAt: isoDay(6) }
         ]);
-        window.__codRenderCal(dNow.getFullYear(), dNow.getMonth());
+        window.__codRenderCal(ovDay.getFullYear(), ovDay.getMonth());
         const codBtns = window.__codButtons();
-        assert('日历明细按钮数正确(2 条计划)', codBtns.length === 2, JSON.stringify(codBtns));
+        assert('日历明细渲染出计划按钮', codBtns.length >= 1, JSON.stringify(codBtns));
         const codOv = codBtns.filter((b) => b.delay)[0];
-        const codFu = codBtns.filter((b) => !b.delay)[0];
         assert('过期计划按钮=「完成/延期」', !!codOv && codOv.txt === '完成/延期', JSON.stringify(codBtns));
-        assert('未来计划按钮仍为「完成」', !!codFu && codFu.txt === '完成', JSON.stringify(codBtns));
+        window.__codRenderCal(fuDay.getFullYear(), fuDay.getMonth());
+        const codFuBtns = window.__codButtons();
+        const codFu = codFuBtns.filter((b) => !b.delay)[0];
+        assert('未来计划按钮仍为「完成」', !!codFu && codFu.txt === '完成', JSON.stringify(codFuBtns));
         window.__codShow('cod_ov', '过期测试山');
         assert('弹窗三按钮在(完成/延期/取消)', !!document.getElementById('cod-complete') && !!document.getElementById('cod-delay') && !!document.getElementById('cod-cancel'), '');
         assert('弹窗文案带计划名', text('.confirm-modal-message').indexOf('过期测试山') >= 0, text('.confirm-modal-message').slice(0, 40));
