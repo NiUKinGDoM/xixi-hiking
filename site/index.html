@@ -1,300 +1,1114 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>XiXiの徒步小记 · 一本安静的徒步日记本</title>
-<meta name="description" content="XiXiの徒步小记是一款纯本地的徒步记录 App：记下每座山、每段路与每次出发的心情，规划下次行程，看自己的足迹一年年长出来。无账号、无广告、不收集任何数据，离线也能用。">
-<meta name="theme-color" content="#f7f6f3">
-<meta property="og:type" content="website">
-<meta property="og:title" content="XiXiの徒步小记 · 一本安静的徒步日记本">
-<meta property="og:description" content="纯本地徒步记录 App：无账号、无广告、不收集任何数据，离线可用。Android 下载 APK，iOS 直接用网页版。">
-<meta property="og:image" content="assets/icons/icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
-<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<title>XiXiの徒步小记 — 一座只属于你自己的登山记录本</title>
+<meta name="description" content="XiXiの徒步小记是一座只属于你自己的登山记录本。记录、照片、计划、日历、山册、分享卡，全部离线优先；云同步是可选项，同步到你自己配置的坚果云 WebDAV。无账号、无统计、无广告。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- ★字体：默认异步加载（国内访问 Google Fonts 不稳，同步加载会阻塞首屏 + 白屏） -->
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&display=swap"></noscript>
 <link rel="stylesheet" href="assets/site.css">
-<script>document.documentElement.className += ' js';</script>
 </head>
 <body>
 
-<header class="nav">
-  <div class="wrap nav-in">
-    <a class="brand" href="./">
-      <img src="assets/icons/icon-192.png" alt="XiXiの徒步小记 图标">
-      <span>XiXiの徒步小记</span>
-    </a>
-    <nav class="nav-links">
-      <a href="#what">它是什么</a>
-      <a href="#shots">界面</a>
-      <a href="#features">功能</a>
-      <a href="#privacy">隐私</a>
-      <a href="#changelog">更新日志</a>
-      <a href="https://github.com/NiUKinGDoM/xixi-hiking" target="_blank" rel="noopener">GitHub</a>
-    </nav>
+<div id="progress"></div>
+
+<nav id="nav">
+  <ul class="nav-links">
+    <li><a href="#s01">概览</a></li>
+    <li><a href="#s02">记录</a></li>
+    <li><a href="#s04">计划</a></li>
+    <li><a href="#s05">搜索</a></li>
+    <li><a href="#s06">分享</a></li>
+    <li><a href="#s07">设置</a></li>
+    <li><a href="#s09">更新</a></li>
+  </ul>
+
+  <a href="#top" class="wordmark">
+    <span class="cn">徒步小记</span>
+    <span class="en">XiXi&#39;s Hiking Notes</span>
+  </a>
+
+  <div class="nav-right">
+    <a href="#download" class="btn-line">下载</a>
+    <button class="menu-btn" id="menuBtn" aria-label="菜单"><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="m-menu" id="mMenu">
+  <a href="#s01">概览</a>
+  <a href="#s02">记录</a>
+  <a href="#s03">照片</a>
+  <a href="#s04">计划</a>
+  <a href="#s05">搜索</a>
+  <a href="#s06">分享</a>
+  <a href="#s07">设置</a>
+  <a href="#s08">安全</a>
+  <a href="#s09">更新日志</a>
+  <a href="#download">下载</a>
+</div>
+
+<!-- ══════════ HERO ══════════ -->
+<header class="hero" id="top">
+  <div class="hero-art" data-parallax="0.12">
+    <svg viewBox="0 0 1440 920" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#131C1F"/>
+          <stop offset="34%" stop-color="#2B3A3B"/>
+          <stop offset="62%" stop-color="#6D5744"/>
+          <stop offset="84%" stop-color="#B77B4E"/>
+          <stop offset="100%" stop-color="#D89A64"/>
+        </linearGradient>
+        <linearGradient id="glow" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stop-color="#F2C694" stop-opacity=".55"/>
+          <stop offset="100%" stop-color="#F2C694" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E5C7A4" stop-opacity="0"/>
+          <stop offset="50%" stop-color="#E5C7A4" stop-opacity=".2"/>
+          <stop offset="100%" stop-color="#E5C7A4" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect width="1440" height="920" fill="url(#sky)"/>
+      <g data-parallax="0.05">
+        <ellipse cx="1010" cy="560" rx="640" ry="240" fill="url(#glow)"/>
+        <circle cx="1010" cy="520" r="58" fill="#F6D5A8" opacity=".78"/>
+      </g>
+      <g data-parallax="0.16">
+        <path d="M0 596 L188 470 L340 566 L512 424 L688 574 L842 476 L1010 588 L1196 470 L1440 592 L1440 920 L0 920 Z" fill="#2E3E3D" opacity=".72"/>
+      </g>
+      <rect y="530" width="1440" height="120" fill="url(#mist)" opacity=".8"/>
+      <g data-parallax="0.28">
+        <path d="M0 672 L232 552 L448 664 L672 536 L892 668 L1122 552 L1440 682 L1440 920 L0 920 Z" fill="#22302F" opacity=".9"/>
+      </g>
+      <g data-parallax="0.42">
+        <path d="M0 768 L286 664 L560 772 L842 662 L1142 776 L1440 700 L1440 920 L0 920 Z" fill="#131D1C"/>
+        <g fill="#0D1514">
+          <path d="M196 786 L216 716 L236 786 Z"/>
+          <path d="M246 790 L262 738 L278 790 Z"/>
+          <path d="M1102 792 L1122 722 L1142 792 Z"/>
+          <path d="M1154 796 L1170 744 L1186 796 Z"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="hero-veil"></div>
+
+  <div class="rail" aria-hidden="true">
+    <div class="tick"><span>4,300</span><i></i></div>
+    <div class="tick"><span>3,800</span><i></i></div>
+    <div class="tick"><span>3,200</span><i></i></div>
+    <div class="tick"><span>2,600</span><i></i></div>
+    <div class="tick"><span>2,000</span><i></i></div>
+  </div>
+
+  <div class="wrap hero-inner">
+    <div class="hero-kicker">
+      <span class="label">Hiking Notes</span>
+      <span class="dash"></span>
+      <span class="label">登山记录本 · 离线优先</span>
+    </div>
+
+    <h1 class="hero-title">
+      <span class="mask m1"><span>徒步</span></span>
+      <span class="mask m2"><span>小记</span></span>
+    </h1>
+
+    <div class="hero-tagline">
+      <div class="rule-v"></div>
+      <p>一座只属于你自己的登山记录本</p>
+    </div>
+
+    <p class="hero-body">
+      登完一座记一座。路线怎么走的、水在哪补的、什么时候该撤——写下来，下座山才有底气。
+      难度、小日记、心情、天气、同行人、最多 24 张照片，一并留在这本子里。
+    </p>
+
+    <div class="hero-actions">
+      <a href="#download" class="cta primary">
+        下载徒步小记
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 12h16m0 0-6-6m6 6-6 6"/></svg>
+      </a>
+      <a href="#s06" class="cta ghost">
+        看看分享卡
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 12h16m0 0-6-6m6 6-6 6"/></svg>
+      </a>
+    </div>
+
+    <div class="hero-meta">
+      <div class="cell"><div class="k">免费</div><div class="v">Free to download</div></div>
+      <div class="cell"><div class="k">无账号</div><div class="v">No sign-up</div></div>
+      <div class="cell"><div class="k">离线优先</div><div class="v">Offline first</div></div>
+      <div class="cell"><div class="k">坚果云</div><div class="v">Your own WebDAV</div></div>
+    </div>
+  </div>
+
+  <div class="scroll-cue">
+    <div class="line"></div>
+    <span>Scroll</span>
   </div>
 </header>
 
-<main>
 
-  <section class="hero">
-    <div class="wrap">
-      <p class="eyebrow">纯本地<span class="sep">/</span>无账号<span class="sep">/</span>无广告</p>
-      <h1>给爱爬山的人，<br>一本安静的<em>徒步日记本</em></h1>
-      <p class="lead">记下每一座山、每一段路、每一次出发时的心情。规划下一次行程，然后看着自己的足迹，一年一年长出来。</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/NiUKinGDoM/xixi-hiking/releases/latest" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-          下载 Android 版
-        </a>
-        <a class="btn" href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener">
-          在浏览器里直接用
-        </a>
-      </div>
-      <div class="hero-meta">
-        <span>记录只存在你的设备上</span>
-        <span>不接入统计与广告 SDK</span>
-        <span>山上没信号也能写</span>
-      </div>
-    </div>
-    <div class="ridge" aria-hidden="true">
-      <svg viewBox="0 0 1200 116" preserveAspectRatio="none">
-        <path d="M0 116 L88 60 L158 90 L242 28 L320 78 L412 44 L512 98 L612 50 L704 88 L800 34 L892 76 L1002 48 L1096 84 L1200 116 Z" fill="rgba(31,92,63,0.075)"/>
-        <path d="M0 116 L118 88 L206 104 L300 70 L396 96 L498 74 L600 104 L702 80 L800 100 L900 72 L1000 96 L1100 84 L1200 116 Z" fill="rgba(31,92,63,0.05)"/>
-      </svg>
-    </div>
-  </section>
+<!-- ══════════ 真实界面 ══════════ -->
+<section class="sec" id="shots" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">预览</div>
+      <h2 class="sec-title">它真实的样子</h2>
+      <p class="sec-lede">
+        下面是<em>真机截图，不是设计稿</em>。
+        装上就是这三屏：统计概览 / 徒步足迹 / 山册。
+      </p>
+    </header>
 
-  <section class="sec" id="what">
-    <div class="wrap">
-      <p class="statement">不是徒步数据平台，也不是轨迹工具 ——<br>只是<em>一本你自己的日记本</em>。</p>
-      <div class="facts">
-        <div class="fact">
-          <span class="num">01</span>
-          <h3>是日记本，不是专业工具</h3>
-          <p>不逼你填一堆参数。山名、日期、心情，想写就写；里程、爬升、天气、同行的人都可以留白。重点是你当时怎么想，不是数据多准确。</p>
+    <div class="shot-row">
+      <figure class="reveal d1">
+        <img src="assets/shots/shot-overview.png" alt="统计概览：总记录数、总里程、总用时、最高海拔" width="585" height="1266" loading="lazy">
+        <figcaption>统计概览</figcaption>
+      </figure>
+      <figure class="reveal d2">
+        <img src="assets/shots/shot-heatmap.png" alt="徒步足迹：每月一张打卡日历" width="585" height="1266" loading="lazy">
+        <figcaption>徒步足迹</figcaption>
+      </figure>
+      <figure class="reveal d3">
+        <img src="assets/shots/shot-records-mb.png" alt="山册：去过的山按海拔着色" width="585" height="1266" loading="lazy">
+        <figcaption>山册</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 01 概览 ══════════ -->
+<section class="sec" id="s01" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">01</div>
+      <h2 class="sec-title">打开就看见，<br>自己走了多远</h2>
+      <p class="sec-lede">
+        统计主卡、年资、年度足迹热力图、年度回顾。
+        所有数字<em>只做加减法</em>：不做评分，不做排行，也不告诉你「还不够努力」。
+      </p>
+    </header>
+
+    <div class="split">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <span class="ttl">统计主卡</span>
+          <span class="label">示例数据 · Sample</span>
         </div>
-        <div class="fact">
-          <span class="num">02</span>
-          <h3>数据在你自己手里</h3>
-          <p>记录与照片只存在你的设备上。只有你主动配置了自己的网盘，才会同步到<b>你自己的</b>账号 —— App 没有开发者服务器，也不收集、不上传任何使用数据。</p>
+
+        <div class="stat-grid">
+          <div class="s"><div class="n"><span data-count="47">0</span><span class="u">次</span></div><div class="l">登顶</div></div>
+          <div class="s"><div class="n"><span data-count="312">0</span><span class="u">km</span></div><div class="l">里程</div></div>
+          <div class="s"><div class="n">96:20<span class="u">h</span></div><div class="l">用时</div></div>
+          <div class="s"><div class="n"><span data-count="4300">0</span><span class="u">m</span></div><div class="l">最高海拔</div></div>
         </div>
-        <div class="fact">
-          <span class="num">03</span>
-          <h3>上山没信号也照记</h3>
-          <p>完全离线可用。到了山里打开就能写，不用等信号，也不怕断网；回到家再慢慢整理照片和细节。</p>
+
+        <div class="tenure">
+          <span class="t">年资</span>
+          <span class="fill" style="flex:1;height:1px;border-bottom:1px dotted var(--hair);transform:translateY(-5px)"></span>
+          <span class="v">第 4 年 · 1,420 天</span>
         </div>
-      </div>
-    </div>
-  </section>
 
-  <section class="sec" id="shots">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">界面</p>
-        <h2>下面是它真实的样子</h2>
-        <p class="note">演示数据，非设计稿。</p>
-      </div>
-      <div class="shot-grid">
-        <figure>
-          <img src="assets/shots/shot-overview.png" alt="统计概览：总记录数、总里程、总用时、最高海拔等统计卡">
-          <figcaption>统计概览</figcaption>
-        </figure>
-        <figure>
-          <img src="assets/shots/shot-heatmap.png" alt="徒步足迹：每月一张打卡日历，去过哪天一眼看清">
-          <figcaption>徒步足迹</figcaption>
-        </figure>
-        <figure>
-          <img src="assets/shots/shot-records-mb.png" alt="山册：去过的山汇成两列卡片，按海拔着色">
-          <figcaption>山册</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
-  <section class="sec" id="features">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">功能</p>
-        <h2>够用就好，不做多余的事</h2>
-      </div>
-      <ul class="feat-list">
-        <li>
-          <h3><span class="num">01</span>徒步记录</h3>
-          <p>山名、日期、里程、用时、爬升、难度、心情、天气、同行人，还有一段想写多少写多少的小日记和照片。</p>
-        </li>
-        <li>
-          <h3><span class="num">02</span>出行计划</h3>
-          <p>先定好下次去哪，到日子早上提醒你；过期了可以一键「完成」转入记录，也可以直接延期改期。</p>
-        </li>
-        <li>
-          <h3><span class="num">03</span>徒步足迹</h3>
-          <p>每个月一张打卡日历，去过哪天一眼看清；同一格点开就能回看那天的记录，还有「那年今日」提示。</p>
-        </li>
-        <li>
-          <h3><span class="num">04</span>山册</h3>
-          <p>去过的山自动汇成一册，按海拔高低着色，一座山一张卡 —— 翻起来像在数自己的收藏。</p>
-        </li>
-        <li>
-          <h3><span class="num">05</span>分享卡</h3>
-          <p>把一次行程生成一张干净的图片，发给朋友或者留着自己收藏。</p>
-        </li>
-        <li>
-          <h3><span class="num">06</span>年度回顾与备份</h3>
-          <p>年底回顾这一年走过的路；随时一键导出完整备份（含照片），换手机不丢。</p>
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="sec" id="privacy">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">隐私与数据</p>
-        <h2>这一块写得直白一点，因为它值得</h2>
-      </div>
-      <div class="privacy-notes">
-        <p><b>没有账号，也没有开发者服务器。</b>记录、计划、备注、照片全部存在你的设备上；不收集、不上传你的身份信息、行为数据、设备标识与位置信息，也没有接入任何统计、广告或推送 SDK。</p>
-        <p><b>联网只做三件事。</b>检查更新（查 GitHub 上的版本号）、云备份（只在你配置了自己的网盘后，直连你的网盘）、崩溃报告（仅在已配置网盘时上传，不含记录与照片）。</p>
-        <p><b>权限都能拒绝。</b>通知、闹钟、震动、照片选择等权限都是按需申请，拒绝只会让对应功能不可用，不影响其它功能。</p>
-      </div>
-      <div class="privacy-links">
-        <a href="privacy.html">《隐私政策》</a>
-        <a href="terms.html">《免责声明》</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="sec" id="changelog">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">更新日志</p>
-        <h2>最近两个版本</h2>
-        <p class="note">App 内「关于应用」也能看到同一份内容。</p>
-      </div>
-      <div class="rel-list">
-        <div class="rel-item">
-          <span class="ver">v1.2.2.10<span class="date">09-24</span></span>
-          <ul>
-            <li><b>记录页的删除按钮和计划页统一了</b> —— 以前记录页列表里是红垃圾桶，跟计划页的灰垃圾桶不是一个样；现在两处长得一模一样。</li>
-            <li><b>计划页日历明细的删除按钮补回了边框</b> —— 之前那个按钮没有边框，孤零零一个字看着像残影。</li>
-            <li><b>热力图弹窗的「分享」按钮字色修好了</b> —— 浅色模式下以前是白字，几乎看不见。</li>
-          </ul>
+        <div class="heat-wrap">
+          <div class="label" style="margin-bottom:14px">年度足迹热力图 / Footprint</div>
+          <div class="heat" id="heat"></div>
         </div>
-        <div class="rel-item">
-          <span class="ver">v1.2.2.9<span class="date">09-23</span></span>
-          <ul>
-            <li><b>「使用前确认」弹窗的两个按钮不再一大一小</b> —— 以前「同意并继续」比旁边的「暂不同意」矮一截也窄一截。</li>
-            <li><b>顺带修好另外三个按钮的尺寸</b> —— 日期选择器的「确定」、支持作者的「保存二维码」、足迹里那天的「分享」。</li>
-          </ul>
+
+        <div class="heat-foot">
+          <span class="label">少</span>
+          <div class="heat-legend">
+            <i></i>
+            <i class="on" style="background:rgba(164,81,43,.24);border-color:transparent"></i>
+            <i class="on" style="background:rgba(164,81,43,.48);border-color:transparent"></i>
+            <i class="on" style="background:rgba(164,81,43,.72);border-color:transparent"></i>
+            <i class="on" style="background:rgba(164,81,43,1);border-color:transparent"></i>
+          </div>
+          <span class="label">多</span>
+        </div>
+
+        <div class="review">
+          <div class="label" style="margin-bottom:14px">年度回顾 · 与去年比</div>
+          <div class="row"><span class="k">登顶次数</span><span class="v">12 座 <span class="up">↑ +3</span></span></div>
+          <div class="row"><span class="k">累计里程</span><span class="v">186 km <span class="up">↑ +18%</span></span></div>
+          <div class="row"><span class="k">单日最长</span><span class="v">21.4 km <span class="up">↑ +2.8</span></span></div>
+          <div class="row"><span class="k">留在山里的日子</span><span class="v">24 天 <span class="dn">↓ −2</span></span></div>
         </div>
       </div>
-      <p class="rel-more"><a href="https://github.com/NiUKinGDoM/xixi-hiking/releases" target="_blank" rel="noopener">查看完整更新日志与历史版本 →</a></p>
-    </div>
-  </section>
 
-</main>
+      <div>
+        <div class="statement reveal">
+          走过的每一趟，<br>
+          <b>最后汇成一张卡。</b>
+        </div>
+        <p class="reveal d1">
+          统计主卡把次数、里程、用时、最高海拔放在一起；年资从第一条记录开始数；
+          热力图按天点亮，哪个月走得多一眼就知道。年度回顾把今年和去年并排放，
+          多了少了都只是事实，不带评判。
+        </p>
 
-<footer class="foot">
-  <div class="wrap foot-in">
-    <div>
-      <p class="sig">XiXiの徒步小记</p>
-      <p>个人作品，免费使用。喜欢的话，可以在 App 内「支持作者」。<br>联系：<a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a></p>
+        <div class="assure reveal d2">
+          <div class="row">
+            <div class="leader"><span class="t">统计主卡</span><span class="fill"></span><span class="label">Card</span></div>
+            <div class="d">次数 / 里程 / 用时 / 最高海拔，四个数一张卡。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">年资</span><span class="fill"></span><span class="label">Tenure</span></div>
+            <div class="d">从第一天写到今天，第几年、第几天。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">年度足迹热力图</span><span class="fill"></span><span class="label">Heatmap</span></div>
+            <div class="d">按天点亮，走过的日子自己会说话。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">年度回顾</span><span class="fill"></span><span class="label">Review</span></div>
+            <div class="d">含「和去年比」，多与少都并排放着。</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="foot-links">
-      <a href="https://github.com/NiUKinGDoM/xixi-hiking" target="_blank" rel="noopener">GitHub 仓库</a>
-      <a href="privacy.html">隐私政策</a>
-      <a href="terms.html">免责声明</a>
-      <a href="https://github.com/NiUKinGDoM/xixi-hiking/issues" target="_blank" rel="noopener">问题反馈</a>
+  </div>
+</section>
+
+<!-- ══════════ 02 记录 ══════════ -->
+<section class="sec" id="s02" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">02</div>
+      <h2 class="sec-title">记录，<br>不设门槛</h2>
+      <p class="sec-lede">
+        增删改都在一处；难度 1–5、小日记、心情、天气、照片最多 24 张一条。
+        按年份分组，<em>列表与山册双视图</em>，点开一行就能读、就能改。
+      </p>
+    </header>
+
+    <div class="split">
+      <div>
+        <div class="statement reveal">
+          一句话也算一条记录。<br>
+          <b>照片也算。</b>
+        </div>
+        <p class="reveal d1">
+          不需要写得好看。累了就写一句小日记，收工再补细节。
+          没有模板，没有必填项：想只留一个日期和一座山名，也完全没问题。
+        </p>
+
+        <div class="assure reveal d2">
+          <div class="row">
+            <div class="leader"><span class="t">难度 1–5</span><span class="fill"></span><span class="label">Difficulty</span></div>
+            <div class="d">一个五格刻度，自己给自己的体感打分。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">小日记</span><span class="fill"></span><span class="label">Journal</span></div>
+            <div class="d">不限字数。写一个字也保存，写一万字也保存。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">心情 · 天气 · 同行人</span><span class="fill"></span><span class="label">Fields</span></div>
+            <div class="d">三个可选字段，写下来就能被搜到。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">照片 24 张 / 条</span><span class="fill"></span><span class="label">Photos</span></div>
+            <div class="d">原图保存，按天挂在记录下面。</div>
+          </div>
+        </div>
+
+        <div class="viewswitch reveal d3">
+          <div class="v"><span class="a">列表</span><span class="b">List</span></div>
+          <div class="v"><span class="a">山册</span><span class="b">Album</span></div>
+        </div>
+        <div class="spec-note reveal d4">按年份分组 · 点行弹窗阅读与编辑</div>
+      </div>
+
+      <div class="reveal d1">
+        <div class="specimen">
+          <div class="sp-head">
+            <span class="label">样本 / Specimen</span>
+            <span class="label">2025 · 按年份分组</span>
+          </div>
+
+          <div class="spec-row">
+            <div class="date">11.08<br>07:20</div>
+            <div class="body">
+              <span class="mount">贡嘎环线 · 难度
+                <span class="difficulty"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+              </span>
+              「今天风大，手套忘了带。」
+            </div>
+            <div class="meta">晴 · 3 人<br><span class="tag">6 张照片</span></div>
+          </div>
+
+          <div class="spec-row">
+            <div class="date">10.02<br>13:40</div>
+            <div class="body">
+              <span class="mount">武功山 · 难度
+                <span class="difficulty"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
+              </span>
+              「草甸上风一直没停，晚上睡觉像有人在拉帐篷。」
+            </div>
+            <div class="meta">多云 · 2 人<br><span class="tag">12 张照片</span></div>
+          </div>
+
+          <div class="spec-row">
+            <div class="date">08.16<br>05:55</div>
+            <div class="body">
+              <span class="mount">四姑娘山二峰 · 难度
+                <span class="difficulty"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+              </span>
+              「雪线以上全是碎石，下撤那条沟别走。」
+            </div>
+            <div class="meta">雪 · 4 人<br><span class="tag">24 张照片</span></div>
+          </div>
+
+          <div class="spec-row">
+            <div class="date">06.11<br>21:16</div>
+            <div class="body">
+              <span class="mount">鳌太 D2 · 难度
+                <span class="difficulty"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+              </span>
+              补记：水在二号平台取，剩下的都在雪线以下。撤退方案还是老一条。
+            </div>
+            <div class="meta">阴 · 独行<br><span class="tag">2 张照片</span></div>
+          </div>
+        </div>
+        <div class="spec-note">点一行 → 弹窗里读、就地改、随删随建</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 03 照片 ══════════ -->
+<section class="sec" id="s03" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">03</div>
+      <h2 class="sec-title">照片留在本机，<br>也留在原样</h2>
+      <p class="sec-lede">
+        本地压缩后存进浏览器 IndexedDB，不上传、不识别、不做人脸归类。
+        详情页横向照片墙，点开就是<em>全屏灯箱</em>，可缩放、可保存。
+      </p>
+    </header>
+
+    <div class="photo-wall reveal">
+      <figure>
+        <svg viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="p1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2B3A3B"/><stop offset="58%" stop-color="#B77B4E"/><stop offset="100%" stop-color="#E8B47E"/>
+          </linearGradient></defs>
+          <rect width="200" height="260" fill="url(#p1)"/>
+          <circle cx="140" cy="150" r="26" fill="#F8DCB4" opacity=".8"/>
+          <path d="M0 176 L52 132 L104 172 L152 128 L200 170 L200 260 L0 260 Z" fill="#26332F" opacity=".85"/>
+          <path d="M0 216 L64 182 L132 220 L200 190 L200 260 L0 260 Z" fill="#16211F"/>
+        </svg>
+        <span class="zoom">＋</span>
+        <figcaption>11.08 / 垭口</figcaption>
+      </figure>
+
+      <figure>
+        <svg viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="p2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8FA48C"/><stop offset="52%" stop-color="#4E6450"/><stop offset="100%" stop-color="#243026"/>
+          </linearGradient></defs>
+          <rect width="200" height="260" fill="url(#p2)"/>
+          <path d="M0 150 L48 118 L96 154 L148 112 L200 148 L200 260 L0 260 Z" fill="#31422F"/>
+          <g fill="#1B271C">
+            <path d="M22 214 L34 168 L46 214 Z"/><path d="M58 222 L72 164 L86 222 Z"/>
+            <path d="M112 216 L126 172 L140 216 Z"/><path d="M158 226 L170 182 L182 226 Z"/>
+          </g>
+        </svg>
+        <figcaption>11.08 / 林线</figcaption>
+      </figure>
+
+      <figure>
+        <svg viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="p3" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#C9D5D8"/><stop offset="60%" stop-color="#96A7AF"/><stop offset="100%" stop-color="#5C6C74"/>
+          </linearGradient></defs>
+          <rect width="200" height="260" fill="url(#p3)"/>
+          <path d="M0 168 L44 122 L92 166 L140 118 L200 162 L200 260 L0 260 Z" fill="#DCE3E2"/>
+          <path d="M44 122 L58 142 L30 142 Z" fill="#8C9BA2"/>
+          <path d="M140 118 L156 142 L124 142 Z" fill="#8C9BA2"/>
+          <path d="M0 212 L60 190 L128 216 L200 196 L200 260 L0 260 Z" fill="#6F8087"/>
+        </svg>
+        <span class="zoom">＋</span>
+        <figcaption>08.16 / 雪线</figcaption>
+      </figure>
+
+      <figure>
+        <svg viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="p4" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3B2C42"/><stop offset="48%" stop-color="#A05A3C"/><stop offset="100%" stop-color="#E1A270"/>
+          </linearGradient></defs>
+          <rect width="200" height="260" fill="url(#p4)"/>
+          <circle cx="66" cy="132" r="20" fill="#F6D0A2" opacity=".82"/>
+          <path d="M0 182 L58 146 L112 184 L162 150 L200 178 L200 260 L0 260 Z" fill="#2C2230"/>
+        </svg>
+        <figcaption>10.02 / 落日</figcaption>
+      </figure>
+
+      <figure>
+        <svg viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="p5" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0F1B2C"/><stop offset="70%" stop-color="#22334A"/><stop offset="100%" stop-color="#3C4E63"/>
+          </linearGradient></defs>
+          <rect width="200" height="260" fill="url(#p5)"/>
+          <g fill="#E4E9F0">
+            <circle cx="30" cy="40" r="1.4"/><circle cx="72" cy="26" r="1"/><circle cx="118" cy="52" r="1.6"/>
+            <circle cx="160" cy="32" r="1"/><circle cx="92" cy="82" r="1.2"/><circle cx="150" cy="96" r="1"/><circle cx="44" cy="70" r="1"/>
+          </g>
+          <path d="M0 190 L52 152 L104 192 L156 158 L200 188 L200 260 L0 260 Z" fill="#131E2C"/>
+        </svg>
+        <span class="zoom">＋</span>
+        <figcaption>06.11 / 夜宿</figcaption>
+      </figure>
+    </div>
+
+    <div class="photo-strip reveal d1">
+      <div class="cell"><div class="k">24 张 / 条</div><div class="d">Per entry</div></div>
+      <div class="cell"><div class="k">IndexedDB</div><div class="d">Local storage</div></div>
+      <div class="cell"><div class="k">横滑照片墙</div><div class="d">Swipe wall</div></div>
+      <div class="cell"><div class="k">全屏灯箱</div><div class="d">Zoom · Save</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 04 计划 ══════════ -->
+<section class="sec" id="s04" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">04</div>
+      <h2 class="sec-title">下座山，<br>先在这里排队</h2>
+      <p class="sec-lede">
+        列表与日历双视图；过期、今天、明天三种徽章一眼分清。
+        到期计划选「完成」，<em>自动转成一条记录</em>；每天 08:00 提醒一次。
+      </p>
+    </header>
+
+    <div class="split">
+      <div class="calendar reveal">
+        <div class="cal-head">
+          <span class="m">十一月</span>
+          <span class="label">Plan / Calendar</span>
+        </div>
+        <div class="cal-grid" id="cal"></div>
+        <div class="cal-legend">
+          <span class="badge over"><i></i>过期</span>
+          <span class="badge now"><i></i>今天</span>
+          <span class="badge next"><i></i>明天</span>
+        </div>
+      </div>
+
+      <div class="ledger">
+        <div class="item reveal d1">
+          <div class="ord">01</div>
+          <div class="tt">双视图<span class="en">List / Calendar</span></div>
+          <div class="dd">想按日子看就切日历，想按轻重缓急看就切列表。同一个清单，两种看法。</div>
+        </div>
+        <div class="item reveal d2">
+          <div class="ord">02</div>
+          <div class="tt">三态徽章<span class="en">Badges</span></div>
+          <div class="dd">过期、今天、明天。状态只分三种，一眼扫完，不用点开才知道该处理哪一条。</div>
+        </div>
+        <div class="item reveal d3">
+          <div class="ord">03</div>
+          <div class="tt">完成 / 延期<span class="en">Done / Later</span></div>
+          <div class="dd">到期计划只有两种去处：完成，自动转成一条记录并播放庆祝动画；延期，顺延到新的一天。</div>
+        </div>
+        <div class="item reveal d4">
+          <div class="ord">04</div>
+          <div class="tt">08:00 提醒<span class="en">Reminder</span></div>
+          <div class="dd">每天早上八点通知一次。只提醒，不打扰，不会在半夜叫你起床。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 05 搜索 ══════════ -->
+<section class="sec" id="s05" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">05</div>
+      <h2 class="sec-title">去年去过的那座山，<br>搜得到</h2>
+      <p class="sec-lede">
+        记录页与计划页各有一个搜索框，<em>按山名匹配</em>，
+        敲两个字就把那趟翻出来。只搜你自己的数据，索引始终在本机。
+      </p>
+    </header>
+
+    <div class="finder">
+      <div>
+        <div class="statement reveal">
+          想不起山名没关系，<br><b>记得一个字就够。</b>
+        </div>
+        <div class="filters reveal d1">
+          <div class="f"><span class="fi">/01</span><span class="fn">记录页 · 搜山名</span><span class="fill"></span><span class="fd">贡嘎</span></div>
+          <div class="f"><span class="fi">/02</span><span class="fn">计划页 · 搜山名</span><span class="fill"></span><span class="fd">转山</span></div>
+          <div class="f"><span class="fi">/03</span><span class="fn">记录与计划各一个框</span><span class="fill"></span><span class="fd">随时切</span></div>
+          <div class="f"><span class="fi">/04</span><span class="fn">纯本地 · 不联网</span><span class="fill"></span><span class="fd">秒出</span></div>
+        </div>
+      </div>
+
+      <div class="searchbox reveal d1">
+        <div class="searchbar">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+          <span class="q" id="typedQuery"></span>
+          <span class="caret"></span>
+        </div>
+        <ul class="results" id="resList">
+          <li><span class="rd">2025.10</span><span class="rf"></span><span class="rn">贡嘎环线</span><span class="rt">记录</span></li>
+          <li><span class="rd">2026.05</span><span class="rf"></span><span class="rn">贡嘎转山计划</span><span class="rt">计划</span></li>
+          <li><span class="rd">2025.11</span><span class="rf"></span><span class="rn">贡嘎东坡</span><span class="rt">记录</span></li>
+          <li><span class="rd">2026.07</span><span class="rf"></span><span class="rn">贡嘎 · 雪线以下</span><span class="rt">记录</span></li>
+        </ul>
+        <div class="searchfoot">按山名匹配 · 索引仅存本机</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 06 分享 ══════════ -->
+<section class="sec" id="s06" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">06</div>
+      <h2 class="sec-title">分享一张卡，<br>不是一条动态</h2>
+      <p class="sec-lede">
+        一键生成，带<em>海拔、难度、心情、天气、同行人</em>。
+        没有信息流，没有关注，没有点赞；不分享，也完全不影响。
+      </p>
+    </header>
+
+    <div class="share">
+      <div class="poster-wrap reveal d1">
+        <div class="poster">
+          <div class="p-top">
+            <span class="p-brand">徒步小记</span>
+            <span>2025.11.08 · Sat</span>
+          </div>
+
+          <div class="p-range">Snow Line · 4,300 M</div>
+          <div class="p-title">雪线之上</div>
+          <div class="p-rule"></div>
+
+          <div class="p-tags">
+            <span>难度 4 / 5</span>
+            <span>心情 满足</span>
+            <span>天气 晴</span>
+            <span>同行 3 人</span>
+          </div>
+
+          <svg class="qr" viewBox="0 0 40 40" fill="#1B201B" style="position:absolute;right:28px;top:158px" aria-hidden="true">
+            <rect x="0" y="0" width="12" height="12"/><rect x="3" y="3" width="6" height="6" fill="#E9E3D6"/><rect x="3.6" y="3.6" width="4.8" height="4.8" fill="#1B201B"/>
+            <rect x="28" y="0" width="12" height="12"/><rect x="31" y="3" width="6" height="6" fill="#E9E3D6"/><rect x="31.6" y="3.6" width="4.8" height="4.8" fill="#1B201B"/>
+            <rect x="0" y="28" width="12" height="12"/><rect x="3" y="31" width="6" height="6" fill="#E9E3D6"/><rect x="3.6" y="31.6" width="4.8" height="4.8" fill="#1B201B"/>
+            <rect x="16" y="2" width="3" height="3"/><rect x="21" y="6" width="3" height="3"/><rect x="16" y="10" width="3" height="3"/>
+            <rect x="24" y="16" width="3" height="3"/><rect x="30" y="20" width="3" height="3"/><rect x="35" y="16" width="3" height="3"/>
+            <rect x="2" y="16" width="3" height="3"/><rect x="8" y="21" width="3" height="3"/><rect x="14" y="16" width="3" height="3"/>
+            <rect x="18" y="26" width="3" height="3"/><rect x="18" y="33" width="3" height="3"/><rect x="25" y="30" width="3" height="3"/>
+            <rect x="31" y="26" width="3" height="3"/><rect x="35" y="33" width="3" height="3"/><rect x="25" y="36" width="3" height="3"/>
+          </svg>
+
+          <div class="p-profile">
+            <svg viewBox="0 0 300 130" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="34" x2="300" y2="34" stroke="#1B201B" stroke-opacity=".1" stroke-width="1" stroke-dasharray="2 5"/>
+              <line x1="0" y1="68" x2="300" y2="68" stroke="#1B201B" stroke-opacity=".1" stroke-width="1" stroke-dasharray="2 5"/>
+              <line x1="0" y1="102" x2="300" y2="102" stroke="#1B201B" stroke-opacity=".1" stroke-width="1" stroke-dasharray="2 5"/>
+              <path d="M0 116 L36 100 L72 104 L104 76 L138 82 L172 46 L206 58 L240 22 L272 34 L300 10 L300 130 L0 130 Z"
+                    fill="#77866E" fill-opacity=".22" stroke="#77866E" stroke-width="1.4" stroke-linejoin="round"/>
+              <circle cx="240" cy="22" r="3.2" fill="#A4512B"/>
+            </svg>
+          </div>
+
+          <div class="p-stats">
+            <div class="s"><div class="n">4,300</div><div class="l">海拔 / M</div></div>
+            <div class="s"><div class="n">18.6</div><div class="l">里程 / Km</div></div>
+            <div class="s"><div class="n">9:12</div><div class="l">用时 / Time</div></div>
+          </div>
+          <div class="p-foot">
+            <span>Hiking Notes</span>
+            <span>第 12 座</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="statement reveal">
+          一张卡说完一次行程。<br><b>剩下的留在本子里。</b>
+        </div>
+
+        <div class="spec-list reveal d1" style="margin-top:38px">
+          <div class="r"><span class="k">Altitude</span><span class="v">海拔</span></div>
+          <div class="r"><span class="k">Difficulty</span><span class="v">难度 1–5</span></div>
+          <div class="r"><span class="k">Mood</span><span class="v">心情</span></div>
+          <div class="r"><span class="k">Weather</span><span class="v">天气</span></div>
+          <div class="r"><span class="k">Company</span><span class="v">同行人</span></div>
+          <div class="r"><span class="k">Privacy</span><span class="v">落款与二维码可关</span></div>
+        </div>
+
+        <div class="spec-note reveal d2" style="margin-top:34px">以上卡片内容为示例；真实卡片由你自己的记录生成。</div>
+
+        <div class="formats reveal d2">
+          <div class="fmt"><span class="a">9 : 16</span><span class="b">Story</span></div>
+          <div class="fmt"><span class="a">3 : 4</span><span class="b">Photo</span></div>
+          <div class="fmt"><span class="a">PDF</span><span class="b">Print</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 07 设置 / 同步 ══════════ -->
+<section class="sec" id="s07" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">07</div>
+      <h2 class="sec-title">设置里，<br>藏着所有的后路</h2>
+      <p class="sec-lede">
+        完整备份 zip、纯数据备份、WebDAV 云同步、导出诊断、检查更新、
+        深色模式、震动开关、照片占用优化、抹掉足迹。<em>每一项都在明面上。</em>
+      </p>
+    </header>
+
+    <div class="split">
+      <div>
+        <div class="statement reveal">
+          同步到你自己的网盘，<br>
+          <b>而不是我们的服务器。</b>
+        </div>
+        <p class="reveal d1">
+          没有账号体系，也没有一台存着你记录的服务器。
+          同步只发生在你主动配置的坚果云 WebDAV 里，数据落到你自己的账号下；
+          自动保留两份历史，想回滚随时回滚。
+        </p>
+
+        <div class="schema reveal d2" style="margin-top:38px">
+          <div class="node">
+            <span class="nk">徒步小记</span>
+            <span class="nv">App · Local</span>
+          </div>
+          <div class="tether"></div>
+          <div class="node accent">
+            <span class="nk">WebDAV 同步</span>
+            <span class="nv">Encrypted</span>
+          </div>
+          <div class="tether"></div>
+          <div class="node">
+            <span class="nk">坚果云</span>
+            <span class="nv">Your account</span>
+          </div>
+          <div class="sync-quad">
+            <div class="q"><div class="a">待同步</div><div class="b">Pending</div></div>
+            <div class="q"><div class="a">同步中</div><div class="b">Syncing</div></div>
+            <div class="q"><div class="a">成功</div><div class="b">Done</div></div>
+            <div class="q"><div class="a">失败</div><div class="b">Failed</div></div>
+          </div>
+          <div class="spec-note">同步状态四维 · 自动保留 2 份 · 换机从云端恢复即一键配好</div>
+        </div>
+      </div>
+
+      <div class="reveal d1">
+        <div class="set-grid">
+          <div class="r">
+            <div class="t"><span class="name">完整备份 zip</span><span class="fill"></span><span class="val">含配置</span></div>
+            <div class="d">可选带上你的网盘配置。换机后从云端恢复，等于一次配好。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">纯数据备份</span><span class="fill"></span><span class="val">Data only</span></div>
+            <div class="d">只打包记录与照片，不带任何账号与网络信息。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">WebDAV 云同步</span><span class="fill"></span><span class="val">坚果云</span></div>
+            <div class="d">网盘信息随时可查看、可修改、可清空。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">同步状态</span><span class="fill"></span><span class="val">四维</span></div>
+            <div class="d">待同步 / 同步中 / 成功 / 失败，四种状态各看各的。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">自动保留 2 份</span><span class="fill"></span><span class="val">Rollback</span></div>
+            <div class="d">最近两份历史自动留下，改错了可以退回去。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">导出诊断</span><span class="fill"></span><span class="val">Log</span></div>
+            <div class="d">出问题时导出一份本地日志，发给谁都由你决定。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">检查更新</span><span class="fill"></span><span class="val">Manual</span></div>
+            <div class="d">只有你点了才联网查版本；更新日志内置离线，随时翻。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">深色模式</span><span class="fill"></span><span class="val">Dark</span></div>
+            <div class="d">跟系统，也可以单独指定。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">震动开关</span><span class="fill"></span><span class="val">Haptic</span></div>
+            <div class="d">庆祝动画与按钮手感，想安静就关掉。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">照片占用优化</span><span class="fill"></span><span class="val">Storage</span></div>
+            <div class="d">看清占用，一键压缩冗余，原图照旧可保存。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">抹掉足迹</span><span class="fill"></span><span class="val">Erase</span></div>
+            <div class="d">一次点击，记录、照片、缓存、配置全部清空。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">关于应用</span><span class="fill"></span><span class="val">Privacy</span></div>
+            <div class="d">隐私政策、版本号与更新日志，都在这一层。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 08 安全 ══════════ -->
+<section class="sec" id="s08" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">08</div>
+      <h2 class="sec-title">安装包，<br>自己也要对自己负责</h2>
+      <p class="sec-lede">
+        记录只在本机，那守门的责任就在安装包本身。
+        从签名校验到<em>文本进 DOM 前一律转义</em>，五道都留着。
+      </p>
+    </header>
+
+    <div class="shield-list">
+      <div class="row reveal d1">
+        <div class="n">/ 01</div>
+        <div class="t">安装包签名自校验</div>
+        <div class="d">启动时核对自身签名，防重打包：任何人改一个字节，App 都知道自己不认识这个自己。</div>
+      </div>
+      <div class="row reveal d2">
+        <div class="n">/ 02</div>
+        <div class="t">打包代码混淆</div>
+        <div class="d">发布产物经过混淆处理，降低被直接阅读、改造与二次分发的可能。</div>
+      </div>
+      <div class="row reveal d3">
+        <div class="n">/ 03</div>
+        <div class="t">资源完整性校验</div>
+        <div class="d">关键资源在加载前校验完整性，被替换过的界面元素不会被悄悄跑起来。</div>
+      </div>
+      <div class="row reveal d4">
+        <div class="n">/ 04</div>
+        <div class="t">系统备份关闭</div>
+        <div class="d">不参与系统级备份，记录与照片不会顺着系统的备份通道流到别处。</div>
+      </div>
+      <div class="row reveal d5">
+        <div class="n">/ 05</div>
+        <div class="t">文本进 DOM 前一律转义</div>
+        <div class="d">服务端返回的任何文本在进入页面前统一转义，不留注入口子。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════ 09 更新日志 ══════════ -->
+<section class="sec" id="s09" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">09</div>
+      <h2 class="sec-title">每一次改，<br>都写在这里</h2>
+      <p class="sec-lede">
+        更新日志<em>随包内置</em>，断网也能翻。下面是最近两版。
+      </p>
+    </header>
+
+    <div class="rel-list">
+      <div class="rel-item reveal d1">
+        <div class="rel-ver">v1.2.2.10<span>2026-09-24</span></div>
+        <ul>
+          <li><b>记录页的删除按钮和计划页统一了</b> —— 以前记录页列表里是红垃圾桶，跟计划页的灰垃圾桶不是一个样；现在两处长得一模一样。</li>
+          <li><b>计划页日历明细的删除按钮补回了边框</b> —— 之前那个按钮没有边框，孤零零一个字看着像残影。</li>
+          <li><b>热力图弹窗的「分享」按钮字色修好了</b> —— 浅色模式下以前是白字，几乎看不见。</li>
+        </ul>
+      </div>
+      <div class="rel-item reveal d2">
+        <div class="rel-ver">v1.2.2.9<span>2026-09-23</span></div>
+        <ul>
+          <li><b>「使用前确认」弹窗的两个按钮不再一大一小</b> —— 以前「同意并继续」比旁边的「暂不同意」矮一截也窄一截。</li>
+          <li><b>顺带修好另外三个按钮的尺寸</b> —— 日期选择器的「确定」、支持作者的「保存二维码」、足迹里那天的「分享」。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rel-more reveal d3">
+      <a href="https://github.com/NiUKinGDoM/xixi-hiking/releases" target="_blank" rel="noopener">查看完整更新日志与历史版本 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 隐私承诺 ══════════ -->
+<section class="sec spread" data-tone="light">
+  <div class="wrap">
+    <div class="label reveal">隐私承诺 / Privacy</div>
+    <blockquote class="reveal d1" style="margin-top:26px">
+      记录与照片只存本机。<br>
+      网页版，<b>存你的浏览器里。</b>
+    </blockquote>
+    <p class="body reveal d2">
+      无账号、无统计、无广告。<br>
+      唯一可选的联网只有两处：你主动配置的<b>坚果云 WebDAV</b>，数据同步到你自己的账号；
+      以及「检查更新」查一次版本号。
+    </p>
+    <div class="attrib reveal d3">
+      完整说明见 App 内「设置 → 关于应用 → 隐私政策」
+    </div>
+
+    <div class="zeros">
+      <div class="z reveal d1"><div class="n">0</div><div class="l">账号</div></div>
+      <div class="z reveal d2"><div class="n">0</div><div class="l">统计</div></div>
+      <div class="z reveal d3"><div class="n">0</div><div class="l">广告</div></div>
+      <div class="z reveal d4"><div class="n">0</div><div class="l">被动上传</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 收尾 ══════════ -->
+<section class="finale" id="download">
+  <div class="finale-art" data-parallax="0.1">
+    <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#111A20"/>
+          <stop offset="48%" stop-color="#2A3840"/>
+          <stop offset="78%" stop-color="#79573F"/>
+          <stop offset="100%" stop-color="#C08250"/>
+        </linearGradient>
+      </defs>
+      <rect width="1440" height="700" fill="url(#dusk)"/>
+      <circle cx="720" cy="470" r="66" fill="#F7D3A4" opacity=".62"/>
+      <path d="M0 462 L228 342 L436 452 L648 326 L866 456 L1092 344 L1440 470 L1440 700 L0 700 Z" fill="#26332F" opacity=".82"/>
+      <path d="M0 552 L300 452 L572 556 L860 444 L1156 560 L1440 486 L1440 700 L0 700 Z" fill="#172220" opacity=".92"/>
+    </svg>
+  </div>
+
+  <div class="wrap">
+    <h2 class="reveal">这座山，<br>你自己说了算</h2>
+    <p class="reveal d1">
+      下载即用，不用注册。<br>
+      想留的都留下，想走的随时带走。
+    </p>
+
+    <div class="store-row reveal d2">
+      <a href="https://github.com/NiUKinGDoM/xixi-hiking/releases/latest" target="_blank" rel="noopener" class="store"><span class="a">下载 Android 版</span><span class="b">APK · 免费 · 无广告</span></a>
+      <a href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener" class="store"><span class="a">在浏览器里打开</span><span class="b">iPhone · iPad · 电脑</span></a>
+    </div>
+
+    <div class="legal reveal d3">免费下载 · 无广告 · 无账号 · 无订阅弹窗<br>Android 装 APK，iPhone 用网页版（添加到主屏幕即可）</div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="wm">XiXiの徒步小记</div>
+        <div class="en">XiXi&#39;s Hiking Notes</div>
+        <p>一座只属于你自己的登山记录本。记录、照片、计划、搜索、分享卡，全部离线优先；云同步是可选项，而且同步到你自己的坚果云账号。</p>
+      </div>
+      <div class="f-col">
+        <h6>产品</h6>
+        <a href="#s01">概览</a>
+        <a href="#s02">记录</a>
+        <a href="#s03">照片</a>
+        <a href="#s04">计划</a>
+      </div>
+      <div class="f-col">
+        <h6>更多</h6>
+        <a href="#s05">搜索</a>
+        <a href="#s06">分享卡</a>
+        <a href="#s07">设置与同步</a>
+        <a href="#s08">安全</a>
+      </div>
+      <div class="f-col">
+        <h6>关于</h6>
+        <a href="privacy.html">隐私政策</a>
+        <a href="terms.html">免责声明</a>
+        <a href="https://github.com/NiUKinGDoM/xixi-hiking/releases" target="_blank" rel="noopener">更新日志</a>
+        <a href="#download">下载</a>
+      </div>
+    </div>
+    <div class="f-bottom">
+      <span>© 2026 XiXiの徒步小记 · Made by XiXi</span>
+      <span>联系：<a href="mailto:Xixihiking@foxmail.com" style="border-bottom:1px solid rgba(233,227,214,.25)">Xixihiking@foxmail.com</a></span>
     </div>
   </div>
 </footer>
 
-<svg class="trail" id="trailSvg" aria-hidden="true">
-  <path class="trail-base" id="trailBase" d=""></path>
-  <path class="trail-done" id="trailDone" d=""></path>
-  <circle class="trail-halo" id="trailHalo" r="12" cx="-99" cy="-99"></circle>
-  <circle class="trail-dot" id="trailDot" r="5" cx="-99" cy="-99"></circle>
-</svg>
-
 <script>
-(function () {
-  var svg = document.getElementById('trailSvg');
-  if (!svg) return;
-  var base = document.getElementById('trailBase');
-  var done = document.getElementById('trailDone');
-  var dot = document.getElementById('trailDot');
-  var halo = document.getElementById('trailHalo');
-  if (!base || !done || !dot || !halo) return;
-  var reduce = false;
-  try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
-  var LEN = 0;
+(function(){
+  /* ---------- hero entrance ---------- */
+  requestAnimationFrame(()=>document.querySelector('.hero').classList.add('hero-ready'));
 
-  function build() {
-    var h = svg.clientHeight || 0;
-    if (!h) { LEN = 0; return; }
-    /* 蛇形山路：沿垂直方向左右交替摆动 */
-    var W = 96, cx = W / 2, amp = 24;
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + h);
-    var segs = Math.max(5, Math.round(h / 460));
-    var step = h / segs;
-    var d = 'M' + cx + ' ' + (-step).toFixed(1);
-    for (var i = 0; i < segs; i++) {
-      var y0 = i * step;
-      var cxp = (cx + ((i % 2 === 0) ? 1 : -1) * amp * 1.6).toFixed(1);
-      d += ' C ' + cxp + ' ' + (y0 + step * 0.22).toFixed(1) +
-           ', ' + cxp + ' ' + (y0 + step * 0.78).toFixed(1) +
-           ', ' + cx + ' ' + (y0 + step).toFixed(1);
-    }
-    base.setAttribute('d', d);
-    done.setAttribute('d', d);
-    LEN = done.getTotalLength ? done.getTotalLength() : 0;
-    if (!LEN) return;
-    done.style.strokeDasharray = LEN;
-    done.style.strokeDashoffset = reduce ? 0 : LEN;
-    if (reduce) hideDot(); else paint();
-  }
-  function hideDot() {
-    dot.setAttribute('cx', -99); dot.setAttribute('cy', -99);
-    halo.setAttribute('cx', -99); halo.setAttribute('cy', -99);
-  }
-  function paint() {
-    if (!LEN) { hideDot(); return; }
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-    var p = max > 0 ? (window.pageYOffset || document.documentElement.scrollTop || 0) / max : 0;
-    p = p < 0 ? 0 : (p > 1 ? 1 : p);
-    done.style.strokeDashoffset = (LEN * (1 - p)).toFixed(1);
-    var pt = done.getPointAtLength(LEN * p);
-    dot.setAttribute('cx', pt.x.toFixed(1)); dot.setAttribute('cy', pt.y.toFixed(1));
-    halo.setAttribute('cx', pt.x.toFixed(1)); halo.setAttribute('cy', pt.y.toFixed(1));
-  }
-  var raf = null;
-  window.addEventListener('scroll', function () {
-    if (raf) return;
-    raf = requestAnimationFrame(function () { raf = null; paint(); });
-  }, { passive: true });
-  window.addEventListener('resize', function () { LEN = 0; build(); });
-  build();
-
-  var els = document.querySelectorAll('.sec, .foot');
-  if ('IntersectionObserver' in window && !reduce) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-      });
-    }, { rootMargin: '0px 0px -6% 0px', threshold: 0 });
-    var vh = window.innerHeight || 0;
-    Array.prototype.forEach.call(els, function (el) {
-      /* 已在首屏内的区块不挂 reveal（直接可见）—— 防「观察器未触发 → 永久空白」 */
-      if (el.getBoundingClientRect().top < vh * 0.92) return;
-      el.classList.add('reveal');
-      io.observe(el);
+  /* ---------- reveal ---------- */
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); }
     });
-    /* 兜底：观察器异常（或被环境跳过）时也保证内容可见 */
-    setTimeout(function () {
-      Array.prototype.forEach.call(els, function (el) {
-        el.classList.add('reveal'); el.classList.add('in');
+  },{threshold:.12, rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  /* ---------- scroll: progress / nav tone / parallax ---------- */
+  const progress = document.getElementById('progress');
+  const nav = document.getElementById('nav');
+  const toneSections = [...document.querySelectorAll('[data-tone]')];
+  const parallaxEls = [...document.querySelectorAll('[data-parallax]')];
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let ticking = false;
+
+  const update = ()=>{
+    const y = window.scrollY;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (y / (h||1) * 100) + '%';
+    nav.classList.toggle('shrunk', y > 60);
+
+    let tone = 'dark';
+    for(const s of toneSections){
+      if(s.getBoundingClientRect().top <= 80) tone = s.dataset.tone;
+    }
+    nav.classList.toggle('light', tone === 'light');
+
+    if(!reduce){
+      for(const el of parallaxEls){
+        const r = el.getBoundingClientRect();
+        if(r.bottom > -200 && r.top < window.innerHeight + 200){
+          const depth = parseFloat(el.dataset.parallax);
+          const offset = (r.top + r.height/2 - window.innerHeight/2) * depth * -1;
+          el.style.transform = 'translate3d(0,' + offset.toFixed(1) + 'px,0)';
+        }
+      }
+    }
+    ticking = false;
+  };
+  window.addEventListener('scroll',()=>{
+    if(!ticking){ ticking = true; requestAnimationFrame(update); }
+  },{passive:true});
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- mobile menu ---------- */
+  const menuBtn = document.getElementById('menuBtn');
+  const mMenu = document.getElementById('mMenu');
+  menuBtn.addEventListener('click', ()=>{
+    const open = mMenu.classList.toggle('open');
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+  mMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
+    mMenu.classList.remove('open');
+    document.body.style.overflow = '';
+  }));
+
+  /* ---------- heatmap (年度足迹) ---------- */
+  const heat = document.getElementById('heat');
+  if(heat){
+    const seed = i => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); };
+    const frag = document.createDocumentFragment();
+    for(let i = 0; i < 371; i++){
+      const cell = document.createElement('i');
+      const r = seed(i + 7);
+      const inSeason = (i % 371) > 60 && (i % 371) < 330;      // 有山的季节
+      let level = 0;
+      if(inSeason){
+        if(r > .93) level = 4;
+        else if(r > .87) level = 3;
+        else if(r > .79) level = 2;
+        else if(r > .70) level = 1;
+      }
+      if(level) cell.dataset.l = level;
+      frag.appendChild(cell);
+    }
+    heat.appendChild(frag);
+  }
+
+  /* ---------- calendar mock (计划) ---------- */
+  const cal = document.getElementById('cal');
+  if(cal){
+    const dows = ['一','二','三','四','五','六','日'];
+    const frag = document.createDocumentFragment();
+    dows.forEach(d=>{
+      const el = document.createElement('div');
+      el.className = 'dow';
+      el.textContent = d;
+      frag.appendChild(el);
+    });
+    // 11 月 1 日为周六 → 前面补 5 个上月的日子
+    for(let i = 0; i < 5; i++){
+      const el = document.createElement('div');
+      el.className = 'day out';
+      el.textContent = 27 + i;
+      frag.appendChild(el);
+    }
+    for(let d = 1; d <= 30; d++){
+      const el = document.createElement('div');
+      el.className = 'day';
+      if(d === 8) el.classList.add('today');
+      if(d === 3 || d === 5) el.classList.add('overdue');
+      if(d === 9 || d === 17 || d === 23) {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        el.appendChild(dot);
+      }
+      el.appendChild(document.createTextNode(d));
+      frag.appendChild(el);
+    }
+    cal.appendChild(frag);
+  }
+
+  /* ---------- counters ---------- */
+  const fmt = n => n.toLocaleString('en-US');
+  const statIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      const el = e.target;
+      const target = parseInt(el.dataset.count,10);
+      const dur = 1700, t0 = performance.now();
+      const tick = (t)=>{
+        const p = Math.min(1,(t - t0)/dur);
+        const eased = 1 - Math.pow(1 - p,4);
+        el.textContent = fmt(Math.round(target * eased));
+        if(p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      statIO.unobserve(el);
+    });
+  },{threshold:.5});
+  document.querySelectorAll('[data-count]').forEach(el=>statIO.observe(el));
+
+  /* ---------- search typing ---------- */
+  const query = '贡嘎';
+  const typed = document.getElementById('typedQuery');
+  const rows = [...document.querySelectorAll('#resList li')];
+  let started = false;
+
+  const runDemo = ()=>{
+    if(started) return; started = true;
+    let i = 0;
+    const type = ()=>{
+      typed.textContent = query.slice(0, i);
+      i++;
+      if(i <= query.length) setTimeout(type, 260);
+      else rows.forEach((r, idx)=>setTimeout(()=>r.classList.add('on'), 200 * idx + 280));
+    };
+    setTimeout(type, 420);
+  };
+
+  const demoEl = document.querySelector('.searchbox');
+  if(demoEl){
+    const demoIO = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){ runDemo(); demoIO.disconnect(); }
       });
-    }, 4000);
+    },{threshold:.35});
+    demoIO.observe(demoEl);
   }
 })();
 </script>
