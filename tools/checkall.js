@@ -32,11 +32,14 @@ const SUITES = [
   { key: 'modalw', name: '弹窗内联宽度锁定（源码扫描）', file: 'tools/modalwidth.js', args: ['--quiet'], timeout: 30000 },
   // ★2026-09-29 新增：官网下载入口是唯一跑在 CF 边缘的代码，本地页面自检碰不到
   { key: 'sitetest', name: '官网下载入口（Pages Function）', file: 'tools/sitetest.js', timeout: 30000 },
+  // ★2026-09-29 新增：官网「更新日志」段必须与 App 内置 BUILTIN 保持同步
+  //   （用户要求「以后每次同步 app 和 github 以后，把官网也同步了」→ 用断言钉住不漏）
+  { key: 'sitecl', name: '官网更新日志同步（vs BUILTIN）', file: 'tools/sitechangelog.js', args: ['--check'], timeout: 30000 },
 ];
 
 let list = SUITES;
 // ★2026-09-18 改按 key 取（原来用下标 slice，新增套件会把原有套件悄悄挤掉）
-if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test', 'sitetest'].indexOf(s.key) >= 0);
+if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test', 'sitetest', 'sitecl'].indexOf(s.key) >= 0);
 else if (has('no-e2e')) list = SUITES.filter((s) => s.key !== 'e2e');
 if (onlyArg) list = SUITES.filter((s) => s.key === onlyArg);
 

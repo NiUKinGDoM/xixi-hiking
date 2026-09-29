@@ -918,6 +918,38 @@ _posCases.every(function (re) { return re.test(_fixData); })
         : bad('「支持作者」仍带行内 font-weight！');
 })();
 
+// ★2026-09-29 关于页入口**位置下移 + 图标尺寸统一** 回归（3 条，用户点名要求）：
+//   用户原话：「关于应用里，把 github 和官网链接位置挪到 madebyxixi 上方。
+//              官网的 icon 是不是比 github 的 icon 小啊，你统一一下大小。」
+//   ① .about-links 必须在「四个玻璃按钮组」**之后**、「Made by XiXi」**之前**
+//      （顺序 = 版本 → 简介 → 隐私/免责 → 支持作者/更新日志 → GitHub/官网 → Made by XiXi）
+//   ② 两个入口 SVG 必须**同为 16×16**（原 GitHub 14、官网 14，观感一实一虚不等）
+//   ③ ★官网描边须为 1.8 —— GitHub 是 fill 实心（体量饱满）、官网是 stroke 描边（纤细），
+//      同尺寸下描边图标视觉偏小，故用 1.8 补偿，使两者观感一致。
+(function () {
+    var card = _semH.match(/<div class="about-card">([\s\S]*?)<div class="about-tag">/);
+    if (!card) return bad('找不到 .about-card 段落！');
+    var seg = card[1];
+    var iBtnGroup = seg.indexOf('id="privacyPolicyBtn"');
+    var iLinks = seg.indexOf('<div class="about-links">');
+    if (iBtnGroup < 0 || iLinks < 0) return bad('找不到按钮组或 .about-links 容器！');
+    (iLinks > iBtnGroup)
+        ? ok('守卫：GitHub/官网入口已下移到玻璃按钮组之后（紧邻 Made by XiXi）')
+        : bad('入口位置错了（必须在四个玻璃按钮组之后、Made by XiXi 之前）！');
+
+    var links = seg.slice(iLinks, seg.indexOf('</div>', seg.indexOf('官方网站')));
+    var sizes = (links.match(/width="(\d+)" height="(\d+)"/g) || []);
+    var all16 = sizes.length === 2 && sizes.every(function (s) { return /width="16" height="16"/.test(s); });
+    all16
+        ? ok('守卫：两个入口图标统一 16×16（GitHub 与官网同尺寸）')
+        : bad('图标尺寸未统一为 16×16（实际 ' + JSON.stringify(sizes) + '）！');
+
+    var sw = links.match(/stroke-width="([\d.]+)"/);
+    (/fill="currentColor"/.test(links) && sw && parseFloat(sw[1]) === 1.8)
+        ? ok('守卫：官网描边 1.8（补偿实心/描边观感差，与 GitHub 视觉等大）')
+        : bad('官网描边不是 1.8（实际 ' + (sw ? sw[1] : '缺失') + '）！');
+})();
+
 // ★2026-09-29 ghsync 同步清单 回归（3 条）：
 //   ① functions/download.js 必须在 DIRS 里（CF Pages 认仓库根，放 site/ 下静默失效）
 //   ② site/functions 不得再出现（已作废的位置，留着会误导后来人）
@@ -950,6 +982,57 @@ _posCases.every(function (re) { return re.test(_fixData); })
         ? ok('守卫：测试套件在位 ' + f)
         : bad('测试套件文件缺失！' + f + '（曾被 _ 前缀清理误删）');
 });
+
+// ★2026-09-29 应用内更新「多镜像冗余」回归（4 条）：
+//   背景：用户报「弹窗出来了但一直下载失败」。根因 = **只有 1 个镜像**（ghfast.top），
+//   实测单个 2.4MB 包要 15~40 秒，手机上极易卡到原生 60s 读超时；且它一挂就只剩
+//   官方直链（国内常被墙）→ 完全没有退路。
+//   修法：改为**多源依次重试**（JS 给镜像数组，原生逐个试，官方直链最后兜底）。
+//   这组守卫防的是「又退回单镜像」或「原生丢掉多源逻辑」。
+(function () {
+    var core, sync;
+    try {
+        core = fs.readFileSync(path.join(ROOT, 'www/app-core.js'), 'utf8');
+        sync = fs.readFileSync(path.join(ROOT, 'www/app-sync.js'), 'utf8');
+    } catch (e) { return bad('读不到 www 下的更新相关 JS！'); }
+
+    // ① 镜像必须是**数组**且 ≥2 个（单镜像 = 本次事故的形态）
+    var mm = core.match(/var UPDATE_MIRRORS = \[([\s\S]*?)\];/);
+    var urls = mm ? (mm[1].match(/'(https:\/\/[^']+)'/g) || []) : [];
+    (mm && urls.length >= 2)
+        ? ok('守卫：更新镜像为多源数组（' + urls.length + ' 个）')
+        : bad('更新镜像退回单源了（必须 ≥2 个镜像，否则一个挂掉就没退路）！');
+
+    // ② 旧的单值变量不得复活（防改动被回退）
+    (!/UPDATE_MIRROR_PREFIX\s*=/.test(core))
+        ? ok('守卫：旧的单镜像变量 UPDATE_MIRROR_PREFIX 已移除')
+        : bad('UPDATE_MIRROR_PREFIX 又回来了（应只用 UPDATE_MIRRORS 数组）！');
+
+    // ③ JS 侧必须把多个镜像拼给原生（\n 分隔）
+    (/UPDATE_MIRRORS[\s\S]{0,240}?\.join\('\\n'\)/.test(sync) && /downloadAndInstall\(pendingUpdate\.apkUrl,\s*mirrors\)/.test(sync))
+        ? ok('守卫：startUpdate 把多镜像（\\n 拼接）传给原生')
+        : bad('startUpdate 未把多镜像数组传给原生（多源重试会失效）！');
+
+    // ④ 原生必须逐个重试 + 官方直链兜底（不能只取第一个源）
+    var mt;
+    try {
+        mt = fs.readFileSync(path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
+    } catch (e) { mt = null; }
+    if (!mt) return bad('读不到 MainActivity.java！');
+    var dm = mt.match(/private File downloadApk\(String apkUrl, String mirrors\) \{([\s\S]*?)\n        \}/);
+    var body = dm ? dm[1] : '';
+    // ★2026-09-29：必须同时满足 4 点，缺一即「多源重试」失效：
+    //   ① 有 for 循环**遍历 mirrors 拆出的每一项**（不是只取 [0]）
+    //   ② 镜像项 add 进 list
+    //   ③ 官方直链 apkUrl 也 add 进 list（最后兜底）
+    //   ④ 真正遍历 urls 逐个尝试
+    (/(for\s*\(String\s+m\s*:\s*mirrors\.split\("\\n"\)\))/.test(body)
+        && /list\.add\(m\.trim\(\)\)/.test(body)
+        && /list\.add\(apkUrl\)/.test(body)
+        && /for \(String u : urls\)/.test(body))
+        ? ok('守卫：原生多源逐个重试 + 官方直链最后兜底')
+        : bad('原生 downloadApk 未实现多源重试（镜像遍历/镜像入列/官方兜底/逐个尝试 四者缺一不可）！');
+})();
 
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail > 0 ? 1 : 0);

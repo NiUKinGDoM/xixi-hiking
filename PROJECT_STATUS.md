@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-29（v1.2.3.1 / vc276）  
+> 最后更新：2026-09-29（v1.2.3.2 / vc277）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -29,8 +29,8 @@ node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一�
 node tools/versiondiff.js             # 完整清单（文件 + 行数 + 关键新增行）；范围同 ghsync 同步清单
 node tools/versiondiff.js --strict    # 有待发改动时退出码 1（用于「发布后应干净」校验）
 # ② 跑测试：一条命令跑全部（替代反复单跑）
-node tools/checkall.js            # 8 套 / 872 项 汇总（smoke 34 + iOS 10 + test 319 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38 + 官网Function 16）
-node tools/checkall.js --fast     # 只跑秒级的四套（smoke + modalw + test + sitetest，改文档/小改后先跑它）
+node tools/checkall.js            # 9 套 / 907 项 汇总（smoke 34 + iOS 10 + test 334 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38 + 官网Function 25 + 官网日志同步 1）
+node tools/checkall.js --fast     # 只跑秒级的五套（smoke + modalw + test + sitetest + sitecl，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
 node tools/smoke.js               # 工具链冒烟（34 项：语法+安全执行；已并入 checkall 第一套）
 
@@ -260,6 +260,23 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 
 - 【优化】「关于应用」里的 GitHub 与官方网站入口改为**一行横排居中**，GitHub 入口挪到官网左侧并补上「GitHub」文字，比原来的裸图标更好认、更好点。
 - 【修复】README 补上官网地址与下载指引，GitHub 仓库首页不再显示旧内容。
+### v1.2.3.2 —— 应用内更新改多镜像冗余
+
+- 【修复】**应用内更新「一直下载失败」** —— 用户反馈点「立即更新」后进度条卡住不动、最终报失败。根因：下载通道只有 `ghfast.top` 单条镜像（实测 2.4MB 包需 15~40 秒，易触发原生 60 秒读超时），且 GitHub 官方直链在国内常被拦截，一条不通就无退路。
+- 【修复】改为**多镜像冗余**：JS 侧维护 `UPDATE_MIRRORS` 镜像数组 → `\n` 拼接传给原生 → 原生 `downloadApk` 逐个源重试 → GitHub 官方直链最后兜底；任一源成功即完成，全部失败才提示，且提示文案改为可操作建议（检查网络 / 稍后重试 / 切换 Wi-Fi）。
+- 【优化】镜像选型经实测排序：`gh-proxy.com`（0.9~3.5s）> `gh.xmly.dev`（3.1~4.4s），各源 3 次下载字节数与 sha256 全部一致，且均带 `Content-Length`（更新进度条正常）。
+- 【测试】`test.js` 新增 4 条回归守卫（多源数组 / 旧变量名已移除 / JS 拼接多镜像 / 原生逐个重试 + 官方兜底），通过数 327 → 331；4 条守卫均做反向验证（撤掉修复各自精确报红 1 条）。
+### v1.2.3.2 —— 第二批（官网镜像下载 + 官网日志自动同步 + 关于页入口下移）
+
+> 用户原话：「①完事之后再把官网更新一下。官网的下载怎么一直跳 github，门槛太高了，也加镜像吧。以后每次同步 app 和 github 以后，把官网也同步了，下载和更新日志那里。②关于应用里，把 github 和官网链接位置挪到 madebyxixi 上方。官网的 icon 是不是比 github 的 icon 小啊，你统一一下大小。」
+
+- 【修复】**官网下载不再跳 GitHub 了**（用户原话「门槛太高」）—— 原 `functions/download.js` 安卓主路径 302 到 `github.com/.../releases/download/...`，国内访问常被墙/极慢，用户看到 GitHub 页面就卡住。现改为**镜像优先**：边缘侧先探测镜像可用性（`Range: bytes=0-0` + 4s 超时），命中即 302 到**镜像直链**；全部镜像不可用才退回 GitHub 官方直链。三层兜底（API 失败 / 无 apk 资产 / 网络异常）**原样保留**，绝不返回死链。新增 `X-Download-Target: mirror:<host>` 响应头便于线上核验。
+- 【优化】**镜像选型与 App 内更新同源同序** —— `gh-proxy.com` → `gh.xmly.dev`，两端改源必须同步改（已加守卫钉住：`sitetest.js` 断言两侧列表逐项一致）。实测两镜像裸请求回 `200 + application/vnd.android.package-archive + 完整 2514231 字节`（0.35s / 0.82s），**确实不经过 GitHub 网页**。
+- 【优化】**官网更新日志不再需要人工誊抄** —— 新增 `tools/sitechangelog.js`：从 App 内置 `BUILTIN_CHANGELOG`（= App 内更新弹窗内容，唯一权威的用户可见日志）自动渲染成官网 HTML 段并注入 `site/index.html`。日期取 git tag 提交日期；`--check` 模式已接入 `checkall.js`（key `sitecl`）。
+- 【优化】**发版流程固化官网同步** —— `tools/ship.js publish` 段把官网同步从「人工提示」升级为**自动执行**：① 先同步官网更新日志段 → ② 再 `ghsync --push`（**顺序铁律**：必须一次推送同时触发 App 站与官网两个 CF Pages 项目，`ghsync` 的 `DIRS` 本就含 `site/` 与 `functions/`）→ ③ 建 Release + 上传 APK → ④ 线上核对下载链路 + 官网首页版本刷新。
+- 【优化】**关于页入口位置下移 + 图标统一大小**（用户点名）—— ① `about-links`（GitHub + 官方网站）整块从「简介下方」下移到「四个玻璃按钮组之后、Made by XiXi 之前」，目标顺序 = 版本 → 简介 → 隐私/免责 → 支持作者/更新日志 → GitHub/官方网站 → Made by XiXi（`.about-links` 的 `margin-top` 6px → 14px）。② 两个图标由 `14×14` 统一放大到 **`16×16`**；官网描边 `stroke-width` 由 2 降到 **1.8**（GitHub 是实心填充、官网是描边，同尺寸下描边观感偏小，用 1.8 补偿使两者视觉等大）。
+- 【测试】`test.js` **331 → 334**（+3：入口位置在按钮组之后 / 两图标同为 16×16 / 官网描边 1.8）；`tools/sitetest.js` **16 → 25**（新增镜像优先 / 镜像全灭退官方 / 镜像顺序回退 / 两侧列表一致 / 源码守卫）；新增 `sitechangelog --check` 1 项入 `checkall`。`_rev3.py` **反向验证 4/4 全部生效**（撤掉修复各自精确报红：①7 项 ②1 项 ③1 项 ④2 项 → 还原全绿）。
+- 【测试】**E2E 隐私弹窗基线刷新**（diff 6.58%，定性为**预期整页重排**）：`e2e/run.js` 点的是设置页 `#privacyPolicyBtn`（= 关于卡片内按钮）→ 改了关于卡片布局 → 弹窗垂直定位微移约 8~10px，裁切对比确认文案逐字一致、非破版 → 备份 `baseline.bak-20260929b` 后 `--update`，E2E 128/0、复跑 126/0。
 - **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.10 更新（**用户 v1.2.2.9 实测两条反馈**；共 3 处补丁 + 2 条新守卫 + 反向验证 3/3）：
   - **① 记录页列表删除按钮与计划页列表统一**（用户原话：「记录页列表模式的删除，改的是计划页列表模式的删除按钮，不是文字，就那个灰色垃圾桶」）—— **★上一版 v1.2.2.9 我理解错了目标**：当时把「日历明细那两处 `data-del`」和「记录页」一起动了，记录页还改成了**文字钮**。用户纠正后正确定位：计划页列表模式删除 = `delete-planned-btn`（class `confirm-btn-cancel` + `plannedDelStyle`）→ **灰色垃圾桶图标**（`padding:6px` 方形 + `material-icons delete` + 底 `rgba(100,116,139,0.14)` + 边 `rgba(100,116,139,0.6)`）。**修法**：记录页删除改回同款图标钮，`recordDelStyle` 与 `plannedDelStyle` 逐字一致。

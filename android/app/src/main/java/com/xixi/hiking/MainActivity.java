@@ -713,13 +713,14 @@ public class MainActivity extends BridgeActivity {
         // state: 'need_permission'(去授权未知来源) / 'downloaded'(下载完待装，一般自动继续) /
         //        'installing'(已跳系统安装器) / 'error'(失败)
         @JavascriptInterface
-        public void downloadAndInstall(final String apkUrl, final String mirrorUrl) {
+        public void downloadAndInstall(final String apkUrl, final String mirrors) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    File apk = downloadApk(apkUrl, mirrorUrl);
+                    File apk = downloadApk(apkUrl, mirrors);
                     if (apk == null) {
-                        notifyJs("error", "下载失败，请检查网络后重试");
+                        // ★2026-09-29 v1.2.3.2：多源全部失败才到这里 —— 给可操作的建议
+                        notifyJs("error", "所有下载通道均失败，请检查网络后重试；若持续失败可稍后再试，或切换到 Wi-Fi");
                         return;
                     }
                     notifyJs("downloaded", apk.getAbsolutePath());
@@ -734,8 +735,18 @@ public class MainActivity extends BridgeActivity {
             thread.start();
         }
 
-        private File downloadApk(String apkUrl, String mirrorUrl) {
-            String[] urls = new String[]{mirrorUrl, apkUrl};
+        private File downloadApk(String apkUrl, String mirrors) {
+            // ★2026-09-29 v1.2.3.2：mirrors 可为**多个镜像**（用 \n 分隔），逐个重试；
+            //   官方直链 apkUrl 永远排在最后兜底。任一成功即返回，全部失败才返回 null。
+            java.util.List<String> list = new java.util.ArrayList<>();
+            if (mirrors != null) {
+                for (String m : mirrors.split("\n")) {
+                    if (m != null && !m.trim().isEmpty()) list.add(m.trim());
+                }
+            }
+            if (apkUrl != null && !apkUrl.isEmpty()) list.add(apkUrl);
+            String[] urls = list.toArray(new String[0]);
+            Log.i(TAG, "downloadApk: 待尝试 " + urls.length + " 个下载源");
             for (String u : urls) {
                 if (u == null || u.isEmpty()) continue;
                 try {

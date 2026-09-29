@@ -9,8 +9,17 @@
  *       → ⑤ 发布文档三处同步 → ⑥ 全套自检 → ⑦ 代码审计 → ⑧ release.js 构建 → ⑨ APK 验证
  *
  *   node tools/ship.js publish <tag> <Release文案> [--dry-run]
- *       ① GH 副本同步 + push（触发 CF Pages 自动部署）→ ② 建 Release + 上传 APK + 下载验证
- *       → ③ 校验 pages.dev 已上新版本
+ *       ① 官网「更新日志」段自动同步（source = App 内置 BUILTIN）
+ *       → ② GH 副本同步 + push（含 site/ 与 functions/，触发 App 站与官网 CF Pages 部署）
+ *       → ③ 建 Release + 上传 APK + 下载验证
+ *       → ④ 线上核对官网下载链路（dlcheck）+ 官网首页版本刷新
+ *       → ⑤ 校验 pages.dev 已上新版本
+ *
+ * ★2026-09-29 变更：官网同步从「人工提示」升级为「流程自动执行」（用户要求
+ *   「以后每次同步 app 和 github 以后，把官网也同步了，下载和更新日志那里」）。
+ *   官网两处：① 更新日志段 = tools/sitechangelog.js 自动生成；
+ *            ② 下载入口 = 仓库根 functions/download.js，安卓 302 镜像直链（不跳 GitHub）。
+ *   ★顺序铁律：官网改动必须**在 ghsync push 之前**完成，才能一次推送同时触发两个 CF 项目。
  *
  * 用法示例：
  *   node tools/ship.js prepare --builtin tools/notes/1.2.0.3-builtin.txt --doc tools/notes/1.2.0.3-doc.txt
@@ -149,16 +158,44 @@ if (mode === 'publish') {
   console.log('tag: ' + tag);
 
   // ① GH 副本同步 + push
-  run('GH 副本同步 + push（触发 CF Pages 部署）', NODE, ['tools/ghsync.js', '-m', 'release: ' + tag, '--push']);
-  // ② Release + 上传 + 下载验证 + 清理本地 APK
+  // ★2026-09-29 顺序调整：官网「更新日志」段必须在 push **之前**自动同步好，
+  //   否则 CF Pages 部署的是旧日志（用户反馈过官网一直显示旧版本）。
+  //   故流程改为：先同步官网两处 → 再 ghsync push（一次推送带上全部改动）→ 建 Release。
+  //   ★但 ghsync 的同步范围是 www/docs/tools/e2e/android —— **不含 site/**！
+  //    site/ 由 CF Pages 独立项目（Root=site）自动部署，靠的是**同一次 push**：
+  //    仓库里 site/ 一变，CF 的 site 项目也会跟着重新构建。所以必须先改文件再 push。
+  //
+  // ①.1 官网更新日志段自动同步（★2026-09-29 用户要求「以后把官网也同步了，更新日志那里」）
+  //    数据源 = App 内置 BUILTIN_CHANGELOG（即 App 内更新弹窗内容），官网直接复用，
+  //    永不再需要人工誊抄。--check 先跑一遍留证（未同步时给出明确提示）。
+  console.log('\n▶ 官网「更新日志」段同步（source = App 内置 BUILTIN_CHANGELOG）');
+  if (DRY) {
+    console.log('   [DRY] node tools/sitechangelog.js');
+  } else {
+    const before = spawnSync(NODE, ['tools/sitechangelog.js', '--check'], { cwd: ROOT, env, encoding: 'utf8' });
+    if (before.status !== 0) {
+      console.log('   ℹ 官网日志段落后 → 自动同步中…');
+    }
+    const sc = spawnSync(NODE, ['tools/sitechangelog.js'], { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 1024 * 1024 * 8 });
+    const scOut = ((sc.stdout || '') + (sc.stderr || '')).trim();
+    console.log(scOut.split('\n').map((l) => '   ' + l).join('\n'));
+    if (sc.status !== 0) { console.error('\n✗ 官网更新日志同步失败，流程中止'); process.exit(1); }
+  }
+
+  // ①.2 官网下载入口（/download）说明：这是 Functions（仓库根 functions/download.js），
+  //     安卓点击后 302 到**镜像直链**（2026-09-29 改，不再跳 github.com），
+  //     iOS/桌面 → 网页版。APK 直链动态查 GitHub API，随 Release 自动跟随，无需改页面。
+  console.log('\n▶ 官网下载入口（/download Functions，镜像优先）');
+  console.log('   ℹ 安卓 → 302 镜像直链（gh-proxy.com / gh.xmly.dev，逐个探测，全灭退官方直链）');
+  console.log('   ℹ iOS/桌面 → 302 网页版；APK 直链动态查 API，随最新 Release 自动跟随');
+
+  // ② GH 副本同步 + push（★必须在上面的官网改动之后 → 一次 push 同时触发 App 站与官网站部署）
+  run('GH 副本同步 + push（触发 CF Pages 部署 · 含 site/ 官网）', NODE, ['tools/ghsync.js', '-m', 'release: ' + tag, '--push']);
+  // ③ Release + 上传 + 下载验证 + 清理本地 APK
   run('建 Release + 上传 APK + 下载验证', NODE, ['tools/ghrelease.js', tag, bodyFile || '']);
 
-  // ②.5 ★官网同步（2026-09-29 用户要求「以后的发版，也要同步官网更新」）
-  //   为什么必须做：官网有两处会随版本漂移 ——
-  //     ① `/download` 的 APK 直链是**动态查 API** 的，本身自动跟随（无需改页面）
-  //     ② 但页面上「更新日志」段是**写死的最近两版**，不同步就会一直显示旧版本
-  //   → 这里先核对线上下载链路可用，再把「页面更新日志落后」的事报出来提醒。
-  console.log('\n▶ 官网下载链路核对（/download 是否已部署且能直下 APK）');
+  // ③.5 线上核对：官网下载链路是否真能直下 APK（部署后验证，不是只查文件）
+  console.log('\n▶ 官网下载链路线上核对（/download 是否真的直下 APK）');
   if (DRY) {
     console.log('   [DRY] node tools/dlcheck.js');
   } else {
@@ -166,7 +203,30 @@ if (mode === 'publish') {
     console.log(((dc.stdout || '') + (dc.stderr || '')).trim().split('\n').map((l) => '   ' + l).join('\n'));
     if (dc.status !== 0) console.log('   ⚠ 官网下载链路异常 → 请检查 functions/download.js（仓库根）是否已推送');
   }
-  console.log('   ℹ 官网「更新日志」段是写死的最近两版 → 本次发版若要更新它，改 site/index.html 后随下次 push 生效');
+  // ③.6 线上核对：官网更新日志段是否已随部署刷新
+  console.log('\n▶ 官网更新日志段线上核对（CF Pages 部署站点 site/ 是否已刷新）');
+  if (!DRY) {
+    const py2 = `
+import urllib.request, time, re, sys
+op = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+url = 'https://xixi-hiking-site.pages.dev/'
+for i in range(6):
+    try:
+        t = op.open(url + '?v=' + str(int(time.time())), timeout=20).read().decode('utf-8','ignore')
+        m = re.search(r'<div class="rel-ver">(v[\\d.]+)<span>', t)
+        got = m.group(1) if m else '?'
+        if got == '${tag}':
+            print('OK ' + got); sys.exit(0)
+        print('wait: ' + got); time.sleep(15)
+    except Exception as e:
+        print('retry: ' + str(e)[:50]); time.sleep(15)
+print('TIMEOUT'); sys.exit(1)
+`;
+    const r2 = spawnSync('python', ['-c', py2], { encoding: 'utf8' });
+    console.log('   ' + ((r2.stdout || '').trim().split('\n').slice(-1)[0] || ''));
+    if (r2.status !== 0) console.log('   ⚠ 官网首页版本未在等待窗口内刷新，请稍后手动确认 xixi-hiking-site.pages.dev');
+    else console.log('   ✅ 官网首页已显示 ' + tag);
+  }
 
   // ③ pages.dev 校验
   console.log('\n▶ 校验 pages.dev 自动部署（最多等 2 分钟）');
@@ -196,9 +256,11 @@ print('TIMEOUT'); sys.exit(1)
   }
 
   console.log('\n✅ publish 完成：' + tag);
-  console.log('📌 别忘了官网（★2026-09-29 起发版需同步官网）：');
-  console.log('   ① /download 直链自动跟随最新 Release（无需改）');
-  console.log('   ② 若本次要更新 site/index.html 的「更新日志」段 → 改完 ghsync --push 即生效');
+  console.log('📌 官网同步已并入本流程（★2026-09-29 起，用户要求「以后把官网也同步了」）：');
+  console.log('   ① 更新日志段 → 已自动从 App 内置 BUILTIN 同步（tools/sitechangelog.js）');
+  console.log('   ② /download 下载 → 302 镜像直链（Functions 在仓库根），APK 直链随 Release 自动跟随');
+  console.log('   ③ site/ 与 functions/ 由 ghsync 整目录推送 → CF Pages 自动重部署（官网独立项目）');
+  console.log('   → 若线上仍是旧内容，等 15~20s 后重跑 node tools/dlcheck.js 手动确认');
   process.exit(0);
 }
 

@@ -509,11 +509,15 @@ function startUpdate() {
         showInfoMessage('当前环境不支持应用内更新');
         return;
     }
-    const mirrorUrl = UPDATE_MIRROR_PREFIX + pendingUpdate.apkUrl.replace(/^https?:\/\//, '');
+    // ★2026-09-29 v1.2.3.2：多镜像 —— 用 \n 拼接多条，原生侧逐个重试（全部失败才报错）
+    const apkPath = pendingUpdate.apkUrl.replace(/^https?:\/\//, '');
+    const mirrors = (typeof UPDATE_MIRRORS !== 'undefined' && UPDATE_MIRRORS.length ? UPDATE_MIRRORS : [])
+        .map(function (p) { return p + apkPath; })
+        .join('\n');
     const desc = document.getElementById('checkUpdateDesc');
-    if (desc) desc.textContent = '正在下载新版本（镜像加速）…';
+    if (desc) desc.textContent = '正在下载新版本…';
     showLoadingToast('正在下载新版本…');
-    window.XixiFileBridge.downloadAndInstall(pendingUpdate.apkUrl, mirrorUrl);
+    window.XixiFileBridge.downloadAndInstall(pendingUpdate.apkUrl, mirrors);
 }
 
 // 原生下载/安装回调

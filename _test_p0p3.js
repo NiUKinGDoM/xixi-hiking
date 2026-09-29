@@ -740,11 +740,30 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         const clHead = clHtml.match(/【[^】]{1,14}】<\/div>/g) || [];
         assert('更新日志按分组标题渲染(' + clHead.length + ')', clHead.length >= 3, 'heads=' + clHead.length);
         const clItems = clHtml.match(/[0-9]+\.<\/span>/g) || [];
-        assert('更新日志条目按编号列表渲染(' + clItems.length + ')', clItems.length >= 5, 'items=' + clItems.length);
+        // ★2026-09-29 改为**动态推导**：原先写死 >= 5，一旦某版更新日志条目少（如 v1.2.3.2 只有 1 条）
+        //   就会误报。本断言的意图是「编号列表渲染机制正常」，与「本版几条」无关 →
+        //   按 BUILTIN 里前三版实际的 `- ` 条目总数推导期望值（渲染出的编号项应恰好覆盖它们）。
+        const _cntDashes = (t) => (String(t || '').match(/^\s*-\s+/gm) || []).length;
+        const expectItems = _cntDashes(window.BUILTIN_CHANGELOG[bkeys[0]])
+            + _cntDashes(window.BUILTIN_CHANGELOG[bkeys[1]])
+            + _cntDashes(window.BUILTIN_CHANGELOG[bkeys[2]]);
+        assert('更新日志条目按编号列表渲染(' + clItems.length + '/期望' + expectItems + ')', clItems.length >= expectItems && expectItems >= 1, 'items=' + clItems.length + ' expect=' + expectItems);
         const clStrong = clHtml.match(/<strong /g) || [];
         assert('小标题转粗体(' + clStrong.length + ')', clStrong.length >= 3, 'strong=' + clStrong.length);
         assert('无 markdown 残留(** / ##)', clTxt.indexOf('**') < 0 && !/^##\s/m.test(clTxt), 'md leaked');
-        assert('Made by 只在末尾一次', (clTxt.match(/Made by XiXi/g) || []).length === 1, 'sign=' + (clTxt.match(/Made by XiXi/g) || []).length);
+        // ★2026-09-29 改为**逐版检查署名在各自段的末尾**：
+        //   ① 原先「全文计数 === 1」会被「正文引用了这个词」误伤（v1.2.3.2 实例）；
+        //   ② 改成「合成文本末尾是署名」也不对——合成文本末尾是**最旧那版**的署名，
+        //      删掉最新版的署名它照样绿（反向验证已证实会漏报）。
+        //   正确做法：对显示的每一版，其渲染文本都要以署名收尾。
+        const _sigTail = 'Made by XiXi 💛';
+        let _sigOk = true, _sigBad = [];
+        for (const _v of [bkeys[0], bkeys[1], bkeys[2]]) {
+            if (!_v) continue;
+            const _raw = String(window.BUILTIN_CHANGELOG[_v] || '').trim();
+            if (!_raw.endsWith(_sigTail)) { _sigOk = false; _sigBad.push(_v); }
+        }
+        assert('每版更新日志均以署名收尾(' + [bkeys[0], bkeys[1], bkeys[2]].join('/') + ')', _sigOk, '缺署名: ' + (_sigBad.join(',') || '无'));
         // ★2026-09-18 更新弹窗与更新日志共用渲染器（曾出现：弹窗仍是纯文本，** 原样露出）
         try {
             console.log('  ⓘ 环境检测：typeof showUpdateModal =', typeof showUpdateModal, '/ renderChangelogBody =', typeof renderChangelogBody);
