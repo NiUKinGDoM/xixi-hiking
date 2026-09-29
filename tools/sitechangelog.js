@@ -31,7 +31,7 @@ const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const CORE = path.join(ROOT, 'www', 'app-core.js');
-const SITE = path.join(ROOT, 'site', 'index.html');
+const SITE = path.join(ROOT, 'site', 'features.html');   // ★2026-09-30 官网精简后「09 更新日志」节搬到 features.html
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry-run');
