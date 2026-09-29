@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-29（v1.2.3.2 / vc277）  
+> 最后更新：2026-09-29（v1.2.3.3 / vc278）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -282,6 +282,14 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - **★push 结果必须实证**：`git push` 输出无异常 ≠ 已生效；用 `git ls-remote <url> refs/heads/master` 比对本地 `HEAD`（`git fetch <url> master` 不带 refspec 时 `FETCH_HEAD` 不可靠，本轮踩到误判）。
   - **★GH 双落点复核**：`docrelease.js` 只更新 `docs/PROJECT_STATUS.md`，**根目录那份不会自动跟** → 必须补跑 `node tools/doc-sync.js --apply` 再 push，否则 GitHub 网页（默认打开根目录）看到的仍是旧版。复核用 API 抓 raw + 比字节（GitHub 会 CRLF→LF，比较前先归一化）。
 - **发布链路（v1.2.3.2 实测）**：回退点 `backups/prev-1.2.3.2/` → 版本三处已就位（vc277 / `APP_VERSION` / sw v54）→ BUILTIN 注入 → 文档三处 → 自检 → audit → 构建 2.40MB → APK 验证（签名有效 / vc277 / v1.2.3.2 / 资源齐全 / sha256 `2260a7d8…`）→ push `f405a53` + 文档补同步 `67dad48` → Release `v1.2.3.2`（id 399036625）+ APK 上传（服务端 digest 与本地 sha256 一致）→ 线上：`/download` 302 `mirror:gh-proxy.com` + `X-Download-Gateway: xixi-hiking` + iPhone 跳网页版 + 官网首页 v1.2.3.2 + App 站 `APP_VERSION=1.2.3.2`。
+- **正式版 v1.2.3.3（vc278）** —— 关于页去署名 + 隐私政策/免责声明补官网（2026-09-29）
+  - **① 关于页去掉「Made by XiXi」署名** —— 用户要求删除卡片底部作者署名，`.about-tag` 元素连同两条 CSS 规则一并移除；删掉后官网/GitHub 入口行成为卡片最后一行，`margin-top` 由 14px 下收至 10px 并补 `padding-bottom: 4px` 承接原有高度，避免底部塌陷、上下留白不匀。实测深浅两模式底部收尾正常（顶部留白 6px / 底部 2px + 行自带 4px padding）
+  - **② 隐私政策补官网（两处）** —— 第四条「联网行为与第三方服务」新增 ④ 官方网站说明（调用系统浏览器打开官网，仅常规网页访问，**不携带任何记录、照片或身份信息**）；第十条「适用法律与联系方式」补上官网地址 `xixi-hiking-site.pages.dev` 可点链接（注明「关于应用 → 官方网站」可一键打开）
+  - **③ 免责声明新增「八、官方渠道与内容来源」** —— 官网仅作介绍、截图与下载指引，**页面内容可能滞后于实际版本**；功能/界面/更新内容**一律以设备上实际运行的版本为准**；请从官方渠道获取安装包，**非官方渠道或他人二次打包的版本无法保证安全性与完整性**，后果由获取者自行承担。原「八/九/十」顺延为「九 责任限制 / 十 知识产权 / 十一 条款变更与适用法律」
+  - **④ `LEGAL_VERSION` bump** `2026-09-23` → `2026-09-29`（政策正文变更 → 打开 App 会重新征求同意一次）；免责声明生效日期同步 `2026-09-29`，隐私政策「生效日期 2026-09-23；最近更新 2026-09-29」（生效日保持不动，只动最近更新）
+  - **⑤ `CACHE_NAME` bump** `v54` → `v55`（网页版强制旧 SW 失效重缓存）
+  - **⑥ 顺带清理**：`www/index.html` 里引用「Made by XiXi」的过期注释（HTML + CSS 共 3 处）；新增 3 条 test.js 守卫（署名彻底移除 / 隐私政策官网两处齐全 / 免责声明编号已顺延），并修复因删署名而失效的 2 处切片锚点
+  - **发布链路**：回退点 `backups/prev-1.2.3.2/` → vc278 → 构建 APK → push → Release `v1.2.3.3` → 线上核对
 - **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.10 更新（**用户 v1.2.2.9 实测两条反馈**；共 3 处补丁 + 2 条新守卫 + 反向验证 3/3）：
   - **① 记录页列表删除按钮与计划页列表统一**（用户原话：「记录页列表模式的删除，改的是计划页列表模式的删除按钮，不是文字，就那个灰色垃圾桶」）—— **★上一版 v1.2.2.9 我理解错了目标**：当时把「日历明细那两处 `data-del`」和「记录页」一起动了，记录页还改成了**文字钮**。用户纠正后正确定位：计划页列表模式删除 = `delete-planned-btn`（class `confirm-btn-cancel` + `plannedDelStyle`）→ **灰色垃圾桶图标**（`padding:6px` 方形 + `material-icons delete` + 底 `rgba(100,116,139,0.14)` + 边 `rgba(100,116,139,0.6)`）。**修法**：记录页删除改回同款图标钮，`recordDelStyle` 与 `plannedDelStyle` 逐字一致。
