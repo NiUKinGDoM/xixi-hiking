@@ -50,7 +50,15 @@ const PAIRS = [
     ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs/版本变更记录-存档.md'), path.join(GH, 'docs/版本变更记录-存档.md')],
 ];
 
+// ★2026-09-29：比较时**归一化换行符**（CRLF → LF）。
+//   原因：Git 的 autocrlf 会把推上去的 CRLF 转成 LF（实测「给新模型的提示词.md」本地 11663B
+//   / 远端 11575B，差值 88 = 行数）。本地副本文件不受影响，但一旦 clone/checkout 过就会被转换
+//   → 纯字节比较会**误报不一致**。本工具只判断「内容语义是否相同」，换行风格不算差异。
+function norm(buf) { return buf.toString('utf8').replace(/\r\n/g, '\n'); }
+
 console.log('== doc-sync ==  ' + (APPLY ? '同步模式' : REVERSE ? '反向同步模式' : '检测模式') + '\n');
+console.log('  注：本工具比的是「主工程 ↔ 本地 GH 副本」。它报绿**不代表远端已更新** ——\n' +
+            '      远端要靠 ghsync --push 推上去，且 GitHub 会做 CRLF→LF 转换（属正常）。\n');
 
 let diff = 0, missing = [], synced = 0;
 for (const [name, a, b] of PAIRS) {
@@ -61,7 +69,7 @@ for (const [name, a, b] of PAIRS) {
         missing.push(name + '（' + miss + '）');
         continue;
     }
-    const same = Buffer.compare(fs.readFileSync(a), fs.readFileSync(b)) === 0;
+    const same = norm(fs.readFileSync(a)) === norm(fs.readFileSync(b));
     if (same) { console.log('  ✅ ' + name.padEnd(28) + '一致'); continue; }
     diff++;
     if (!APPLY && !REVERSE) { console.log('  ⚠️  ' + name.padEnd(28) + '内容不一致'); continue; }

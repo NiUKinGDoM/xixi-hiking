@@ -118,24 +118,47 @@ DOCS.concat(LOGS).forEach((d) => {
 });
 
 // J. 双端一致性
+// ★★2026-09-29 重大修正：会话根的三份文档在 GH 侧有**两个落点**（`GH/docs/` 和 **`GH/` 根**）。
+//   此前只检查 `GH/docs/` → **GitHub 网页上打开的根目录那份永久停在旧版也没人发现**
+//   （PROJECT_STATUS 曾停在 139755B / 开发侧改动记录停在 25203B，横跨数个版本，
+//    用户在 GitHub 上一看就是旧内容）。⇒ 必须与 doc-sync.js 的配对表**完全对齐**、双落点都查。
 const PAIRS = [
     ['README.md', path.join(ROOT, 'README.md'), path.join(GH, 'README.md')],
     ['CHANGELOG.md', path.join(ROOT, 'CHANGELOG.md'), path.join(GH, 'CHANGELOG.md')],
     ['docs/PROJECT_STATUS.md', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'docs', 'PROJECT_STATUS.md')],
+    ['PROJECT_STATUS.md（根）', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'PROJECT_STATUS.md')],
     // ★2026-09-14 补漏：本文件同样是双端的，此前未纳入检查
     ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs', '给新模型的提示词.md')],
+    ['给新模型的提示词.md（根）', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, '给新模型的提示词.md')],
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs', 'DEVICE-CHECKLIST.md'), path.join(GH, 'docs', 'DEVICE-CHECKLIST.md')],
     // ★2026-09-18 补漏：与 doc-sync 的配对表保持一致（此前漏了两处双端文件）
     ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs', '方案-换机同步与登录体验.md'), path.join(GH, 'docs', '方案-换机同步与登录体验.md')],
     ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs', '版本变更记录-存档.md'), path.join(GH, 'docs', '版本变更记录-存档.md')],
     // ★2026-09-20 新增：开发侧改动记录（用户：「开发侧的你告诉我就行，要我能看得着」）
     ['docs/开发侧改动记录.md', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, 'docs', '开发侧改动记录.md')],
+    ['开发侧改动记录.md（根）', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, '开发侧改动记录.md')],
 ];
+// ★比较前归一化换行符（Git autocrlf 会 CRLF→LF，纯字节比较会误报）
+const _n = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 const dual = [];
 PAIRS.forEach(([n, a, b]) => {
     if (!fs.existsSync(a) || !fs.existsSync(b)) { dual.push(n + ' 缺一侧（' + (fs.existsSync(a) ? '副本缺' : '主工程缺') + '）'); return; }
-    if (fs.readFileSync(a, 'utf8') !== fs.readFileSync(b, 'utf8')) dual.push(n + ' 双端内容不一致');
+    if (_n(a) !== _n(b)) dual.push(n + ' 双端内容不一致');
 });
+// ★2026-09-29 硬约束：本表必须与 doc-sync.js 的 PAIRS **逐条对齐**（防将来只改一边 → 假绿）
+(function () {
+    try {
+        const src = fs.readFileSync(path.join(ROOT, 'tools', 'doc-sync.js'), 'utf8');
+        const names = (src.match(/^\s{4}\['[^']+',\s*path\.join\(/gm) || [])
+            .map((s) => s.match(/'([^']+)'/)[1]);
+        PAIRS.forEach(([n]) => {
+            if (!names.includes(n)) dual.push('docaudit/doc-sync 配对表不同步：doc-sync 缺「' + n + '」');
+        });
+        names.forEach((n) => {
+            if (!PAIRS.some(([x]) => x === n)) dual.push('docaudit/doc-sync 配对表不同步：docaudit 缺「' + n + '」');
+        });
+    } catch (e) { /* doc-sync 不在则跳过（本项非致命） */ }
+})();
 
 if (JSON_OUT) {
     console.log(JSON.stringify({ appVersion: APP_VER, report, dual }, null, 1));
