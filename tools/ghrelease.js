@@ -53,9 +53,15 @@ if (!SELFTEST) {
 }
 
 // ---------- token ----------
-const tk = spawnSync('python', [path.join(__dirname, 'ghtoken.py')], { encoding: 'utf8' });
-const token = (tk.stdout || '').trim();
-if (!token || !token.startsWith('ghp_')) { console.error('✗ 未取到 GitHub token（tools/ghtoken.py）'); process.exit(1); }
+// ★2026-09-29 支持从环境变量 GH_TOKEN 读取（沙箱下 spawnSync 会 EBUSY 失败，
+//   报「未取到 token」属误判；由调用方用 python 侧读出后经环境变量传入即可绕过）。
+//   优先环境变量，其次才是 ghtoken.py —— 两者语义一致，都不落盘。
+let token = (process.env.GH_TOKEN || '').trim();
+if (!token || !token.startsWith('ghp_')) {
+    const tk = spawnSync('python', [path.join(__dirname, 'ghtoken.py')], { encoding: 'utf8' });
+    token = (tk.stdout || '').trim();
+}
+if (!token || !token.startsWith('ghp_')) { console.error('✗ 未取到 GitHub token（可用 GH_TOKEN 环境变量传入，或检查 tools/ghtoken.py）'); process.exit(1); }
 console.log('token: 已读取（' + token.length + ' 字符）\n');
 
 const H = {

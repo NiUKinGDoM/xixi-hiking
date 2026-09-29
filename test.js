@@ -391,6 +391,37 @@ try {
       : bad('隐私政策法律要素缺失，或生效日期与 LEGAL_VERSION 不同步!');
 })();
     dj.includes('信息共享、转让与公开披露') && dj.includes('不会</b>向任何第三方出售') ? ok('隐私政策含第三方共享披露条款') : bad('隐私政策缺少共享/披露条款!');
+    // ★2026-09-29 新增（用户要求「更新一下隐私政策，把官网加上。免责声明你再看看要不要加了」）：
+    //   ① 隐私政策须写明官网（第四条联网行为 + 第十条联系方式各一处）
+    //   ② 免责声明须有「官方渠道与内容来源」条 —— 说明页面内容可能滞后、以实际版本为准、
+    //      非官方渠道包不保证安全（避免截图与实际有出入时的争议）
+    (function () {
+        var _site = 'xixi-hiking-site.pages.dev';
+        var pOk = (dj.match(new RegExp(_site, 'g')) || []).length >= 2
+            && dj.includes('官方网站</b>：应用内「关于应用 → 官方网站」入口会调用系统浏览器')
+            && dj.includes('不携带你的任何记录、照片或身份信息');
+        pOk ? ok('隐私政策含官网（第四条联网说明 + 第十条联系方式）')
+            : bad('隐私政策未把官网写全（需含第四条联网说明与第十条联系方式两处）!');
+        var dOk = dj.includes('官方渠道与内容来源')
+            && dj.includes('一律以你设备上实际运行的版本为准')
+            && dj.includes('从非官方渠道下载或他人二次打包的版本');
+        dOk ? ok('免责声明含「官方渠道与内容来源」条（内容以实际版本为准 + 非官方包不担保）')
+            : bad('免责声明缺少官网/官方渠道条!');
+        // 编号连续性：新增「八、官方渠道与内容来源」后，原八/九/十应顺延为九/十/十一；
+        // 逐个断言「新老编号都只出现一次」，防改了标题忘顺延 → 出现两个「八、」（用户会看到编号跳号/重复）
+        var _titles = (dj.match(/<div class="dmi-title">([一二三四五六七八九十]+)、[^<]*<\/div>/g) || []);
+        var _dupes = _titles.filter(function (t, i) { return _titles.indexOf(t) !== i; });
+        // 免责声明里「八、官方渠道与内容来源」必须存在，且不得再出现「八、责任限制」（应已顺延为九）
+        var _dOk2 = dj.includes('<div class="dmi-title">八、官方渠道与内容来源</div>')
+            && dj.includes('<div class="dmi-title">九、责任限制</div>')
+            && dj.includes('<div class="dmi-title">十、知识产权</div>')
+            && dj.includes('<div class="dmi-title">十一、条款变更与适用法律</div>')
+            && !dj.includes('<div class="dmi-title">八、责任限制</div>')
+            && !dj.includes('<div class="dmi-title">九、知识产权</div>')
+            && !dj.includes('<div class="dmi-title">十、条款变更与适用法律</div>');
+        _dOk2 ? ok('免责声明条目编号已顺延（八=官方渠道 / 九=责任限制 / 十=知识产权 / 十一=条款变更）')
+              : bad('免责声明条目编号未正确顺延（新增条后旧编号仍残留）!');
+    })();
     // ★2026-09-18 免责声明：必须有责任限制 + 「法定责任优先」兜底（否则条款可能整体无效）
     dj.includes('责任限制') && dj.includes('不排除或限制依法不得排除') && dj.includes('中华人民共和国法律') ? ok('免责声明含责任限制+法定优先兜底条款') : bad('免责声明缺少责任限制/法定优先条款!');
     dj.includes('数据安全与备份责任') && dj.includes('开发者无法找回你未备份的数据') ? ok('免责声明含备份责任划分') : bad('免责声明缺少备份责任条款!');
@@ -871,20 +902,24 @@ _posCases.every(function (re) { return re.test(_fixData); })
         : bad('官网入口跳转方式错了（必须 location.href，window.open 会被 WebView 静默吞掉）！');
 })();
 (function () {
-    // 取 .about-links 容器整段（到 about-tag 之前，跨行）
-    var m = _semH.match(/<div class="about-links">([\s\S]*?)<div class="about-tag"/);
+    // 取 .about-links 容器整段（跨行）
+    // ★2026-09-29 改锚点：原先切到 `<div class="about-tag">` 为止 —— 该署名已按用户要求删除，
+    //   锚点失效会让本守卫静默失效 → 改为切到容器自身的收尾（下一个 `</div>` 之后紧跟的闭括号结构）。
+    var m = _semH.match(/<div class="about-links">([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/);
     if (!m) return bad('找不到 .about-links 容器（GitHub 与官网必须同排）！');
     var seg = m[1];
     var iG = seg.indexOf('id="githubBtn"'), iS = seg.indexOf('id="officialSiteBtn"');
     var gText = /<span>GitHub<\/span>/.test(seg);
     var sameRow = iG > -1 && iS > -1 && iG < iS;      // 两个都在容器内，且 GitHub 在前
-    var noLegacyIcon = !/about-tag[^>]*>\s*<button/.test(_semH) && !/id="githubBtn"[\s\S]{0,600}?about-tag/.test(_semH.split('about-links')[0] || '');
     sameRow && gText
         ? ok('守卫：GitHub 与官网入口同排（GitHub 在左、带「GitHub」字样）')
         : bad('入口排布错了（要求：.about-links 内一行横排、GitHub 在官网左边且有 GitHub 字样）！');
-    noLegacyIcon
-        ? ok('守卫：about-tag 内已无残留 GitHub 图标')
-        : bad('about-tag 里还有残留 GitHub 按钮！');
+    // ★2026-09-29 改为「署名已彻底移除」守卫（原守卫是「about-tag 内不得残留 GitHub 图标」，
+    //   现在 about-tag 整体已删 → 反向钉住：源码里不得再出现该 class 与署名文字）。
+    var tagGone = !/about-tag/.test(_semH) && !/Made by XiXi/.test(_semH);
+    tagGone
+        ? ok('守卫：「Made by XiXi」署名与 .about-tag 已彻底移除')
+        : bad('关于页仍有 .about-tag /「Made by XiXi」残留！');
 })();
 
 // ★2026-09-29 关于页视觉细节 回归（3 条，用户点名要求）：
@@ -921,23 +956,28 @@ _posCases.every(function (re) { return re.test(_fixData); })
 // ★2026-09-29 关于页入口**位置下移 + 图标尺寸统一** 回归（3 条，用户点名要求）：
 //   用户原话：「关于应用里，把 github 和官网链接位置挪到 madebyxixi 上方。
 //              官网的 icon 是不是比 github 的 icon 小啊，你统一一下大小。」
-//   ① .about-links 必须在「四个玻璃按钮组」**之后**、「Made by XiXi」**之前**
-//      （顺序 = 版本 → 简介 → 隐私/免责 → 支持作者/更新日志 → GitHub/官网 → Made by XiXi）
+//   ① .about-links 必须在「四个玻璃按钮组」**之后**（顺序 = 版本 → 简介 → 隐私/免责 →
+//      支持作者/更新日志 → GitHub/官网）
 //   ② 两个入口 SVG 必须**同为 16×16**（原 GitHub 14、官网 14，观感一实一虚不等）
 //   ③ ★官网描边须为 1.8 —— GitHub 是 fill 实心（体量饱满）、官网是 stroke 描边（纤细），
 //      同尺寸下描边图标视觉偏小，故用 1.8 补偿，使两者观感一致。
+//   ★2026-09-29 二次调整：用户要求删除「Made by XiXi」署名 → 本守卫原以 `<div class="about-tag">`
+//      作为 .about-card 段落的收尾锚点，该元素已删 → 锚点改为卡片内**最后一个按钮容器**的收尾结构，
+//      并把断言①的措辞改为「已在按钮组之后」。
 (function () {
-    var card = _semH.match(/<div class="about-card">([\s\S]*?)<div class="about-tag">/);
+    var card = _semH.match(/<div class="about-card">([\s\S]*?)<div class="about-links">/);
     if (!card) return bad('找不到 .about-card 段落！');
     var seg = card[1];
     var iBtnGroup = seg.indexOf('id="privacyPolicyBtn"');
-    var iLinks = seg.indexOf('<div class="about-links">');
-    if (iBtnGroup < 0 || iLinks < 0) return bad('找不到按钮组或 .about-links 容器！');
-    (iLinks > iBtnGroup)
-        ? ok('守卫：GitHub/官网入口已下移到玻璃按钮组之后（紧邻 Made by XiXi）')
-        : bad('入口位置错了（必须在四个玻璃按钮组之后、Made by XiXi 之前）！');
+    if (iBtnGroup < 0) return bad('找不到按钮组！');
+    (iBtnGroup > -1)
+        ? ok('守卫：GitHub/官网入口已下移到玻璃按钮组之后')
+        : bad('入口位置错了（必须在四个玻璃按钮组之后）！');
 
-    var links = seg.slice(iLinks, seg.indexOf('</div>', seg.indexOf('官方网站')));
+    // 取整行入口段（.about-links 起，到卡片收尾）
+    var links = _semH.slice(_semH.indexOf('<div class="about-links">'),
+                            _semH.indexOf('</div>', _semH.indexOf('官方网站')));
+    if (links.indexOf('about-links') < 0) return bad('找不到 .about-links 段！');
     var sizes = (links.match(/width="(\d+)" height="(\d+)"/g) || []);
     var all16 = sizes.length === 2 && sizes.every(function (s) { return /width="16" height="16"/.test(s); });
     all16

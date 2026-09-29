@@ -1831,19 +1831,24 @@ function showDisclaimerModal() {
                             <div class="dmi-body">应用内的更新检查依赖 GitHub，云备份依赖你选择的 WebDAV 网盘。上述服务的可用性、内容变更、服务中断或数据处理行为不由开发者控制，开发者不就此承担赔偿责任。</div></div>
                     </div>
                     <div class="dmi-group">
+                        <span class="material-icons dmi-ic">public</span>
+                        <div style="min-width:0;"><div class="dmi-title">八、官方渠道与内容来源</div>
+                            <div class="dmi-body">本应用的官方网站为 <a href="https://xixi-hiking-site.pages.dev" target="_blank" rel="noopener">xixi-hiking-site.pages.dev</a>（应用内「关于应用 → 官方网站」可一键打开），源码仓库为 GitHub 上的 xixi-hiking 项目。官网仅作介绍、截图与下载指引之用，<b>其页面内容可能滞后于实际版本</b>；功能、界面与更新内容<b>一律以你设备上实际运行的版本为准</b>。请通过上述官方渠道获取安装包，<b>从非官方渠道下载或他人二次打包的版本，开发者无法保证其安全性与完整性，由此产生的后果由获取者自行承担</b>。</div></div>
+                    </div>
+                    <div class="dmi-group">
                         <span class="material-icons dmi-ic">balance</span>
-                        <div style="min-width:0;"><div class="dmi-title">八、责任限制</div>
+                        <div style="min-width:0;"><div class="dmi-title">九、责任限制</div>
                             <div class="dmi-body">在适用法律允许的最大范围内，开发者不对因使用或无法使用本应用所致的间接、附带或衍生损失（包括但不限于数据丢失、行程延误、人身或财产损害）承担赔偿责任。<b>本条不排除或限制依法不得排除、限制的责任</b>；如相关法律另有强制性规定，以该法律规定为准。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">copyright</span>
-                        <div style="min-width:0;"><div class="dmi-title">九、知识产权</div>
+                        <div style="min-width:0;"><div class="dmi-title">十、知识产权</div>
                             <div class="dmi-body">本应用的界面设计、图标与程序代码归开发者所有；你在应用内创建的记录、备注与照片<b>归你本人所有</b>。请勿对本应用进行反向工程、二次打包或用于商业用途。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">gavel</span>
-                        <div style="min-width:0;"><div class="dmi-title">十、条款变更与适用法律</div>
-                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>，因本声明或使用本应用发生争议的，双方应友好协商解决；协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-09-23。</div></div>
+                        <div style="min-width:0;"><div class="dmi-title">十一、条款变更与适用法律</div>
+                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>，因本声明或使用本应用发生争议的，双方应友好协商解决；协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-09-29。</div></div>
                     </div>
             </div>
             <div class="confirm-modal-buttons">
@@ -1858,7 +1863,7 @@ function showDisclaimerModal() {
 // ★2026-09-18 同意留存（隐私政策 / 免责声明）
 //   立法本意：用户「明确同意」必须有痕迹 —— 显式勾选 + 本机记录（条款版本 + 时间戳）。
 //   ★改动政策正文时必须同步 bump LEGAL_VERSION（与正文「生效日期」保持一致）→ 会自动重新征求同意。
-const LEGAL_VERSION = '2026-09-23';
+const LEGAL_VERSION = '2026-09-29';
 const LEGAL_AGREE_KEY = 'hiking_legal_agree';
 let _legalPromptedThisSession = false;   // 启动时已主动弹过（同一会话不再打扰）
 let _legalTabPrompted = false;           // 首次进设置页已弹过
@@ -1995,7 +2000,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">info</span>
                         <div style="min-width:0;"><div class="dmi-title">适用范围与生效</div>
-                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。生效日期：2026-09-23；最近更新：2026-09-23。本政策随版本迭代更新，重大变更会在应用内提示。</div></div>
+                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。生效日期：2026-09-23；最近更新：2026-09-29。本政策随版本迭代更新，重大变更会在应用内提示。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">storage</span>
@@ -2015,7 +2020,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">wifi</span>
                         <div style="min-width:0;"><div class="dmi-title">四、联网行为与第三方服务</div>
-                            <div class="dmi-body">① <b>检查更新</b>：请求 GitHub Releases 接口查询最新版本号，仅产生常规网络请求信息（IP、User-Agent），由 GitHub 依其自身隐私政策处理；② <b>云备份</b>：依赖你自行选择的 WebDAV 服务商（如坚果云），其数据处理行为适用该服务商的条款与政策；③ <b>崩溃报告</b>：仅在已配置网盘的前提下，应用异常时上传一份不含记录与照片的诊断信息（版本号、错误内容、时间），用于定位问题。</div></div>
+                            <div class="dmi-body">① <b>检查更新</b>：请求 GitHub Releases 接口查询最新版本号，仅产生常规网络请求信息（IP、User-Agent），由 GitHub 依其自身隐私政策处理；② <b>云备份</b>：依赖你自行选择的 WebDAV 服务商（如坚果云），其数据处理行为适用该服务商的条款与政策；③ <b>崩溃报告</b>：仅在已配置网盘的前提下，应用异常时上传一份不含记录与照片的诊断信息（版本号、错误内容、时间），用于定位问题；④ <b>官方网站</b>：应用内「关于应用 → 官方网站」入口会调用系统浏览器打开项目官网，仅发生常规网页访问，<b>不携带你的任何记录、照片或身份信息</b>。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">security</span>
@@ -2045,7 +2050,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">gavel</span>
                         <div style="min-width:0;"><div class="dmi-title">十、适用法律与联系方式</div>
-                            <div class="dmi-body">如对本政策有疑问、意见或投诉，可通过「关于应用 → GitHub」提交 Issue、发邮件至 <a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a>，或经应用内反馈渠道联系开发者，我们将在合理期限内答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>。</div></div>
+                            <div class="dmi-body">如对本政策有疑问、意见或投诉，可通过「关于应用 → GitHub」提交 Issue、发邮件至 <a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a>，或访问项目官网 <a href="https://xixi-hiking-site.pages.dev" target="_blank" rel="noopener">xixi-hiking-site.pages.dev</a>（应用内「关于应用 → 官方网站」可一键打开），我们将在合理期限内答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>。</div></div>
                     </div>
                 ${AGREEMENT_STAMP}
             </div>

@@ -178,4 +178,13 @@ const back = fs.readFileSync(SITE, 'utf8');
 const okWrite = back.includes('<div class="rel-ver">' + versions[0] + '<span>');
 console.log((okWrite ? '✅' : '✗') + ' site/index.html 更新日志段已同步 → ' + versions.join(' / '));
 console.log('   首页版本: ' + versions[0]);
+// ★2026-09-29 修复：写前备份原先从不清理，会残留 site/index.html.siteclbak
+//   并随 ghsync 同步进仓库（污染工作区、每次 push 多一个未跟踪文件）。
+//   现在：回读校验**通过即删除**；**失败则保留**（供人工对比排查）。
+if (okWrite) {
+    try { fs.unlinkSync(bak); console.log('   （写前备份已清理）'); }
+    catch (e) { /* 清理失败不影响主流程 */ }
+} else {
+    console.log('   ⚠ 回读校验未通过 → 写前备份保留在 ' + bak + '，请人工核对');
+}
 process.exit(okWrite ? 0 : 1);
