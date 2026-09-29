@@ -93,13 +93,8 @@ public class MainActivity extends BridgeActivity {
         // 挡住换皮/捆绑重分发。注意：更换签名密钥时必须同步更新 SIGN_EXPECT_SHA（见 PROJECT_STATUS）
         if (!verifyInstalledSignature()) {
             try {
-                android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this);
-                b.setTitle("安装包校验失败");
-                b.setMessage("当前安装包的签名与官方版本不一致，可能已被篡改或重新打包。\n\n为保护你的数据安全，应用已停止运行。请卸载后从官方渠道重新安装。");
-                b.setCancelable(false);
-                b.setPositiveButton("知道了", (dialog, which) -> finish());
-                b.setOnDismissListener(d -> finish());
-                b.show();
+                showFatalGlassDialog("安装包校验失败",
+                        "当前安装包的签名与官方版本不一致，可能已被篡改或重新打包。\n\n为保护你的数据安全，应用已停止运行。请卸载后从官方渠道重新安装。");
             } catch (Exception e) {
                 Log.e(TAG, "sig dialog failed", e);
             }
@@ -157,6 +152,8 @@ public class MainActivity extends BridgeActivity {
             public void onPageLoaded(WebView webView) {
                 setupDownloadListener(webView);
                 setupJsBridge(webView);
+                // ★2026-09-30 资源校验提示：网页就绪后把待提示项推给网页玻璃弹窗（复用 confirm-modal）
+                flushTamperWarn();
                 // ★2026-08-14 禁用双指捏合缩放（软件感，非网页感）：关闭内置缩放/手势缩放/缩放按钮
                 try {
                     webView.getSettings().setSupportZoom(false);
@@ -1118,7 +1115,108 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    // ★2026-09-30 致命提示的原生玻璃弹窗
+    //   场景：签名校验失败必须立刻显示（此时 WebView 还没就绪，用不了网页 confirm-modal），
+    //   所以这里用原生 View 手绘一套，逐项对齐 www/index.html 的 .confirm-modal / .confirm-modal-content /
+    //   .confirm-modal-title / .confirm-modal-message / .confirm-modal-buttons / .check-go-btn 数值，
+    //   确保与网页弹窗视觉一致（圆角 20/12、blur(2px) saturate(150%)、1px 白边、宋体标题 20px/900 等）。
+    private void showFatalGlassDialog(final String title, final String message) {
+        try {
+            float d = getResources().getDisplayMetrics().density;
+
+            // 遮罩：rgba(0,0,0,0.3)
+            final android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+            root.setBackgroundColor(0x4D000000);
+            root.setClickable(true);   // 吞掉点击，不可取消
+
+            // 内容卡：半透明白 + 白描边 + 20px 圆角 + 20px 内边距
+            final android.widget.LinearLayout card = new android.widget.LinearLayout(this);
+            card.setOrientation(android.widget.LinearLayout.VERTICAL);
+            android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
+            cardBg.setColor(0xEBFFFFFF);                     // 玻璃底（叠深色遮罩后观感≈rgba(255,255,255,0.92)）
+            cardBg.setCornerRadius(20 * d);
+            cardBg.setStroke(Math.round(1 * d), 0x80FFFFFF); // 1px solid rgba(255,255,255,0.5)
+            card.setBackground(cardBg);
+            int pad = Math.round(20 * d);
+            card.setPadding(pad, pad, pad, pad);
+
+            android.widget.FrameLayout.LayoutParams cardLp = new android.widget.FrameLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            cardLp.gravity = android.view.Gravity.CENTER;
+            cardLp.leftMargin = Math.round(22 * d);
+            cardLp.rightMargin = Math.round(22 * d);
+            card.setLayoutParams(cardLp);
+
+            // 标题：宋体 / 20px / 900 / #0f172a（与 .confirm-modal-title 一致）
+            android.widget.TextView tvTitle = new android.widget.TextView(this);
+            tvTitle.setText(title == null ? "" : title);
+            tvTitle.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 20 * d);
+            tvTitle.setTypeface(android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD));
+            tvTitle.setTextColor(0xFF0F172A);
+            tvTitle.setLetterSpacing(0.02f);
+            card.addView(tvTitle);
+
+            // 正文：#1f2937 / 14px / 行高 1.6
+            android.widget.TextView tvMsg = new android.widget.TextView(this);
+            tvMsg.setText(message == null ? "" : message);
+            tvMsg.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 14 * d);
+            tvMsg.setTextColor(0xFF1F2937);
+            tvMsg.setLineSpacing(0, 1.6f);
+            android.widget.LinearLayout.LayoutParams msgLp = new android.widget.LinearLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            msgLp.topMargin = Math.round(12 * d);
+            tvMsg.setLayoutParams(msgLp);
+            card.addView(tvMsg);
+
+            // 按钮行：右对齐（与 .confirm-modal-buttons justify-end 一致）
+            android.widget.LinearLayout btnRow = new android.widget.LinearLayout(this);
+            btnRow.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+            btnRow.setGravity(android.view.Gravity.END);
+            android.widget.LinearLayout.LayoutParams rowLp = new android.widget.LinearLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            rowLp.topMargin = Math.round(20 * d);
+            btnRow.setLayoutParams(rowLp);
+
+            // 「知道了」：danger 实心红（与 .check-go-btn 的危险态一致）
+            android.widget.TextView ok = new android.widget.TextView(this);
+            ok.setText("知道了");
+            ok.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 14 * d);
+            ok.setTypeface(ok.getTypeface(), android.graphics.Typeface.BOLD);
+            ok.setTextColor(0xFFFFFFFF);
+            ok.setGravity(android.view.Gravity.CENTER);
+            android.graphics.drawable.GradientDrawable okBg = new android.graphics.drawable.GradientDrawable();
+            okBg.setColor(0xFFDC2626);
+            okBg.setCornerRadius(12 * d);
+            ok.setBackground(okBg);
+            int okPadH = Math.round(24 * d), okPadV = Math.round(10 * d);
+            ok.setPadding(okPadH, okPadV, okPadH, okPadV);
+            ok.setMinWidth(Math.round(96 * d));
+            ok.setClickable(true);
+            ok.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try { ((android.app.Activity) MainActivity.this).finish(); } catch (Exception e) { /* 忽略 */ }
+                }
+            });
+            btnRow.addView(ok);
+            card.addView(btnRow);
+
+            root.addView(card);
+            setContentView(root);
+        } catch (Exception e) {
+            Log.e(TAG, "showFatalGlassDialog failed", e);
+        }
+    }
+
     // ★2026-09-08 资源完整性软校验：核心资源哈希与 ResGuard（tools/security.js hash 生成）比对，不一致仅提示
+    // ★2026-09-30 设计语言统一：不再用系统 AlertDialog（灰底方块），改为把文件名交给网页弹窗
+    //   （window.__showTamperWarn，复用 confirm-modal 玻璃体系）；网页可能还没就绪 → 先记下，
+    //   由 onPageLoaded 触发 flushTamperWarn() 消费；再辅以 3s 定时兜底（防 onPageLoaded 不来的极端情况）
+    private String pendingTamperFile = null;
+
     private void verifyAssetsIntegrity() {
         try {
             String bad = null;
@@ -1131,20 +1229,35 @@ public class MainActivity extends BridgeActivity {
                 in.close();
                 if (!pair[1].equalsIgnoreCase(sha256Hex(bos.toByteArray()))) { bad = pair[0]; break; }
             }
-            if (bad != null) showTamperWarn(bad);
+            if (bad != null) {
+                pendingTamperFile = bad;
+                // 兜底：3s 后若网页仍未消费（onPageLoaded 未触发），尝试再推一次
+                try {
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                            new Runnable() { @Override public void run() { flushTamperWarn(); } }, 3000);
+                } catch (Exception ignored) { /* 兜底失败不影响主流程 */ }
+            }
         } catch (Exception e) {
             Log.e(TAG, "integrity check error: " + e.getMessage());
         }
     }
 
-    private void showTamperWarn(String file) {
+    // ★2026-09-30 把「资源不符」推给网页弹窗（复用 confirm-modal 玻璃体系，与全站设计语言一致）
+    private void flushTamperWarn() {
+        final String file = pendingTamperFile;
+        if (file == null) return;
         try {
-            android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(this);
-            b.setTitle("资源校验提示");
-            b.setMessage("检测到资源文件（" + file + "）与官方版本不一致，安装包可能被修改。\n\n为安全起见，请勿在此安装包中输入或导入重要数据，建议卸载后从官方渠道重新安装。");
-            b.setPositiveButton("知道了", null);
-            b.show();
-        } catch (Exception e) { /* 提示失败不影响使用 */ }
+            android.webkit.WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+            if (wv == null) return;
+            // 只允许 [A-Za-z0-9._/-]（文件名白名单，防拼接注入）
+            String safeName = file.matches("[A-Za-z0-9._/-]+") ? file : "unknown";
+            wv.evaluateJavascript(
+                    "try{if(typeof window.__showTamperWarn==='function'){window.__showTamperWarn(\""
+                            + safeName + "\");}}catch(e){}", null);
+            pendingTamperFile = null;
+        } catch (Exception e) {
+            Log.e(TAG, "flushTamperWarn failed", e);
+        }
     }
 
     // ★2026-09-08 崩溃上报：读外部私有崩溃日志（xixi_crash.log，JS 启动上报用；上限 60KB）

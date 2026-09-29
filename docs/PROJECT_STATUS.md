@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-29（v1.2.3.3 / vc278）  
+> 最后更新：2026-09-30（v1.2.3.4 / vc279）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -282,6 +282,14 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - **★push 结果必须实证**：`git push` 输出无异常 ≠ 已生效；用 `git ls-remote <url> refs/heads/master` 比对本地 `HEAD`（`git fetch <url> master` 不带 refspec 时 `FETCH_HEAD` 不可靠，本轮踩到误判）。
   - **★GH 双落点复核**：`docrelease.js` 只更新 `docs/PROJECT_STATUS.md`，**根目录那份不会自动跟** → 必须补跑 `node tools/doc-sync.js --apply` 再 push，否则 GitHub 网页（默认打开根目录）看到的仍是旧版。复核用 API 抓 raw + 比字节（GitHub 会 CRLF→LF，比较前先归一化）。
 - **发布链路（v1.2.3.2 实测）**：回退点 `backups/prev-1.2.3.2/` → 版本三处已就位（vc277 / `APP_VERSION` / sw v54）→ BUILTIN 注入 → 文档三处 → 自检 → audit → 构建 2.40MB → APK 验证（签名有效 / vc277 / v1.2.3.2 / 资源齐全 / sha256 `2260a7d8…`）→ push `f405a53` + 文档补同步 `67dad48` → Release `v1.2.3.2`（id 399036625）+ APK 上传（服务端 digest 与本地 sha256 一致）→ 线上：`/download` 302 `mirror:gh-proxy.com` + `X-Download-Gateway: xixi-hiking` + iPhone 跳网页版 + 官网首页 v1.2.3.2 + App 站 `APP_VERSION=1.2.3.2`。
+- **正式版 v1.2.3.4（vc279）** —— 资源校验误报修复 + 弹窗统一玻璃设计 + 官网精简三端适配（2026-09-30）
+  - **① 修复「资源校验提示」误报**（用户截图反馈）—— 上一版 APK 内嵌的资源哈希清单比实际资源旧 5 小时（上轮构建脚本漏了「拷 ResGuard.java 到构建目录」一步）→ 启动软校验误判「资源被篡改」弹窗。修复：走正规 `release.js` 五步重建；**实证 APK 内 9 项资源 sha256 与 dex 清单逐项一致**（index.html = `bce7ca45…`，三处对齐）。
+  - **② 弹窗统一玻璃设计语言**（用户「这个弹窗也统一一下设计语言哈」）—— 资源校验（软提示，可延后）改走网页 `confirm-modal` 玻璃弹窗（新增 `window.__showTamperWarn` + 原生 `flushTamperWarn` 桥接，`onPageLoaded` 触发 + 3s 兜底）；签名校验（致命，WebView 就绪前显示）改原生手绘玻璃 View（`showFatalGlassDialog`，逐项对齐 confirm-modal 数值）。**两处 `android.app.AlertDialog` 全部移除**（javac 严格编译通过）。
+  - **③ 官网首页精简**（用户「整体页面太长了」）—— 首页 46KB→18.4KB（-60%，删 s01~s09 九节，只留首屏+真实截图+隐私承诺+下载）；新增 `site/features.html` 承载九节详情 + 页内锚点条；首屏「看看分享卡」按钮改「看详细介绍」；补首页 favicon（theme-color + icon-192 + apple-touch-icon）。
+  - **④ 官网三端适配**（用户「适配手机版网页，安卓/ios/桌面端」）—— `.cta` 用 `::before` 透明伪元素扩热区（视觉零改动，elementFromPoint 实测上下各扩 12px）、`.menu-btn` 44×44、`.nav-links a` 桌面加 padding、`@media(max-width:360px)` 收拢 hero 保证 320px 首屏露出主按钮。实测**布局 56/56（8 档视口）+ 基础 72/72（10 档）+ 反向验证 4/4**。
+  - **⑤ 守卫防再犯** —— `security.js hash` 加「构建目录 ResGuard 陈旧」报警（纯 fs 不 spawn）；`release.js` ⑤步后回读校验；`test.js` 5q 段 +6 断言（无 AlertDialog 残留 / showFatalGlassDialog+flushTamperWarn 在 / JS 侧 __showTamperWarn 在 / ResGuard 陈旧守卫在）。
+  - **自检**：test **341/0**（+4）。
+  - **发布链路**：bump v1.2.3.4（vc279）+ sw v55→v56 → 五步同步（①www→assets ②www→构建目录 ③obf ④hash ⑤cp+回读校验）+ gradle 全量（1m14s）→ 实证 9 项哈希一致 →（待 push + Release + 三端同步）
 - **正式版 v1.2.3.3（vc278）** —— 关于页去署名 + 隐私政策/免责声明补官网（2026-09-29）
   - **① 关于页去掉「Made by XiXi」署名** —— 用户要求删除卡片底部作者署名，`.about-tag` 元素连同两条 CSS 规则一并移除；删掉后官网/GitHub 入口行成为卡片最后一行，`margin-top` 由 14px 下收至 10px 并补 `padding-bottom: 4px` 承接原有高度，避免底部塌陷、上下留白不匀。实测深浅两模式底部收尾正常（顶部留白 6px / 底部 2px + 行自带 4px padding）
   - **② 隐私政策补官网（两处）** —— 第四条「联网行为与第三方服务」新增 ④ 官方网站说明（调用系统浏览器打开官网，仅常规网页访问，**不携带任何记录、照片或身份信息**）；第十条「适用法律与联系方式」补上官网地址 `xixi-hiking-site.pages.dev` 可点链接（注明「关于应用 → 官方网站」可一键打开）

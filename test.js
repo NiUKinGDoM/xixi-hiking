@@ -445,8 +445,17 @@ try {
     java.includes('verifyInstalledSignature') && java.includes('SIGN_EXPECT_SHA') && java.includes('sha256Hex') ? ok('防重打包签名自校验在') : bad('签名校验缺失!');
     man.includes('allowBackup="false"') && man.includes('fullBackupContent="false"') ? ok('系统备份已关闭(数据防拖库)') : bad('allowBackup 未关!');
     java.includes('verifyAssetsIntegrity') && rg.includes('HASHES') && rg.split('"index.html"').length === 2 ? ok('资源完整性校验+ResGuard 清单在') : bad('资源校验缺失!');
-    java.includes('安装包校验失败') && java.includes('资源校验提示') ? ok('篡改提示对话框文案在') : bad('提示缺失!');
+    java.includes('安装包校验失败') ? ok('签名校验提示文案在') : bad('签名提示缺失!');
+    // ★2026-09-30 弹窗设计统一：两处弹窗都改走玻璃体系（签名校验=原生玻璃 View，资源校验=网页 confirm-modal），
+    //   不再用系统 AlertDialog（灰底方块）。若残留 AlertDialog = 回退到割裂的旧样式。
+    java.includes('android.app.AlertDialog') ? bad('MainActivity 仍残留系统 AlertDialog（应改走玻璃弹窗）') : ok('弹窗已统一玻璃体系（无 AlertDialog 残留）');
+    java.includes('showFatalGlassDialog') && java.includes('flushTamperWarn') ? ok('原生玻璃弹窗 + 资源提示桥接在') : bad('玻璃弹窗桥接缺失!');
+    // ★2026-09-30 资源提示桥接：JS 侧须有 window.__showTamperWarn（含「资源校验提示」文案）供原生 flushTamperWarn 调用
+    const adTamper = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    adTamper.includes('window.__showTamperWarn') && adTamper.includes('资源校验提示') ? ok('JS 侧资源校验提示（__showTamperWarn）已暴露') : bad('JS 侧 __showTamperWarn 缺失!');
     sec.includes('javascript-obfuscator') && sec.includes("cmd === 'obf'") && sec.includes("cmd === 'hash'") ? ok('安全工具链(obf/hash)在') : bad('工具链缺失!');
+    // ★2026-09-30 守卫：hash 命令须带「构建目录 ResGuard 陈旧」报警（防漏拷导致误报弹窗）
+    sec.includes('守卫警报：构建目录的 ResGuard.java') ? ok('ResGuard 陈旧守卫在（security.js）') : bad('ResGuard 陈旧守卫缺失!');
 } catch (e) { bad('5q 检查失败: ' + e.message); }
 
 // 5r. 机制化自检（2026-09-10）：外部注入检测 / 文档版本一致 / Java 括号配平

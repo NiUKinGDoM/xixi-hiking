@@ -1198,6 +1198,40 @@ window.__handleSystemBack = function () {
 window.__showBackHint = function () {
     showInfoMessage('再按一次退出徒步小记', 2000);
 };
+// ★2026-09-30 安装包完整性提示（原生 verifyAssetsIntegrity 发现资源哈希不符时调用）
+//   背景：此前原生直接用 android.app.AlertDialog（系统灰底方块 + 系统字体），与全站玻璃语言割裂；
+//   改为复用网页既有的 confirm-modal 体系 → 质感与所有弹窗 100% 一致（含深浅两模式）。
+//   用 data-persist 标记为「安全提示常驻弹窗」：不参与 closeOpenModals 的批量清理，
+//   避免启动时被同意留存弹窗 / 检查更新弹窗的 closeOpenModals() 顺手清掉。
+window.__showTamperWarn = function (file) {
+    try {
+        closeOpenModals();
+        var safe = escapeHtml(String(file == null ? '' : file));
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.id = 'tamperWarnModal';
+        modal.setAttribute('data-persist', '1');
+        modal.innerHTML =
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;">' +
+                '<div class="confirm-modal-title">' +
+                    '<span class="material-icons" style="color: #d97706;">shield_moon</span>' +
+                    '资源校验提示' +
+                '</div>' +
+                '<div class="confirm-modal-message">' +
+                    '检测到资源文件（' + safe + '）与官方版本不一致，安装包可能被修改。' +
+                    '<br><br>为安全起见，请勿在此安装包中输入或导入重要数据，建议卸载后从官方渠道重新安装。' +
+                '</div>' +
+                '<div class="confirm-modal-buttons">' +
+                    '<button class="check-go-btn ripple-effect" id="tamperWarnOk">知道了</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+        var ok = document.getElementById('tamperWarnOk');
+        if (ok) ok.addEventListener('click', function () {
+            try { modal.remove(); } catch (e) { /* 忽略 */ }
+        });
+    } catch (e) { /* 提示失败不影响使用 */ }
+};
 // ★2026-08-25 灯箱主按钮统一入口：编辑模式=添加照片，查看模式=保存图片
 function lbPrimaryAction() {
     var lb = photoLightboxEl;

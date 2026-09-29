@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>详细介绍 · XiXiの徒步小记</title>
+<meta name="description" content="XiXiの徒步小记功能介绍：概览统计、记录与山册、本地照片、计划与日历、全文搜索、分享卡、数据管理与 WebDAV 同步、安全措施。每一项都配 App 真机截图。">
+<meta name="theme-color" content="#0E110F">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&display=swap"></noscript>
+<link rel="stylesheet" href="assets/site.css">
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav id="nav" aria-label="主导航">
+  <a href="index.html" class="wordmark">
+    <span class="cn">徒步小记</span>
+    <span class="en">XiXi&#39;s Hiking Notes</span>
+  </a>
+  <div class="nav-right">
+    <a href="index.html" class="btn-line">返回首页</a>
+    <a href="/download" class="btn-line accent">下载</a>
+  </div>
+</nav>
+
+<!-- ══════════ 页头 ══════════ -->
+<header class="page-head" id="top">
+  <div class="wrap">
+    <div class="hero-kicker">
+      <span class="label">Features</span>
+      <span class="dash"></span>
+      <span class="label">九件事，逐项说清</span>
+    </div>
+    <h1 class="page-title">详细介绍</h1>
+    <p class="page-lede">
+      下面每一屏都配 <em>App 自己渲染出来的真机截图</em>，不是设计稿，也不是照着做的复刻。
+      九节读完，装上之后是什么样子，你心里就有数了。
+    </p>
+    <nav class="feature-toc" aria-label="页内导航">
+      <a href="#s01"><span class="n">01</span>概览</a>
+      <a href="#s02"><span class="n">02</span>记录</a>
+      <a href="#s03"><span class="n">03</span>照片</a>
+      <a href="#s04"><span class="n">04</span>计划</a>
+      <a href="#s05"><span class="n">05</span>搜索</a>
+      <a href="#s06"><span class="n">06</span>分享卡</a>
+      <a href="#s07"><span class="n">07</span>设置与同步</a>
+      <a href="#s08"><span class="n">08</span>安全</a>
+      <a href="#s09"><span class="n">09</span>更新日志</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ══════════ 01 概览 ══════════ -->
+<section class="sec" id="s01" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">01</div>
+      <h2 class="sec-title">打开就看见，<br>自己走了多远</h2>
+      <p class="sec-lede">
+        统计主卡、平均三项、我的里程碑、徒步足迹、年度回顾，还有往年今日。
+        所有数字<em>只做加减法</em>：不做评分，不做排行，也不告诉你「还不够努力」。
+      </p>
+    </header>
+
+    <div class="split">
+      <figure class="phone phone-single phone-lg reveal">
+        <img src="assets/shots/shot-overview.png" alt="概览页真机截图：统计主卡、平均海拔与难度、我的里程碑、徒步足迹日历与回顾入口" width="585" height="1266" loading="lazy" decoding="async">
+        <figcaption><span class="n">01</span><span class="t">概览</span><span class="e">Overview</span></figcaption>
+      </figure>
+
+      <div>
+        <div class="statement reveal">
+          走过的每一趟，<br>
+          <b>最后汇成一张卡。</b>
+        </div>
+        <p class="reveal d1">
+          统计主卡把次数、里程、用时、最高海拔放在一起，旁边再补三格平均值；
+          「我的里程碑」把成就摆在一处，达成时放一屏彩屑；徒步足迹按月点亮，
+          点开就是那天的记录。年度回顾把今年和去年并排放，多了少了都只是事实，不带评判。
+        </p>
+
+        <div class="assure reveal d2">
+          <div class="row">
+            <div class="leader"><span class="t">统计主卡</span><span class="fill"></span><span class="label">Card</span></div>
+            <div class="d">次数 / 里程 / 用时 / 最高海拔，四个数一张卡。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">平均三项</span><span class="fill"></span><span class="label">Averages</span></div>
+            <div class="d">平均海拔、平均难度、平均用时，再补三格。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">我的里程碑</span><span class="fill"></span><span class="label">Milestones</span></div>
+            <div class="d">山峰、里程、海拔、五岳、四季、天气、难度，攒齐了放彩屑。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">徒步足迹</span><span class="fill"></span><span class="label">Footprint</span></div>
+            <div class="d">按月一张日历，走过的日子点得开，能生成分享卡。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">年度回顾</span><span class="fill"></span><span class="label">Review</span></div>
+            <div class="d">全屏一页，今年与去年并排放，多与少都摆着。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">那年今日</span><span class="fill"></span><span class="label">On this day</span></div>
+            <div class="d">往年同一天走过的山，自己浮到概览最上面。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 02 记录 ══════════ -->
+<section class="sec" id="s02" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">02</div>
+      <h2 class="sec-title">记录，<br>不设门槛</h2>
+      <p class="sec-lede">
+        增删改都在一处；<em>一套字段同时管登山和徒步</em> —— 难度 1–5、海拔、里程、用时、小日记、心情、天气、同行人、照片最多 24 张。
+        按年份分组，列表与山册双视图，点开一行就是详情，详情里能直接改。
+      </p>
+    </header>
+
+    <div class="split">
+      <div>
+        <div class="statement reveal">
+          一句话也算一条记录。<br>
+          <b>照片也算。</b>
+        </div>
+        <p class="reveal d1">
+          不需要写得好看。累了就写一句小日记，收工再补细节。
+          没有模板，没有必填项：想只留一个日期和一个名字（山名、线路名都行），也完全没问题。
+        </p>
+
+        <div class="assure reveal d2">
+          <div class="row">
+            <div class="leader"><span class="t">登山 · 徒步通用</span><span class="fill"></span><span class="label">Peak · Trail</span></div>
+            <div class="d">只有「名称」是必填 —— 海拔、里程、用时都可以空着，登顶和城郊短线一样能记。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">列表 / 山册</span><span class="fill"></span><span class="label">List · Album</span></div>
+            <div class="d">按时间排列，或按名称汇总成册 —— 一座山、一条线，各自一张卡，彩边是它的最高海拔。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">难度 1–5</span><span class="fill"></span><span class="label">Difficulty</span></div>
+            <div class="d">一个五格刻度，自己给自己的体感打分。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">小日记</span><span class="fill"></span><span class="label">Journal</span></div>
+            <div class="d">不限字数。写一个字也保存，写一万字也保存。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">心情 · 天气 · 同行人</span><span class="fill"></span><span class="label">Fields</span></div>
+            <div class="d">三个可选字段，写下来就能被搜到。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">照片 24 张 / 条</span><span class="fill"></span><span class="label">Photos</span></div>
+            <div class="d">原图存在本机，详情页一排缩略图可左右滑。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">批量模式</span><span class="fill"></span><span class="label">Batch</span></div>
+            <div class="d">右上角进批量，一次勾一堆，删起来不用一条条点。</div>
+          </div>
+          <div class="row">
+            <div class="leader"><span class="t">从历史复制</span><span class="fill"></span><span class="label">Duplicate</span></div>
+            <div class="d">新增时可以从老记录带出山名、难度、海拔，改两个数就成一条新的。</div>
+          </div>
+        </div>
+
+        <div class="viewswitch reveal d3">
+          <div class="v"><span class="a">列表</span><span class="b">List</span></div>
+          <div class="v"><span class="a">山册</span><span class="b">Album</span></div>
+        </div>
+        <div class="spec-note reveal d4">按年份分组 · 点行看详情，详情里直接改</div>
+      </div>
+
+      <figure class="phone phone-single reveal d1">
+        <img src="assets/shots/shot-records-album.png" alt="山册视图真机截图：去过的山按最高海拔着色，一座山一张卡片" width="585" height="1266" loading="lazy" decoding="async">
+        <figcaption><span class="n">02</span><span class="t">山册</span><span class="e">Album</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 03 照片 ══════════ -->
+<section class="sec" id="s03" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">03</div>
+      <h2 class="sec-title">照片留在本机，<br>也留在原样</h2>
+      <p class="sec-lede">
+        本地压缩后存进本机 IndexedDB，不上传、不识别、不做人脸归类。
+        详情页一排缩略图可左右滑，点开是<em>全屏灯箱</em>：双指放大到 3 倍、放大后拖动、双击还原。
+      </p>
+    </header>
+
+    <div class="split">
+      <figure class="phone phone-single phone-lg reveal">
+        <img src="assets/shots/shot-record-detail.png" alt="记录详情真机截图：照片墙、海拔里程用时、心情天气同行人与小日记" width="585" height="1266" loading="lazy" decoding="async">
+        <figcaption><span class="n">03</span><span class="t">详情与照片</span><span class="e">Detail</span></figcaption>
+      </figure>
+
+      <div>
+        <div class="statement reveal">
+          点开一行，<br>
+          <b>这一趟就都在眼前。</b>
+        </div>
+        <p class="reveal d1">
+          照片是本地压缩后再存的，想存回相册也随时可以，全程不经过任何服务器。
+          山册里还会把同一个名字下的照片聚成一段「照片回忆」，隔几年翻出来看正好。
+        </p>
+
+        <div class="photo-strip reveal d2">
+          <div class="cell"><div class="k">24 张 / 条</div><div class="d">Per entry</div></div>
+          <div class="cell"><div class="k">IndexedDB</div><div class="d">Local storage</div></div>
+          <div class="cell"><div class="k">横滑照片墙</div><div class="d">Swipe wall</div></div>
+          <div class="cell"><div class="k">灯箱 1–3×</div><div class="d">Pinch · Save</div></div>
+        </div>
+
+        <div class="spec-note reveal d3">照片不联网、不识别、不归类；卸载或抹掉足迹即清除</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 04 计划 ══════════ -->
+<section class="sec" id="s04" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">04</div>
+      <h2 class="sec-title">下座山，<br>先在这里排队</h2>
+      <p class="sec-lede">
+        列表与日历双视图；过期、今天、明天三种徽章一眼分清。
+        到期的计划点「完成 / 延期」—— 完成就<em>转成一条记录</em>，延期就改个新日子。
+        计划当天早上 8:00 提醒一次，点通知直达计划页。
+      </p>
+    </header>
+
+    <div class="split">
+      <figure class="phone phone-single reveal">
+        <img src="assets/shots/shot-plan-list.png" alt="计划页列表视图真机截图：过期计划带红标，右侧是完成延期与删除按钮" width="585" height="1266" loading="lazy" decoding="async">
+        <figcaption><span class="n">04</span><span class="t">计划 · 列表</span><span class="e">Plans</span></figcaption>
+      </figure>
+
+      <div class="ledger">
+        <div class="item reveal d1">
+          <div class="ord">01</div>
+          <div class="tt">双视图<span class="en">List / Calendar</span></div>
+          <div class="dd">想按日子看就切日历，点日期看当天安排；想按轻重缓急看就切列表。同一个清单，两种看法。</div>
+        </div>
+        <div class="item reveal d2">
+          <div class="ord">02</div>
+          <div class="tt">三态徽章<span class="en">Badges</span></div>
+          <div class="dd">过期、今天、明天。状态只分三种，一眼扫完，不用点开才知道该处理哪一条。</div>
+        </div>
+        <div class="item reveal d3">
+          <div class="ord">03</div>
+          <div class="tt">完成 / 延期<span class="en">Done / Later</span></div>
+          <div class="dd">到期计划只有两种去处：完成，自动转成一条记录并放一屏彩屑；延期，顺延到新的一天。</div>
+        </div>
+        <div class="item reveal d4">
+          <div class="ord">04</div>
+          <div class="tt">早上 8:00<span class="en">Reminder</span></div>
+          <div class="dd">计划当天早上八点通知一次，点开直达计划页。只提醒，不打扰，不会在半夜叫你起床。</div>
+        </div>
+        <div class="item reveal d5">
+          <div class="ord">05</div>
+          <div class="tt">先看看示例<span class="en">Sample</span></div>
+          <div class="dd">第一次装不用对着空列表发呆：一键灌进三条记录加一条计划，看完想删就删。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 05 搜索 ══════════ -->
+<section class="sec" id="s05" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">05</div>
+      <h2 class="sec-title">去年去过的那座山，<br>搜得到</h2>
+      <p class="sec-lede">
+        记录页与计划页各有一个搜索框。山名、小日记、心情、天气、同行人<em>一起搜</em>，
+        只记得半句话也能把那趟翻出来。索引始终在本机，不联网。
+      </p>
+    </header>
+
+    <div class="finder">
+      <div>
+        <div class="statement reveal">
+          想不起山名没关系，<br><b>记得半句话就够。</b>
+        </div>
+        <div class="filters reveal d1">
+          <div class="f"><span class="fi">/01</span><span class="fn">记录页 · 搜五个字段</span><span class="fill"></span><span class="fd">雪</span></div>
+          <div class="f"><span class="fi">/02</span><span class="fn">山名 · 小日记 · 心情 · 天气 · 同行人</span><span class="fill"></span><span class="fd">一起搜</span></div>
+          <div class="f"><span class="fi">/03</span><span class="fn">计划页 · 搜山名，日历里直接定位那天</span><span class="fill"></span><span class="fd">转山</span></div>
+          <div class="f"><span class="fi">/04</span><span class="fn">命中数写在标题旁</span><span class="fill"></span><span class="fd">匹配 2 / 共 37 条</span></div>
+        </div>
+        <div class="spec-note reveal d2">纯本地 · 不联网 · 输入即筛，秒出</div>
+      </div>
+
+      <figure class="phone phone-single reveal d1">
+        <img src="assets/shots/shot-search.png" alt="搜索真机截图：在记录页搜「雪」，命中两条 —— 天气为雪的那次，和小日记里写着雪线的那次" width="585" height="1266" loading="lazy" decoding="async">
+        <figcaption><span class="n">05</span><span class="t">搜索「雪」</span><span class="e">Search</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 06 分享 ══════════ -->
+<section class="sec" id="s06" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">06</div>
+      <h2 class="sec-title">分享一张卡，<br>不是一条动态</h2>
+      <p class="sec-lede">
+        一键生成一张 <em>1080 × 1440</em> 的竖版卡，带海拔、里程、用时、心情、天气、同行人。
+        没有信息流，没有关注，没有点赞；不分享，也完全不影响。
+      </p>
+    </header>
+
+    <div class="share">
+      <figure class="card-frame reveal d1">
+        <img src="assets/shots/shot-share-card.png" alt="分享卡真机截图：插画山景背景，标注日期、山名、海拔、里程、用时、心情、天气与同行人" width="1080" height="1440" loading="lazy" decoding="async">
+        <figcaption>由一次真实记录生成的分享卡 · 1080 × 1440</figcaption>
+      </figure>
+
+      <div>
+        <div class="statement reveal">
+          一张卡说完一次行程。<br><b>剩下的留在本子里。</b>
+        </div>
+
+        <div class="spec-list reveal d1" style="margin-top:38px">
+          <div class="r"><span class="k">Altitude</span><span class="v">海拔</span></div>
+          <div class="r"><span class="k">Distance</span><span class="v">里程</span></div>
+          <div class="r"><span class="k">Duration</span><span class="v">用时</span></div>
+          <div class="r"><span class="k">Mood</span><span class="v">心情</span></div>
+          <div class="r"><span class="k">Weather</span><span class="v">天气</span></div>
+          <div class="r"><span class="k">Company</span><span class="v">同行人</span></div>
+        </div>
+
+        <div class="spec-note reveal d2" style="margin-top:34px">
+          卡面只放你填过的字段：没写天气就不出现天气，没写同行人就不出现同行人。
+          本地生成，不上传。
+        </div>
+
+        <div class="formats reveal d2">
+          <div class="fmt"><span class="a">1080 × 1440</span><span class="b">PNG</span></div>
+          <div class="fmt"><span class="a">3 : 4</span><span class="b">Portrait</span></div>
+          <div class="fmt"><span class="a">本地生成</span><span class="b">No upload</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 07 设置 / 同步 ══════════ -->
+<section class="sec" id="s07" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">07</div>
+      <h2 class="sec-title">设置里，<br>藏着所有的后路</h2>
+      <p class="sec-lede">
+        导入 / 导出数据、完整备份 zip、WebDAV 云同步、自动同步、外观模式、
+        震动反馈、显示帧率、照片占用、抹掉足迹、检查更新、导出诊断。<em>每一项都在明面上。</em>
+      </p>
+    </header>
+
+    <div class="split">
+      <div>
+        <div class="statement reveal">
+          同步到你自己的网盘，<br>
+          <b>而不是我们的服务器。</b>
+        </div>
+        <p class="reveal d1">
+          没有账号体系，也没有一台存着你记录的服务器。
+          同步只发生在你主动配置的坚果云 WebDAV 里，数据落到你自己的账号下；
+          自动保留两份历史，想回滚随时回滚。
+        </p>
+
+        <div class="schema reveal d2" style="margin-top:38px">
+          <div class="node">
+            <span class="nk">徒步小记</span>
+            <span class="nv">App · Local</span>
+          </div>
+          <div class="tether"></div>
+          <div class="node accent">
+            <span class="nk">WebDAV 同步</span>
+            <span class="nv">Encrypted</span>
+          </div>
+          <div class="tether"></div>
+          <div class="node">
+            <span class="nk">坚果云</span>
+            <span class="nv">Your account</span>
+          </div>
+          <div class="sync-quad">
+            <div class="q"><div class="a">待同步</div><div class="b">Pending</div></div>
+            <div class="q"><div class="a">同步中</div><div class="b">Syncing</div></div>
+            <div class="q"><div class="a">成功</div><div class="b">Done</div></div>
+            <div class="q"><div class="a">失败</div><div class="b">Failed</div></div>
+          </div>
+          <div class="spec-note">同步状态四维 · 自动保留 2 份 · 换机从云端恢复即一键配好</div>
+        </div>
+      </div>
+
+      <div class="reveal d1">
+        <div class="set-grid">
+          <div class="r">
+            <div class="t"><span class="name">导出数据 · 完整备份 zip</span><span class="fill"></span><span class="val">含配置</span></div>
+            <div class="d">可选带上你的网盘配置。换机后从云端恢复，等于一次配好。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">导入数据</span><span class="fill"></span><span class="val">Restore</span></div>
+            <div class="d">选备份文件还原；包坏了会明确告诉你，不会点了没反应。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">抹掉所有足迹</span><span class="fill"></span><span class="val">Erase</span></div>
+            <div class="d">一次点击清空记录、照片、计划，含引导标记与网盘绑定；云端备份不动。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">上传 · 下载 · 管理</span><span class="fill"></span><span class="val">WebDAV</span></div>
+            <div class="d">云端备份的三件事：立刻上传一份、拉回来、查看与删除历史。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">WebDAV 云同步</span><span class="fill"></span><span class="val">坚果云</span></div>
+            <div class="d">网盘信息随时可查看、可修改、可清空。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">同步状态</span><span class="fill"></span><span class="val">四维</span></div>
+            <div class="d">待同步 / 同步中 / 成功 / 失败，四种状态各看各的。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">自动保留 2 份</span><span class="fill"></span><span class="val">Rollback</span></div>
+            <div class="d">最近两份历史自动留下，改错了可以退回去。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">自动同步</span><span class="fill"></span><span class="val">Auto</span></div>
+            <div class="d">数据变更后自动上传备份；不想让它自己动，一个开关关掉。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">外观模式</span><span class="fill"></span><span class="val">Theme</span></div>
+            <div class="d">跟随系统，也可以单独指定深色或浅色。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">震动反馈</span><span class="fill"></span><span class="val">Haptic</span></div>
+            <div class="d">按钮与庆祝动画的手感，想安静就关掉。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">照片占用</span><span class="fill"></span><span class="val">Storage</span></div>
+            <div class="d">看清占了多大地方，一键清理不属于任何记录的缓存照片。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">显示帧率</span><span class="fill"></span><span class="val">FPS</span></div>
+            <div class="d">顶栏实时帧率，只在你想看的时候开。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">检查更新</span><span class="fill"></span><span class="val">Manual</span></div>
+            <div class="d">只有你点了才联网查版本；更新日志随包内置，断网也能翻。</div>
+          </div>
+          <div class="r">
+            <div class="t"><span class="name">关于应用</span><span class="fill"></span><span class="val">About</span></div>
+            <div class="d">隐私政策、免责声明、支持作者、更新日志，还有你徒步第几天。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 08 安全 ══════════ -->
+<section class="sec" id="s08" data-tone="dark">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">08</div>
+      <h2 class="sec-title">安装包，<br>自己也要对自己负责</h2>
+      <p class="sec-lede">
+        记录只在本机，那守门的责任就在安装包本身。
+        从签名校验到<em>文本进 DOM 前一律转义</em>，五道都留着。
+      </p>
+    </header>
+
+    <div class="shield-list">
+      <div class="row reveal d1">
+        <div class="n">/ 01</div>
+        <div class="t">安装包签名自校验</div>
+        <div class="d">启动时核对自身签名，防重打包：任何人改一个字节，App 都知道自己不认识这个自己。</div>
+      </div>
+      <div class="row reveal d2">
+        <div class="n">/ 02</div>
+        <div class="t">打包代码混淆</div>
+        <div class="d">发布产物经过混淆处理，降低被直接阅读、改造与二次分发的可能。</div>
+      </div>
+      <div class="row reveal d3">
+        <div class="n">/ 03</div>
+        <div class="t">资源完整性校验</div>
+        <div class="d">关键资源在加载前校验完整性，被替换过的界面元素不会被悄悄跑起来。</div>
+      </div>
+      <div class="row reveal d4">
+        <div class="n">/ 04</div>
+        <div class="t">系统备份关闭</div>
+        <div class="d">不参与系统级备份，记录与照片不会顺着系统的备份通道流到别处。</div>
+      </div>
+      <div class="row reveal d5">
+        <div class="n">/ 05</div>
+        <div class="t">文本进 DOM 前一律转义</div>
+        <div class="d">服务端返回的任何文本在进入页面前统一转义，不留注入口子。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════ 09 更新日志 ══════════ -->
+<section class="sec" id="s09" data-tone="light">
+  <div class="wrap">
+    <header class="sec-head reveal">
+      <div class="sec-idx">09</div>
+      <h2 class="sec-title">每一次改，<br>都写在这里</h2>
+      <p class="sec-lede">
+        更新日志<em>随包内置</em>，断网也能翻。下面是最近两版。
+      </p>
+    </header>
+
+    <div class="rel-list">
+      <div class="rel-item reveal d1">
+        <div class="rel-ver">v1.2.3.3<span>2026-09-30</span></div>
+        <ul>
+          <li><b>「关于应用」页面更清爽了</b> —— 底部那一行作者署名去掉了，页面收尾更干净利落</li>
+          <li><b>隐私政策补上了官网地址</b> —— 现在政策里明确写清了官方网站（xixi-hiking-site.pages.dev），并说明：点「关于应用 → 官方网站」只是打开一个普通网页，<b>不会带走你的任何记录、照片或身份信息</b></li>
+          <li><b>免责声明新增「官方渠道与内容来源」一条</b> —— 说明官网只作介绍与下载指引之用，<b>页面内容可能比实际版本旧，功能一律以你手机上装的版本为准</b>；同时提醒请从官方渠道下载，别人二次打包的版本无法保证安全</li>
+        </ul>
+      </div>
+      <div class="rel-item reveal d2">
+        <div class="rel-ver">v1.2.3.2<span>2026-09-30</span></div>
+        <ul>
+          <li><b>应用内更新不再「一直下载失败」了</b> —— 之前点「立即更新」后进度卡住不动、最后报失败，是因为下载通道只有一条，一旦这条通道慢或被挡住就没有退路。现在改成<b>多条通道自动依次尝试</b>，任意一条成功就能顺利下完；全部通道都不行才会提示失败，而且提示里会明确告诉你可以换个网络（比如切到 Wi-Fi）再试</li>
+          <li><b>下载安装包更快更稳了</b> —— 点「立即更新」「下载安装包」时，会先自动挑一条<b>速度最快的通道</b>，不再一头撞上容易卡住的那条；万一首选通道不通，会自动换下一条，直到下载完成</li>
+          <li><b>「关于应用」里的 GitHub 与官方网站入口位置调整</b> —— 两个入口整行下移到<b>底部「Made by XiXi」的正上方</b>，不再夹在简介和按钮中间，找起来更顺手</li>
+          <li><b>两个入口的图标大小统一了</b> —— 之前 GitHub 图标看着比官网图标大一号，现在调成一样大，一行横排更整齐</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rel-more reveal d3">
+      <a href="https://github.com/NiUKinGDoM/xixi-hiking/releases" target="_blank" rel="noopener">查看完整更新日志与历史版本 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 收尾 ══════════ -->
+<section class="sec spread" data-tone="light">
+  <div class="wrap" style="text-align:center">
+    <div class="label reveal">看完了 / Try it</div>
+    <blockquote class="reveal d1" style="margin-top:26px">
+      介绍再多，<br>不如自己走一趟。
+    </blockquote>
+    <div class="store-row reveal d2" style="justify-content:center;margin-top:38px">
+      <a href="/download" rel="noopener" class="store"><span class="a">下载 Android 版</span><span class="b">APK · 免费 · 无广告</span></a>
+      <a href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener" class="store"><span class="a">在浏览器里打开</span><span class="b">iPhone · iPad · 电脑</span></a>
+    </div>
+    <div class="doc-foot" style="margin-top:44px">
+      <a href="index.html">← 返回首页</a> &nbsp;·&nbsp;
+      <a href="privacy.html">隐私政策</a> &nbsp;·&nbsp;
+      <a href="terms.html">免责声明</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="f-bottom">
+      <span>© 2026 XiXiの徒步小记 · Made by XiXi</span>
+      <span>联系：<a href="mailto:Xixihiking@foxmail.com" style="border-bottom:1px solid rgba(233,227,214,.25)">Xixihiking@foxmail.com</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+ try{
+  /* ---------- 强制渐显展开（本页无 hero 动画，最长的一段内容必须都看得见） ---------- */
+  const reveals = [...document.querySelectorAll('.reveal')];
+  const revealAll = ()=>reveals.forEach(el=>el.classList.add('on'));
+
+  if(!('IntersectionObserver' in window)){
+    revealAll();
+  }else{
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); }
+      });
+    },{threshold:.12, rootMargin:'0px 0px -6% 0px'});
+    reveals.forEach(el=>io.observe(el));
+    /* ★兜底：回调万一没触发，落在视口里的内容不能一直藏着 */
+    setTimeout(()=>{
+      reveals.forEach(el=>{
+        if(el.classList.contains('on')) return;
+        const r = el.getBoundingClientRect();
+        if(r.top < window.innerHeight && r.bottom > 0) el.classList.add('on');
+      });
+    }, 2500);
+  }
+  /* ★兜底：打印 / 生成 PDF / 归档快照时全部展开 */
+  window.addEventListener('beforeprint', revealAll);
+
+  /* ---------- 滚动进度条 + 导航色调 ---------- */
+  const progress = document.getElementById('progress');
+  const nav = document.getElementById('nav');
+  const toneSections = [...document.querySelectorAll('[data-tone]')];
+
+  const onScroll = ()=>{
+    const st = window.scrollY || document.documentElement.scrollTop;
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    if(progress) progress.style.transform = 'scaleX(' + (h>0 ? Math.min(st/h,1) : 0) + ')';
+    if(nav){
+      let tone = 'dark';
+      toneSections.forEach(sec=>{
+        const r = sec.getBoundingClientRect();
+        if(r.top <= 72 && r.bottom > 72) tone = sec.getAttribute('data-tone') || 'dark';
+      });
+      nav.setAttribute('data-tone', tone);
+    }
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+ }catch(e){ /* 渐进增强：脚本失败也要保证内容可见（上面已有 revealAll 兜底路径） */ }
+})();
+</script>
+
+</body>
+</html>

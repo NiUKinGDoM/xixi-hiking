@@ -89,6 +89,14 @@ console.log('⑤ 同步 build.gradle / ResGuard / MainActivity / Manifest …');
 ['build.gradle'].forEach(f => cp(path.join(ROOT, 'android/app', f), path.join(TEMP_ANDROID, 'app', f)));
 ['ResGuard.java', 'MainActivity.java'].forEach(f => cp(path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking', f), path.join(TEMP_JAVA, f)));
 cp(path.join(ROOT, 'android/app/src/main/AndroidManifest.xml'), path.join(TEMP_ANDROID, 'app/src/main/AndroidManifest.xml'));
+// ★2026-09-30 回读校验：拷贝后构建目录的 ResGuard.java 必须与工程目录逐字节一致
+//   （2026-09-29 曾漏掉本步，导致 APK 内嵌旧哈希清单 → 启动弹「资源校验提示」误报，差 5 小时才定位）
+const rgSrc = path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking/ResGuard.java');
+const rgDst = path.join(TEMP_JAVA, 'ResGuard.java');
+if (fs.readFileSync(rgSrc, 'utf8') !== fs.readFileSync(rgDst, 'utf8')) {
+  fail('守卫失败：构建目录 ResGuard.java 与工程目录不一致（哈希清单陈旧，会导致资源校验误报）');
+}
+console.log('守卫：构建目录 ResGuard.java 已同步 ✅');
 
 if (skipBuild) {
   console.log('\n✅ 同步 + 安全两步完成（--skip-build，未构建）');

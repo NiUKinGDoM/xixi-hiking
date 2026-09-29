@@ -90,6 +90,27 @@ if (cmd === 'obf') {
   fs.writeFileSync(outFile, java);
   console.log('ResGuard.java 已更新 (' + entries.length + ' 项): ' + outFile);
   for (const e of entries) console.log('  ' + e.replace(/"/g, '').replace(/\{|\}/g, ''));
+  // ★2026-09-30 守卫：ResGuard.java 生成后，若构建目录存在旧副本且内容不一致 → 醒目报警
+  //   背景：曾有构建脚本漏「拷 ResGuard.java 到构建目录」一步，导致 APK 内嵌旧哈希清单 →
+  //   启动即弹「资源校验提示」误报（构建目录 18:08 旧值 vs 工程目录 23:55 新值，差 5 小时）。
+  //   纯 fs 读取比对，不 spawn 子进程（沙箱 EBUSY 下也能跑）。
+  try {
+    const osMod = require('os');
+    const buildJava = path.join(process.env.HIKING_BUILD_DIR || path.join(osMod.tmpdir(), 'hiking-build'),
+        'android', 'app', 'src', 'main', 'java', 'com', 'xixi', 'hiking', 'ResGuard.java');
+    if (fs.existsSync(buildJava)) {
+      const same = fs.readFileSync(buildJava, 'utf8') === java;
+      if (!same) {
+        console.error('\n⚠ 守卫警报：构建目录的 ResGuard.java 与刚生成的不一致（陈旧）。');
+        console.error('  构建目录: ' + buildJava);
+        console.error('  发布前必须先同步（release.js 第⑤步会自动拷贝；手工/python 复刻构建请勿漏掉这一步）。\n');
+      } else {
+        console.log('守卫：构建目录 ResGuard.java 已同步（与工程目录一致）✅');
+      }
+    } else {
+      console.log('守卫：构建目录尚无 ResGuard.java（首次构建，release.js 第⑤步会拷贝）');
+    }
+  } catch (e) { /* 守卫失败不影响 hash 主流程 */ }
 } else {
   console.log('用法: node tools/security.js obf <srcDir> <outDir> | hash');
 }

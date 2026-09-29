@@ -540,3 +540,87 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
 @media (max-width:520px){
   .sync-quad{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ==========================================================================
+   详细介绍页（features.html，2026-09-30）
+   ★ 首页精简为「落地页」后，九节细节全部搬到本页；本页是内容页（非首屏），
+     所以页头用短横页样式，不再占满一屏。
+   ========================================================================== */
+.page-head{
+  position:relative;padding:150px 0 40px;
+  background:linear-gradient(180deg,var(--ink) 0%,var(--ink-2) 100%);
+  border-bottom:1px solid rgba(218,212,198,.1);
+}
+.page-title{
+  font-family:var(--display);font-size:clamp(44px,7.6vw,86px);font-weight:600;
+  letter-spacing:.06em;line-height:1.02;color:var(--paper);margin:26px 0 0;
+}
+.page-lede{
+  max-width:62ch;margin-top:26px;color:var(--bone);opacity:.78;font-size:15.5px;line-height:2;
+}
+.page-lede em{color:var(--ember);font-style:normal}
+
+/* 页内锚点条：窄屏可横滑，不换行不塌 */
+.feature-toc{
+  display:flex;gap:0;flex-wrap:wrap;margin-top:44px;
+  border-top:1px solid rgba(218,212,198,.14);
+}
+.feature-toc a{
+  display:flex;align-items:baseline;gap:9px;padding:15px 20px 13px 0;
+  margin-right:20px;font-size:12.5px;letter-spacing:.06em;color:var(--bone);
+  opacity:.68;border-bottom:1px solid transparent;transition:.45s var(--ease);
+}
+.feature-toc a .n{
+  font-family:var(--body);font-size:9.5px;letter-spacing:.2em;color:var(--ember);opacity:.85;
+}
+.feature-toc a:hover{opacity:1;border-bottom-color:var(--clay);color:var(--paper)}
+
+/* 导航栏「下载」强调按钮（复用 .btn-line 几何，只换色） */
+nav .btn-line.accent{border-color:var(--clay);color:var(--ember);opacity:1}
+nav .btn-line.accent:hover{background:var(--clay);color:var(--paper);border-color:var(--clay)}
+.doc-page nav .btn-line.accent{border-color:var(--clay);color:var(--clay)}
+.doc-page nav .btn-line.accent:hover{background:var(--clay);color:var(--paper)}
+
+@media (max-width:860px){
+  .page-head{padding:126px 0 34px}
+  .feature-toc{gap:0;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;margin-inline:-22px;padding-inline:22px}
+  .feature-toc::-webkit-scrollbar{display:none}
+  .feature-toc a{white-space:nowrap;padding:13px 16px 11px 0;margin-right:16px}
+}
+
+/* ==========================================================================
+   三端适配优化（2026-09-30）
+   ① 点击热区：.cta / .menu-btn / .nav-links 用透明伪元素扩热区，视觉零改动
+   ② 320px 窄屏：压缩 hero 标题与间距，保证首屏能露出主按钮
+   ========================================================================== */
+
+/* ① 文字下划线式按钮 .cta —— 视觉不变，用透明伪元素把点击区扩到 ≥44px 高 */
+.cta{position:relative}
+.cta::before{
+  content:"";position:absolute;left:-6px;right:-6px;top:-12px;bottom:-12px;
+}
+/* 汉堡菜单 —— 移动端唯一菜单入口，扩成标准 44×44 触控目标 */
+@media (max-width:860px){
+  .menu-btn{
+    min-width:44px;min-height:44px;
+    align-items:center;justify-content:center;
+    padding:0;margin-right:-6px;
+  }
+}
+/* 桌面导航链接 —— 加垂直 padding 增大悬停/点击区域（下划线 ::after 不受影响） */
+@media (min-width:861px){
+  .nav-links a{padding:9px 0 8px}
+}
+
+/* ② 320px 窄屏：首屏内容收拢，保证主按钮在第一屏可见 */
+@media (max-width:360px){
+  .hero{padding:96px 0 30px}
+  h1.hero-title{font-size:56px;letter-spacing:.08em;text-indent:.08em}
+  .hero-kicker{margin-bottom:20px}
+  .hero-tagline{margin-top:22px}
+  .hero-body{margin-top:20px;line-height:1.9}
+  .hero-actions{margin-top:30px;gap:20px}
+  .hero-actions .cta{padding-bottom:6px}
+  .hero-meta .cell{padding:14px 0 0}
+}
