@@ -855,11 +855,12 @@ _posCases.every(function (re) { return re.test(_fixData); })
     (iSave > -1 && iAnim > -1 && iSave < iAnim) ? ok('\u5b88\u536b\uff1adeleteRecord \u5148\u843d\u76d8\u518d\u64ad\u52a8\u753b\uff08\u4e0d\u518d\u4f9d\u8d56 animationend\uff09') : bad('deleteRecord \u4ecd\u5728\u4f9d\u8d56 animationend \u843d\u76d8\uff01');
 })();
 
-// ★2026-09-29 官网入口 回归（3 条）：① HTML 入口在位 ② 事件绑定在位
+// ★2026-09-29 官网 / GitHub 入口 回归（4 条）：① HTML 入口在位 ② 事件绑定在位
 //   ③ ★跳转方式必须是 location.href —— Capacitor WebView 的 shouldOverrideUrlLoading 只管「当前页导航」，
-//      用 window.open(url,'_blank') 不会触发原生拦截 → 冷门 WebView 上表现为「点了完全没反应」，
-//      与全站现有 GitHub 图标的做法必须一致。这条守卫就是钉住这个坑。
-(/id="officialSiteBtn"/.test(_semH) && /class="about-site ripple-effect"/.test(_semH)) ? ok('守卫：关于页「官方网站」入口在位') : bad('关于页官网入口丢失！');
+//      用 window.open(url,'_blank') 不会触发原生拦截 → 冷门 WebView 上表现为「点了完全没反应」。
+//   ④ ★两个入口必须**同排**（都在 .about-links 容器里、GitHub 在左）—— 用户明确要求
+//      「GitHub 挪到官网左边、加 GitHub 字样、一行横排居中」；不得退回 about-tag 里那个裸图标。
+(/id="officialSiteBtn"/.test(_semH) && /class="about-link ripple-effect"/.test(_semH)) ? ok('守卫：关于页「官方网站」入口在位') : bad('关于页官网入口丢失！');
 (/getElementById\('officialSiteBtn'\)/.test(_fixInit)) ? ok('守卫：官网入口已绑定点击事件') : bad('官网入口未绑定事件！');
 (function () {
     var m = _fixInit.match(/getElementById\('officialSiteBtn'\)[\s\S]{0,400}?\n    \}/);
@@ -868,6 +869,22 @@ _posCases.every(function (re) { return re.test(_fixData); })
     (/window\.location\.href\s*=\s*'https:\/\/xixi-hiking-site\.pages\.dev\//.test(seg) && !/window\.open\(/.test(seg))
         ? ok('守卫：官网入口用 location.href 跳转（可命中原生外部打开拦截）')
         : bad('官网入口跳转方式错了（必须 location.href，window.open 会被 WebView 静默吞掉）！');
+})();
+(function () {
+    // 取 .about-links 容器整段（到 about-tag 之前，跨行）
+    var m = _semH.match(/<div class="about-links">([\s\S]*?)<div class="about-tag"/);
+    if (!m) return bad('找不到 .about-links 容器（GitHub 与官网必须同排）！');
+    var seg = m[1];
+    var iG = seg.indexOf('id="githubBtn"'), iS = seg.indexOf('id="officialSiteBtn"');
+    var gText = /<span>GitHub<\/span>/.test(seg);
+    var sameRow = iG > -1 && iS > -1 && iG < iS;      // 两个都在容器内，且 GitHub 在前
+    var noLegacyIcon = !/about-tag[^>]*>\s*<button/.test(_semH) && !/id="githubBtn"[\s\S]{0,600}?about-tag/.test(_semH.split('about-links')[0] || '');
+    sameRow && gText
+        ? ok('守卫：GitHub 与官网入口同排（GitHub 在左、带「GitHub」字样）')
+        : bad('入口排布错了（要求：.about-links 内一行横排、GitHub 在官网左边且有 GitHub 字样）！');
+    noLegacyIcon
+        ? ok('守卫：about-tag 内已无残留 GitHub 图标')
+        : bad('about-tag 里还有残留 GitHub 按钮！');
 })();
 
 // ★2026-09-29 ghsync 同步清单 回归（3 条）：

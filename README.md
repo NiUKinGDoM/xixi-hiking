@@ -6,15 +6,19 @@
 
 ---
 
-## 🌐 在线体验
+## 🌐 官方网站 · 在线体验
 
-**网页版**（iOS / 桌面浏览器直接可用，推荐"添加到主屏幕"当 App 用）：
+> ### 🏠 官网：**https://xixi-hiking-site.pages.dev**
+>
+> 项目介绍、功能截图、下载入口都在这里 —— **手机上打开就能一键下载 APK**（不跳 GitHub 网页）。
+
+**App 网页版**（iOS / 桌面浏览器直接可用，推荐"添加到主屏幕"当 App 用）：
 
 👉 **https://xixi-hiking.pages.dev**
 
 - Cloudflare Pages 全球 CDN，域名长期稳定
 - 数据存在你自己的浏览器本地，不上传任何第三方
-- Android 请下载 APK（见下方 Release）
+- Android 请下载 APK（见下方 Release，或直接走官网下载）
 
 ## ✨ 功能一览
 
@@ -37,11 +41,13 @@
 
 ## 📱 下载 Android 版
 
-GitHub Releases 获取最新 APK：https://github.com/NiUKinGDoM/xixi-hiking/releases
+**推荐**：直接打开官网 <https://xixi-hiking-site.pages.dev> —— 安卓点「下载」**立即开始下载 APK**，不用跳 GitHub。
+
+或从 GitHub Releases 获取：https://github.com/NiUKinGDoM/xixi-hiking/releases
 
 （App 内置"检查更新"，装好后可直接在应用内升级，支持直装免重下）
 
-> 🛡️ **正版提示**：请从上方 Release 下载并覆盖安装，勿安装来路不明的安装包（App 内置签名校验，非官方包会被拦截）。所有正式版使用同一签名，覆盖安装不会丢数据。
+> 🛡️ **正版提示**：请从官网或上方 Release 下载并覆盖安装，勿安装来路不明的安装包（App 内置签名校验，非官方包会被拦截）。所有正式版使用同一签名，覆盖安装不会丢数据。
 
 ---
 

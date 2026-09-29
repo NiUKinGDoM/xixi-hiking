@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-29（v1.2.3.0 / vc275）  
+> 最后更新：2026-09-29（v1.2.3.1 / vc276）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -256,6 +256,10 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - **④ 官网 `/download` 直链上线**（上一轮遗留）—— `site/functions/download.js`：安卓 → 302 APK 资产直链（不跳 GitHub 网页）；iPhone/桌面 → 302 网页版；三层兜底绝不给死链。本地自检 **16/16 全过**。
 - **实测汇总** —— 可用自检 **872 项**（smoke 34 + iOS 10 + test **319** + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38 + 官网 Function 16）。★`smoke.js` 本机仍 EBUSY 假失败（32 项全报「语法错误: 」空 stderr）→ 已用**逐文件直跑**替代验证（全部 JS `node --check` 0 失败、6 个片段 wrap 后 6/6 通过）。
 - **发布链路** —— 回退点 `backups/prev-1.2.2.10/` → bump v1.2.3.0（vc275）+ sw 缓存 → 构建 → 验包 → `ghsync --push` → `ghrelease` 发布 + APK 上传 digest 校验 → 官网同步 push → 网页版复核。
+### v1.2.3.1 —— 关于页入口行改造
+
+- 【优化】「关于应用」里的 GitHub 与官方网站入口改为**一行横排居中**，GitHub 入口挪到官网左侧并补上「GitHub」文字，比原来的裸图标更好认、更好点。
+- 【修复】README 补上官网地址与下载指引，GitHub 仓库首页不再显示旧内容。
 - **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.10 更新（**用户 v1.2.2.9 实测两条反馈**；共 3 处补丁 + 2 条新守卫 + 反向验证 3/3）：
   - **① 记录页列表删除按钮与计划页列表统一**（用户原话：「记录页列表模式的删除，改的是计划页列表模式的删除按钮，不是文字，就那个灰色垃圾桶」）—— **★上一版 v1.2.2.9 我理解错了目标**：当时把「日历明细那两处 `data-del`」和「记录页」一起动了，记录页还改成了**文字钮**。用户纠正后正确定位：计划页列表模式删除 = `delete-planned-btn`（class `confirm-btn-cancel` + `plannedDelStyle`）→ **灰色垃圾桶图标**（`padding:6px` 方形 + `material-icons delete` + 底 `rgba(100,116,139,0.14)` + 边 `rgba(100,116,139,0.6)`）。**修法**：记录页删除改回同款图标钮，`recordDelStyle` 与 `plannedDelStyle` 逐字一致。
