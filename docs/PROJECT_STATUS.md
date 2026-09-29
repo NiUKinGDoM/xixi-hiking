@@ -289,7 +289,12 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - **④ `LEGAL_VERSION` bump** `2026-09-23` → `2026-09-29`（政策正文变更 → 打开 App 会重新征求同意一次）；免责声明生效日期同步 `2026-09-29`，隐私政策「生效日期 2026-09-23；最近更新 2026-09-29」（生效日保持不动，只动最近更新）
   - **⑤ `CACHE_NAME` bump** `v54` → `v55`（网页版强制旧 SW 失效重缓存）
   - **⑥ 顺带清理**：`www/index.html` 里引用「Made by XiXi」的过期注释（HTML + CSS 共 3 处）；新增 3 条 test.js 守卫（署名彻底移除 / 隐私政策官网两处齐全 / 免责声明编号已顺延），并修复因删署名而失效的 2 处切片锚点
-  - **发布链路**：回退点 `backups/prev-1.2.3.2/` → vc278 → 构建 APK → push → Release `v1.2.3.3` → 线上核对
+  - **发布链路（v1.2.3.3 实测）**：回退点 `backups/prev-1.2.3.2/` → vc278 → `tools/release.js`（同步 + 混淆 + 哈希 + 全量构建）→ APK **2.40MB** / sha256 `2e7db73fc277c534…` → push `025b1b9`（文档）+ `b98ffe3`（www/site/tools，10 文件）→ Release `v1.2.3.3`（id **399319671**，asset 598641496，**服务端 digest = 本地 sha256**）→ 线上核对全绿
+  - **★本轮踩到的最大坑（已记入 memory 铁律）**：构建**必须走 `tools/release.js`**，直接跑工程目录的 `gradle assembleRelease` 会用到 `android/app/src/main/assets/public/` 的**历史遗留拷贝**（不跟 www 更新）→ **打出的 APK 是旧版 www**（首轮实测：APK 内还是 v1.2.3.2 / v54 / 还带 Made by XiXi）。改走后 APK 内 `APP_VERSION=1.2.3.3` / `CACHE_NAME=v55` / 无署名残留
+  - **★APK 内嵌内容校验方法（新）**：混淆器会把字符串做 `\x20` 转义 + **跨文件挤进字符串池**（`app-data.js` 的免责声明正文实际落在 `app-core.js` 的池里）→ **纯文本 grep 必然失配**。正确做法：`_dump_pool.js` 用 node `vm` 执行混淆文件 + hook 字符串池函数 dump 全部字符串，再搜关键词（实测 3248 条 / 117775 字符，免责声明 8 条全部命中）
+  - **线上核验（全绿）**：App 站 `APP_VERSION=1.2.3.3` / `sw.js=v55`；官网首页含 v1.2.3.3；`/download` **302 → `mirror:gh-proxy.com`** + `X-Download-Gateway: xixi-hiking`；iPhone 302 → 网页版；APK 直链 302 可达；GitHub 文档双落点 11 组逐字节一致
+  - **自检**：test **337** / test-ui **30** / P0P3 **299** / sitetest **25** / sitechangelog **1** / modalwidth **38** / ioscheck（push 后转绿）/ audit F 段 **0** / docaudit J 段 **11 组**
+  - **反向验证 3/3**：撤署名删除 / 撤隐私政策第四条官网 / 撤免责声明编号顺延 → 各自**精确报红**，还原后 337/0
 - **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.10 更新（**用户 v1.2.2.9 实测两条反馈**；共 3 处补丁 + 2 条新守卫 + 反向验证 3/3）：
   - **① 记录页列表删除按钮与计划页列表统一**（用户原话：「记录页列表模式的删除，改的是计划页列表模式的删除按钮，不是文字，就那个灰色垃圾桶」）—— **★上一版 v1.2.2.9 我理解错了目标**：当时把「日历明细那两处 `data-del`」和「记录页」一起动了，记录页还改成了**文字钮**。用户纠正后正确定位：计划页列表模式删除 = `delete-planned-btn`（class `confirm-btn-cancel` + `plannedDelStyle`）→ **灰色垃圾桶图标**（`padding:6px` 方形 + `material-icons delete` + 底 `rgba(100,116,139,0.14)` + 边 `rgba(100,116,139,0.6)`）。**修法**：记录页删除改回同款图标钮，`recordDelStyle` 与 `plannedDelStyle` 逐字一致。
