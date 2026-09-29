@@ -141,7 +141,8 @@ if (gateway === 'xixi-hiking') {
   fail++;
 } else if (firstIsHtml && !wentToGithub) {
   console.log('  ❌ /download 返回的是**静态 HTML**（CF 软 404 兜底页）→ **Function 未部署**');
-  console.log('     检查：site/functions/download.js 是否已推到 master（ghsync 的 site/ 目录必须含 functions/）');
+  console.log('     检查：functions/download.js 是否已推到 master（★仓库根 functions/，不是 site/functions/ ——');
+  console.log('           CF Pages 的 Functions 目录基于仓库根判定，放 site/ 下线上完全不生效）');
   fail++;
 } else {
   console.log('  ⚠ 未见 X-Download-Gateway 标记（但已跳到 GitHub，行为正确）');

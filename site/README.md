@@ -64,9 +64,26 @@ node tools/dlcheck.js --ua ios                            # 换 UA 看分流；-
    → Function 会走 `fallback-error` 兜底。**这只是本地调试环境的问题，CF 边缘证书链正常**；
    `tools/_devserver.js` 已内置 `NODE_TLS_REJECT_UNAUTHORIZED=0` 仅用于本地预演。
 
-> **★部署这个 Function 的前提**：`functions/` 目录**必须一起推上去**。
-> `tools/ghsync.js` 的 `site/` 是整目录同步（`filter: null`，含 `.js`）→ `ghsync --push` 即可。
-> 若线上 `/download` 返回静态 HTML，第一件事就是查 `site/functions/download.js` 有没有在远端。
+> ### ★★ Function 的位置铁律（2026-09-29 踩坑，最贵的一条）
+>
+> **Functions 必须放在仓库根 `functions/`，不是 `site/functions/`。**
+>
+> CF Pages 的 Functions 目录**基于仓库根判定**，与「Build output directory（= `site`）」无关。
+> 放在 `site/functions/` 时线上**完全不生效**，而且**没有任何报错** ——
+> `/download` 会走进 CF 的软 404 兜底，静默返回首页 HTML。
+>
+> **三条实证证据**（当时的排查依据）：
+> 1. `/download` 与任意「不存在的路径」返回**逐字节相同**的首页 HTML（连 404 状态码都没有）
+> 2. 线上 `/_routes.json` **不存在** —— CF 只要在仓库根检测到 `functions/` 就会自动生成它
+> 3. 官方文档：`/functions` 的目录结构决定路由，基于仓库根判定
+>
+> **判据（复验用）**：`curl -sI https://xixi-hiking-site.pages.dev/download` 必须带
+> `X-Download-Gateway: xixi-hiking` 响应头。看不到这个头 = Function 没生效。
+>
+> `tools/ghsync.js` 已配 `{ src: 'functions', dst: 'functions' }` 同步规则；改完 `ghsync --push` 即可。
+
+> **★部署这个 Function 的前提**：仓库根 `functions/` 目录**必须一起推上去**。
+> 若线上 `/download` 返回静态 HTML，第一件事就是查 `functions/download.js` 有没有在远端。
 
 ## 首次部署（Cloudflare Pages）
 
@@ -77,6 +94,9 @@ node tools/dlcheck.js --ua ios                            # 换 UA 看分流；-
    - **Build command**：留空
    - **Build output directory**：`site`
 4. Save and Deploy → 得到 `<项目名>.pages.dev`
+
+> ⚠️ 注意：`Build output directory: site` **只决定静态文件从哪来**，不影响 Functions ——
+> Functions 永远认仓库根 `functions/`（见上方「★ Function 的位置铁律」）。
 
 > 之后每次 `git push` 到 `master`，CF 会自动重新部署官网（与 App 的 PWA 站点互不影响）。
 

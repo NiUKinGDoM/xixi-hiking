@@ -2,8 +2,10 @@
 /**
  * tools/sitetest.js — 官网 Pages Function 离线自测（★2026-09-29 新增）
  *
- * 为什么需要它：`site/functions/download.js` 是**唯一在 CF 边缘运行的代码**，
+ * 为什么需要它：`functions/download.js` 是**唯一在 CF 边缘运行的代码**，
  * 本地页面自检（siteprobe）碰不到它，而它一旦错就会让用户点到死链。
+ * （★2026-09-29：功能文件在**仓库根** functions/ —— CF Pages 的 Functions 目录基于
+ *   仓库根判定，放 site/ 下线上完全不生效，曾导致 `/download` 静默 404。）
  * 这里用「假 fetch」模拟 GitHub API，验证分流与兜底：
  *
  *   ① 安卓 UA + 正常 API        → 302 到 apk 资产直链（release-assets 最终直下）
@@ -21,7 +23,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const SRC = path.join(ROOT, 'site', 'functions', 'download.js');
+const SRC = path.join(ROOT, 'functions', 'download.js');
 
 if (!fs.existsSync(SRC)) {
   console.error('✗ 找不到 ' + SRC);

@@ -164,7 +164,7 @@ if (mode === 'publish') {
   } else {
     const dc = spawnSync(NODE, ['tools/dlcheck.js'], { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 });
     console.log(((dc.stdout || '') + (dc.stderr || '')).trim().split('\n').map((l) => '   ' + l).join('\n'));
-    if (dc.status !== 0) console.log('   ⚠ 官网下载链路异常 → 请检查 site/functions/download.js 是否已推送');
+    if (dc.status !== 0) console.log('   ⚠ 官网下载链路异常 → 请检查 functions/download.js（仓库根）是否已推送');
   }
   console.log('   ℹ 官网「更新日志」段是写死的最近两版 → 本次发版若要更新它，改 site/index.html 后随下次 push 生效');
 

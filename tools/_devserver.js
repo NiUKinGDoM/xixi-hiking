@@ -5,7 +5,9 @@
  * **静态文件服务器（python -m http.server）不会执行它** → 本地无法验证下载入口。
  * 这里用 node 起一个小服务：
  *   - 静态文件 → 走 site/
- *   - /download → 真实调用 site/functions/download.js 的 onRequest
+ *   - /download → 真实调用 functions/download.js 的 onRequest
+ *     （★2026-09-29：Function 在**仓库根** functions/，不是 site/functions/ ——
+ *       CF Pages 的 Functions 目录基于仓库根判定，放 site/ 下线上完全不生效）
  *
  * 用法：node tools/_devserver.js [端口，默认 8791]
  * 然后用 tools/dlcheck.js --base http://127.0.0.1:8791 验证下载链路。
@@ -35,7 +37,8 @@ const MIME = {
 
 // 把 ESM 的 Function 转成 CJS 便于 require（只改导出写法，逻辑不动）
 function loadHandler() {
-  const p = path.join(SITE, 'functions', 'download.js');
+  // ★2026-09-29：仓库根 functions/ —— 与线上实际部署位置严格一致（放 site/ 下线上无效）
+  const p = path.join(ROOT, 'functions', 'download.js');
   const code = fs.readFileSync(p, 'utf8')
     .replace(/\bexport\s+async\s+function\s+onRequest\b/, 'async function onRequest');
   const Module = require('module');
@@ -109,6 +112,6 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log('官网本地预览: http://127.0.0.1:' + PORT);
   console.log('  静态目录: ' + SITE);
-  console.log('  /download: 由 site/functions/download.js 真实处理');
+  console.log('  /download: 由 functions/download.js 真实处理（仓库根）');
   console.log('  验证下载链路: node tools/dlcheck.js --base http://127.0.0.1:' + PORT);
 });

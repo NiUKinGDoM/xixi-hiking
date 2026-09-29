@@ -15,4 +15,8 @@ console.log('batchCancelBtn 文本:', d.getElementById('batchCancelBtn') ? d.get
 // 计划页
 const pMode = d.getElementById('plannedBatchModeBtn');
 if (pMode) { pMode.click(); console.log('计划页点击后 plannedBatchBar display:', d.getElementById('plannedBatchBar') ? d.getElementById('plannedBatchBar').style.display : 'N/A'); }
+// ★2026-09-29：本文件是「临时探针」性质（打印观察值），**不是自动断言套件**。
+//   它跑完后 jsdom 的定时器会让进程挂住不退出 → 此前靠外层 SIGTERM 结束（退出码 1，
+//   容易被误读成「测试失败」）。这里显式退出，保证退出码 0。
 console.log('plannedBatchDeleteBtn 文本:', d.getElementById('plannedBatchDeleteBtn') ? d.getElementById('plannedBatchDeleteBtn').textContent.trim() : '缺失');
+process.exit(0);

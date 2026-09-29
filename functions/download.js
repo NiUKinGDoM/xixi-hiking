@@ -1,5 +1,13 @@
 /**
- * site/functions/download.js — 官网下载入口（Cloudflare Pages Function）
+ * functions/download.js — 官网下载入口（Cloudflare Pages Function）
+ *
+ * ★位置铁律（2026-09-29 踩坑）：CF Pages 的 Functions 目录**基于仓库根判定**，
+ *   不是构建输出目录。Root=site 时，`site/functions/` 里的文件**线上完全不生效**
+ *   （`/download` 会静默返回首页 HTML 软 404，连 404 状态码都没有）。
+ *   三条实证证据：① `/download` 与任意不存在路径返回逐字节相同的首页
+ *   ② 线上 `/_routes.json` 不存在（CF 只要检测到仓库根 functions/ 就自动生成）
+ *   ③ 官方文档：目录结构决定路由，基于仓库根。
+ *   ⇒ 本文件必须放在**仓库根** `functions/download.js`。改动时别挪位置。
  *
  * 作用：官网上的「下载」不跳 GitHub 网页，点击后**直接开始下载 APK**。
  *

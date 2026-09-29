@@ -43,9 +43,14 @@ const DIRS = [
   { src: 'e2e', dst: 'e2e', filter: (f) => f.endsWith('.js') },
   { src: 'docs', dst: 'docs', filter: (f) => f.endsWith('.md') },
   // ★2026-09-23 官网（独立静态站，CF Pages 以 Root=site 部署；与 www 隔离，不被 App 的 SW 接管）
-  //   ★2026-09-29 起 site/ 内含 functions/（Pages Function，提供 /download 直接下载 APK）
-  //   → filter 必须放行 .js，否则线上不会生成该路由，下载按钮 404
+  //   ★2026-09-29 ★重大修正★：CF Pages 的 Functions 目录认的是**仓库根**的 `functions/`，
+  //   不是构建输出目录（Root=site）里的 `site/functions/`。证据：
+  //     ① `/download` 与「不存在的路径」返回逐字节相同的首页 → 完全没被当路由
+  //     ② 线上 `/_routes.json` 不存在（CF 只要检测到 functions/ 就自动生成它）
+  //     ③ 官方文档：`/functions` 目录结构决定路由，基于仓库根判定
+  //   → 页面仍在 site/，但 Function 移到仓库根 `functions/`（site/functions/ 保留为历史副本，不再参与部署）
   { src: 'site', dst: 'site', filter: null },
+  { src: 'functions', dst: 'functions', filter: (f) => f.endsWith('.js') },
 ];
 
 function walkCopy(srcDir, dstDir, filter, plan) {
@@ -83,9 +88,9 @@ function listAssets(dir, base, out) {
 }
 const CHECK = WWW_FILES.map((f) => 'www/' + f)
   .concat(listAssets(assetsDir, '', []))
-  // ★2026-09-29 补入 site/functions/download.js：它是 /download 直链的唯一实现，
-  //   此前 CHECK 写死了 site 下三个 html → 该文件「复制得到、但从不核对」＝自检假绿。
-  .concat(['docs/PROJECT_STATUS.md', 'site/index.html', 'site/privacy.html', 'site/terms.html', 'site/functions/download.js']);
+  // ★2026-09-29 补入 functions/download.js（仓库根）：它是 /download 直链的唯一实现。
+  //   ★位置修正：原放在 site/functions/ 无效（CF 认仓库根）→ 已移到仓库根 functions/。
+  .concat(['docs/PROJECT_STATUS.md', 'site/index.html', 'site/privacy.html', 'site/terms.html', 'functions/download.js']);
 
 console.log(`== ghsync ${DRY ? '(DRY-RUN) ' : ''}==`);
 console.log(`主工程: ${ROOT}`);
