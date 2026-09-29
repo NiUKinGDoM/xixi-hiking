@@ -887,6 +887,37 @@ _posCases.every(function (re) { return re.test(_fixData); })
         : bad('about-tag 里还有残留 GitHub 按钮！');
 })();
 
+// ★2026-09-29 关于页视觉细节 回归（3 条，用户点名要求）：
+//   ① .about-link 必须**无下划线**（text-decoration:none）—— 且不得残留旧的
+//      text-underline-offset / text-decoration-thickness 死属性。
+//   ② 图标与文字**垂直平齐**：靠 inline-flex + align-items:center + line-height:1
+//      + svg display:block（消除 inline 基线下沉缝隙）。
+//   ③ 「支持作者」按钮**不加粗** —— 与旁边隐私政策/免责声明/更新日志同为 .glass-btn 默认字重；
+//      行内不得再出现 font-weight:700。
+(function () {
+    // ★index.html 里内联了全部自定义 CSS，直接用 _semH（不存在单独的 _semCss）
+    var css = _semH;
+    var m = css.match(/\.about-card \.about-link\s*\{([\s\S]*?)\}/);
+    if (!m) return bad('找不到 .about-link 样式块！');
+    var body = m[1];
+    var noUnderline = /text-decoration:\s*none/.test(body) && !/text-decoration:\s*underline/.test(body);
+    var noDeadProps = !/text-underline-offset/.test(body) && !/text-decoration-thickness/.test(body);
+    (noUnderline && noDeadProps)
+        ? ok('守卫：关于页入口已去下划线（且无死属性残留）')
+        : bad('入口仍有下划线或残留 text-underline-offset/thickness！');
+
+    var svgM = css.match(/\.about-card \.about-link svg\s*\{([\s\S]*?)\}/);
+    var svgBlock = svgM ? svgM[1] : '';
+    (/align-items:\s*center/.test(body) && /line-height:\s*1\b/.test(body) && /display:\s*block/.test(svgBlock))
+        ? ok('守卫：入口图标与文字垂直平齐（center + line-height:1 + svg block）')
+        : bad('图标与文字可能不齐（需 inline-flex align-items:center + line-height:1 + svg display:block）！');
+
+    var sm = _semH.match(/id="supportAuthorBtn"[^>]*>/);
+    (sm && !/font-weight/.test(sm[0]))
+        ? ok('守卫：「支持作者」按钮已去加粗（与旁边玻璃按钮一致）')
+        : bad('「支持作者」仍带行内 font-weight！');
+})();
+
 // ★2026-09-29 ghsync 同步清单 回归（3 条）：
 //   ① functions/download.js 必须在 DIRS 里（CF Pages 认仓库根，放 site/ 下静默失效）
 //   ② site/functions 不得再出现（已作废的位置，留着会误导后来人）

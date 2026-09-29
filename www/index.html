@@ -1038,8 +1038,9 @@
         }
         /* ★2026-09-29 官网 / GitHub 入口行（关于页）：两个入口**一行横排居中**。
            ★统一用 .about-link 一套样式（原来官网是 .about-site 单独一套、GitHub 是裸内联）
-           —— 现在两者外观完全一致（同字号/字重/色/下划线），只是图标不同。
-           后续若要加第三个入口（如 B站/公众号），直接往里加一个 .about-link 即可。 */
+           —— 现在两者外观完全一致（同字号/字重/色），只是图标不同。
+           后续若要加第三个入口（如 B站/公众号），直接往里加一个 .about-link 即可。
+           ★2026-09-29 用户要求：**去掉下划线** + **文字与图标垂直平齐**。 */
         .about-card .about-links {
             display: flex;
             align-items: center;
@@ -1050,9 +1051,10 @@
         }
         .about-card .about-link {
             display: inline-flex;
-            align-items: center;
+            align-items: center;      /* ★文字与图标垂直居中平齐（不再靠基线对齐） */
             gap: 6px;
             font-size: 13px;
+            line-height: 1;           /* ★行高收紧：文字块高度 = 字号，居中后与图标精确对齐 */
             color: #4f46e5;
             font-weight: 700;
             letter-spacing: 0.04em;
@@ -1064,13 +1066,16 @@
             margin: 0;
             cursor: pointer;
             font-family: inherit;
-            text-decoration: underline;
-            text-underline-offset: 3px;
-            text-decoration-thickness: 1px;
+            text-decoration: none;    /* ★2026-09-29 用户要求：去掉下划线 */
             -webkit-tap-highlight-color: transparent;
         }
         .about-card .about-link:active { opacity: 0.65; }
-        .about-card .about-link svg { flex: none; }
+        /* ★图标：display:block 消除 inline 基线下沉缝隙；vertical-align 兜底防继承别的对齐 */
+        .about-card .about-link svg {
+            flex: none;
+            display: block;
+            vertical-align: middle;
+        }
         body.dark-mode .about-card .about-link {
             color: #a5b4fc;
         }
@@ -6572,7 +6577,7 @@
                                 <button id="disclaimerBtn" class="ripple-effect glass-btn" style="padding:8px 14px;border-radius:12px;font-size:13px;" title="户外安全提示与使用须知">免责声明</button>
                             </div>
                             <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <button id="supportAuthorBtn" class="ripple-effect glass-btn" style="padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;" title="如果喜欢，请作者喝杯奶茶">支持作者</button>
+                                <button id="supportAuthorBtn" class="ripple-effect glass-btn" style="padding:8px 14px;border-radius:12px;font-size:13px;" title="如果喜欢，请作者喝杯奶茶">支持作者</button>
                                 <button id="changelogBtn" class="ripple-effect glass-btn" style="padding:8px 14px;border-radius:12px;font-size:13px;" title="查看当前版本更新内容">更新日志</button>
                             </div>
                         </div>
