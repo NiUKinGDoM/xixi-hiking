@@ -26,16 +26,27 @@ const APPLY = process.argv.includes('--apply');
 const REVERSE = process.argv.includes('--reverse');
 
 // 双端文档对照表：[显示名, 主工程侧, 副本侧]
+// ★★2026-09-29 重大修正：会话根的三份文档（PROJECT_STATUS / 开发侧改动记录 / 给新模型的提示词）
+//   在 GH 侧有**两个落点** —— `GH/docs/` 和 `GH/`（根）。
+//   此前只同步 `GH/docs/`，导致 **GitHub 网页上打开的根目录那份永久停在旧版**
+//   （用户在 GitHub 上一看就是旧内容，而 doc-sync 却报「双端一致」= 假绿）。
+//   ⇒ 三个文件都必须**双落点**同步。以后新增此类文档照抄这个模式。
 const PAIRS = [
     ['README.md', path.join(ROOT, 'README.md'), path.join(GH, 'README.md')],
     ['CHANGELOG.md', path.join(ROOT, 'CHANGELOG.md'), path.join(GH, 'CHANGELOG.md')],
+    // ★ 双落点（步骤 1）：会话根 → GH/docs/
     ['docs/PROJECT_STATUS.md', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'docs/PROJECT_STATUS.md')],
+    // ★ 双落点（步骤 2）：会话根 → GH 根（GitHub 网页默认显示这份）
+    ['PROJECT_STATUS.md（根）', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'PROJECT_STATUS.md')],
     ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs/给新模型的提示词.md')],
+    ['给新模型的提示词.md（根）', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, '给新模型的提示词.md')],
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs/DEVICE-CHECKLIST.md'), path.join(GH, 'docs/DEVICE-CHECKLIST.md')],
     // ★2026-09-18 补漏：本文件同样是双端的，此前未纳入（用户「整理所有文档」时发现）
     ['docs/方案-换机同步与登录体验.md', path.join(ROOT, 'docs/方案-换机同步与登录体验.md'), path.join(GH, 'docs/方案-换机同步与登录体验.md')],
     // ★ 2026-09-20 新增：用户要求「开发侧的事写在别处、但要我能看得着」→ 开发侧改动记录（根 ↔ GH docs/ 双端）
     ['docs/开发侧改动记录.md', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, 'docs/开发侧改动记录.md')],
+    // ★ 双落点（步骤 2）
+    ['开发侧改动记录.md（根）', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, '开发侧改动记录.md')],
     ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs/版本变更记录-存档.md'), path.join(GH, 'docs/版本变更记录-存档.md')],
 ];
 

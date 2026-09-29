@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-09-23（v1.2.2.10 / vc274）  
+> 最后更新：2026-09-29（v1.2.3.0 / vc275）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -29,10 +29,10 @@ node tools/patch.js <补丁.json> [--dry-run]     # JSON 补丁：命中唯一�
 node tools/versiondiff.js             # 完整清单（文件 + 行数 + 关键新增行）；范围同 ghsync 同步清单
 node tools/versiondiff.js --strict    # 有待发改动时退出码 1（用于「发布后应干净」校验）
 # ② 跑测试：一条命令跑全部（替代反复单跑）
-node tools/checkall.js            # 7 套 / 810 项 汇总（smoke 20 + iOS 10 + test 287 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38）
-node tools/checkall.js --fast     # 只跑前三套（秒级，改文档/小改后先跑它）
+node tools/checkall.js            # 8 套 / 872 项 汇总（smoke 34 + iOS 10 + test 319 + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38 + 官网Function 16）
+node tools/checkall.js --fast     # 只跑秒级的四套（smoke + modalw + test + sitetest，改文档/小改后先跑它）
 node tools/checkall.js --no-e2e   # 跳 E2E
-node tools/smoke.js               # 工具链冒烟（20 项：语法+安全执行；已并入 checkall 第一套）
+node tools/smoke.js               # 工具链冒烟（34 项：语法+安全执行；已并入 checkall 第一套）
 
 # ③ 浏览器实测（替代每次新写 playwright 脚本）
 node e2e/inspect.js --inline "return typeof showInfoMessage"
@@ -66,6 +66,18 @@ node tools/ioscheck.js      # ★iOS 网页版同步适配体检（2026-09-14 �
 # ⑧ 发布编排（一条命令串起全流程，任一步失败即停）
 node tools/ship.js prepare --builtin <BUILTIN文案> --doc <文档条目文案>   # 核对→快照→bump→BUILTIN→文档→自检→审计→构建→APK验证
 node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同步push→建Release+上传+下载验证→校验 pages.dev
+#   ★2026-09-29 起 publish 内含「②.5 官网下载链路核对」（自动跑 tools/dlcheck.js）
+
+# ⑧.5 ★官网（site/）相关（2026-09-29 起发版需同步官网）
+node tools/sitetest.js              # 官网 /download Function 离线自测（16 项，已并入 checkall）
+node tools/dlcheck.js               # 线上下载链路实测：跟重定向到底，验到 PK 字节才算过
+node tools/dlcheck.js --ua ios      # 换 UA 看分流（android|ios|mac|win）；--head 只测首跳
+node tools/dlcheck.js --base http://127.0.0.1:8795   # 测本地
+node tools/_devserver.js 8795       # ★本地官网预览（静态文件 + 真实执行 Function）
+node tools/siteshot.js <url> <out.png> [宽] [scale] [forceReveal]   # 官网整页截图（需 Chrome:9333）
+node tools/siteshots.js             # 从 www/ 重生成 10 张真机截图；--dump 导 App 真实文案（写官网文案的唯一事实来源）
+#   ★官网改动后必须 `ghsync --push`（site/ 整目录含 functions/）→ CF Pages 自动重新部署
+#   ★改了 site/index.html 的「更新日志」段才算官网跟上版本；/download 直链是动态查 API、无需改
 # ★补正类改动（文案 / 日志 / 文档 / 守卫；不影响用户可见功能行为）→ **一律「同号修正重发」，不升号**（用户 2026-09-20 定：「以后像这种的，都同号修正重发」）
 #   ★禁跑 prepare（含 bump）→ 手动：prev-snapshot → sw CACHE_NAME+1 → checkall → audit（先清 .latest.png）→ release.js → verify-apk.js
 #   ★发布：ghsync -m "release: vX (开发者可读的修正说明)" --push  +  ghrelease.js vX <Release文案>（幂等：复用 Release + PATCH body + 删旧 asset 重传）
@@ -190,7 +202,61 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > 更早的见 `docs/版本变更记录-存档.md`；**小版本进位时（如 1.2.1.x → 1.2.2.x）把上一系列整段搬过去**。
 >
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
-> 第 1 行 `- **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
+> 第 1 行 `### 🔧 待发：官网入口 + 五项优化（2026-09-29 · 用户「在app里增加官网链接，也作为新增写到更新日志里」）
+
+> **状态：已改完 www/ + 工具链，等用户「同步」后 bump 到 v1.2.3.0（vc275）再发布。**
+> 当前线上/已发布版本仍是 **v1.2.2.10（vc274）**。
+
+- **本轮新增：App 内「官方网站」入口**（用户指令「在app里增加官网链接，也作为新增写到更新日志里。完事之后同步」）：
+  - **位置** —— 设置页「关于应用」卡片，版本号下方、描述与按钮组之间（`id="officialSiteBtn"`，class `about-site ripple-effect`）。
+  - **★跳转方式必须用 `window.location.href`（不能 `window.open`）** —— Capacitor WebView 的 `shouldOverrideUrlLoading` **只拦截「当前页导航」**，`window.open(url,'_blank')` 不会触发原生拦截 → 冷门 WebView 上表现为**点了完全没反应**。与既有 GitHub 图标（`app-init.js` 用 `location.href`，现网已验证可跳外部浏览器）保持同一写法。目标地址 `https://xixi-hiking-site.pages.dev/`。
+  - **★图标用内联 SVG，不用 `material-icons` 字体** —— 探针实测发现图标字体未加载时**会露出 ligature 文字 "public"**（探针首次测得 `text: "public\n官方网站"`）；改用 14px 内联地球 SVG（与 GitHub 图标做法一致，符合「禁图像 logo、用 inline SVG」偏好）。
+  - **样式** —— 新增 `.about-card .about-site`，**完全对齐 `.about-tag`**（同 13px / 700 / `#4f46e5`，深色 `#a5b4fc`），只多一条下划线暗示可点，避免引入第三套链接视觉。
+  - **四条回归守卫**（`test.js` 316 → **319**）：① HTML 入口在位 ② 事件已绑定 ③ **跳转方式必须是 `location.href` 且不得含 `window.open`** ④（`test-ui` 侧无）。
+  - **★反向验证**：把 `location.href` 换成 `window.open` → 守卫**精确报红 1 条**（318/1）→ 还原 319/0 ✓
+  - **★实测**（像素级 + 四档窄屏）：`390px` 下按钮 `86.1×24.8` 可见、无折行、无横向溢出（`docW == vw`）、与 `Made by XiXi` 行不重叠；**320/360/390/412 × 深浅双模式全通过**；**对比度像素实测：浅色 5.12 / 深色 12.90**（均 ≥4.5 达标）。
+- 本轮五项优化（**例行五项优化**：①设计统一性 ②底层代码清理 ③流畅度帧率 ④文档随版本同步 ⑤查 bug —— 用户指令「给APP做个仔细的五项优化」）：
+  - **① 设计统一性 —— 查出并修掉全站唯一一处「玻璃配方」漂移**：灯箱（照片查看）的**「保存」按钮**写的是 `blur(2px)`，**漏了 `saturate(150%)`**，而紧挨着的「删除」按钮是对的 → 同一行两个按钮玻璃质感不一致。全站扫描确认**仅此 1 处**（其余 42 处全部 `blur(2px) saturate(150%)`）。修法：补齐 `saturate(150%)`（`backdrop-filter` 与 `-webkit-` 各一处）。
+    - 这是同类问题**第三次**出现（2026-09-16 `.settings-group` 写成 120%、`.switch-slider` 写成 `blur(4px)`）→ **说明「统一玻璃配方」这类批量活儿靠手扫一定会漏**，已在文档中强调必须跑 `designcheck`。
+  - **② 底层代码清理 —— 把 6 个「有工具没入口」的体检片段纳入冒烟**：`tools/snippets/` 下的 6 个片段（`design-scan` / `perf-check` / `robust-check` / `stress-check` / `offline-check` / `ios-sim`）此前**零校验**（和 2026-09-16 发现的 `design-scan` 死文件是同一类问题）。修法：`smoke.js` 支持 **`snippet: true`** 模式 —— 片段是 function body（顶层写了 `return`），不能直接 `node --check`，改为**包一层 `function __wrap(){…}` 写临时文件再校验**，校验完删除。
+    - **反向验证**：故意往 `perf-check.js` 末尾塞语法错误 → 冒烟正确报红 ✓；还原后全绿 ✓。
+  - **③ 流畅度帧率（实测已满帧，无优化点）** —— `perf-check` 四页签实测：概览 **60.1fps** / 记录 **60.1** / 计划 **60.6** / 设置 **60.3**，p95 帧耗时 16.8~17.0ms、最差 20.3ms、**jank 全为 0**、**无屏外动画**（`animsOffscreen: 0`）；滚动 60.2fps。首屏 `DOMContentLoaded` 58ms、`FCP` 452ms 健康。唯一长任务 55ms 出现在启动初始化（一次性），**切页触发零长任务**（单独实测 `tasks: []`）。
+    - **★结论：60fps 是设备刷新率上限（本机 60Hz），代码侧无优化余量**；掉帧为 0 说明每帧都在预算内画完。高刷屏（90/120Hz）设备会自动跟随，无需改代码。
+  - **④ 文档随版本同步** —— 本条目（PROJECT_STATUS 双端）+ `CHANGELOG` 时间线 + 更新日志 + Release 三份文案；`smoke.js` 工具清单项数更新。
+  - **⑤ 查 bug —— 修掉一个「静默丢操作」的真 bug（本轮最重要的一条）**：
+    - **`deleteRecord()` 把数据落盘整段挂在 `animationend` 动画事件上** —— 原实现：给行加 `.row-exit` 动画，在 `animationend` 回调里才执行「内存过滤 + `updateStatistics` + `saveToStorage` + `renderTable`」。**一旦该事件不触发（行元素被提前重建 / 页面在动画期间被切走 / 系统「减少动态效果」的极端时序），记录就永远删不掉，而且无任何报错** —— 用户只看到行还在，反复点也没反应。
+    - **探针实测确认**：注入 1 条记录 → 调 `deleteRecord()` → **内存 `records.length` 仍为 1、localStorage 仍为 0 条**（删除未生效），与推断完全一致。
+    - **★对比发现的不一致**：同一件事的批量删除 `deleteBatchSelected()` 是**同步立即落盘、不依赖任何动画** → 只有单条删除走了不可靠路径。
+    - **修法**：改为**先落盘、再播动画**（与批量删除口径统一）；`animationend` 只负责「行列残影清理」，纯装饰，失败也不影响数据。
+    - **回归守卫**：新增源码级断言「`deleteRecord` 内 `saveToStorage` 必须出现在 `animationend` 之前」，**并剥掉注释行再比较**（注释里也含 `animationend` 一词，会污染顺序判断 —— 这个坑是写断言时现场踩到并修掉的）。
+  - **顺带核实（结论：非 bug，无需修改）** —— 逐个实测 `audit` 报的 13 个「查无定义」类名：`grid-cols-2` 需与 `.grid` 组合才有 `display:grid`（组合后实测 `170px 170px` 两列 ✓）、`mt-3`=12px / `flex-wrap`=wrap / `text-red-400`=oklch 红 / `pb-1`=4px / `py-4`=16px 全部生效 → **均由 Tailwind 运行时生成或为 JS 钩子类，无样式失效**。
+    - **★教训（又一次）**：探针**不能只测单个类** —— 我第一次单独测 `.grid-cols-2` 得到 `display:block` 差点误判成 bug，补了「组合探针」才发现正常。
+  - **实测** —— 可用自检全绿：**712 项**（test **319** + test-ui 30 + P0P3 299 + 弹窗宽度 38 + 官网 Function 16 + iOS 10）；`audit` 确定性项通过、残留物 0；`deepcheck` 死代码 0；压力体检**零 DOM 泄漏**（反复开关弹窗 15 轮，modal/backdrop/toast 增量全 0）、500 条记录批量渲染 18ms；健壮性体检 XSS 未触发、无裸标签注入、脏数据不抛异常。
+    - **★`smoke.js`(32 项) 本机仍 EBUSY 假失败**（32 项全报「语法错误: 」空 stderr）→ 已用**逐文件独立直跑**替代验证：全部 JS `node --check` **0 失败**、6 个片段包 `function __wrap(){…}` 后 **6/6 通过**。
+  - **说明** —— 本版**改了功能行为**（删除落盘时机），**不适用「同号修正重发」政策**，按常规**升号**发布。
+
+### 🔧 v1.2.3.0：App 内新增「官方网站」入口（2026-09-29 · 用户「在app里增加官网链接，也作为新增写到更新日志里。完事之后同步」）
+
+> **状态：准备发布**（升号 v1.2.3.0 / vc275；★按四段满 10 进位规则，`v1.2.2.10` 的下一版是 `v1.2.3.0`，不是 `1.2.2.11`）。上一轮残留的官网 `/download` 直链也随本次同步一起上线。
+
+- **① App 内「官方网站」入口**（用户指令「在app里增加官网链接，也作为新增写到更新日志里」）：
+  - **位置** —— 设置页「关于应用」卡片，版本号下方、描述与按钮组之间（`id="officialSiteBtn"`，class `about-site ripple-effect`）。
+  - **★跳转方式必须用 `window.location.href`（不能 `window.open`）** —— Capacitor WebView 的 `shouldOverrideUrlLoading` **只拦截「当前页导航」**，`window.open(url,'_blank')` 不会触发原生拦截 → 冷门 WebView 上表现为**点了完全没反应**。与既有 GitHub 图标保持同一写法。目标地址 `https://xixi-hiking-site.pages.dev/`。
+  - **★图标用内联 SVG，不用 `material-icons` 字体** —— 探针实测发现图标字体未加载时**会露出 ligature 文字 "public"**；改用 14px 内联地球 SVG（符合「禁图像 logo、用 inline SVG」偏好）。
+  - **样式** —— 新增 `.about-card .about-site`，**完全对齐 `.about-tag`**（同 13px / 700 / `#4f46e5`，深色 `#a5b4fc`），只多一条下划线，不引入第三套链接视觉。
+  - **守卫** —— `test.js` 316 → **319**（入口在位 / 事件已绑定 / **跳转方式必须 `location.href` 且不得含 `window.open`**）。**★反向验证**：换成 `window.open` → 精确报红 1 条（318/1）→ 还原 319/0 ✓
+  - **实测** —— **四档窄屏（320/360/390/412）× 深浅双模式全通过**（无折行、无横向溢出、与 `Made by XiXi` 行不重叠）；**对比度像素实测：浅色 5.12 / 深色 12.90**（均 ≥4.5 达标）。
+- **② 五项优化（本轮另一批）**：
+  - **① 设计统一性** —— 修掉全站唯一一处玻璃配方漂移（灯箱「保存」按钮漏 `saturate(150%)`）。同类问题**第三次**出现 → 结论：必须跑 `designcheck` 机器体检。
+  - **② 底层代码清理** —— `tools/snippets/` 6 个体检片段从「零校验」纳入 `smoke.js`（新增 `snippet: true` 模式 + wrap 校验法）。**反向验证**通过。
+  - **③ 流畅度帧率** —— 四页实测 60fps / jank 0 / 无屏外动画 → **刻意不改**（60 是设备刷新率上限，无优化余量）。
+  - **④ 文档** —— 双端 8 组一致，`docaudit` J 段 ✅。
+  - **⑤ 查 bug** —— 修 `deleteRecord()` 把落盘挂在 `animationend` 上的**静默丢操作** bug（探针实测确认：调删除后内存与 localStorage 均未变）。改为**先落盘再播动画**（与批量删除口径统一）。
+- **③ 工具链修复** —— `ghsync.js` 的 diff 核对清单 `CHECK` 此前写死 site 下三个 html，**漏了 `site/functions/download.js`**（`/download` 直链的唯一实现）→ 该文件「复制得到、但从不核对」＝**自检假绿**。已补入。
+- **④ 官网 `/download` 直链上线**（上一轮遗留）—— `site/functions/download.js`：安卓 → 302 APK 资产直链（不跳 GitHub 网页）；iPhone/桌面 → 302 网页版；三层兜底绝不给死链。本地自检 **16/16 全过**。
+- **实测汇总** —— 可用自检 **872 项**（smoke 34 + iOS 10 + test **319** + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38 + 官网 Function 16）。★`smoke.js` 本机仍 EBUSY 假失败（32 项全报「语法错误: 」空 stderr）→ 已用**逐文件直跑**替代验证（全部 JS `node --check` 0 失败、6 个片段 wrap 后 6/6 通过）。
+- **发布链路** —— 回退点 `backups/prev-1.2.2.10/` → bump v1.2.3.0（vc275）+ sw 缓存 → 构建 → 验包 → `ghsync --push` → `ghrelease` 发布 + APK 上传 digest 校验 → 官网同步 push → 网页版复核。
+- **正式版 v1.2.2.10**（versionCode 274，com.xixi.hiking，**Release+R8 签名包**）—— 主工程 `hiking-app3/` 即正式版，改代码直接在这里
 - v1.2.2.10 更新（**用户 v1.2.2.9 实测两条反馈**；共 3 处补丁 + 2 条新守卫 + 反向验证 3/3）：
   - **① 记录页列表删除按钮与计划页列表统一**（用户原话：「记录页列表模式的删除，改的是计划页列表模式的删除按钮，不是文字，就那个灰色垃圾桶」）—— **★上一版 v1.2.2.9 我理解错了目标**：当时把「日历明细那两处 `data-del`」和「记录页」一起动了，记录页还改成了**文字钮**。用户纠正后正确定位：计划页列表模式删除 = `delete-planned-btn`（class `confirm-btn-cancel` + `plannedDelStyle`）→ **灰色垃圾桶图标**（`padding:6px` 方形 + `material-icons delete` + 底 `rgba(100,116,139,0.14)` + 边 `rgba(100,116,139,0.6)`）。**修法**：记录页删除改回同款图标钮，`recordDelStyle` 与 `plannedDelStyle` 逐字一致。
   - **② 计划页日历明细删除补边框**（用户原话：「日历模式的这个删除按钮怎么没有边框」）—— 根因是我自己加的 `.danger-subtle-btn` 带 `border:transparent !important`，把行内边框吃掉了。**修法**：删掉 `.danger-subtle-btn`（已无引用），日历明细恢复 `confirm-btn-cancel` + 可见边框。
@@ -531,16 +597,117 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - `backups/github-同步目录/xixi-hiking/`：GitHub 仓库本地副本（clone 后覆盖提交推送）
 - \*\*网页版正式通道：<https://xixi-hiking.pages.dev\*\*（Cloudflare> Pages + GitHub Git 集成，push master 自动部署，Root=www，长期稳定）｜发版前验收预览用 workbuddy_sites_deploy 临时链接（会漂移，仅临时）
 
+## 官网（site/）· 2026-09-23 新增 · 2026-09-27 重做（v4）· 2026-09-28 v9→v11 · 2026-09-29 v12（下载直链）· **已上线**
 
+> **★线上地址：https://xixi-hiking-site.pages.dev/**（2026-09-28 首次部署 · CF Pages 独立项目 · Root=`site` · 生产分支 `master`）
+> App 的 PWA 是另一个项目 `xixi-hiking.pages.dev`（Root=`www`）—— **两个项目刻意隔离**。
+> 推送到 `master` 后 CF 自动重新部署，**不用手动触发**。
+> ★**2026-09-29 起：发版必须同步官网**（用户明确要求）—— 见下方「发版与官网的联动」。
 
-## 官网（site/）· 2026-09-23 新增 · 2026-09-27 重做（v4）
+### ★发版与官网的联动（2026-09-29 用户要求：「以后的发版，也要同步官网更新」）
+
+发布 APK 时**官网需要跟着动的地方有两处，性质不同**：
+
+| 项 | 是否随版本自动 | 说明 |
+|---|---|---|
+| **`/download` 下载直链** | ✅ **全自动** | 它是 Pages Function，**运行时查 GitHub API 拿最新 Release** → 不用改页面、不用重新部署 |
+| **`#s09` 更新日志段** | ❌ **写死的最近 2 版** | 每次发版要手动更新 `site/index.html` 的 `.rel-list`（版本号 + 日期 + 条目），否则官网一直显示旧版本 |
+
+- `tools/ship.js publish` 已内建 **②.5 步**：自动跑 `tools/dlcheck.js` 核对线上下载链路，并提示更新日志要同步。
+- `site/` 整个目录（**含 `functions/`**）已在 `ghsync` 同步清单里 → `ghsync --push` 即上远端，CF 自动重新部署。
+- **★页面上的下载按钮一律指向 `/download`**，不再直指 GitHub 页面（用户要求「点击后直接下载 APK」）。
+  - 改这三处时注意：导航条「下载」、移动菜单「下载」、收尾区主按钮 —— **都是 `/download`**；
+    页内锚点保留给首屏 CTA（`hero-actions` 的「下载徒步小记」→ `#download` 滚动到收尾区）。
+  - 收尾区另加了一个次要入口 `.dl-note`「查看历史版本与更新日志 →」仍指 GitHub（想看历史版本时用）。
+
+### ★官网下载入口：`/download`（Pages Function，2026-09-29 新增）
+
+**做了什么**：官网点「下载 Android 版」→ **浏览器直接开始下载 APK**，不再跳到 GitHub 网页。
+
+```
+官网按钮 → /download（site/functions/download.js）
+   ├─ 安卓 UA  → 302 → GitHub → 302 → release-assets CDN
+   │             （Content-Type: application/vnd.android.package-archive
+   │              + Content-Disposition: attachment → 直接存文件）
+   └─ iPhone/iPad/桌面 → 302 → https://xixi-hiking.pages.dev（网页版，不让人白下 2.5MB）
+```
+
+- **★为什么不写 `releases/latest/download/XiXi-hiking.apk` 这种固定名**：本仓库历史资产名有
+  **4 种写法**（`XiXi.-v…`（中文「小记」被 GitHub 替换成 `.`）/ `xixi-hiking-v…` / `XiXiHiking-v…` / `XiXi-hiking-v…`），
+  **固定文件名在历史上根本不存在**。所以改为**查 API 拿当前 latest 那个 Release 里 apk 资产的真实名字**再拼直链
+  → 以后改命名规则也不用动这个文件。
+- **★为什么必须用 `/releases/latest` 而不是 `/releases` 列表取第一条**：`/releases` 的返回顺序
+  **不是**按版本号排序的（实测 v1.2.2.9 排在 v1.2.2.10 之前）→ 取第一条会拿到旧包。
+- **边缘缓存 10 分钟**（`s-maxage=600`）避免每次点击都打 API（未鉴权 60 次/小时/IP）；发版后最多 10 分钟自动切新包。
+- **三层兜底**：API 非 200 / 该 Release 无 apk 资产 / fetch 抛异常 → 一律 302 到 Release 页面，**绝不给出死链**。
+- **响应头自带诊断标记**：`X-Download-Gateway: xixi-hiking`、`X-Download-Target: apk|webapp|fallback-*`、
+  `X-APK-Version`、`X-APK-Name` —— `dlcheck.js` 就靠这些判定（**★不能靠状态码**，见下）。
+
+**★这一轮踩到的两个判据坑（都会导致「自检假绿」）**：
+1. **CF Pages 对不存在的路径返回 200 + 首页 HTML（软 404），不是 404** →
+   只看 `404` 会把「Function 没部署」误判成「正常」。**必须看 `X-Download-Gateway` 标记**。
+2. **本地 node 的 `fetch` 打 GitHub API 报 `unable to verify the first certificate`**（沙箱根证书链不全）
+   → Function 走了 `fallback-error` 兜底。**这是本地调试环境问题，CF 边缘证书链正常**；
+   `tools/_devserver.js` 已内置 `NODE_TLS_REJECT_UNAUTHORIZED=0` 仅用于本地预演。
+
+**配套工具（三个，均已入 checkall / smoke）**：
+| 工具 | 作用 |
+|---|---|
+| `site/functions/download.js` | Pages Function 本体（**唯一跑在 CF 边缘的代码**） |
+| `tools/sitetest.js` | **离线**自测 16 项：分流（安卓/iPhone/iPad/mac/win）+ 三层兜底 + 4 种历史资产名 + 源码卫生 |
+| `tools/dlcheck.js` | **线上/本地实测**：跟完整重定向链，验证最终响应体前两字节 = `PK`（真的是 APK 不是网页）；`--ua android\|ios\|mac\|win`、`--head` |
+| `tools/_devserver.js` | 本地官网预览（静态文件 + 真实执行 Function），补上「静态服务器不跑 Function」的空白 |
+
+**实测记录（2026-09-29）**：本地 `_devserver` → 安卓完整链路
+`302 → github.com/releases/download/v1.2.2.10/XiXi-hiking-v1.2.2.10.apk → 302 → release-assets CDN → 200`
+**`Content-Type: application/vnd.android.package-archive`、首字节 `PK`、2,510,665 字节（2.39 MB）**；
+iPhone / mac / win 三种 UA 全部 302 到网页版。官网七档宽度（320/360/390/768/1440…）零横溢。
+
 
 - **独立静态站**（首页 + 隐私政策 + 免责声明）：`hiking-app3/site/`，纯静态、零依赖、**零外部 CDN**
 - **独立 Cloudflare Pages 项目（Root=`site`）**：与 App 的 PWA 站点（Root=`www`）**刻意隔离** —— 放进 `www/` 会被 `sw.js` 接管，用户打开官网会被拉进 App 本体
 - **★首次部署需用户在 CF 控制台操作**：Pages → Connect to Git → 选本仓库 → Build command 留空 / Build output directory `site`（详细步骤见 `site/README.md`）
 - 已纳入 `tools/ghsync.js` 同步清单（DIRS + diff 核对 15 项）→ `ghsync --push` 即上远端，push master 后 CF 自动部署
 - **★政策正文是两份拷贝**：App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`），官网在 `site/privacy.html` / `site/terms.html` → **改一处必须同步另一处**，并 bump `LEGAL_VERSION` + 官网页「生效日期」
-- 界面截图（统计概览 / 徒步足迹 / 山册）为**真实 App 渲染 + 演示数据**；想换自己的真机图，替换 `site/assets/shots/` 同名文件即可（建议 390×844、2 倍图）
+- 界面截图**一律是真机渲染**（`tools/siteshots.js` 从 `www/` 生成，见下）；想换图就重跑脚本，别手改。
+
+- **★2026-09-28 v11（用户：「再核对一下内容，哪些没有就补充，哪些没有的，就去掉。示例页面全换为真实截图，分享卡那里也一样」）**：
+  - **① 手搓 mock 全部删除** —— 统计主卡面板 / 记录样本 / 照片墙 SVG / 日历 mock / 搜索框打字演示 / 分享卡海报，**六个假界面一个不留**，换成 10 张真机截图（`tools/siteshots.js` 产出）。同时删掉为此写的 JS（热力图生成 / 日历生成 / 数字滚动 / 打字演示，共 4 段）与 **94 条死 CSS**（`site.css` 花括号 405→311）。
+  - **② 内容逐条核对**（事实来源 = `node tools/siteshots.js --dump` 导出的 App 四页真实文案）：
+    - **删**：「概览有年资」（实为「我的里程碑」，年资在设置→关于）、「年度足迹热力图 53 列」（实为「徒步足迹」按月日历 + 回顾）、搜索「按山名匹配」（实际匹配**山名/小日记/心情/天气/同行人**五字段）、分享卡「带难度」（2026-08-25 起不显示）、分享卡「二维码」「落款可关」（无）、分享卡「9:16 / PDF Print」（只有 1080×1440 一种）。
+    - **补**：那年今日、我的里程碑（17 项成就 + 彩屑）、平均三项（海拔/难度/用时）、批量模式、从历史复制、照片回忆、山册彩边含义、自动同步、显示帧率、先看看示例、「分享卡只放你填过的字段」。
+  - **③ 新工具 `tools/siteshots.js`**（10 张图 + `--dump` 导文案）：CDP 驱动 `www/index.html`（390×844 @1.5x），预置 localStorage（37 条演示记录 + 4 条计划 + **源码读出的 `LEGAL_VERSION`** + 四引导卡已关 + FPS 关 + 浅色 + 顶栏标题 + 当日过期提醒已消），把 5 张插画风演示照片画进 canvas 塞进 IndexedDB，最后**拦下 `generateShareCard` 的输出**存成真分享卡。**注意**：`www/` 必须走 http 服务（照片走 IndexedDB，`file://` 不可靠）。
+  - **④ 修两个真 bug**：
+    - **`max-width` + `margin-inline:auto` 放在 grid item 上是收缩而非拉伸**（auto 外边距取消 `stretch`）→ 图片没加载时容器只剩标题宽（实测 110px），加载完跳 352px → **整页 842px 布局抖动**；改 `width:100%` + `max-width` 封顶后，**加载前后 `scrollHeight` 完全相等（17393）**。
+    - **`siteshot.js` 卡死** —— `img.decode()` 对「尚未开始加载」的懒加载图既不 resolve 也不 reject → CDP `awaitPromise` 永久挂起（命令被 SIGTERM）。修法：先把 `loading` 全改 `eager` 再滚一遍，且 `Promise.race` 加 4s 超时。
+  - **自检**：320/360/390/414/768/1024/1440 **七档零横溢**；11 张图全部加载成功且显示比例与 `naturalWidth/naturalHeight` 偏差 < 0.25%（`border` 固有偏差）；加载前后总高一致（零 CLS）。
+  - **镜像侧**：`shot-heatmap.png`、`shot-records-mb.png` 需在主工程与镜像**双端删除**（`ghsync` 只复制不删多余文件）。**✅ 已于 2026-09-29 部署上线**（commit `ee1339f`，用户建好 CF Pages 项目 → https://xixi-hiking-site.pages.dev/ ）。
+  - **⑤ 量词与定位补正（用户：「怎么能是一座登山记录本？单位不对吧？...还有这是登山徒步一起记录的」）**：`一座…登山记录本` → **`一本只属于你自己的徒步登山记录本`**（`<title>` / meta / 首屏标语 / 页脚 四处统一）。App 自己的关于页写的是「记录每一次**徒步、登山**的足迹」，官网原来只说登山 → 补上徒步：kicker 改 `徒步 · 登山 · 离线优先`、首屏正文改「登完一座山记一座，走过一条线也记一条」、#s02 lede 改「一套字段同时管登山和徒步」并新增 assure 行「登山 · 徒步通用」(#核对源码：唯一必填只有「名称」)、山册表述改「按名称汇总成册 —— 一座山、一条线，各自一张卡」、页脚补「登山、徒步、城郊短线都记」。**顺带修窄屏折行**：新标语 16 字在 360px 会折两行 → `@media (max-width:400px)` 收字号 14.5px + 字距 .1em，复测 320/360/390 全单行零横溢。
+- **★2026-09-28 v10（用户：「徒步足迹的图片，删掉。再优化一下网页，和里边的内容」）**：
+  - ① 删「徒步足迹」截图 + `sec-lede` 改「这两屏」+ 截图说明改「`01 统计概览 / OVERVIEW`」`02 山册 / ALBUM`」编号式；
+  - ② **渐显动画三层兜底**（此前只有 v4 的 4 秒超时，且 v9 重做时**丢了**）—— `<head>` 首行给 `<html>` 加 `.js`，CSS 改写成 `.js .reveal{opacity:0}` / `.js .mask > span{...}`（JS 失效 → 无 `.js` → 内容直接可见）；主脚本整体包 `try/catch`，任何一步抛错即 `classList.remove('js')`；另加「不支持 IO → 全展开」「首屏标题 1.6s 强制升起」「视口内 `.reveal` 2.5s 强制显示」「`beforeprint` 全展开」；
+  - ③ **页脚品牌字折行修复** —— `.f-brand .wm` 38px+.28em 需 387px 而列宽仅 376px → 「XiXiの徒步小 / 记」两行；改 `clamp(20px,2.1vw,29px)` + `.2em` + `white-space:nowrap`（实测单行 55px 高）；
+  - ④ **计划段标题单字孤行修复** —— 「三态徽章」在 32px+.16em 下需 148.5px 而列宽 148px → 挤成「三态徽 / 章」；改 `.tt` `clamp(20px,2.05vw,28px)` + `.12em`，列改 `112px minmax(0,.9fr) minmax(0,1.1fr)`（Range 探针实测 1120/1280/1440 三档全单行）；
+  - ⑤ **横溢清零** —— `.ledger .item::before` 的悬浮高光左右各外扩 28px，窄屏（页边距收到 22px）顶出视口 6px → `@media(max-width:1080px)` 收平；`.sync-quad` 四列在 320px 溢出 5px → `@media(max-width:520px)` 改两列。**实测 320/360/390/414/768/1024/1440 七档 `scrollWidth === clientWidth`**；
+  - ⑥ 内容与可访问性 —— s03 「浏览器 IndexedDB」→「本机 IndexedDB」；截图 `alt` 写全 + `decoding="async"`；`nav` 加 `aria-label`、菜单键加 `aria-controls`/`aria-expanded`、支持 Esc 关闭。
+  - **★新增自检工具链（本机 `spawn` 仍 EBUSY，故走「Chrome 独立起调试端口 + node 只连 WebSocket」）**：`tools/siteshot.js`（整页/分段截图，`captureBeyondViewport`，**必须先整页滚一遍**否则 `loading="lazy"` 图片拍成空白）、`tools/siteeval.js`（单点求值）、`tools/siteprobe.js`（多档宽度批量求值）。用法见 `site/README.md`。命名刻意**不带 `_` 前缀**（防被「`_*` 宽模式清理」误删）。
+  - **未部署**：等用户「同步」指令；`site/README.md` 已同步更新。
+- **★2026-09-29 v12（用户：「以后的发版，也要同步官网更新。对了，官网的下载，不要跳到 github，可以点击后直接下载 apk 吗」）**：
+  - **① 新增 `/download` Pages Function**（`site/functions/download.js`）：官网点下载 → **直接开始下 APK**，
+    不再跳 GitHub 网页。安卓给资产直链、iPhone/iPad/桌面给网页版；三层兜底 + 诊断响应头。详见上方专节。
+  - **② 页面三处下载入口改指 `/download`**：导航条、移动菜单、收尾区主按钮（首屏 CTA 仍是页内锚点 `#download` 滚到收尾区）；
+    收尾区新增次要入口 `.dl-note`「查看历史版本与更新日志 →」（仍指 GitHub，要看历史时用）；新增 `.dl-note` 样式。
+  - **③ 新增三个工具**：`tools/sitetest.js`（Function 离线自测 16 项）、`tools/dlcheck.js`（线上/本地下载链路实测，
+    验到 `PK` 字节才算过）、`tools/_devserver.js`（本地预览：静态文件 + **真实执行 Function**，补上「静态服务器不跑 Function」的空白）。
+  - **④ 流程接入**：`checkall` 加第 8 套（sitetest，`--fast` 也跑）；`smoke` 加 5 个官网工具（sitetest 实跑、其余仅语法）；
+    `ship.js publish` 加 **②.5 步**自动核对线上下载链路 + 提示更新日志同步；`ghsync` 确认 `site/`（含 `functions/`）整目录同步。
+  - **⑤ 两个「自检假绿」判据坑（已修）**：CF Pages 对不存在路径返回 **200 + 首页 HTML（软 404）** → 判据必须看
+    `X-Download-Gateway` 标记而非状态码；本地 node `fetch` 报 `unable to verify the first certificate`（沙箱证书链）
+    → 本地预演用 `NODE_TLS_REJECT_UNAUTHORIZED=0`（**仅本地，CF 边缘正常**）。
+  - **自检**：`checkall` **8 套 / 859 项全绿**（smoke 26 + iOS 10 + test 314 + test-ui 30 + P0P3 299 + E2E 126 + modalw 38 + sitetest 16）；
+    官网多档宽度零横溢；收尾区几何实测正常（两按钮居中并排、`.dl-note` 单行 21px）。
+  - **★本次仅改官网与工具链，`www/` 与 APK 未动** → **不 bump、不升号、不用跑 `ship prepare`**；
+    上线只需 `ghsync --push`（CF 自动重新部署官网）。
 - **★已知环境问题（2026-09-23 遇到）**：本机一度出现「node 的 `child_process` spawn 全部 EBUSY」→ `ghsync`/`ship`/`patch.js` 的写后校验集体失效（表现为「取 token 失败」「syntax error」假报错）。绕法：**从 shell 直接跑 git/ghtoken.py** 完成提交与推送（token 只进变量、输出打码）
 - **★2026-09-27 重做（v4）：纸感极简 / 户外杂志**（用户评 v3「整体页面设计就很低级，所有内容。你自己重新做吧」）—— 推翻 v3 的「**粉紫蓝三色渐变底 + 彩色图标 + 玻璃卡片堆叠**」（诊断：用装饰冒充设计）。新令牌：纸底 `#f7f6f3` / 墨字 `#16181c` / 正文 `#5c6269` / 主色**森林绿 `#1f5c3f`**（与 App 图标同色系，色彩不再打架）；**分隔改「细线 + 留白」**（线为渐变淡出，**去掉卡片堆叠**）；排版**左对齐**、标题 `clamp(27px, 6.6vw, 78px)`、小标签 12px / `letter-spacing .2em`；结构改「eyebrow + 大标题（关键词绿色）+ 编号 fact / 两列 feat / 标签-说明两栏 privacy / 版本-日期 changelog」；装饰保留淡绿山脊 + 宽屏左侧路线（改绿）；**玻璃只留导航条**（配方仍唯一 `blur(2px) saturate(150%)`）。**★修一处严重隐患**：`.reveal` 靠 `IntersectionObserver` 加 `.in` 才 `opacity:1` → 回调不触发即**永久白屏**（headless / 虚拟时间下实测复现；打印、爬虫、JS 部分失败同理）→ 已改「**首屏内区块不挂动画类** + **4 秒超时兜底**」。**自检**：320/360/375/390/412/500/768 **七档 × 三页 = 21 项零横溢**；静态项（脚本语法 / 玻璃配方唯一 / 圆角表 / 类名 100% 覆盖 / 无 emoji / 无外部依赖）全绿。**v3 备份在 `%TEMP%/site-v3-backup`**，可随时回退。
 ## 待办/新功能方案（2026-09-08 更新）
