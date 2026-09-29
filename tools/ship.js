@@ -153,6 +153,21 @@ if (mode === 'publish') {
   // ② Release + 上传 + 下载验证 + 清理本地 APK
   run('建 Release + 上传 APK + 下载验证', NODE, ['tools/ghrelease.js', tag, bodyFile || '']);
 
+  // ②.5 ★官网同步（2026-09-29 用户要求「以后的发版，也要同步官网更新」）
+  //   为什么必须做：官网有两处会随版本漂移 ——
+  //     ① `/download` 的 APK 直链是**动态查 API** 的，本身自动跟随（无需改页面）
+  //     ② 但页面上「更新日志」段是**写死的最近两版**，不同步就会一直显示旧版本
+  //   → 这里先核对线上下载链路可用，再把「页面更新日志落后」的事报出来提醒。
+  console.log('\n▶ 官网下载链路核对（/download 是否已部署且能直下 APK）');
+  if (DRY) {
+    console.log('   [DRY] node tools/dlcheck.js');
+  } else {
+    const dc = spawnSync(NODE, ['tools/dlcheck.js'], { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 1024 * 1024 * 16 });
+    console.log(((dc.stdout || '') + (dc.stderr || '')).trim().split('\n').map((l) => '   ' + l).join('\n'));
+    if (dc.status !== 0) console.log('   ⚠ 官网下载链路异常 → 请检查 site/functions/download.js 是否已推送');
+  }
+  console.log('   ℹ 官网「更新日志」段是写死的最近两版 → 本次发版若要更新它，改 site/index.html 后随下次 push 生效');
+
   // ③ pages.dev 校验
   console.log('\n▶ 校验 pages.dev 自动部署（最多等 2 分钟）');
   if (DRY) {
@@ -181,6 +196,9 @@ print('TIMEOUT'); sys.exit(1)
   }
 
   console.log('\n✅ publish 完成：' + tag);
+  console.log('📌 别忘了官网（★2026-09-29 起发版需同步官网）：');
+  console.log('   ① /download 直链自动跟随最新 Release（无需改）');
+  console.log('   ② 若本次要更新 site/index.html 的「更新日志」段 → 改完 ghsync --push 即生效');
   process.exit(0);
 }
 

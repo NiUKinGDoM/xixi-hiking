@@ -997,7 +997,7 @@ function ensureLightbox() {
         '<div style="position:relative;z-index:6;display:flex;gap:16px;align-items:center;flex-shrink:0;">' +
         // ★2026-08-25 左右箭头改 material-icons + flex 居中（‹ › 字符不在圆正中）；保存/删除统一 padding 10px 28px
         '<button id="lb-prev" style="display:flex;align-items:center;justify-content:center;padding:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;line-height:1;"><span class="material-icons" style="font-size:26px;">chevron_left</span></button>' +
-        '<button id="lb-save" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:10px 28px;border-radius:22px;font-size:14px;cursor:pointer;font-weight:600;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);">保存</button>' +
+        '<button id="lb-save" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:10px 28px;border-radius:22px;font-size:14px;cursor:pointer;font-weight:600;backdrop-filter:blur(2px) saturate(150%);-webkit-backdrop-filter:blur(2px) saturate(150%);">保存</button>' +
         '<button id="lb-del" style="background:rgba(70,15,20,0.08);border:1px solid rgba(248,113,113,0.9);color:#fecaca;padding:10px 28px;border-radius:22px;font-size:14px;cursor:pointer;font-weight:600;backdrop-filter:blur(2px) saturate(150%);-webkit-backdrop-filter:blur(2px) saturate(150%);display:none;">删除</button>' +
         '<button id="lb-next" style="display:flex;align-items:center;justify-content:center;padding:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;line-height:1;"><span class="material-icons" style="font-size:26px;">chevron_right</span></button>' +
         '</div>' +
@@ -2208,23 +2208,22 @@ function deleteRecord(id) {
         photoDeleteMany(recToDelete.photos).catch(function () {});
     }
     thumbCacheClear(); // ★2026-08-27 照片删除：缩略图缓存全清
+    // ★2026-09-29 五项优化⑤：数据落盘不再挂在 animationend 上。
+    //   原实现把「内存过滤 + saveToStorage + renderTable」整段放在行退出动画的 animationend 回调里，
+    //   一旦该事件因任何原因不触发（行元素被提前重建 / 系统「减少动态效果」把动画压成 0.01ms 的极端时序 /
+    //   页面在动画期间被切走），记录就永远删不掉且**无任何报错**——用户只看到行还在。
+    //   现改为：先落盘再播动画（与 deleteBatchSelected 的同步落盘保持一致），动画纯装饰。
+    records = records.filter(r => r.id !== id);
+    updateStatistics();
+    saveToStorage();
+    renderTable();
     const row = document.getElementById('row-' + id);
     if (row) {
         row.classList.add('row-exit');
-        row.addEventListener('animationend', () => {
-            records = records.filter(r => r.id !== id);
-            updateStatistics();
-            saveToStorage();
-            renderTable();
-        }, { once: true });
-    } else {
-        records = records.filter(r => r.id !== id);
-        updateStatistics();
-        saveToStorage();
-        renderTable();
+        // 动画结束后若该行仍在（renderTable 通常已重建列表），自行移除，避免残影
+        row.addEventListener('animationend', () => { if (row.parentNode) row.parentNode.removeChild(row); }, { once: true });
     }
 }
-
 function addNewRecord() {
     const newRecord = {
         id: generateId(),

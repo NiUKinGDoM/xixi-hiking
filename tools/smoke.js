@@ -2,7 +2,7 @@
 /**
  * tools/smoke.js — 工具链冒烟测试（★2026-09-10 新增）
  *
- * 为什么需要它：项目有 14 个自建工具（覆盖补丁注入/构建/同步/校验/编排），
+ * 为什么需要它：项目有 20+ 个自建工具（覆盖补丁注入/构建/同步/校验/编排），
  *   但它们此前**零测试**——今天 ghsync（assets 子目录 → EPERM）与 ship（绝对路径）
  *   都是「第一次真实使用就崩」。机制兜住了代码，机制自己却没人管。
  *
@@ -12,6 +12,11 @@
  *      判定：无未捕获异常 + 退出码 ∈ {0,1} + 有输出
  *   有副作用或耗时的工具（release/checkall/ghrelease 写模式等）**只做语法校验**，
  *   标注 skip-exec，绝不因为冒烟测试而改动工程或触发构建。
+ *   ③ ★2026-09-29 起：`tools/snippets/*.js`（6 个体检片段）也纳入 —— 它们是 **function body**
+ *      （顶层写了 `return`），不能直接 `node --check` → 用 `snippet: true` 标记，冒烟会
+ *      临时包一层 `function __wrap(){…}` 再校验、校验完删除临时文件。
+ *      为什么加：这些片段此前**零校验**，和 09-16 发现的 design-scan「死文件」是同一类问题
+ *      （有工具没入口 → 没人用 → 悄悄烂掉没人知道）。
  *
  * 用法：
  *   node tools/smoke.js             # 默认：语法 + 安全执行
@@ -50,9 +55,25 @@ const CASES = [
   { path: 'tools/ioscheck.js', args: ['--no-sim', '--no-net'], safe: true, note: '--no-sim --no-net → 只读静态（版本对齐 + iOS 能力守卫）' },
   { path: 'tools/ghsync.js', args: ['--dry-run'], safe: true, note: '--dry-run → 只读预览' },
   { path: 'tools/security.js', args: [], safe: true, note: '无参数 → 用法提示' },
+  { path: 'tools/sitetest.js', args: [], safe: true, note: '★官网下载入口 Function 离线自测（16 项，无副作用）' },
+  { path: 'tools/dlcheck.js', args: ['--head'], safe: false, net: true, note: '⚠ 需网络（打线上官网）→ 仅语法校验' },
+  { path: 'tools/_devserver.js', args: [], safe: false, note: '⚠ 常驻服务 → 仅语法校验' },
+  { path: 'tools/siteshot.js', args: [], safe: false, note: '⚠ 需浏览器 → 仅语法校验' },
+  { path: 'tools/siteeval.js', args: [], safe: false, note: '⚠ 需浏览器 → 仅语法校验' },
+  { path: 'tools/siteprobe.js', args: [], safe: false, note: '⚠ 需浏览器 → 仅语法校验' },
+  { path: 'tools/siteshots.js', args: [], safe: false, note: '⚠ 需浏览器 + 写图 → 仅语法校验' },
   { path: 'tools/release.js', args: [], safe: false, note: '⚠ 会触发构建 → 仅语法校验' },
   { path: 'tools/checkall.js', args: [], safe: false, note: '⚠ 会跑全部测试 → 仅语法校验' },
   { path: 'tools/ghtoken.py', args: [], safe: true, py: true, note: '读取凭据（不打印内容）' },
+  // ★2026-09-29 五项优化②：tools/snippets/ 是「用 e2e/inspect.js --file 手动调用」的体检片段，
+  //   此前 6 个片段**零校验**（和 09-16 发现的 design-scan 死文件同一类问题：有工具没入口）。
+  //   它们是 function body（顶层写了 return），不能直接 node --check → 用 wrap 模式包一层函数再校验。
+  { path: 'tools/snippets/design-scan.js', snippet: true, safe: false, note: '设计扫描（designcheck 调用）' },
+  { path: 'tools/snippets/perf-check.js', snippet: true, safe: false, note: '★流畅度体检（FPS/长任务/合成层）→ e2e/inspect.js --file' },
+  { path: 'tools/snippets/robust-check.js', snippet: true, safe: false, note: '健壮性（XSS/脏数据/边界）→ e2e/inspect.js --file' },
+  { path: 'tools/snippets/stress-check.js', snippet: true, safe: false, note: '压力（DOM 泄漏/反复开关弹窗）→ e2e/inspect.js --file' },
+  { path: 'tools/snippets/offline-check.js', snippet: true, safe: false, note: '离线自足（断网可用性）→ e2e/inspect.js --file' },
+  { path: 'tools/snippets/ios-sim.js', snippet: true, safe: false, note: 'iOS 模拟（ioscheck 调用）' },
 ];
 
 // 未捕获异常的判别（stderr 出现这些即为真崩）
@@ -83,9 +104,26 @@ for (const c of active) {
 
   // ① 语法校验（.py 跳过）
   if (!c.py) {
-    const s = spawnSync(NODE, ['--check', abs], { encoding: 'utf8' });
-    r.syntaxOk = s.status === 0;
-    if (!r.syntaxOk) r.detail = '语法错误: ' + (s.stderr || '').split('\n')[0];
+    if (c.snippet) {
+      // ★snippet 是 function body（顶层 return 合法）→ 包一层 function 再交给 node --check 校验。
+      //   直接用 --check 会因「return 不在函数内」误报，故写临时文件包壳。
+      const tmp = path.join(ROOT, 'tools/snippets/.__smoke_wrap.js');
+      try {
+        fs.writeFileSync(tmp, 'function __wrap(){\n' + fs.readFileSync(abs, 'utf8') + '\n}\n', 'utf8');
+        const s2 = spawnSync(NODE, ['--check', tmp], { encoding: 'utf8' });
+        r.syntaxOk = s2.status === 0;
+        if (!r.syntaxOk) r.detail = '语法错误: ' + (s2.stderr || '').split('\n')[0];
+      } catch (e) {
+        r.syntaxOk = false;
+        r.detail = '包装失败: ' + e.message;
+      } finally {
+        try { fs.unlinkSync(tmp); } catch (e) { /* 忽略 */ }
+      }
+    } else {
+      const s = spawnSync(NODE, ['--check', abs], { encoding: 'utf8' });
+      r.syntaxOk = s.status === 0;
+      if (!r.syntaxOk) r.detail = '语法错误: ' + (s.stderr || '').split('\n')[0];
+    }
   } else {
     r.syntaxOk = true;   // py 由执行环节验证
   }

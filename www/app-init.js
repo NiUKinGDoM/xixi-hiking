@@ -465,6 +465,13 @@ function setupEventListeners() {
             window.location.href = 'https://github.com/NiUKinGDoM/xixi-hiking';
         });
     }
+    // ★2026-09-29 关于页：官网入口 → 系统浏览器打开官网（安卓由 MainActivity 拦截外部打开；网页版直接跳转）
+    const officialSiteBtn = document.getElementById('officialSiteBtn');
+    if (officialSiteBtn) {
+        officialSiteBtn.addEventListener('click', function () {
+            window.location.href = 'https://xixi-hiking-site.pages.dev/';
+        });
+    }
     
     // 导入按钮
     const importBtn = document.getElementById('importBtn');

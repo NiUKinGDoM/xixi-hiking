@@ -352,6 +352,10 @@ h1.hero-title{
 .store .a{font-family:var(--display);font-size:16px;letter-spacing:.18em;color:var(--paper)}
 .store .b{font-size:8.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--bone-2)}
 .legal{margin-top:36px;font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--bone-2);opacity:.75}
+/* 次要入口（历史版本 / 更新日志）——不抢主按钮的视觉层级 */
+.dl-note{margin-top:22px;font-size:11px;letter-spacing:.14em}
+.dl-note a{color:var(--bone-2);border-bottom:1px solid rgba(218,212,198,.28);padding-bottom:2px;transition:.5s var(--ease)}
+.dl-note a:hover{color:var(--ember);border-bottom-color:var(--ember)}
 
 /* ---------- footer ---------- */
 footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,212,198,.13);--soft:var(--bone-2)}

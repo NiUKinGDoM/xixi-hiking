@@ -43,6 +43,8 @@ const DIRS = [
   { src: 'e2e', dst: 'e2e', filter: (f) => f.endsWith('.js') },
   { src: 'docs', dst: 'docs', filter: (f) => f.endsWith('.md') },
   // ★2026-09-23 官网（独立静态站，CF Pages 以 Root=site 部署；与 www 隔离，不被 App 的 SW 接管）
+  //   ★2026-09-29 起 site/ 内含 functions/（Pages Function，提供 /download 直接下载 APK）
+  //   → filter 必须放行 .js，否则线上不会生成该路由，下载按钮 404
   { src: 'site', dst: 'site', filter: null },
 ];
 
@@ -81,7 +83,9 @@ function listAssets(dir, base, out) {
 }
 const CHECK = WWW_FILES.map((f) => 'www/' + f)
   .concat(listAssets(assetsDir, '', []))
-  .concat(['docs/PROJECT_STATUS.md', 'site/index.html', 'site/privacy.html', 'site/terms.html']);
+  // ★2026-09-29 补入 site/functions/download.js：它是 /download 直链的唯一实现，
+  //   此前 CHECK 写死了 site 下三个 html → 该文件「复制得到、但从不核对」＝自检假绿。
+  .concat(['docs/PROJECT_STATUS.md', 'site/index.html', 'site/privacy.html', 'site/terms.html', 'site/functions/download.js']);
 
 console.log(`== ghsync ${DRY ? '(DRY-RUN) ' : ''}==`);
 console.log(`主工程: ${ROOT}`);

@@ -839,6 +839,37 @@ _posCases.every(function (re) { return re.test(_fixData); })
 (!/data-diff/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u6b7b\u5c5e\u6027 data-diff \u5df2\u6e05\u7406') : bad('data-diff \u6b7b\u5c5e\u6027\u4ecd\u5728\uff01');
 (/fmtPlanDateKey\(new Date\(\)\)/.test(_fixData) && !/fmtPlanDateKey\(new Date\(\)\.toISOString\(\)\)/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u65e5\u5386 todayKey \u5df2\u4e0d\u518d\u7ed5 toISOString') : bad('todayKey \u4ecd\u5728\u7ed5 toISOString\uff01');
 
+// ★2026-09-29 五项优化⑤ 回归：灯箱「保存」按钮玻璃配方必须与全站一致（blur(2px) saturate(150%)）
+(!/backdrop-filter:blur\(2px\);(?! saturate)/.test(_fixData) && /id="lb-save"/.test(_fixData)) ? ok('\u5b88\u536b\uff1a\u706f\u7bb1\u300c\u4fdd\u5b58\u300d\u6309\u94ae\u73bb\u7483\u914d\u65b9\u5df2\u8865 saturate(150%)\uff08\u4e0e\u5220\u9664\u6309\u94ae\u4e00\u81f4\uff09') : bad('\u706f\u7bb1\u4fdd\u5b58\u6309\u94ae\u73bb\u7483\u914d\u65b9\u53c8\u6f02\u79fb\uff01');
+// ★2026-09-29 五项优化⑤ 回归：deleteRecord 落盘\u4e0d\u80fd\u6302\u5728 animationend \u4e0a（\u4e8b\u4ef6\u4e0d\u89e6\u53d1=\u8bb0\u5f55\u6c38\u8fdc\u5220\u4e0d\u6389\u4e14\u65e0\u62a5\u9519\uff09
+(function () {
+    // 边界用「下一个顶层 function」而非「行首 }」：函数体内存在 if/for 的收尾 }，非贪婪会提前截断。
+    // ★不依赖行尾符（源码可能是 \n 或 \r\n）→ 用 \s* 容错
+    var m = _fixData.match(/function deleteRecord\(id\) \{[\s\S]*?\n\}\s*function addNewRecord/);
+    if (!m) return bad('\u627e\u4e0d\u5230 deleteRecord\uff01');
+    var body = m[0];
+    // ★只看「代码」不看注释：剥掉注释行，否则注释里提到的 animationend 会污染顺序判断
+    var code = body.replace(/^\s*\/\/.*$/gm, '');
+    var iAnim = code.indexOf('animationend');
+    var iSave = code.indexOf('saveToStorage');
+    (iSave > -1 && iAnim > -1 && iSave < iAnim) ? ok('\u5b88\u536b\uff1adeleteRecord \u5148\u843d\u76d8\u518d\u64ad\u52a8\u753b\uff08\u4e0d\u518d\u4f9d\u8d56 animationend\uff09') : bad('deleteRecord \u4ecd\u5728\u4f9d\u8d56 animationend \u843d\u76d8\uff01');
+})();
+
+// ★2026-09-29 官网入口 回归（3 条）：① HTML 入口在位 ② 事件绑定在位
+//   ③ ★跳转方式必须是 location.href —— Capacitor WebView 的 shouldOverrideUrlLoading 只管「当前页导航」，
+//      用 window.open(url,'_blank') 不会触发原生拦截 → 冷门 WebView 上表现为「点了完全没反应」，
+//      与全站现有 GitHub 图标的做法必须一致。这条守卫就是钉住这个坑。
+(/id="officialSiteBtn"/.test(_semH) && /class="about-site ripple-effect"/.test(_semH)) ? ok('守卫：关于页「官方网站」入口在位') : bad('关于页官网入口丢失！');
+(/getElementById\('officialSiteBtn'\)/.test(_fixInit)) ? ok('守卫：官网入口已绑定点击事件') : bad('官网入口未绑定事件！');
+(function () {
+    var m = _fixInit.match(/getElementById\('officialSiteBtn'\)[\s\S]{0,400}?\n    \}/);
+    if (!m) return bad('找不到官网入口绑定代码！');
+    var seg = m[0].replace(/^\s*\/\/.*$/gm, '');
+    (/window\.location\.href\s*=\s*'https:\/\/xixi-hiking-site\.pages\.dev\//.test(seg) && !/window\.open\(/.test(seg))
+        ? ok('守卫：官网入口用 location.href 跳转（可命中原生外部打开拦截）')
+        : bad('官网入口跳转方式错了（必须 location.href，window.open 会被 WebView 静默吞掉）！');
+})();
+
 // ★2026-09-28：曾发生「清理临时脚本 rm -f _*.js」把 _ 开头的重要测试文件一起删掉
 //   —— P0P3 套件（299 条断言）消失了两版都没被发现（checkall 只静默跳过）→ 守卫文件存在性
 ['_test_p0p3.js', '_test_batch3.js'].forEach(function (f) {

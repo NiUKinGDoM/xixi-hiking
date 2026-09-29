@@ -1,6 +1,8 @@
 # site/ — XiXiの徒步小记 官网
 
-App 的介绍站：**首页 + 隐私政策 + 免责声明**，纯静态（无构建步骤）。
+App 的介绍站：**首页 + 隐私政策 + 免责声明**，纯静态（无构建步骤），**外加一个 Pages Function 做下载入口**。
+
+> **★线上地址：<https://xixi-hiking-site.pages.dev/>**（CF Pages 独立项目 · Root=`site` · 生产分支 `master` · push master 自动重新部署）
 
 ## 为什么单独一个目录
 
@@ -16,6 +18,55 @@ App 的介绍站：**首页 + 隐私政策 + 免责声明**，纯静态（无构
 | `assets/site.css` | **共享样式**（三页共用；改样式只改这一个文件） |
 | `assets/shots/` | **10 张真机截图**（由 `tools/siteshots.js` 从 `www/` 真实渲染生成，585×1266；分享卡 1080×1440） |
 | `assets/icons/` | 图标（复用 App 的 192 / 512 / 180） |
+| **`functions/download.js`** | **★下载入口（Pages Function）** —— 官网 `/download` 路由，详见下节 |
+
+## ★下载入口：`/download`（2026-09-29 新增）
+
+**目的**：官网点「下载 Android 版」→ **浏览器直接开始下载 APK**，不再跳到 GitHub 网页。
+
+```
+index.html 的下载按钮（导航条 / 移动菜单 / 收尾区主按钮）→ /download
+   ├─ 安卓 UA            → 302 → GitHub → 302 → release-assets CDN（最终 Content-Disposition: attachment → 直接存文件）
+   ├─ iPhone / iPad      → 302 → https://xixi-hiking.pages.dev（网页版）
+   └─ 桌面（mac/win）    → 302 → https://xixi-hiking.pages.dev（网页版）
+```
+
+**三个设计决定（都有实测依据，别改回去）**：
+
+1. **不做「固定文件名」的直链**（如 `releases/latest/download/XiXi-hiking.apk`）
+   —— 本仓库历史资产名有 **4 种写法**：`XiXi.-v…`（早期 GitHub 把中文「小记」替换成 `.`）、`xixi-hiking-v…`、`XiXiHiking-v…`、`XiXi-hiking-v…`。
+   → 改为**运行时查 `releases/latest` API，取该 Release 里 apk 资产的真实名字**再拼直链。以后改命名规则不用动这个文件。
+2. **必须用 `/releases/latest`，不能用 `/releases` 列表取第一条**
+   —— `/releases` 的返回顺序**不是**按版本号排的（实测 v1.2.2.9 排在 v1.2.2.10 之前）→ 取第一条会拿到旧包。
+3. **边缘缓存 10 分钟**（`s-maxage=600`）
+   —— 避免每次点击都打 API（未鉴权 60 次/小时/IP）；发版后最多 10 分钟自动切到新包。**不需要为发版改这个文件。**
+
+**三层兜底**（API 非 200 / 该 Release 无 apk / fetch 抛异常）→ 一律 302 到 Release 页面，**绝不给出死链**。
+
+**诊断响应头**：`X-Download-Gateway` / `X-Download-Target: apk|webapp|fallback-api|fallback-no-apk|fallback-error` / `X-APK-Version` / `X-APK-Name`。
+
+### ★验证下载链路（改完必须跑）
+
+```bash
+cd hiking-app3
+node tools/sitetest.js                                   # 离线自测 16 项（分流 + 兜底 + 4 种历史资产名），已并入 checkall
+node tools/_devserver.js 8795 &                          # 本地预览（静态文件 + 真实执行 Function）
+node tools/dlcheck.js --base http://127.0.0.1:8795        # 本地实测（会真的拉到 PK 字节）
+node tools/dlcheck.js                                     # 线上实测（打 pages.dev）
+node tools/dlcheck.js --ua ios                            # 换 UA 看分流；--head 只测首跳
+```
+
+**★两个「自检假绿」的坑（都踩过）**：
+
+1. **CF Pages 对不存在的路径返回 `200 + 首页 HTML`（软 404），不是 404**
+   → 只检查状态码会把「Function 没部署」误判成「正常」。**判据必须看 `X-Download-Gateway` 响应头**。
+2. **本机 node 的 `fetch` 打 GitHub API 报 `unable to verify the first certificate`**（沙箱根证书链不全）
+   → Function 会走 `fallback-error` 兜底。**这只是本地调试环境的问题，CF 边缘证书链正常**；
+   `tools/_devserver.js` 已内置 `NODE_TLS_REJECT_UNAUTHORIZED=0` 仅用于本地预演。
+
+> **★部署这个 Function 的前提**：`functions/` 目录**必须一起推上去**。
+> `tools/ghsync.js` 的 `site/` 是整目录同步（`filter: null`，含 `.js`）→ `ghsync --push` 即可。
+> 若线上 `/download` 返回静态 HTML，第一件事就是查 `site/functions/download.js` 有没有在远端。
 
 ## 首次部署（Cloudflare Pages）
 
@@ -93,11 +144,26 @@ App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`�
 | 顶部菜单 | `index.html` 的 `<ul class="nav-links">` 与 `.m-menu` |
 | 各段标题与说明 | 每段 `<header class="sec-head">` 里的 `sec-title` / `sec-lede` |
 | 统计卡演示数字 | `#s01` 的 `.stat-grid`（已标「示例数据」，建议保留标注） |
-| 更新日志 | `#s09` 的 `.rel-list` |
-| 下载入口 | `.finale` 的 `.store-row`（目前 = GitHub Releases + 网页版） |
+| 更新日志 | `#s09` 的 `.rel-list`（**写死的最近 2 版 → 每次发版要同步**） |
+| 下载入口 | 页面三处指向 `/download`（导航条 / 移动菜单 / 收尾区 `.store-row` 主按钮）；收尾区次要入口 `.dl-note` 指 GitHub |
 | 界面截图 | 别手改图；改 `www/` 的界面后跑 `node tools/siteshots.js` 重出（素材在 `assets/shots/`） |
 | 配色 / 字体 / 间距 | `assets/site.css` 顶部的 `:root` |
-| 界面截图 | 替换 `assets/shots/` 同名文件（建议 585×1266 或同比例） |
+| 下载分流 / 兜底 | `functions/download.js` |
+
+## ★发版时官网要做什么（2026-09-29 起）
+
+| 项 | 要不要动 |
+|---|---|
+| `/download` 的 APK 直链 | **不用动** —— 运行时查 API，永远指向最新 Release |
+| `#s09` 更新日志段 | **要动** —— 写死的最近 2 版，把新版本号 + 日期 + 条目加上 |
+
+```bash
+# 改完 site/index.html 的更新日志段后
+node tools/ghsync.js -m "site: 更新日志 vX.Y.Z" --push   # CF 自动重新部署
+node tools/dlcheck.js                                     # 顺手核对下载链路没坏
+```
+
+> `tools/ship.js publish` 已内建「②.5 自动核对官网下载链路 + 提示更新日志同步」，走它就不会漏。
 
 ## 真机截图怎么生成
 
@@ -139,6 +205,10 @@ node tools/siteshot.js "file:///…/site/index.html" "$TEMP/a.png" 1440 1 1 0 42
 node tools/siteeval.js "file:///…/site/index.html" "document.querySelectorAll('.reveal.on').length" 1440
 # ④ 多档宽度批量:    node tools/siteprobe.js <url> "<js表达式>" "320,360,390,414,768,1440"
 node tools/siteprobe.js "file:///…/site/index.html" "document.documentElement.scrollWidth" "320,768,1440"
+# ⑤ 下载链路实测:    node tools/dlcheck.js [--base <url>] [--ua android|ios|mac|win] [--head]
+node tools/dlcheck.js --base http://127.0.0.1:8795     # 本地（配 _devserver.js）
+# ⑥ 官网本地预览（会真实执行 /download）：node tools/_devserver.js [端口]
+node tools/_devserver.js 8795
 kill %1
 ```
 
