@@ -870,6 +870,31 @@ _posCases.every(function (re) { return re.test(_fixData); })
         : bad('官网入口跳转方式错了（必须 location.href，window.open 会被 WebView 静默吞掉）！');
 })();
 
+// ★2026-09-29 ghsync 同步清单 回归（3 条）：
+//   ① functions/download.js 必须在 DIRS 里（CF Pages 认仓库根，放 site/ 下静默失效）
+//   ② site/functions 不得再出现（已作废的位置，留着会误导后来人）
+//   ③ ★ROOT_FILES 里不得混入「会话根文档」—— PROJECT_STATUS/开发侧改动记录/给新模型的提示词
+//      实际住在 PROJ（= ROOT/..），由 doc-sync.js 管；塞进 ghsync 的 ROOT_FILES 会
+//      「源文件缺失（跳过）」+ 核对永远命中不到 = 双份假绿。
+(function () {
+    var gs;
+    try { gs = fs.readFileSync(path.join(ROOT, 'tools/ghsync.js'), 'utf8'); } catch (e) { gs = null; }
+    if (!gs) return bad('读不到 tools/ghsync.js！');
+    (/\{\s*src:\s*'functions',\s*dst:\s*'functions'/.test(gs) && /'functions\/download\.js'/.test(gs))
+        ? ok('\u5b88\u536b\uff1aghsync \u5df2\u540c\u6b65\u4ed3\u5e93\u6839 functions/\uff08/download \u76f4\u94fe\u5b9e\u73b0\uff09')
+        : bad('\u5b88\u536b\uff1aghsync \u672a\u540c\u6b65\u4ed3\u5e93\u6839 functions/\uff01');
+    (!/site\/functions/.test(gs.replace(/^\s*\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')))
+        ? ok('\u5b88\u536b\uff1aghsync \u5df2\u65e0 site/functions \u6b8b\u7559\u5f15\u7528')
+        : bad('\u5b88\u536b\uff1aghsync \u4ecd\u5f15\u7528\u4f5c\u5e9f\u7684 site/functions\uff01');
+    (function () {
+        var m = gs.match(/const ROOT_FILES = \[[^\]]*\]/);
+        if (!m) return bad('\u627e\u4e0d\u5230 ROOT_FILES \u5b9a\u4e49\uff01');
+        (/PROJECT_STATUS|\u5f00\u53d1\u4fa7\u6539\u52a8\u8bb0\u5f55|\u7ed9\u65b0\u6a21\u578b\u7684\u63d0\u793a\u8bcd/.test(m[0]))
+            ? bad('\u5b88\u536b\uff1aghsync \u7684 ROOT_FILES \u6df7\u5165\u4f1a\u8bdd\u6839\u6587\u6863\uff08\u4f1a\u53cc\u4efd\u5047\u7eff\uff09\uff01')
+            : ok('\u5b88\u536b\uff1aghsync \u7684 ROOT_FILES \u672a\u6df7\u5165\u4f1a\u8bdd\u6839\u6587\u6863\uff08\u5f52 doc-sync \u7ba1\uff09');
+    })();
+})();
+
 // ★2026-09-28：曾发生「清理临时脚本 rm -f _*.js」把 _ 开头的重要测试文件一起删掉
 //   —— P0P3 套件（299 条断言）消失了两版都没被发现（checkall 只静默跳过）→ 守卫文件存在性
 ['_test_p0p3.js', '_test_batch3.js'].forEach(function (f) {

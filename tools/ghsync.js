@@ -31,6 +31,11 @@ const DRY = has('dry-run');
 const WWW_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
 const ROOT_FILES = ['README.md', 'CHANGELOG.md', 'prev-snapshot.js', 'bump.js', 'test.js', 'test-ui.js',
   '_test_p0p3.js', '_test_batch3.js'];   // ★2026-09-15 补入：P0P3 断言集与历史批次脚本原仅存于本地
+// ★2026-09-29 核实：`PROJECT_STATUS.md` / `开发侧改动记录.md` / `给新模型的提示词.md`
+//   的位置在**会话根目录**（`PROJ = ROOT/..`），不在主工程 hiking-app3/ 里 ——
+//   它们由 doc-sync.js 负责双端同步（PROJ ↔ GH docs/），**不归 ghsync 管**。
+//   ⇒ 千万别把它们塞进 ROOT_FILES：从 ROOT 读会「源文件缺失（跳过）」，
+//     而核对清单又永远命中不到 → 制造新的假绿。（曾差点这么改，已纠正）
 const ANDROID_FILES = [
   'android/app/build.gradle',
   'android/app/src/main/java/com/xixi/hiking/MainActivity.java',
@@ -88,9 +93,13 @@ function listAssets(dir, base, out) {
 }
 const CHECK = WWW_FILES.map((f) => 'www/' + f)
   .concat(listAssets(assetsDir, '', []))
+  .concat(ROOT_FILES)                       // ★2026-09-29：根文件必须逐个核对（内容来自 ROOT）
+  .concat(ANDROID_FILES)                    // ★2026-09-29：安卓源文件同样纳入核对（此前只复制不核对）
   // ★2026-09-29 补入 functions/download.js（仓库根）：它是 /download 直链的唯一实现。
   //   ★位置修正：原放在 site/functions/ 无效（CF 认仓库根）→ 已移到仓库根 functions/。
-  .concat(['docs/PROJECT_STATUS.md', 'site/index.html', 'site/privacy.html', 'site/terms.html', 'functions/download.js']);
+  .concat(['site/index.html', 'site/privacy.html', 'site/terms.html', 'functions/download.js']);
+// ★注意：`docs/PROJECT_STATUS.md` 等三家文档由 doc-sync.js 从**会话根**同步，不在此核对
+//   （原先列在这里属于无效项：源不在 ROOT，核对永远命中不到 → 假绿）。
 
 console.log(`== ghsync ${DRY ? '(DRY-RUN) ' : ''}==`);
 console.log(`主工程: ${ROOT}`);
