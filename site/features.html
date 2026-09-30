@@ -561,8 +561,8 @@
       介绍再多，<br>不如自己走一趟。
     </blockquote>
     <div class="store-row reveal d2" style="justify-content:center;margin-top:38px">
-      <a href="/download" rel="noopener" class="store"><span class="a">下载 Android 版</span><span class="b">APK · 免费 · 无广告</span></a>
-      <a href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener" class="store"><span class="a">在浏览器里打开</span><span class="b">iPhone · iPad · 电脑</span></a>
+      <a href="/download" rel="noopener" class="store" data-apk><span class="a">下载 Android 版</span><span class="b">APK · 免费 · 无广告</span></a>
+      <a href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener" class="store" data-web><span class="a">在浏览器里打开</span><span class="b">iPhone · iPad · 电脑</span></a>
     </div>
     <div class="doc-foot" style="margin-top:44px">
       <a href="index.html">← 返回首页</a> &nbsp;·&nbsp;
@@ -584,6 +584,22 @@
 <script>
 (function(){
  try{
+  /* ---------- iOS 适配：无安装 APK 能力 → 下载路径全部引导网页版 ---------- */
+  var IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (IS_IOS) {
+    document.documentElement.classList.add('is-ios');
+    document.querySelectorAll('a[href="/download"]').forEach(function (a) {
+      a.setAttribute('href', 'https://xixi-hiking.pages.dev');
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    });
+    document.querySelectorAll('[data-apk]').forEach(function (a) { a.style.display = 'none'; });
+    document.querySelectorAll('[data-web] .b').forEach(function (el) {
+      el.textContent = '添加到主屏幕 · 像 App 一样用';
+    });
+  }
+
   /* ---------- 强制渐显展开（本页无 hero 动画，最长的一段内容必须都看得见） ---------- */
   const reveals = [...document.querySelectorAll('.reveal')];
   const revealAll = ()=>reveals.forEach(el=>el.classList.add('on'));

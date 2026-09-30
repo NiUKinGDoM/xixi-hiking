@@ -251,8 +251,8 @@
     </p>
 
     <div class="store-row reveal d2">
-      <a href="/download" rel="noopener" class="store"><span class="a">下载 Android 版</span><span class="b">APK · 免费 · 无广告</span></a>
-      <a href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener" class="store"><span class="a">在浏览器里打开</span><span class="b">iPhone · iPad · 电脑</span></a>
+      <a href="/download" rel="noopener" class="store" data-apk><span class="a">下载 Android 版</span><span class="b">APK · 免费 · 无广告</span></a>
+      <a href="https://xixi-hiking.pages.dev" target="_blank" rel="noopener" class="store" data-web><span class="a">在浏览器里打开</span><span class="b">iPhone · iPad · 电脑</span></a>
     </div>
 
     <div class="legal reveal d3">免费下载 · 无广告 · 无账号 · 无订阅弹窗<br>Android 装 APK，iPhone 用网页版（添加到主屏幕即可）</div>
@@ -304,6 +304,29 @@
 <script>
 (function(){
  try{
+  /* ---------- iOS 适配：iPhone/iPad 无安装 APK 能力 → 下载路径全部引导网页版 ----------
+     iPadOS 13+ 桌面模式 UA 是 Macintosh，用 maxTouchPoints>1 识别。 */
+  var IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (IS_IOS) {
+    document.documentElement.classList.add('is-ios');
+    /* 所有「下载」入口（首屏 cta / 导航下载 / 锚点）→ 网页版 */
+    document.querySelectorAll('a[href="/download"],a[href="#download"]').forEach(function (a) {
+      a.setAttribute('href', 'https://xixi-hiking.pages.dev');
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    });
+    /* APK 按钮在 iOS 上是死路 → 隐藏 */
+    document.querySelectorAll('[data-apk]').forEach(function (a) { a.style.display = 'none'; });
+    /* 网页版按钮副文案 → 引导添加到主屏幕 */
+    document.querySelectorAll('[data-web] .b').forEach(function (el) {
+      el.textContent = '添加到主屏幕 · 像 App 一样用';
+    });
+    /* 下载区说明改 iOS 专用 */
+    var legal = document.querySelector('.legal');
+    if (legal) legal.innerHTML = '免费 · 无广告 · 无账号<br>打开网页版 → 点「分享」→「添加到主屏幕」，像 App 一样用';
+  }
+
   /* ---------- hero entrance ---------- */
   const hero = document.querySelector('.hero');
   const raiseHero = ()=>{ if(hero) hero.classList.add('hero-ready'); };
@@ -371,7 +394,10 @@
   window.addEventListener('scroll',()=>{
     if(!ticking){ ticking = true; requestAnimationFrame(update); }
   },{passive:true});
-  window.addEventListener('resize', update);
+  /* ★resize 也走 rAF 节流（拖拽窗口时原写法每像素触发一次全量 update） */
+  window.addEventListener('resize',()=>{
+    if(!ticking){ ticking = true; requestAnimationFrame(update); }
+  },{passive:true});
   update();
 
   /* ---------- mobile menu ---------- */

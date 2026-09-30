@@ -624,3 +624,49 @@ nav .btn-line.accent:hover{background:var(--clay);color:var(--paper);border-colo
   .hero-actions .cta{padding-bottom:6px}
   .hero-meta .cell{padding:14px 0 0}
 }
+
+/* ==========================================================================
+   官网适配二轮（2026-09-30）
+   ① 首屏 CTA 升级为醒目按钮（原两行小字下划线太弱，主转化点没有视觉重量）
+   ② 手机端截图区改横滑（原 2 列缩略图看不清细节 + 第 5 张孤零零）
+   ========================================================================== */
+
+/* ① CTA：圆角描边按钮（::before 热区扩展保留） */
+.hero-actions .cta{
+  font-size:12px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;
+  padding:15px 28px;border-radius:12px;
+  border:1px solid var(--ember);
+  background:rgba(204,128,88,.14);
+  color:var(--ember);
+}
+.hero-actions .cta:hover{
+  letter-spacing:.3em;
+  background:rgba(204,128,88,.26);
+}
+.hero-actions .cta.ghost{
+  border-color:rgba(218,212,198,.28);
+  background:rgba(218,212,198,.05);
+  color:var(--bone);
+}
+.hero-actions .cta.ghost:hover{
+  background:rgba(218,212,198,.12);
+  color:var(--paper);
+}
+/* 手机：两个按钮全宽堆叠（醒目全宽行动按钮） */
+@media (max-width:430px){
+  .hero-actions{flex-direction:column;align-items:stretch;gap:14px}
+  .hero-actions .cta{justify-content:center;padding:16px 20px;letter-spacing:.22em}
+}
+
+/* ② 手机截图区：横滑 scroll-snap，每张 ~76vw 能看清 App 界面细节 */
+@media (max-width:560px){
+  .shot-row{
+    display:flex;overflow-x:auto;
+    scroll-snap-type:x mandatory;gap:14px;
+    margin-inline:-22px;padding-inline:22px;   /* 出血到屏幕边缘（wrap 边距 22px） */
+    padding-bottom:12px;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .shot-row::-webkit-scrollbar{display:none}
+  .shot-row .phone{flex:0 0 76vw;scroll-snap-align:center}
+}
