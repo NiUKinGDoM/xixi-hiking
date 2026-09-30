@@ -133,7 +133,7 @@ h1.hero-title{
 .cta.ghost{opacity:.6}
 .cta.ghost:hover{opacity:1}
 .hero-meta{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;
   margin-top:clamp(56px,8vh,88px);border-top:1px solid var(--hair);
 }
 .hero-meta .cell{padding:22px 22px 0 0}
@@ -206,7 +206,7 @@ h1.hero-title{
 .viewswitch .v:hover{border-color:var(--accent);transform:translateY(-3px)}
 .viewswitch .v .a{font-family:var(--display);font-size:16px;letter-spacing:.18em}
 .viewswitch .v .b{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--soft)}
-.photo-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:10px;border:1px solid var(--hair)}
+.photo-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-top:10px;border:1px solid var(--hair)}
 .photo-strip .cell{padding:18px 16px;border-right:1px solid var(--hair)}
 .photo-strip .cell:last-child{border-right:none}
 .photo-strip .k{font-family:var(--display);font-size:17px;letter-spacing:.12em}
@@ -259,7 +259,7 @@ h1.hero-title{
 .spec-list .r{display:grid;grid-template-columns:78px minmax(0,1fr);gap:22px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)}
 .spec-list .r .k{font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--accent)}
 .spec-list .r .v{font-family:var(--display);font-size:16.5px;letter-spacing:.05em;line-height:1.75}
-.formats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:38px}
+.formats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:38px}
 .fmt{border:1px solid var(--hair);padding:20px 18px;display:flex;flex-direction:column;gap:9px;transition:.6s var(--ease)}
 .fmt:hover{border-color:var(--accent);transform:translateY(-4px)}
 .fmt .a{font-family:var(--display);font-size:17px;letter-spacing:.12em}
@@ -283,12 +283,12 @@ h1.hero-title{
   border:1px solid var(--accent);transform:translateY(-50%) rotate(45deg);background:var(--paper);
 }
 .sec[data-tone="dark"] .tether::after{background:var(--ink)}
-.sync-quad{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border:1px solid var(--hair);margin-top:14px}
+.sync-quad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;border:1px solid var(--hair);margin-top:14px}
 .sync-quad .q{padding:16px 12px;text-align:center}
 .sync-quad .q .a{font-family:var(--display);font-size:13px;letter-spacing:.16em}
 .sync-quad .q .b{margin-top:7px;font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:var(--soft)}
 
-.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 clamp(28px,4vw,64px);border-top:1px solid var(--hair)}
+.set-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 clamp(28px,4vw,64px);border-top:1px solid var(--hair)}
 .set-grid .r{padding:15px 0;border-bottom:1px solid var(--hair)}
 .set-grid .r .t{display:flex;align-items:baseline;gap:12px}
 .set-grid .r .t .name{font-family:var(--display);font-size:15px;letter-spacing:.12em;white-space:nowrap}
@@ -359,7 +359,7 @@ h1.hero-title{
 
 /* ---------- footer ---------- */
 footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,212,198,.13);--soft:var(--bone-2)}
-.f-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:clamp(28px,4vw,64px);padding-bottom:52px;border-bottom:1px solid var(--hair)}
+.f-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,4vw,64px);padding-bottom:52px;border-bottom:1px solid var(--hair)}
 .f-brand .wm{
   font-family:var(--display);font-size:clamp(20px,2.1vw,29px);font-weight:700;
   letter-spacing:.2em;text-indent:.2em;color:var(--paper);white-space:nowrap;
@@ -401,11 +401,11 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
   nav{padding-inline:24px}
   .wrap{width:calc(100% - 44px)}
   .hero{padding-top:120px}
-  .hero-meta{grid-template-columns:repeat(2,1fr);gap:0 18px}
+  .hero-meta{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}
   .hero-meta .cell{padding:18px 0 0}
   .scroll-cue{display:none}
   .ledger .item{grid-template-columns:1fr;gap:16px}
-  .photo-strip{grid-template-columns:repeat(2,1fr)}
+  .photo-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
   .photo-strip .cell:nth-child(2n){border-right:none}
   .spread .zeros{flex-wrap:wrap;gap:28px}
   .formats{grid-template-columns:1fr}
@@ -463,7 +463,7 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
 /* ---------- 更新日志 ---------- */
 .rel-list{border-top:1px solid var(--hair)}
 .rel-item{
-  display:grid;grid-template-columns:158px 1fr;gap:clamp(20px,3vw,44px);
+  display:grid;grid-template-columns:158px minmax(0,1fr);gap:clamp(20px,3vw,44px);
   padding:clamp(26px,3.2vw,40px) 0;border-bottom:1px solid var(--hair);
 }
 .rel-ver{font-family:var(--display);font-size:15px;letter-spacing:.1em;font-variant-numeric:tabular-nums}
@@ -540,7 +540,7 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
   .ledger .item::before{left:0;right:0}
 }
 @media (max-width:520px){
-  .sync-quad{grid-template-columns:repeat(2,1fr)}
+  .sync-quad{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* ==========================================================================
@@ -672,3 +672,58 @@ nav .btn-line.accent:hover{background:var(--clay);color:var(--paper);border-colo
   .shot-row::-webkit-scrollbar{display:none}
   .shot-row .phone{flex:0 0 76vw;scroll-snap-align:center}
 }
+
+/* ==========================================================================
+   官网下载按钮等宽（2026-09-30）
+   ★原用 flex，按钮宽度由内容决定 → 「下载 Android 版」(210px) 比
+     「在浏览器里打开」(190px) 宽，两个框一大一小。改 grid 等分列，
+     四端（安卓 / iOS / Windows / macOS）宽度一致。
+   ========================================================================== */
+.store-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  max-width:440px;
+  margin-inline:auto;
+  margin-top:52px;
+  justify-content:center;
+}
+.store{
+  width:100%;
+  min-width:0;              /* 宽度交给 grid 控制（原 min-width:190px 会让小块撑破等分） */
+  padding:19px 20px;
+}
+/* 窄屏：单列，两个按钮依然等宽 */
+@media (max-width:520px){
+  .store-row{grid-template-columns:1fr;max-width:300px}
+}
+/* ★iOS 端 APK 按钮被隐藏 → 只剩一个按钮，也走单列，宽度与其他端保持一致 */
+.is-ios .store-row{grid-template-columns:1fr;max-width:300px}
+
+/* ==========================================================================
+   详细介绍页适配补正（2026-09-30）
+   ① 锚点跳转防顶栏遮挡：nav 是 fixed（高 93~96px），点 01/02 跳转后
+      目标节标题会紧贴甚至被顶栏压住（实测只差 1px，极端情况会遮挡）
+   ② 全部多列 grid 的 1fr 已统一包 minmax(0,1fr)（防内容撑破列宽）
+   ========================================================================== */
+section.sec[id],
+.finale[id]{
+  scroll-margin-top:104px;
+}
+
+/* ③ 文字链接扩触控热区（视觉零改动）——手机上次要入口（更新日志/历史版本）也要好点 */
+.rel-more a,
+.dl-note a{
+  position:relative;
+}
+.rel-more a::before,
+.dl-note a::before{
+  content:"";position:absolute;left:-8px;right:-8px;top:-12px;bottom:-10px;
+}
+
+/* ④ ★详细介绍页节间距收小 —— 首页只有 2 个内容节（靠大留白造章节节奏），
+     features 有 9 节连续排列，沿用首页的大 padding（手机 96px / 桌面 178px 上下）
+     会让节间空白累加到近 1800px，页面又长又空。本页单独收窄。 */
+.feat-page .sec{padding:clamp(60px,7.5vw,110px) 0}
+.feat-page .sec-head{margin-bottom:clamp(40px,4.6vw,72px)}
+.feat-page .page-head{padding-bottom:clamp(28px,4vw,44px)}
