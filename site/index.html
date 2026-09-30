@@ -333,6 +333,24 @@
   requestAnimationFrame(raiseHero);
   setTimeout(raiseHero, 1600);              // ★兜底：首屏标题必须出现，不能永远等动画
 
+  /* ★加固（2026-09-30）：标题原本只靠 animation 的 forwards 保持终态 —— 一旦动画
+     在滚动重排 / 后台标签页 / 省电模式下未播放或被中断，标题会永久停在
+     translateY(112%)+opacity:0（用户反馈「往上划时标题不显示」）。这里双保险：
+     ① 动画窗口结束后显式锁定终态；② 滚动经过 hero 时探针纠正。视觉零改动。 */
+  const lockHeroTitle = (force)=>{
+    try{
+      const r = hero ? hero.getBoundingClientRect() : null;
+      if(!force && !(r && r.bottom > 0 && r.top < window.innerHeight)) return;
+      document.querySelectorAll('.hero-title .mask > span').forEach(s=>{
+        if(force || parseFloat(getComputedStyle(s).opacity) < 0.9){
+          s.style.transform = 'translateY(0)';
+          s.style.opacity = '1';
+        }
+      });
+    }catch(e){}
+  };
+  setTimeout(()=>lockHeroTitle(true), 1700);
+
   /* ---------- reveal ---------- */
   const reveals = [...document.querySelectorAll('.reveal')];
   const revealAll = ()=>reveals.forEach(el=>el.classList.add('on'));
@@ -389,6 +407,7 @@
         }
       }
     }
+    lockHeroTitle();          // ★探针：经过 hero 时确保标题可见（rAF 节流内，开销可忽略）
     ticking = false;
   };
   window.addEventListener('scroll',()=>{

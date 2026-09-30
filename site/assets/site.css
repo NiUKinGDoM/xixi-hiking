@@ -727,3 +727,50 @@ section.sec[id],
 .feat-page .sec{padding:clamp(60px,7.5vw,110px) 0}
 .feat-page .sec-head{margin-bottom:clamp(40px,4.6vw,72px)}
 .feat-page .page-head{padding-bottom:clamp(28px,4vw,44px)}
+
+/* ==========================================================================
+   下载框适配深浅色调（2026-09-30）
+   ★根因：.store .a 硬编码 var(--paper)（浅米色字），而 features 收尾区是
+     .spread（背景 --paper-2 浅米）→「浅字压浅底」完全看不清（首页 .finale 是
+     深色底，浅字本来正确，所以只在详细介绍页暴露）。
+   改为跟随色调变量：.spread 已定义，.finale（深色）补上。
+   ========================================================================== */
+.finale{
+  --hair:rgba(218,212,198,.17);
+  --soft:var(--bone-2);
+  --accent:var(--ember);
+}
+.store{border-color:var(--hair)}
+.store:hover{border-color:var(--accent)}
+.store .a{color:inherit}
+.store .b{color:var(--soft)}
+
+/* ==========================================================================
+   手机顶栏「更多」菜单收窄（2026-09-30）
+   ★根因：字号 clamp(28px,7.4vw,42px) + padding 11px 0 → 每行≈77px，
+     10 个菜单项 ≈770px，在 844px 高的屏上几乎撑满；且 justify-content:center
+     内容超高时上下同时溢出、顶部被裁。
+   改为：字号收到 clamp(19px,5.2vw,30px)、顶部对齐 + 可滚动（内容超高也不裁）。
+   ========================================================================== */
+.m-menu{
+  justify-content:flex-start;
+  gap:0;
+  padding:clamp(92px,13vh,116px) 32px 32px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.m-menu a{
+  font-size:clamp(18px,5vw,28px);
+  padding:8px 0;
+}
+
+/* ==========================================================================
+   截图整体缩小（2026-09-30，用户「所有截图比例缩小一点，现在都太大了」）
+   ========================================================================== */
+.phone-single{max-width:300px}          /* 原 352 */
+.phone-single.phone-lg{max-width:344px}  /* 原 400 */
+.card-frame{max-width:360px}             /* 原 420 */
+.shot-row{max-width:1000px}              /* 原 1160 */
+@media (max-width:560px){
+  .shot-row .phone{flex:0 0 66vw}        /* 原 76vw */
+}
