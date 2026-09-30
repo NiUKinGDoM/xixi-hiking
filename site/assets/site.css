@@ -410,8 +410,10 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
   .spread .zeros{flex-wrap:wrap;gap:28px}
   .formats{grid-template-columns:1fr}
   .set-grid{grid-template-columns:1fr}
-  .f-grid{grid-template-columns:1fr 1fr}
+  /* ★2026-09-30 footer 三列并排（原 2 列导致「关于」孤零零占一行）+ 品牌描述撑满 */
+  .f-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:26px clamp(14px,3.4vw,28px)}
   .f-brand{grid-column:1/-1}
+  .f-brand p{max-width:none}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition-duration:.01ms!important}
