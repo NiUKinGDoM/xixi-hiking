@@ -20,7 +20,7 @@
  * ★2026-09-10 v18→v19：**去外部 CDN 依赖**——图标字体（原阿里 CDN，断网图标全失效）+ Tailwind 运行时（原阿里 CDN，断网布局塌）本地化；SW 收录字体/vendor/PWA 图标/manifest
  * ★2026-09-29 v19→v20 起略（详见各版 CACHE_NAME 行注释）：v1.2.3.2 → v54 多镜像冗余；v1.2.3.3 → v55 关于页去署名 + 政策补官网
  */
-const CACHE_NAME = 'xixi-hiking-v56';   // ★2026-09-30 v1.2.3.4：资源校验误报修复 + 弹窗统一玻璃设计语言
+const CACHE_NAME = 'xixi-hiking-v57';   // ★2026-10-08 折叠屏适配：内容居中撑满（修展开后右侧大片空白）
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {

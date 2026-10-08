@@ -875,6 +875,21 @@
             .grid[class*="grid-cols-3"][class*="gap-2"] > * { margin: 4px; }
             .grid[class*="grid-cols-4"][class*="gap-3"] > * { margin: 6px; }
         }
+        /* ★2026-10-08 折叠屏适配（大折叠 / 阔折叠 / 小折叠展开态）
+           背景：Tailwind 产物里的 .container 从 40rem(640px) 起就限宽（40rem→640 / 48rem→768），
+           但本项目的「居中」规则原先只在 ≥1024px 生效 → 640~1023px 区间变成「限宽但左对齐」，
+           屏幕右侧堆出一大片空白（大折叠内屏 673~900px 正好落在这个区间）。
+           ⇒ 把居中限宽下探到 600px。手机（<600px）保持全宽，布局零影响。 */
+        @media (min-width: 600px) and (max-width: 1023.98px) {
+            .container.container {
+                max-width: 900px;
+                margin-left: auto;
+                margin-right: auto;
+                /* 内容不贴屏幕边（折叠屏展开后屏幕变宽，贴边会显得局促） */
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
         /* ★2026-08-25 iPad/大屏适配（仅 ≥1024px 生效，手机布局零影响）：内容限宽居中 + 底栏不拉伸 */
         /* ★2026-08-29 .container.container 双类提特异性：压过 Tailwind 产物同名 .container（3233 行 64rem=1024px 会覆盖 900px） */
         @media (min-width: 1024px) {
