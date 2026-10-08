@@ -233,8 +233,17 @@ function initGlobalSearch() {
     }
     if (window.visualViewport) {
         // ★2026-08-27 resize/scroll 都直接处理（不要求聚焦）：键盘弹起跟随、收起回位——按返回键关键盘也能恢复
-        window.visualViewport.addEventListener('resize', function () { applyKeyboardOffset(); });
-        window.visualViewport.addEventListener('scroll', function () { applyKeyboardOffset(); });
+        // ★2026-10-08 五项优化③：加 rAF 节流 —— 键盘弹起/收起动画期间 visualViewport 会高频触发
+        //   （每帧多次），每次都调 applyKeyboardOffset 会反复写 bottom（触发布局）→ 跟随发涩/掉帧。
+        //   节流成「每帧最多一次」，跟手更顺，行为与观感不变。
+        let kvTicking = false;
+        const onViewportChange = function () {
+            if (kvTicking) return;
+            kvTicking = true;
+            requestAnimationFrame(function () { kvTicking = false; applyKeyboardOffset(); });
+        };
+        window.visualViewport.addEventListener('resize', onViewportChange);
+        window.visualViewport.addEventListener('scroll', onViewportChange);
     }
     input.addEventListener('focus', function () {
         clearTimeout(searchHideTimer); // ★2026-08-27 聚焦时取消自动消失计时器（防输入中框消失）
@@ -1212,7 +1221,7 @@ window.__showTamperWarn = function (file) {
         modal.id = 'tamperWarnModal';
         modal.setAttribute('data-persist', '1');
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;">' +
+            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;width: calc(100vw - 44px);box-sizing: border-box;">' +
                 '<div class="confirm-modal-title">' +
                     '<span class="material-icons" style="color: #d97706;">shield_moon</span>' +
                     '资源校验提示' +

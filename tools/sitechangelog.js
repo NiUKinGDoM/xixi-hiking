@@ -4,7 +4,7 @@
  *
  * 为什么需要它（用户 2026-09-29 原话）：
  *   「以后每次同步 app 和 github 以后，把官网也同步了，下载和更新日志那里。」
- *   —— 官网 `site/index.html` 的「09 更新日志」段原来是**手写的最近两版**，
+ *   —— 官网 `site/features.html` 的「09 更新日志」段原来是**手写的最近两版**，
  *      发版时极易忘记改，导致官网长期显示旧版本日志（用户一眼就看出没更新）。
  *
  * 数据来源：`www/app-core.js` 的 `BUILTIN_CHANGELOG` —— 它就是 App 内更新弹窗
@@ -126,12 +126,12 @@ function renderVersion(tag, dcls) {
 const blocks = versions.map((v, i) => renderVersion(v, 'd' + (i + 1))).join('\n');
 const newList = '<div class="rel-list">\n' + blocks + '\n    </div>';
 
-// ---------- 5) 注入 site/index.html ----------
+// ---------- 5) 注入 site/features.html ----------
 let site = fs.readFileSync(SITE, 'utf8');
 const E = site.includes('\r\n') ? '\r\n' : '\n';
 const SEC_MARK = '<!-- ══════════ 09 更新日志 ══════════ -->';
 const secAt = site.indexOf(SEC_MARK);
-if (secAt < 0) { console.error('✗ site/index.html 找不到「09 更新日志」注释锚点'); process.exit(1); }
+if (secAt < 0) { console.error('✗ site/features.html 找不到「09 更新日志」注释锚点'); process.exit(1); }
 const listAt = site.indexOf('<div class="rel-list">', secAt);
 const listEndMark = '</div>\n\n    <div class="rel-more reveal';
 const listEnd = site.indexOf(listEndMark, listAt);
@@ -164,7 +164,7 @@ if (curNorm === newNorm) {
   process.exit(0);
 }
 if (DRY) {
-  console.log('[DRY] 将把 site/index.html 的 .rel-list 段替换为：\n');
+  console.log('[DRY] 将把 site/features.html 的 .rel-list 段替换为：\n');
   console.log(newList);
   process.exit(0);
 }
@@ -176,9 +176,9 @@ const patched = site.slice(0, listAt) + newList.split('\n').join(E) + site.slice
 fs.writeFileSync(SITE, patched, 'utf8');
 const back = fs.readFileSync(SITE, 'utf8');
 const okWrite = back.includes('<div class="rel-ver">' + versions[0] + '<span>');
-console.log((okWrite ? '✅' : '✗') + ' site/index.html 更新日志段已同步 → ' + versions.join(' / '));
+console.log((okWrite ? '✅' : '✗') + ' site/features.html 更新日志段已同步 → ' + versions.join(' / '));
 console.log('   首页版本: ' + versions[0]);
-// ★2026-09-29 修复：写前备份原先从不清理，会残留 site/index.html.siteclbak
+// ★2026-09-29 修复：写前备份原先从不清理，会残留 site/features.html.siteclbak
 //   并随 ghsync 同步进仓库（污染工作区、每次 push 多一个未跟踪文件）。
 //   现在：回读校验**通过即删除**；**失败则保留**（供人工对比排查）。
 if (okWrite) {
