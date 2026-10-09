@@ -153,7 +153,7 @@ try {
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
-    dj.includes("(r.notes || '').toLowerCase().indexOf(q)") && dj.includes("(r.mood || '')") ? ok('搜索扩展小日记/心情等字段') : bad('全文搜索缺失!');
+    dj.includes('lowerText(r.notes).indexOf(q)') && dj.includes('lowerText(r.mood)') ? ok('搜索扩展小日记/心情等字段') : bad('全文搜索缺失!');
     dj.includes('function confirmWipeAllData') && dj.includes('function wipeAllDataExecute') ? ok('抹掉数据双重确认存在') : bad('wipe 函数缺失!');
     ih.includes('id="wipeAllBtn"') ? ok('设置页抹掉按钮在位') : bad('wipeAllBtn 缺失!');
     dj.includes('function maybeShowOverdueCare') ? ok('计划过期关怀函数存在') : bad('maybeShowOverdueCare 缺失!');
@@ -163,6 +163,35 @@ try {
     ih.includes('.pl-overdue') ? ok('过期红标样式在位') : bad('pl-overdue 缺失!');
     ij.includes('maybeShowOverdueCare') ? ok('启动挂过期关怀') : bad('关怀调用缺失!');
 } catch (e) { bad('5e 检查失败: ' + e.message); }
+
+// 5e-2. ★2026-10-09 搜索框按视图收敛（山册视图 / 计划日历视图不再提供搜索）
+console.log('-- 5e-2. 搜索框视图收敛 --');
+try {
+    const dj2 = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    dj2.includes('function isSearchUnavailableView') ? ok('搜索框：视图可用性判断在') : bad('isSearchUnavailableView 缺失!');
+    /recordsViewMode === 'mountain'/.test(dj2) && /plansViewMode === 'calendar'/.test(dj2) ? ok('搜索框：山册 + 计划日历两视图已排除') : bad('视图排除不完整!');
+    dj2.includes('function clearGlobalSearchQuery') ? ok('搜索框：切到这两个视图会清空搜索词（防过滤残留）') : bad('clearGlobalSearchQuery 缺失!');
+    (!/locatePlanInCalendar|calendarSearchMatches/.test(dj2)) ? ok('搜索框：日历搜索定位死代码已清理') : bad('日历搜索死代码残留!');
+    dj2.includes('var keys = allKeys;') ? ok('搜索框：山册渲染不再按搜索词过滤') : bad('山册仍在按搜索词过滤!');
+
+    // 5e-3. ★2026-10-09 隐私政策 / 免责声明法律要素补强
+    dj2.includes('个人信息处理者') ? ok('隐私：写明个人信息处理者身份') : bad('个人信息处理者身份缺失!');
+    dj2.includes('跨境传输') && dj2.includes('中国境外') ? ok('隐私：含数据出境告知（GitHub 境外服务器）') : bad('数据出境告知缺失!');
+    dj2.includes('重新征求你的同意') ? ok('隐私：重大变更「重新征求同意」写实') : bad('重新征求同意表述缺失!');
+    dj2.includes('本应用不具备定位与求救功能') && dj2.includes('110') ? ok('免责：含紧急情况报警提示') : bad('紧急报警提示缺失!');
+
+    // 5e-4. ★2026-10-09② 运营者主体改名 xixi + 新增「个人信息安全事件的通知」（PIPL 第 57 条）
+    dj2.includes('由<b>xixi</b>') && dj2.includes('运营者为<b>xixi</b>') && !dj2.includes('个人开发者') ? ok('隐私：运营者主体为 xixi') : bad('运营者主体表述不对!');
+    dj2.includes('六、个人信息安全事件的通知') && dj2.includes('立即采取补救措施') && dj2.includes('履行个人信息保护职责的部门') ? ok('隐私：含安全事件通知（补救 + 告知 + 报告部门）') : bad('安全事件通知条缺失!');
+    (function () {
+        // ★注意：`AGREEMENT_STAMP` 的**常量声明**在正文之前 → 必须取 lastIndexOf，否则切片为空
+        var _a = dj2.indexOf('适用范围与生效'), _b = dj2.lastIndexOf('AGREEMENT_STAMP');
+        var _seg = (_a >= 0 && _b > _a) ? dj2.slice(_a, _b) : '';
+        var _nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一'];
+        var _hit = _nums.filter(function (n) { return _seg.indexOf('dmi-title">' + n + '、') >= 0; });
+        _hit.length === 11 ? ok('隐私：条目编号一~十一完整无重复') : bad('隐私条目编号异常（命中 ' + _hit.length + '/11）!');
+    })();
+} catch (e) { bad('5e-2 检查失败: ' + e.message); }
 
 // 5f. 2026-09-06 装机反馈第二波修复（深色用时里程框 / 导出说明迁 i / 引导 ✕ 四卡齐）
 console.log('-- 5f. 09-06 反馈修复 --');

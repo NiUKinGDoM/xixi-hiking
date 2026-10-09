@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-10-08（v1.2.3.5 / vc280）  
+> 最后更新：2026-10-09（v1.2.3.6 / vc281）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -282,6 +282,7 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - **★push 结果必须实证**：`git push` 输出无异常 ≠ 已生效；用 `git ls-remote <url> refs/heads/master` 比对本地 `HEAD`（`git fetch <url> master` 不带 refspec 时 `FETCH_HEAD` 不可靠，本轮踩到误判）。
   - **★GH 双落点复核**：`docrelease.js` 只更新 `docs/PROJECT_STATUS.md`，**根目录那份不会自动跟** → 必须补跑 `node tools/doc-sync.js --apply` 再 push，否则 GitHub 网页（默认打开根目录）看到的仍是旧版。复核用 API 抓 raw + 比字节（GitHub 会 CRLF→LF，比较前先归一化）。
 - **发布链路（v1.2.3.2 实测）**：回退点 `backups/prev-1.2.3.2/` → 版本三处已就位（vc277 / `APP_VERSION` / sw v54）→ BUILTIN 注入 → 文档三处 → 自检 → audit → 构建 2.40MB → APK 验证（签名有效 / vc277 / v1.2.3.2 / 资源齐全 / sha256 `2260a7d8…`）→ push `f405a53` + 文档补同步 `67dad48` → Release `v1.2.3.2`（id 399036625）+ APK 上传（服务端 digest 与本地 sha256 一致）→ 线上：`/download` 302 `mirror:gh-proxy.com` + `X-Download-Gateway: xixi-hiking` + iPhone 跳网页版 + 官网首页 v1.2.3.2 + App 站 `APP_VERSION=1.2.3.2`。
+- **正式版 v1.2.3.6（vc281）** —— 搜索框按视图收敛（山册 / 计划日历不再有）+ 隐私政策与免责声明补强（主体 xixi / 数据出境 / 安全事件通知 / 重新征同意 / 紧急报警）（2026-10-09）
 - **正式版 v1.2.3.5（vc280）** —— 折叠屏 / 大屏适配 + 弹窗宽度加固 + 键盘跟随节流（2026-10-08）
   - **① 折叠屏适配（用户点名：阔折叠 / 大折叠 / 小折叠）** —— 用户反馈「大折叠展开后内容边界不足，屏幕右边四分之一都是空白」。**★根因**：`.container` 被两套规则打架 —— Tailwind 产物从 `40rem(640px)` 起就给 `.container` 限宽（640 / 768 / 1024…），而本项目的**居中规则原先只在 ≥1024px 生效** → **640~1023px 区间「限宽但左对齐」**，空白全堆右侧；大折叠内屏（Fold5≈673 / MIX Fold3≈720 / Mate X 系≈900~1000）**恰好全落在这个区间**。实测 1000px 视口右空 **232px（23.2%）** —— 正是用户说的「四分之一」。
   - **修法**：新增 `@media (min-width:600px) and (max-width:1023.98px)`，`.container.container{max-width:900px;margin:auto;padding:0 20px}`（双类提特异性压过 Tailwind）。手机（<600px）零影响；≥1024px 原有 iPad 规则不动。

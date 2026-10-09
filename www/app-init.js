@@ -634,7 +634,6 @@ function setupEventListeners() {
                     calendarViewYear = nowCal.getFullYear();
                     calendarViewMonth = nowCal.getMonth();
                     calendarSelKey = null;
-                    calendarSearchMatches = null;
                 }
                 // ★2026-08-11 二次点击刷新：先退出计划编辑态再渲染
                 if (typeof plannedEditingId !== 'undefined' && plannedEditingId !== null) {
@@ -749,11 +748,9 @@ function setupEventListeners() {
         if (tabId === 'plans' && typeof renderPlannedTripsTable === 'function') {
             try { renderPlannedTripsTable(); } catch (e) { console.error('lazy render plans failed:', e); }
         }
-        // ★2026-08-27 计划页搜索修复：placeholder 按页切换（计划页不再显示"搜索记录…"）+ 切页自动呼出搜索框一次
-        //   （计划少、页面不足一屏时轻滑无法滚动呼出，切页自动出现让用户知道搜索框位置，1 秒不碰自动消失）
-        // ★2026-09-11 用户确认：计划页日历视图与列表视图逻辑一致，同样自动呼出搜索框
-        //   （原 ★2026-08-31「日历下不呼出」取消——日历搜索会定位到匹配计划的日期 locatePlanInCalendar，
-        //    且计划条数少时页面不足一屏、无法靠轻滑呼出，不弹即等于搜索不可达）
+        // ★2026-08-27 计划页搜索修复：placeholder 按页切换（计划页不再显示"搜索记录…"）
+        // ★2026-10-09 山册视图 / 计划日历视图不提供搜索（用户要求）→ 统一交给 pokeSearchBar 判断，
+        //   只有「记录页列表视图 / 计划页列表视图」才会显示搜索框，另两个视图自动隐藏
         if (tabId === 'records' || tabId === 'plans') {
             // ★2026-09-11 修复：pokeSearchBar 第一行按 currentTabId 判断当前页，必须先同步为 tabId——
             //   本块原先早于 currentTabId 赋值执行，poke 时读到的还是上一个 tab，直接判定「不在记录/计划页」并隐藏，

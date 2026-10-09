@@ -59,6 +59,17 @@ function getSortedRecords() {
 
 let renderTableRAF = null;
 
+// ★2026-10-09 清空全局搜索词（切到「山册 / 计划日历」这类不提供搜索的视图时调用）
+//   只清状态与输入框；重渲染交给调用方（避免出现"搜索框没了、过滤却还生效"的死结）
+function clearGlobalSearchQuery() {
+    if (typeof searchQuery !== 'string' || !searchQuery) return;
+    searchQuery = '';
+    var inp = safeGetElementById('globalSearchInput');
+    if (inp) inp.value = '';
+    var clr = safeGetElementById('globalSearchClear');
+    if (clr) clr.style.display = 'none';
+}
+
 // ★2026-08-27 记录/计划搜索（方案A：默认隐藏，往下滚动滑出/滚回顶部收起；有搜索词时常显；输入实时按名称过滤）
 function initGlobalSearch() {
     const bar = safeGetElementById('globalSearchBar');
@@ -73,8 +84,16 @@ function initGlobalSearch() {
     // ★2026-08-27 显示规则（用户最终方案）：任意方向轻滑（滚动发生）即显示；1 秒不碰自动消失；
     //   有搜索词或输入框聚焦时常显；仅记录/计划页生效（★2026-08-27 底部避让分页已按用户要求移除）
     let searchHideTimer = null;
+    // ★2026-10-09 山册视图（记录页）/ 计划日历视图不提供搜索（用户要求）→ 这两个视图下搜索框不出现
+    function isSearchUnavailableView() {
+        if (currentTabId === 'records') return typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain';
+        if (currentTabId === 'plans') return typeof plansViewMode !== 'undefined' && plansViewMode === 'calendar';
+        return false;
+    }
     function pokeSearchBar() {
         if (currentTabId !== 'records' && currentTabId !== 'plans') { setBarVisible(false); return; }
+        // ★2026-10-09 山册 / 计划日历视图：隐藏搜索框并清掉搜索词（否则「框没了但过滤还在」成死结）
+        if (isSearchUnavailableView()) { clearGlobalSearchQuery(); setBarVisible(false); return; }
         if (document.activeElement === input) { setBarVisible(true); return; } // 输入中常显
         // ★2026-09-02 自动避让分页键（用户要求）：滚动接近页面底部（分页/批量条区域露出）时收起搜索框，
         //   避免悬浮条盖住"上一页/下一页/页码"；向上离开底部区域即恢复显示
@@ -114,17 +133,14 @@ function initGlobalSearch() {
         clearTimeout(searchHideTimer); // 打字时取消自动消失计时器
         setBarVisible(true); // 输入时常显
         if (currentTabId === 'records') {
-            if (typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') renderMountainBook(); // ★2026-09-03 山册模式按山名实时过滤
-            else { recordPage = 1; renderTable(); }
+            // ★2026-10-09 山册视图已不提供搜索（搜索框不出现）→ 这里只需按列表刷新
+            recordPage = 1;
+            renderTable();
         }
         else if (currentTabId === 'plans') {
-            if (plansViewMode === 'calendar') {
-                // ★2026-08-31 日历模式搜索：定位到匹配计划的日历日期并标记
-                locatePlanInCalendar(searchQuery);
-            } else {
-                plannedPage = 1;
-                renderPlannedTripsTable();
-            }
+            // ★2026-10-09 计划日历视图已不提供搜索（搜索框不出现）→ 这里只需按列表刷新
+            plannedPage = 1;
+            renderPlannedTripsTable();
         }
     }
     input.addEventListener('compositionstart', function () {
@@ -262,19 +278,8 @@ function initGlobalSearch() {
         input.value = '';
         clear.style.display = 'none';
         pokeSearchBar(); // 清空后回到「滚动显示 + 1 秒自动消失」规则
-        // ★2026-08-31 日历模式清空搜索：复位日历到今天所在月
-        if (plansViewMode === 'calendar') {
-            calendarSearchMatches = null;
-            calendarSelKey = null;
-            var now = new Date();
-            calendarViewYear = now.getFullYear();
-            calendarViewMonth = now.getMonth();
-        }
-        // ★2026-09-03 山册模式清空搜索：同样要重渲染山册（原只 renderTable 渲染隐藏列表，山册残留过滤结果不还原）
-        if (currentTabId === 'records') {
-            if (typeof recordsViewMode !== 'undefined' && recordsViewMode === 'mountain') renderMountainBook();
-            else { recordPage = 1; renderTable(); }
-        }
+        // ★2026-10-09 山册 / 计划日历视图已不提供搜索（搜索框不出现）→ 清空只可能发生在列表视图
+        if (currentTabId === 'records') { recordPage = 1; renderTable(); }
         else if (currentTabId === 'plans') { plannedPage = 1; renderPlannedTripsTable(); }
     });
     // 搜索框内回车/失焦不收起（保持简单）；供 switchTab 切页时清空
@@ -283,8 +288,6 @@ function initGlobalSearch() {
         if (input) input.value = '';
         if (clear) clear.style.display = 'none';
         setBarVisible(false);
-        // ★2026-08-31 日历模式清空搜索：复位定位状态
-        if (typeof calendarSearchMatches !== 'undefined') calendarSearchMatches = null;
     };
     // ★2026-08-27 计划页搜索修复：暴露呼出函数，供 switchTab 切到记录/计划页时自动显示搜索框
     //   （计划少、页面不足一屏时无法滚动呼出，切页自动出现一次让用户知道搜索框位置）
@@ -1856,7 +1859,7 @@ function showDisclaimerModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">wb_sunny</span>
                         <div style="min-width:0;"><div class="dmi-title">四、出发前做好准备</div>
-                            <div class="dmi-body">请先查看天气预报与封山公告，结伴而行，带足饮水、照明与充电设备；不逞强、不夜行、不涉险，量力而行。户外安全永远由你本人第一位负责。</div></div>
+                            <div class="dmi-body">请先查看天气预报与封山公告，结伴而行，带足饮水、照明与充电设备；不逞强、不夜行、不涉险，量力而行。<b>本应用不具备定位与求救功能</b>——遇险请立即拨打 110、119 或当地山地救援电话，不要依赖本应用中的记录或坐标。户外安全永远由你本人第一位负责。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">warning</span>
@@ -1891,7 +1894,7 @@ function showDisclaimerModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">gavel</span>
                         <div style="min-width:0;"><div class="dmi-title">十一、条款变更与适用法律</div>
-                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>，因本声明或使用本应用发生争议的，双方应友好协商解决；协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-09-29。</div></div>
+                            <div class="dmi-body">本声明可能随版本更新调整，更新后在本页展示；若调整涉及你的重要权益，我们会在应用内<b>重新征求你的同意</b>。你继续使用本应用即视为接受更新后的条款，如不同意请停止使用并卸载。本声明适用<b>中华人民共和国法律</b>；因本声明或使用本应用发生争议的，双方应友好协商解决，协商不成的，可依法向有管辖权的人民法院提起诉讼。生效日期：2026-10-09。</div></div>
                     </div>
             </div>
             <div class="confirm-modal-buttons">
@@ -1906,7 +1909,7 @@ function showDisclaimerModal() {
 // ★2026-09-18 同意留存（隐私政策 / 免责声明）
 //   立法本意：用户「明确同意」必须有痕迹 —— 显式勾选 + 本机记录（条款版本 + 时间戳）。
 //   ★改动政策正文时必须同步 bump LEGAL_VERSION（与正文「生效日期」保持一致）→ 会自动重新征求同意。
-const LEGAL_VERSION = '2026-09-29';
+const LEGAL_VERSION = '2026-10-09';
 const LEGAL_AGREE_KEY = 'hiking_legal_agree';
 let _legalPromptedThisSession = false;   // 启动时已主动弹过（同一会话不再打扰）
 let _legalTabPrompted = false;           // 首次进设置页已弹过
@@ -1951,7 +1954,7 @@ function showLegalConsentModal() {
                 '<div class="dmi-group">' +
                     '<span class="material-icons dmi-ic">shield</span>' +
                     '<div style="min-width:0;"><div class="dmi-title">关于你的数据</div>' +
-                    '<div class="dmi-body">记录与照片只保存在本机；只有你主动配置网盘后，数据才会同步到<b>你自己的</b>账号。本应用没有开发者服务器，不收集、不上传任何使用数据。</div></div>' +
+                    '<div class="dmi-body">记录与照片只保存在本机；只有你主动配置网盘后，数据才会同步到<b>你自己的</b>账号。本应用没有开发者服务器，不收集、不上传任何使用数据。唯一的联网是启动时的「检查更新」——仅向 GitHub 查询版本号（该服务器位于中国境外），传输 IP 与浏览器标识，<b>不含你的记录与照片</b>，详见《隐私政策》第四条。</div></div>' +
                 '</div>' +
                 '<div class="dmi-group">' +
                     '<span class="material-icons dmi-ic">description</span>' +
@@ -2043,7 +2046,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">info</span>
                         <div style="min-width:0;"><div class="dmi-title">适用范围与生效</div>
-                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。生效日期：2026-09-23；最近更新：2026-09-29。本政策随版本迭代更新，重大变更会在应用内提示。</div></div>
+                            <div class="dmi-body">本政策适用于「XiXiの徒步小记」Android 客户端与网页版（以下统称<b>本应用</b>）。本应用由<b>xixi</b>独立开发与维护（下称「开发者」或「我们」），属《中华人民共和国个人信息保护法》意义上的个人信息处理者，联系方式见第十一条。生效日期：2026-10-09；最近更新：2026-10-09。本政策随版本迭代更新；若变更涉及你的权利或个人信息处理方式的重大变化，我们会<b>更新条款版本号并在应用内重新征求你的同意</b>。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">storage</span>
@@ -2063,7 +2066,7 @@ function showPrivacyPolicyModal() {
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">wifi</span>
                         <div style="min-width:0;"><div class="dmi-title">四、联网行为与第三方服务</div>
-                            <div class="dmi-body">① <b>检查更新</b>：请求 GitHub Releases 接口查询最新版本号，仅产生常规网络请求信息（IP、User-Agent），由 GitHub 依其自身隐私政策处理；② <b>云备份</b>：依赖你自行选择的 WebDAV 服务商（如坚果云），其数据处理行为适用该服务商的条款与政策；③ <b>崩溃报告</b>：仅在已配置网盘的前提下，应用异常时上传一份不含记录与照片的诊断信息（版本号、错误内容、时间），用于定位问题；④ <b>官方网站</b>：应用内「关于应用 → 官方网站」入口会调用系统浏览器打开项目官网，仅发生常规网页访问，<b>不携带你的任何记录、照片或身份信息</b>。</div></div>
+                            <div class="dmi-body">① <b>检查更新</b>：应用启动时会请求 GitHub Releases 接口查询最新版本号，仅产生常规网络请求信息（IP、User-Agent），<b>不含你的记录、照片或身份信息</b>；<b>GitHub 的服务器位于中国境外</b>，该请求可能构成个人信息的跨境传输——若你不希望发生该传输，可在完全离线（如飞行模式）下使用本应用，离线不影响记录、查看、导出等核心功能，仅无法获知是否有新版本。② <b>云备份</b>：依赖你自行选择的 WebDAV 服务商（如坚果云，服务器位于中国境内），其数据处理行为适用该服务商的条款与政策；③ <b>崩溃报告</b>：仅在已配置网盘的前提下，应用异常时上传一份不含记录与照片的诊断信息（版本号、错误内容、时间），用于定位问题；④ <b>官方网站</b>：应用内「关于应用 → 官方网站」入口会调用系统浏览器打开项目官网，仅发生常规网页访问，<b>不携带你的任何记录、照片或身份信息</b>。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">security</span>
@@ -2071,29 +2074,34 @@ function showPrivacyPolicyModal() {
                             <div class="dmi-body">本应用采用以下措施保护你的数据：本地数据随应用沙箱隔离；网盘凭据加密存储；Android 包经过签名校验，防止被篡改或替换安装；不申请通讯录、短信、通话记录、精确位置等与功能无关的权限。同时请理解：<b>任何存储方式都无法保证绝对安全</b>，请定期导出备份并自行妥善保存。</div></div>
                     </div>
                     <div class="dmi-group">
+                        <span class="material-icons dmi-ic">report_problem</span>
+                        <div style="min-width:0;"><div class="dmi-title">六、个人信息安全事件的通知</div>
+                            <div class="dmi-body">本应用的数据默认只存在于你自己的设备上，开发者并不持有你的记录与照片，因此不存在「服务端数据被批量获取」的情形。即便如此，一旦发现你的个人信息发生或可能发生<b>泄露、篡改或丢失</b>（例如网盘凭据在传输环节出现风险、安装包校验机制被绕过），我们会<b>立即采取补救措施</b>（如暂停相关功能、尽快发布修复版本），并通过应用内弹窗、更新日志与官网公告等可行方式<b>如实告知</b>：事件基本情况、可能造成的影响、我们已采取的措施，以及你可以采取的应对建议（如更换网盘应用密码）；同时依法向履行个人信息保护职责的部门报告。如你发现疑似安全问题，也可通过第十一条的联系方式主动告知我们。</div></div>
+                    </div>
+                    <div class="dmi-group">
                         <span class="material-icons dmi-ic">rule</span>
-                        <div style="min-width:0;"><div class="dmi-title">六、你的权利</div>
-                            <div class="dmi-body"><b>查阅与更正</b>：全部数据在应用内可见、可改；<b>导出与迁移</b>：随时「导出完整备份」带走记录与照片；<b>删除</b>：单条删除、批量删除、抹掉所有足迹（云端旧备份需你自行在网盘删除）；<b>撤回同意</b>：关闭自动同步、解绑网盘账号或卸载应用。上述权利<b>均无需向开发者申请</b>，你在应用内即可直接行使。</div></div>
+                        <div style="min-width:0;"><div class="dmi-title">七、你的权利</div>
+                            <div class="dmi-body"><b>查阅与更正</b>：全部数据在应用内可见、可改；<b>导出与迁移</b>：随时「导出完整备份」带走记录与照片；<b>删除</b>：单条删除、批量删除、抹掉所有足迹（云端旧备份需你自行在网盘删除）；<b>撤回同意</b>：你可在「设置 → 云备份」解绑网盘账号，以撤回对云备份的授权；撤回不影响撤回前基于你的同意已进行的处理。上述权利<b>均无需向开发者申请</b>，你在应用内即可直接行使；如需协助，可通过第十一条的联系方式联系我们。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">child_care</span>
-                        <div style="min-width:0;"><div class="dmi-title">七、未成年人保护</div>
+                        <div style="min-width:0;"><div class="dmi-title">八、未成年人保护</div>
                             <div class="dmi-body">本应用不面向 14 周岁以下儿童单独提供服务。未成年人应在监护人指导下使用；户外活动请务必由成年人陪同，并由监护人承担相应监护责任。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">key</span>
-                        <div style="min-width:0;"><div class="dmi-title">八、权限清单与用途</div>
+                        <div style="min-width:0;"><div class="dmi-title">九、权限清单与用途</div>
                             <div class="dmi-body"><b>通知</b>：计划与备份提醒；<b>精确闹钟</b>：计划当天早上提醒；<b>开机启动</b>：重启手机后恢复你的计划闹钟；<b>震动</b>：点按反馈；<b>安装应用</b>：协助安装已下载的新版本；<b>存储写入</b>（仅旧版安卓）：把备份写入「下载」目录；<b>照片选择</b>：为记录添加照片。以上权限均可拒绝，拒绝仅导致对应功能不可用，不影响其余功能。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">update</span>
-                        <div style="min-width:0;"><div class="dmi-title">九、政策更新</div>
-                            <div class="dmi-body">本政策随功能迭代更新，最新内容始终在本页展示。若更新涉及你的权利或数据处理方式的重大变化，本应用会在应用内以提示方式告知。</div></div>
+                        <div style="min-width:0;"><div class="dmi-title">十、政策更新</div>
+                            <div class="dmi-body">本政策随功能迭代更新，最新内容始终在本页展示。若更新涉及你的权利或个人信息处理方式的重大变化，我们会更新<b>条款版本号</b>，并在应用内<b>重新征求你的同意</b>——你需再次阅读并勾选同意后方可继续使用；不同意时可停止使用并卸载本应用。</div></div>
                     </div>
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">gavel</span>
-                        <div style="min-width:0;"><div class="dmi-title">十、适用法律与联系方式</div>
-                            <div class="dmi-body">如对本政策有疑问、意见或投诉，可通过「关于应用 → GitHub」提交 Issue、发邮件至 <a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a>，或访问项目官网 <a href="https://xixi-hiking-site.pages.dev" target="_blank" rel="noopener">xixi-hiking-site.pages.dev</a>（应用内「关于应用 → 官方网站」可一键打开），我们将在合理期限内答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>。</div></div>
+                        <div style="min-width:0;"><div class="dmi-title">十一、适用法律与联系方式</div>
+                            <div class="dmi-body">本应用的运营者为<b>xixi</b>（GitHub：NiUKinGDoM），系本政策项下的个人信息处理者。如对本政策有疑问、意见或投诉，或需行使查阅、更正、删除、撤回同意等权利，可通过「关于应用 → GitHub」提交 Issue、发邮件至 <a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a>，或访问项目官网 <a href="https://xixi-hiking-site.pages.dev" target="_blank" rel="noopener">xixi-hiking-site.pages.dev</a>（应用内「关于应用 → 官方网站」可一键打开），我们将在合理期限内（一般不超过 15 个工作日）答复。本政策的订立、效力、解释与争议解决均适用<b>中华人民共和国法律</b>；因本政策发生争议的，双方应友好协商解决，协商不成的，可依法向有管辖权的人民法院提起诉讼。</div></div>
                     </div>
                 ${AGREEMENT_STAMP}
             </div>
@@ -2824,6 +2832,8 @@ function applyPlansView() {
     var addBtn = safeGetElementById('addPlannedTripBtn');
     if (batchBtn) batchBtn.style.display = isCal ? 'none' : 'inline-flex';
     if (addBtn) addBtn.style.display = isCal ? 'none' : 'inline-flex';
+    // ★2026-10-09 日历视图不提供搜索：切视图后让搜索框重新判断显隐（列表显示 / 日历隐藏）
+    if (window.__pokeSearchBar) { try { window.__pokeSearchBar(); } catch (e) { /* 忽略 */ } }
 }
 
 function togglePlansView() {
@@ -2834,17 +2844,13 @@ function togglePlansView() {
         try { exitPlannedBatchMode(); } catch (e) { /* 忽略 */ }
     }
     if (plansViewMode === 'calendar') {
+        // ★2026-10-09 日历视图不提供搜索（用户要求）→ 先清空搜索词再渲染，避免过滤/定位残留
+        clearGlobalSearchQuery();
         var now = new Date();
         calendarViewYear = now.getFullYear();
         calendarViewMonth = now.getMonth();
         calendarSelKey = null;
-        // ★2026-08-31 切到日历视图：有搜索词则直接定位到匹配计划（搜索在日历模式下用于定位）
-        if (searchQuery && searchQuery.trim()) {
-            locatePlanInCalendar(searchQuery);
-        } else {
-            calendarSearchMatches = null;
-            renderPlannedCalendar();
-        }
+        renderPlannedCalendar();
     } else {
         plannedPage = 1;
         renderPlannedTripsTable();
@@ -2871,33 +2877,6 @@ function fmtPlanDateKey(iso) {
     var m = ('0' + (t.getMonth() + 1)).slice(-2);
     var d = ('0' + t.getDate()).slice(-2);
     return t.getFullYear() + '-' + m + '-' + d;
-}
-
-// ★2026-08-31 日历模式搜索定位：跳转匹配计划所在月份/日期并标记（calendarSearchMatches 供明细高亮）
-var calendarSearchMatches = null;
-function locatePlanInCalendar(query) {
-    var q = (query || '').trim();
-    if (!q) {
-        calendarSearchMatches = null;
-        calendarSelKey = null;
-        var now = new Date();
-        calendarViewYear = now.getFullYear();
-        calendarViewMonth = now.getMonth();
-        renderPlannedCalendar();
-        return;
-    }
-    var match = (plannedTrips || []).find(function (t) { return t.name && t.name.indexOf(q) >= 0; });
-    if (!match) {
-        calendarSearchMatches = q;
-        renderPlannedCalendar();
-        return;
-    }
-    var d = new Date(match.createdAt);
-    calendarViewYear = d.getFullYear();
-    calendarViewMonth = d.getMonth();
-    calendarSelKey = fmtPlanDateKey(match.createdAt);
-    calendarSearchMatches = q;
-    renderPlannedCalendar();
 }
 
 // 渲染月历：有计划日期显示蓝点，点击日期下方显示该日计划（完成/删除）
@@ -3112,11 +3091,8 @@ function renderCalDayDetail(key) {
         '<button id="calShowMonthBtn" class="ripple-effect glass-btn corner-glow" style="margin-left:auto;padding:4px 10px;border-radius:8px;font-size:12px;">整月</button>' +
         '</div>';
     plans.forEach(function (t) {
-        // ★2026-08-31 搜索匹配标记：计划名含搜索词 → 左侧强调点 + 描边高亮
-        var isMatch = calendarSearchMatches && t.name && t.name.indexOf(calendarSearchMatches) >= 0;
-        var itemBorder = isMatch
-            ? '2px solid ' + accent
-            : '0.5px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)');
+        // ★2026-10-09 日历搜索已移除（该视图不提供搜索）→ 原「搜索匹配高亮」逻辑一并清理
+        var itemBorder = '0.5px solid ' + (dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)');
         // ★2026-08-31 浅色模式删除按钮更可见：灰蓝底+描边+深字（class 浅色下白边不可见）
         var delStyle = dark
             ? 'padding:6px 12px;border-radius:10px;font-size:12px;'
@@ -3124,9 +3100,7 @@ function renderCalDayDetail(key) {
         html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:6px;' +
             'background:' + (dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.5)') + ';border:' + itemBorder + ';">' +
             '<div style="min-width:0;"><div style="display:flex;align-items:center;gap:6px;min-width:0;">' +
-            (isMatch ? '<span style="color:' + accent + ';font-size:12px;flex-shrink:0;">● </span>' : '') +
             '<span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">' + escapeHtml(t.name) + '</span>' +
-            (isMatch ? '<span style="font-size:11px;color:' + accent + ';font-weight:400;flex-shrink:0;">匹配</span>' : '') +
             planRelBadgeHtml(t.createdAt) +
             '</div>' +
             '<div style="font-size:11px;color:rgba(100,116,139,0.9);">Lv' + t.difficulty + (t.elevation ? ' · ' + t.elevation + 'm' : '') + '</div></div>' +
@@ -3524,6 +3498,8 @@ function initRecordsView() {
 }
 function applyRecordsView() {
     var isMb = recordsViewMode === 'mountain';
+    // ★2026-10-09 山册视图不提供搜索（用户要求）→ 先清空搜索词，随后 renderMountainBook 按全量渲染
+    if (isMb) clearGlobalSearchQuery();
     var lv = safeGetElementById('recordsListViewWrap'); // 列表整体（表格+分页+批量条）
     var mb = safeGetElementById('mountainBookView');
     var icon = safeGetElementById('recordsViewToggleIcon');
@@ -3555,9 +3531,9 @@ function applyRecordsView() {
     if (capElR) capElR.style.display = '';   // ★2026-09-05 切视图时恢复被收起说明
     var btn = safeGetElementById('recordsViewToggleBtn');
     if (btn) btn.title = isMb ? '切回记录列表' : '查看我的山册';
-    // ★2026-09-03 搜索框提示随视图切换（山册 = 搜山名）
-    var gs = safeGetElementById('globalSearchInput');
-    if (gs) gs.placeholder = isMb ? '搜索山峰…' : '搜索记录…';
+    // ★2026-10-09 山册视图已不提供搜索 → 原「placeholder 随视图切换（山册搜山名）」逻辑移除；
+    //   改为让搜索框重新判断显隐（列表显示 / 山册隐藏）
+    if (window.__pokeSearchBar) { try { window.__pokeSearchBar(); } catch (e) { /* 忽略 */ } }
 }
 // ★2026-09-02 山册渲染：按记录名（山）聚合卡片；点卡片头展开这座山的记录；点记录右侧 ↗ 定位打开
 // ★2026-09-03 双列名册：网格两列排卡片（山影天空带已按用户要求删除，卡只显示山名行）
@@ -3565,7 +3541,6 @@ function renderMountainBook() {
     var wrap = safeGetElementById('mountainBookView');
     if (!wrap) return;
     var list = (records || []).filter(function (r) { return r && r.name && String(r.name).trim(); });
-    var q = (typeof searchQuery === 'string' && searchQuery.trim()) ? searchQuery.trim().toLowerCase() : '';
     if (!list.length) {
         wrap.innerHTML = '<div class="yr-empty">还没有任何记录<br>去「列表」添加第一条，山册会自动在这里汇总</div>';
         return;
@@ -3593,19 +3568,8 @@ function renderMountainBook() {
     var sealNo = {};
     allKeys.forEach(function (k, i) { sealNo[k] = i + 1; });
     var padLen = Math.max(2, String(allKeys.length).length);
-    var keys = allKeys.filter(function (k) {
-        if (!q) return true;
-        if (lowerText(k).indexOf(q) >= 0) return true;
-        // 山名本身没匹配时，再翻这座山的所有记录（同伴/备注等字段也可能命中）
-        return groups[k].some(function (r) {
-            return String(r.companions || '').toLowerCase().indexOf(q) >= 0 ||
-                String(r.notes || '').toLowerCase().indexOf(q) >= 0;
-        });
-    });
-    if (q && !keys.length) {
-        wrap.innerHTML = '<div class="yr-empty">' + (window.__isComposing ? '正在输入…' : '没有找到匹配的山，换个词试试') + '</div>';
-        return;
-    }
+    // ★2026-10-09 山册视图已不提供搜索（用户要求）→ 不再按搜索词过滤，山册全册常显
+    var keys = allKeys;
     // ★2026-09-03 双列山册 + 整行抽屉：每两座山一组 .mb-row；
     //   先排两个卡头（占两列），再排两个抽屉（grid-column 1/-1 整行）；
     //   点卡头 → 对应抽屉以整行宽在卡头行下方拉开，卡头留在原列（用户需求 v2）
