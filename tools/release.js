@@ -18,6 +18,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -97,6 +98,32 @@ if (fs.readFileSync(rgSrc, 'utf8') !== fs.readFileSync(rgDst, 'utf8')) {
   fail('守卫失败：构建目录 ResGuard.java 与工程目录不一致（哈希清单陈旧，会导致资源校验误报）');
 }
 console.log('守卫：构建目录 ResGuard.java 已同步 ✅');
+
+// ★2026-10-09 内容级守卫（第二个必要维度）：光「文件一致」不够 ——
+//   若第④步被跳过 / 或对 www 明文目录而非混淆产物执行 hash，工程目录的 ResGuard.java
+//   也是「自洽」的，上面的守卫照样绿，但 APK 内嵌的哈希与真实资源对不上 →
+//   启动弹「资源校验提示」误报。必须逐项重算构建目录实际文件的 SHA-256 与清单比对。
+//   （2026-09-29 同类误报已踩过一次，2026-10-09 手工复刻构建时因 EBUSY 跳过第④步再次踩中）
+try {
+  const rgTxt = fs.readFileSync(rgSrc, 'utf8');
+  const pairs = [...rgTxt.matchAll(/\{"([^"]+)",\s*"([0-9a-f]{64})"\}/g)];
+  if (!pairs.length) fail('守卫失败：ResGuard.java 未解析到哈希条目');
+  const mismatched = [];
+  for (const [, name, want] of pairs) {
+    const p = path.join(TEMP_ASSETS, name);
+    if (!fs.existsSync(p)) { mismatched.push(name + '(缺失)'); continue; }
+    const got = crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+    if (got !== want) mismatched.push(name);
+  }
+  if (mismatched.length) {
+    fail('守卫失败：ResGuard 哈希与构建目录实际资源不符 → ' + mismatched.join(', ') +
+         '\n  ⇒ 十有八九是第④步没对**混淆产物目录**执行（改用: node tools/security.js hash "' + TEMP_ASSETS + '"）');
+  }
+  console.log('守卫：ResGuard 哈希 vs 构建目录资源逐项匹配（' + pairs.length + '/' + pairs.length + '）✅');
+} catch (e) {
+  if (String(e && e.message || e).startsWith('守卫失败')) throw e;
+  console.log('守卫：内容级校验跳过（' + (e && e.message) + '）');
+}
 
 if (skipBuild) {
   console.log('\n✅ 同步 + 安全两步完成（--skip-build，未构建）');
