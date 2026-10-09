@@ -5949,6 +5949,56 @@
     }
   }
 }
+
+        /* ★★本块必须放在样式表【末尾】——它要覆盖的
+           .bottom-tabbar / .bottom-tabbar .tab-btn / .ov-mini-row / .sync-health-text
+           定义全在文件后段（900~2000 行），同特异性下【后出现者胜】——
+           放前面会被反向覆盖（2026-10-09 真实踩到：改了一次发现完全没生效）。 */
+        /* ★2026-10-09 折叠屏【外屏】适配（窄屏；小折叠外屏实测约 260~350px）
+           实测三处问题（仅 ≤350px 出现，≥360px 全干净）：
+             ① 底栏撑破页面：4 个按钮 padding 8px 18px → 底栏总宽 302px，
+                视口 260px 时整页横向溢出 35px（页面能左右拖动）
+             ② 概览三张矮卡固定 3 列 → 列宽仅 ~70px，而「平均海拔」需 46px
+                只分到 15~41px → 被截断显示成「平均…」
+             ③ 设置页同步状态文案 nowrap + ellipsis → 「还没连接云端 · 点这里配置」被截成「还没连接云端 · 点…」
+           ⇒ 阈值取 350px（常规手机 ≥360px 布局零影响）。 */
+        @media (max-width: 350px) {
+            /* ① 底栏收窄：按钮内边距 18px→8px、底栏内边距 16px→10px，确保 <302px 也能完整放下 */
+            .bottom-tabbar {
+                padding: 10px 10px;
+                gap: 0;
+                max-width: calc(100vw - 12px);
+            }
+            .bottom-tabbar .tab-btn {
+                padding: 8px 8px;
+            }
+            .bottom-tabbar .tab-btn + .tab-btn {
+                margin-left: 2px;
+            }
+            /* ② 概览矮卡 3 列 → 1 列（列宽不足必然截断标签） */
+            .ov-mini-row {
+                grid-template-columns: 1fr;
+            }
+            /* ③ 同步状态文案允许折行，不再截断 */
+            .sync-health-text,
+            .sync-dim .sync-dim-tx {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+            }
+            /* ④ 顶栏：标题原为 whitespace-nowrap（不可收缩），窄屏下把右侧 FPS 挤出屏幕右边界
+                  → 整个页面横向溢出 35px（260px 屏实测）。改为允许折行 + 容器可收缩。 */
+            .header-bar > .flex:first-child {
+                min-width: 0;
+            }
+            #appTitleWrap {
+                min-width: 0;
+            }
+            #appTitle {
+                white-space: normal;
+                line-height: 1.2;
+            }
+        }
 </style></head>
 <body>
 <!-- ★2026-09-02 灵动液态玻璃 C：页面级背景流光层（body 最底层，所有 tab 共享；透明不挡交互） -->
@@ -6549,7 +6599,7 @@
                     <div class="about-card">
                         <div class="about-logo">🏔️</div>
                         <div class="about-name">徒步小记</div>
-                        <div class="about-version">版本 1.2.3.6</div>
+                        <div class="about-version">版本 1.2.3.7</div>
                         <!-- ★2026-09-01 徒步年资（按最早记录自动算，无记录隐藏） -->
                         <div id="aboutSinceLine" class="about-since" style="display:none;"></div>
                         <div class="about-desc">一款由 <b class="about-highlight">XiXi</b> 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。</div>
