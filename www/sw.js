@@ -21,7 +21,7 @@
  * ★2026-09-29 v19→v20 起略（详见各版 CACHE_NAME 行注释）：v1.2.3.2 → v54 多镜像冗余；v1.2.3.3 → v55 关于页去署名 + 政策补官网
  * ★2026-10-09 v59→v60：v1.2.3.7 折叠屏【外屏】窄屏适配（≤350px 底栏收窄/矮卡单列/标题可折行）
  */
-const CACHE_NAME = 'xixi-hiking-v60';   // ★2026-10-09 v1.2.3.7：折叠屏外屏窄屏适配；前情 v59=搜索框按视图收敛+隐私免责补强
+const CACHE_NAME = 'xixi-hiking-v61';   // ★2026-10-09 v1.2.3.7 同号重发：+山册窄屏统计格适配(3列2行)；前情 v60=折叠屏外屏窄屏适配
 const CORE_ASSETS = ['./', './index.html', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {

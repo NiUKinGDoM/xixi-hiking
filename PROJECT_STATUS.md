@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-10-09（v1.2.3.7 / vc282）  
+> 最后更新：2026-10-09（v1.2.3.7 同号重发 / vc282）  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
 > （2026-09-09 11:2x 用户在原项目直连 Git 成功=域名未变；判断依据：直传项目无 Build 配置页，能见 root/build 设置=已切 Git 源）（全球 CDN、永不漂移，iOS 朋友长期用=此域；CF 账号用户自持，每次发版需用户登录 Pages 上传新 zip——若需我侧自动发布可后续接 CF Pages Git 集成连 xixi-hiking 仓库 www 目录）  
@@ -287,6 +287,15 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - **★升号判定**：外屏适配改了用户可见的排版行为（窄屏下底栏/矮卡/标题布局变化）→ 不适用「同号修正重发」，按常规**升号** v1.2.3.6 → **v1.2.3.7**（vc281 → vc282）。
   - **修法**：`www/index.html` 新增 `@media (max-width: 350px)` 块（**★必须放样式表末尾** —— 被覆盖的 `.bottom-tabbar` / `.tab-btn` / `.ov-mini-row` / `.sync-health-text` 定义在 900~2000 行，同特异性下后出现者胜，插前面会**静默失效**）：① 底栏 `padding:10px 10px` + 按钮 `8px 8px` + 相邻 `margin-left:2px`；② `.ov-mini-row` 3 列→1 列；③ `.sync-health-text` / `.sync-dim .sync-dim-tx` 允许折行；④ `#appTitle` 允许换行 + `#appTitleWrap` / `.header-bar > .flex:first-child` `min-width:0`（原 nowrap 不可收缩，把 FPS 挤出屏幕右边界 → 整页横向溢出 35px）。
   - **实测**：全宽度扫描 **9 档 × 4 tab = 36/36 全绿**（260/280/300/320/340 底栏 198px + 矮卡 1 列 + 标题可折行 + 零溢出；**360/390/412/430 完全保持原样**：底栏 302px + 3 列 + nowrap → 常规手机零影响）；**反向验证**：临时禁用该块（阈值 `max-width:1px`）→ 260px 立刻报红（溢出 35px + 6 处截断）。
+- **★同号重发 v1.2.3.7（vc282，同日第二次）** —— 山册抽屉统计格窄屏文字重合修复（2026-10-09）
+  - **用户指令**：「折叠屏外屏，山册页面，展开后数据的字还是会重合。再推一版，用一个版本号」→ 即**沿用 v1.2.3.7 同号重发**（不升号）。
+  - **根因**：山册卡片是**双列**（`.mb-row` = `repeat(2, minmax(0,1fr))`），抽屉 `.mb-drawer` 内 `.mb-stat` 原为 **flex 一行均分 6 格**。窄屏下实测：260px 抽屉仅 **196px** → 每格 **30.7px**，而「一起走过」的值是「老王/小李/张三」（8 字符 ≈ 需 100px+）→ **值溢出格子、压到相邻格上**（用户看到的「字重合」）。350px 也仅 45.7px/格，同样溢出。
+  - **修法**：在**同一个 `@media (max-width: 350px)` 块内**追加 ⑤ 段：`.mb-stat` 由 flex → **`grid` + `repeat(3, minmax(0,1fr))` + `row-gap:8px`**（3 列 × 2 行）；`.mb-stat > div` 加 `min-width:0` + `padding:0 2px`；`.mb-stat .sv` 字号 **15→12px** + `white-space:normal` + `overflow-wrap:anywhere` + `word-break:break-word`；`.sl` 10→9px。
+  - **★实测（CDP 真机宽度）**：**媒体查询边界精准** —— 260/320/350px → `display:grid`（3 列 / 每格 61.3→91.3px / 字号 12px）；**351/360/390/412px → `display:flex`（原样 / 字号 15px）**，常规手机零影响。`pageOverflow:0` 全档位无横向溢出。截图确认：260px 下「老王/小李/张三」自动折两行、与相邻格无重叠；390px 与修复前一致。
+  - **门禁（EBUSY 逐套直跑）**：test 353 / test-ui 30 / P0P3 299 / E2E 126 / modalwidth 39 / ioscheck 11 = **858 项全绿**；audit 确定性项通过；sitechangelog 1/0 通过。
+  - **★踩坑①（换行风格已变）**：`www/index.html` 实测为**纯 LF（CRLF=0）**，与 MEMORY 里记的「CRLF」**已不一致**（历史 patch 写入时归一化了）→ 锚点用 `\r\n` 拼**必然命中 0 次**。**⇒ 每次改前先实测换行风格，别信记忆。**
+  - **★踩坑②（JS 字符串内不能有真换行）**：给 `BUILTIN_CHANGELOG` 追加文案时误插了**真实 CRLF**（而 JS 单引号字符串不能跨行）→ `node --check` 报 `Invalid or unexpected token`、`sitechangelog` 报「求值失败」。**⇒ 必须用转义的 `\n`**；修完做**内容级复核**（真实换行=0 / `\n` 转义数=5 / 关键串在）。
+  - **★踩坑③（CDP 截图时序）**：脚本内用 `Emulation.setDeviceMetricsOverride` 连续切宽度后截图，**宽档会沿用窄档的媒体查询结果**（截图抢跑）→ 误以为「390px 也变成了 3 列 2 行」。**⇒ 每档必须重新 `Page.navigate`；判定以 `getComputedStyle` 实测为准，别只信截图。**
   - **★本轮踩坑（测试环境污染）**：我先起过一个 `E2E_ROOT=/tmp/oldwww` 的旧版静态服务占用 8123 端口，`e2e/serve.js` 检测到端口已存活就**直接复用** → 后续扫描测的是**旧版代码**，一度误报「96 个问题」。**教训：改完代码排查异常前，先确认 8123 服务指向的是当前 www**（`curl -s http://127.0.0.1:8123/index.html | grep <本次新增标记>`）。
   - **★E2E 视觉基线刷新**：政策正文变长（+747 字）→ 3 张政策截图 diff 17.4% / 11.3%。**差异指纹确认为预期变化**：其余 7 张截图 diff 全部 ≤0.43%（未改动处像素级一致），仅政策类 3 张变化；且弹窗排版实测正常（内边距左右各 17px、零溢出、`.confirm-modal-message` 可滚动 `scrollH 2121 / clientH 464`、按钮在视口内）。→ `e2e/run.js --update` 刷基线 → 复跑 **126/0 稳定全绿**。
   - **发布链路**：回退点 `backups/prev-1.2.3.6/`（回读校验与 `www/app-core.js` 逐字节一致）→ bump v1.2.3.7（vc282）+ sw `CACHE_NAME v59→v60` → BUILTIN 新增 v1.2.3.7 条目（111 条）→ 文案三份存档对齐 → 自检 → 构建 → 验包 → push + Release + 官网同步。
