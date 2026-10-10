@@ -3631,23 +3631,146 @@ function applyRecordsView() {
 }
 // ★2026-09-02 山册渲染：按记录名（山）聚合卡片；点卡片头展开这座山的记录；点记录右侧 ↗ 定位打开
 // ★2026-09-03 双列名册：网格两列排卡片（山影天空带已按用户要求删除，卡只显示山名行）
-// ★2026-10-10 同山归并（用户：上次写「朱雀-草甸」、这次写「朱雀-冰晶顶」→ 应是同一座山，山册却分成两张卡）
-//   规则：按「- — – － · • ・ / ｜ | 、 ，」等分隔符取【第一段】作为分组键；无分隔符则用整名。
-//   「朱雀-草甸」「朱雀-冰晶顶」「朱雀」→ 键都是「朱雀」⇒ 归到同一座山，次数/里程/最高海拔一起累计。
-//   前段少于 2 字视为误切（如「东-峰」），退回整名，避免把不相干的合到一起。
-//   显示名不改观感：卡片仍显示【最近一次】写的那次完整名字（见 renderMountainCard）。
+// ★2026-10-10 山册「连接器」（用户：「朱雀-草甸」「朱雀-冰晶顶」应是同一座山；连接后名字自己定；
+//   ★只在山册里生效，记录本身与其它页面一律不动）
+//   ★不做自动前缀归并（自动切「-」前缀可能误并）—— 改成纯手动：抽屉底部「连接到另一座山」→ 选目标 + 自定义名字
+//   映射存 AppStore「hiking_mtn_merge」：{ 来源名: { to: 目标名, name: 显示名 } }；支持链式（A→B、B→C）。
+function mtnMerges() {
+    try { return AppStore.getItem('hiking_mtn_merge') || {}; } catch (e) { return {}; }
+}
 function mtnKeyOf(name) {
-    var s = String(name == null ? '' : name).trim();
-    if (!s) return '';
-    var seg = s.split(/[-—–－·•・\/｜|、，,]+/)[0];
-    seg = (seg || '').trim();
-    return (seg.length >= 2) ? seg : s;
+    var base = String(name == null ? '' : name).trim();
+    if (!base) return '';
+    var m = mtnMerges(), hop = 0;
+    while (m[base] && m[base].to && m[base].to !== base && hop++ < 10) base = m[base].to;
+    return base;
+}
+// 组显示名：连接器自定义名优先，否则用原名
+function mtnLabelOf(key) {
+    var m = mtnMerges();
+    if (m[key] && m[key].name) return m[key].name;
+    for (var k0 in m) { if (m[k0] && m[k0].to === key && m[k0].name) return m[k0].name; }
+    return key;
+}
+// 当前山册里所有「山」（归并后的键），供连接弹窗列选项
+function mtnAllKeys() {
+    var seen = {}, out = [];
+    (records || []).forEach(function (r) {
+        var k = mtnKeyOf(r && r.name);
+        if (k && !seen[k]) { seen[k] = 1; out.push(k); }
+    });
+    out.sort();
+    return out;
+}
+// 抽屉底部那一行「连接」（已连接则显示状态）
+function mtnMergeRowHtml(key) {
+    var m = mtnMerges();
+    var conn = !!(m[key] && m[key].to);
+    var sources = [];
+    for (var k0 in m) { if (m[k0] && m[k0].to === key) sources.push(k0); }
+    var txt;
+    if (conn) txt = '已连接到「' + mtnLabelOf(m[key].to) + '」';
+    else if (sources.length) txt = '已并入 ' + sources.length + ' 座山';
+    else txt = '连接到另一座山';
+    return '<div style="text-align:center;margin-top:10px;">' +
+        '<button type="button" class="mtn-merge-btn" data-mtn-key="' + escapeHtml(key) + '" ' +
+        'style="background:transparent;border:none;color:#64748b;font-size:11px;cursor:pointer;padding:4px 8px;border-radius:8px;">' +
+        '<span class="material-icons" style="font-size:13px;vertical-align:-2px;">link</span> ' + escapeHtml(txt) + '</button></div>';
+}
+// 连接弹窗（选目标 + 自定义名字）
+function openMtnMergeDialog(key) {
+    try {
+        var m = mtnMerges();
+        var conn = !!(m[key] && m[key].to);
+        var cur = conn ? m[key] : null;
+        var sources = [];
+        for (var s0 in m) { if (m[s0] && m[s0].to === key) sources.push(s0); }
+        var canOff = conn || sources.length > 0;
+        var others = mtnAllKeys().filter(function (k0) { return k0 !== key; });
+        var selectedKey = (cur && cur.to) ? cur.to : '';
+        var optRow = function (k0) {
+            var on = k0 === selectedKey;
+            return '<div class="mtn-merge-opt" data-key="' + escapeHtml(k0) + '" style="padding:10px 12px;font-size:13px;color:' + (on ? '#4f46e5' : '#1e293b') + ';background:' + (on ? 'rgba(99,102,241,0.10)' : 'transparent') + ';border-bottom:1px solid rgba(148,163,184,0.14);cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;">' +
+                '<span>' + escapeHtml(mtnLabelOf(k0)) + '</span>' +
+                (on ? '<span class="material-icons" style="font-size:16px;color:#4f46e5;">check</span>' : '') +
+                '</div>';
+        };
+        var opts = others.map(optRow).join('') || '<div style="padding:12px;font-size:12px;color:#94a3b8;">还没有别的山可以连接</div>';
+        var inputStyle = 'width:100%;padding:9px 10px;border-radius:10px;font-size:13px;border:1px solid rgba(148,163,184,0.35);background:#fff;color:#1e293b;box-sizing:border-box;';
+        var modal = document.createElement('div');
+        modal.className = 'confirm-modal modal-backdrop-animate';
+        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="font-size:20px;vertical-align:-4px;color:#6366f1;">link</span> 连接山</div>' +
+            '<div class="confirm-modal-message" style="line-height:1.7;text-align:left;">' +
+            '<div style="margin-bottom:6px;">把「<b>' + escapeHtml(mtnLabelOf(key)) + '</b>」连接到：</div>' +
+            '<div id="mtnMergeList" style="max-height:180px;overflow-y:auto;border:1px solid rgba(148,163,184,0.25);border-radius:10px;margin-bottom:12px;">' + opts + '</div>' +
+            '<div style="margin-bottom:6px;">连接后叫什么名字？<span style="font-size:11px;color:#94a3b8;">（留空则用目标山的名字）</span></div>' +
+            '<input type="text" id="mtnMergeName" maxlength="20" placeholder="例如：朱雀" value="' + escapeHtml(cur && cur.name ? cur.name : '') + '" style="' + inputStyle + '">' +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.5;">只在「山册」里生效 —— 归类和名字变了，记录本身一条都不动。</div>' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+            (canOff ? '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeOff">断开</button>'
+                  : '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeCancel">取消</button>') +
+            '<button class="check-go-btn ripple-effect" id="mtnMergeOk">' + (conn ? '保存' : '连接') + '</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+        var close = function () { try { document.body.removeChild(modal); } catch (e) { } };
+        if (canOff) {
+            document.getElementById('mtnMergeOff').addEventListener('click', function () {
+                var mm = mtnMerges();
+                delete mm[key];
+                for (var d0 in mm) { if (mm[d0] && mm[d0].to === key) delete mm[d0]; }
+                try { AppStore.setItem('hiking_mtn_merge', mm); } catch (e) { }
+                close(); try { renderMountainBook(); } catch (e2) { }
+            });
+        } else {
+            document.getElementById('mtnMergeCancel').addEventListener('click', close);
+        }
+        document.getElementById('mtnMergeOk').addEventListener('click', function () {
+            var nm = document.getElementById('mtnMergeName');
+            var to = selectedKey;
+            if (!to) { try { showErrorMessage('请先选一座山'); } catch (eE) { } return; }
+            var mm = mtnMerges();
+            var label = ((nm && nm.value) ? String(nm.value).trim() : '') || mtnLabelOf(to);
+            mm[key] = { to: to, name: label };
+            try { AppStore.setItem('hiking_mtn_merge', mm); } catch (e) { }
+            close(); try { renderMountainBook(); } catch (e2) { }
+        });
+        modal.addEventListener('click', function (e) {
+            var el = e.target;
+            var opt = (el && el.closest) ? el.closest('.mtn-merge-opt') : null;
+            if (opt) {
+                selectedKey = opt.getAttribute('data-key') || '';
+                modal.querySelectorAll('.mtn-merge-opt').forEach(function (o) {
+                    var on = o.getAttribute('data-key') === selectedKey;
+                    o.style.background = on ? 'rgba(99,102,241,0.10)' : 'transparent';
+                    o.style.color = on ? '#4f46e5' : '#1e293b';
+                    var chk = o.querySelector('.material-icons');
+                    if (on && !chk) o.insertAdjacentHTML('beforeend', '<span class="material-icons" style="font-size:16px;color:#4f46e5;">check</span>');
+                    else if (!on && chk) chk.remove();
+                });
+                return;
+            }
+            if (e.target === modal) close();
+        });
+    } catch (e) { /* 连接弹窗失败不影响山册 */ }
 }
 
 
 function renderMountainBook() {
     var wrap = safeGetElementById('mountainBookView');
     if (!wrap) return;
+    // ★2026-10-10 连接器：委托一次（捕获阶段，避免触发展开/收起）
+    if (!window.__mtnMergeBound) {
+        window.__mtnMergeBound = true;
+        document.addEventListener('click', function (e) {
+            var el = e.target;
+            var b = (el && el.closest) ? el.closest('.mtn-merge-btn') : null;
+            if (!b) return;
+            e.stopPropagation();
+            openMtnMergeDialog(b.getAttribute('data-mtn-key'));
+        }, true);
+    }
     var list = (records || []).filter(function (r) { return r && r.name && String(r.name).trim(); });
     if (!list.length) {
         wrap.innerHTML = '<div class="yr-empty">还没有任何记录<br>去「列表」添加第一条，山册会自动在这里汇总</div>';
@@ -3707,12 +3830,8 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         return Object.keys(out).slice(0, 3);
     }
     var arr = groups[k];
-    // ★2026-10-10 同山归并后，卡片显示名 = 组内【最近一次】写的那次完整名（分组用主名，观感保持原样）
-    var dispName = k, __latestAt = '';
-    for (var __di = 0; __di < arr.length; __di++) {
-        var __dc = arr[__di].createdAt || '';
-        if (__dc >= __latestAt) { __latestAt = __dc; dispName = String(arr[__di].name || '').trim() || k; }
-    }
+    // ★2026-10-10 显示名：连接器自定义名优先，否则用原名
+    var dispName = mtnLabelOf(k);
     // ★2026-09-05 P0-1 大数量优化：组内单 pass 合并 4 个 reduce + comp；排序只在有照片时对照片记录做（无照片大组免整组 sort）
     var n = arr.length;
     var km = 0, min = 0, el = 0, diffSum = 0, lastTs = 0;   // ★2026-10-10 P1-2 该山最近一次
@@ -3781,7 +3900,7 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         lastTxt = '<div class="mb-last" style="text-align:center;font-size:11px;margin-top:6px;opacity:0.66;">' +
             (n > 1 ? '最近一次' : '唯一一次') + ' · ' + (ldays <= 0 ? '今天' : ldays + ' 天前') + '（' + ldate + '）</div>';
     }
-    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + lastTxt + '</div>';
+    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + lastTxt + mtnMergeRowHtml(k) + '</div>';
     return { head: head, drawer: drawer };
 }
 
