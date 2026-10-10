@@ -28,7 +28,7 @@ const argOf = (n) => { const i = process.argv.indexOf('-' + n); return i >= 0 ? 
 const DRY = has('dry-run');
 
 // ---- 同步清单 ----
-const WWW_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
+const WWW_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
 const ROOT_FILES = ['README.md', 'CHANGELOG.md', 'prev-snapshot.js', 'bump.js', 'test.js', 'test-ui.js',
   '_test_p0p3.js', '_test_batch3.js'];   // ★2026-09-15 补入：P0P3 断言集与历史批次脚本原仅存于本地
 // ★2026-09-29 核实：`PROJECT_STATUS.md` / `开发侧改动记录.md` / `给新模型的提示词.md`

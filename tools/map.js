@@ -3,10 +3,10 @@
  * tools/map.js —— 代码地图生成器（★2026-10-10 新增）
  *
  * 解决什么问题：
- *   `www/app-data.js` 已 5000+ 行、`www/index.html` 6700+ 行（含 CSS）。
- *   改一个函数要在大文件里翻半天 —— 这是"零构建手写"路线的必然代价，
- *   而拆文件又会踩「4 个 JS 按序引入、缺一即白屏」那条最贵的铁律。
- *   折中办法：**不拆文件，先给一张地图** —— 改之前先查这里定位。
+ *   `www/app-data.js` 5000+ 行、`www/index.html` 726 行 + `www/app.css` 6000 行
+ *   （★2026-10-10 CSS 已从 index.html 外置到 app.css）。
+ *   改一个函数要在大文件里翻半天 —— 这是"零构建手写"路线的必然代价。
+ *   办法：**先给一张地图** —— 改之前先查这里定位（JS 函数 + 样式分区都索引）。
  *
  * 用法：
  *   node tools/map.js            # 生成/刷新 tools/notes/code-map.md
@@ -15,7 +15,7 @@
  *
  * 说明：
  *   · 索引 **顶层函数**（缩进 ≤ 4 的 function / const xx = function|=>）
- *   · index.html 另索引 CSS 分区注释与 <style>/<script> 段
+ *   · index.html 索引 <style>/<script> 段；**app.css 索引样式分区注释**（改样式先跳这里）
  *   · 地图头部记录了各文件行数 —— 行数变了就说明地图过期（--check 靠这个判断）
  *   · **地图是派生产物，不进版本库**（`tools/notes/*.md` 不在 ghsync 同步清单里，
  *     与 `tools/notes/<版本>-release.md` 的约定一致）→ 新机器/新会话第一条命令跑一下即可生成
@@ -26,7 +26,7 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'tools', 'notes', 'code-map.md');
-const JS_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'sw.js'];
+const JS_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'sw.js'];
 
 function read(rel) {
   const p = path.join(ROOT, 'www', rel);
@@ -71,6 +71,17 @@ function htmlIndex(rel) {
   return out;
 }
 
+// ---------- CSS：样式分区注释索引（★2026-10-10 起样式已外置 www/app.css）----------
+function cssIndex(rel) {
+  const arr = lines(read(rel));
+  const out = [];
+  arr.forEach((ln, i) => {
+    const m = RE_CSS_SEC.exec(ln);
+    if (m) out.push({ line: i + 1, kind: 'CSS 分区', name: m[1] });
+  });
+  return out;
+}
+
 function build() {
   const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
   const L = [];
@@ -103,6 +114,18 @@ function build() {
         L.push('| 行 | 类型 | 名称 |');
         L.push('|---|---|---|');
         h.forEach((x) => L.push('| ' + x.line + ' | ' + x.kind + ' | ' + (x.name || '—') + ' |'));
+        L.push('');
+      }
+    }
+
+    if (f === 'app.css') {
+      const c = cssIndex(f);
+      if (c.length) {
+        L.push('### 样式分区（改样式先跳到这里）');
+        L.push('');
+        L.push('| 行 | 类型 | 名称 |');
+        L.push('|---|---|---|');
+        c.forEach((x) => L.push('| ' + x.line + ' | ' + x.kind + ' | ' + (x.name || '—') + ' |'));
         L.push('');
       }
     }

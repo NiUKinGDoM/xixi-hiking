@@ -210,8 +210,20 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
 > 第 1 行 `### 🔧 待发：官网入口 + 五项优化（2026-09-29 · 用户「在app里增加官网链接，也作为新增写到更新日志里」）
 
-> **状态：已改完 www/ + 工具链，等用户「同步」后 bump 到 v1.2.3.0（vc275）再发布。**
-> 当前线上/已发布版本仍是 **v1.2.2.10（vc274）**。
+> **★当前状态（2026-10-10）：线上/已发布 = v1.2.3.7（vc282）** —— 同日已三次同号重发。
+
+- **★★CSS 外置：`index.html` 6721 → 726 行（同日第三次同号重发，不改版本号）** —— 把页内样式表拆成独立文件：
+  - **做法**：两段内联 `<style>`（自定义 4635 + Tailwind 产物 1362）→ 新增 `www/app.css`（6006 行）；`index.html` **-89%**。
+    图标字体段**留在原地**、`<link>` 插原位置 → **级联顺序一字未变**（图标字体 → app.css → Tailwind 运行时注入）。
+  - **7 处清单同步**：`sw.js`（CORE_ASSETS + `CACHE_NAME` v61→**v62**）、`security.js` HASH_FILES、`prev-snapshot.js`、
+    `ghsync.js`、`release.js`、`versiondiff.js`、`rollback.js`。**★漏 `ghsync.js` 会让网页版裸奔**（CF Pages 上 app.css 404 → 整页无样式）。
+  - **3 个守卫改「拼接读取」**：`test.js` 新增 `readPage()` = index.html + **app.css 包成 `<style>` 追加** →
+    **15 项 CSS 断言与 `matchAll(/<style>/)` 零改动生效**；`audit.js` 分区改从 app.css 读；`deepcheck.js` 并入信号扫描。
+  - **验证（硬证据）**：E2E 真实渲染 **126/0 全绿**（含视觉基线像素对比）；**computed style 同源对照 `794 + 68 = 862` rule 完全对应**、
+    `body` 与 `.glass-btn` 逐项相同；浏览器实测 `app.css: 862 rules` 已加载、级联顺序一致、**页面错误 0**；
+    `test.js` 354/0 + **反向验证**（改坏 app.css 精确报红「border-red-500 无定义」）。
+  - **★勘误**：`versiondiff.js` **会**报新增文件（`A` 状态，已实证）；真正要小心的是另一层 —— 它的 `WWW_FILES` 白名单同样硬编码，**新文件忘加白名单时它自己也看不见**。
+  - **备份**：`backups/prev-csssplit-20261010/`（13 个文件，可整体回退）。
 
 - **本轮新增：App 内「官方网站」入口**（用户指令「在app里增加官网链接，也作为新增写到更新日志里。完事之后同步」）：
   - **位置** —— 设置页「关于应用」卡片，版本号下方、描述与按钮组之间（`id="officialSiteBtn"`，class `about-site ripple-effect`）。

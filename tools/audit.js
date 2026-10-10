@@ -13,7 +13,7 @@
  *   node tools/audit.js --css      只跑 A/B/C
  *   node tools/audit.js --residue  只跑 D/E
  * 退出码：D/E 命中 → 1（可当门禁）；A/B/C 仅提示（静态存在性≠实际生效，须用 e2e/inspect.js 实测确认）
- * CSS 分区依据：index.html 两个 <style>——第 1 个=自定义（含分区注释），第 2 个以 `/*! tailwindcss` 开头=编译产物
+ * CSS 分区依据：www/app.css —— `/*! tailwindcss` 之前=自定义（含分区注释），之后=编译产物
  */
 const fs = require('fs');
 const path = require('path');
@@ -30,11 +30,11 @@ const jsMap = {};
 for (const f of JS_FILES) jsMap[f] = fs.readFileSync(path.join(WWW, f), 'utf8');
 const allJs = Object.values(jsMap).join('\n');
 
-// ---- 切 CSS 分区 ----
-const styleBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
-const twIdx = styleBlocks.findIndex((b) => /^[\s\S]{0,80}\/\*!\s*tailwindcss/.test(b));
-const tailwind = twIdx >= 0 ? styleBlocks[twIdx] : '';
-const custom = styleBlocks.filter((_, i) => i !== twIdx).join('\n');
+// ---- 切 CSS 分区（★2026-10-10 起 CSS 已外置 www/app.css，index.html 不再含样式）----
+const cssAll = fs.readFileSync(path.join(WWW, 'app.css'), 'utf8');
+const _twAt = cssAll.search(/\/\*!\s*tailwindcss/);
+const tailwind = _twAt >= 0 ? cssAll.slice(_twAt) : '';
+const custom = _twAt >= 0 ? cssAll.slice(0, _twAt) : cssAll;
 console.log(`== audit ==  自定义CSS ${custom.length}B | Tailwind ${tailwind.length}B\n`);
 
 let fail = false;

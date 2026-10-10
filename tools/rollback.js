@@ -69,6 +69,7 @@ if (!target) {
 // 回退点内的文件 → 主工程内对应位置
 const MAP = [
     ['index.html', 'www/index.html'],
+    ['app.css', 'www/app.css'],
     ['app-core.js', 'www/app-core.js'],
     ['app-data.js', 'www/app-data.js'],
     ['app-sync.js', 'www/app-sync.js'],

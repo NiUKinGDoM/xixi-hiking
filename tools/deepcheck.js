@@ -24,6 +24,8 @@ const JSON_OUT = process.argv.indexOf('--json') >= 0;
 const files = {};
 JS_FILES.forEach((f) => { files[f] = fs.readFileSync(path.join(WWW, f), 'utf8'); });
 const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
+// ★2026-10-10 CSS 外置：app.css 也纳入信号扫描（① 名字计数 / ⑥ TODO / ⑦ 超大行）
+const pageCss = (() => { try { return fs.readFileSync(path.join(WWW, 'app.css'), 'utf8'); } catch (e) { return ''; } })();
 // ★死代码判定必须把「测试与工具脚本」也算进来 —— 曾因只扫 www/ 把测试钩子 resetGuideSeen 误判成死代码删掉，
 //   导致 test.js 1 条 + P0P3 2 条用例失败（是断言救回来的）。凡"删除"类结论一律先跑 checkall 验证。
 let auxSrc = '';
@@ -31,7 +33,7 @@ let auxSrc = '';
 try {
   fs.readdirSync(path.join(ROOT, 'e2e')).filter((f) => f.endsWith('.js')).forEach((f) => { try { auxSrc += fs.readFileSync(path.join(ROOT, 'e2e', f), 'utf8'); } catch (e) {} });
 } catch (e) {}
-const all = Object.values(files).join('\n') + '\n' + html + '\n' + auxSrc;
+const all = Object.values(files).join('\n') + '\n' + html + '\n' + pageCss + '\n' + auxSrc;
 
 const report = [];
 const sig = (title, items, note) => report.push({ title, items, note });
@@ -129,8 +131,8 @@ const sig = (title, items, note) => report.push({ title, items, note });
 /* ---------- ⑥ TODO / FIXME / 调试残留 ---------- */
 {
   const todo = [];
-  JS_FILES.concat(['index.html', 'sw.js']).forEach((f) => {
-    const src = f === 'sw.js' ? fs.readFileSync(path.join(WWW, f), 'utf8') : (files[f] || html);
+  JS_FILES.concat(['index.html', 'sw.js', 'app.css']).forEach((f) => {
+    const src = f === 'sw.js' ? fs.readFileSync(path.join(WWW, f), 'utf8') : (f === 'app.css' ? pageCss : (files[f] || html));
     const lines = src.split('\n');
     lines.forEach((ln, i) => {
       if (/TODO|FIXME|XXX|HACK/.test(ln)) todo.push(f + ':' + (i + 1) + ' ' + ln.trim().slice(0, 100));
@@ -144,8 +146,8 @@ const sig = (title, items, note) => report.push({ title, items, note });
 /* ---------- ⑦ 超大行（base64 残留 / 压缩混入） ---------- */
 {
   const big = [];
-  JS_FILES.concat(['index.html']).forEach((f) => {
-    const src = files[f] || html;
+  JS_FILES.concat(['index.html', 'app.css']).forEach((f) => {
+    const src = f === 'app.css' ? pageCss : (files[f] || html);
     src.split('\n').forEach((ln, i) => {
       if (ln.length > 8000) big.push(f + ':' + (i + 1) + ' 行长 ' + ln.length + ' 字符' + (/base64/.test(ln) ? '（疑似 base64）' : ''));
     });

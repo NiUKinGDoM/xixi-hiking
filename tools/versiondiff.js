@@ -36,7 +36,7 @@ const STRICT = process.argv.includes('--strict');
 const NOTES = process.argv.includes('--notes');
 
 // ---- 同步清单：**必须与 tools/ghsync.js 保持一致**（那里是唯一权威）----
-const WWW_FILES = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
+const WWW_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
 const ROOT_FILES = ['README.md', 'CHANGELOG.md', 'prev-snapshot.js', 'bump.js', 'test.js', 'test-ui.js',
     '_test_p0p3.js', '_test_batch3.js'];
 const ANDROID_FILES = ['android/app/build.gradle',

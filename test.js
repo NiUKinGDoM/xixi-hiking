@@ -10,6 +10,14 @@ const vm = require('vm');
 
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'www/index.html');
+// ★2026-10-10 CSS 外置（www/app.css）：读「页面」= index.html + app.css（包成 <style> 追加）
+//   目的：既有 CSS 断言 + matchAll(/<style>/) 全部零改动生效；反向断言（!includes）语义不变
+const _APP_CSS = path.join(ROOT, 'www/app.css');
+function readPage() {
+    let _css = '';
+    try { _css = fs.readFileSync(_APP_CSS, 'utf8'); } catch (e) {}
+    return fs.readFileSync(HTML, 'utf8') + '\n<style>' + _css + '</style>\n';
+}
 const GRADLE = path.join(ROOT, 'android/app/build.gradle');
 const MANIFEST = path.join(ROOT, 'android/app/src/main/AndroidManifest.xml');
 const MAIN_ACTIVITY = path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java');
@@ -23,7 +31,7 @@ console.log('===== XiXiの徒步小记 自动测试 =====');
 // 1. JS 语法（所有 script 块）
 console.log('-- 1. JS 语法 --');
 try {
-    const html = fs.readFileSync(HTML, 'utf8');
+    const html = readPage();
     const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
     // ★2026-08-30 方案A：主 JS 拆外部文件，脚本块 = 内联 + 4 个外部文件（按加载顺序）
     ['www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, f), 'utf8')));
@@ -34,7 +42,7 @@ try {
 
 // 2. 关键函数存在性
 console.log('-- 2. 关键功能完整性 --');
-const html = fs.readFileSync(HTML, 'utf8');
+const html = readPage();
 // ★2026-08-30 方案A：allJs = 内联 script 内容 + 4 个外部 JS（关键函数/死代码/版本/单测均针对 JS 内容）
 const allJs = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n') + '\n;\n' +
     ['www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'].map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n;\n');
@@ -118,7 +126,7 @@ try {
 console.log('-- 5c. 照片 GC --');
 try {
     const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     cj.includes('function photoCountOrphans') ? ok('photoCountOrphans 只读扫描存在') : bad('photoCountOrphans 缺失!');
     cj.includes('function confirmDeleteOrphanPhotos') ? ok('清理确认入口存在') : bad('confirmDeleteOrphanPhotos 缺失!');
     cj.includes("Promise.all([photoGetUsage(), photoCountOrphans()])") ? ok('占用统计联动孤立扫描') : bad('refreshPhotoUsage 未联动!');
@@ -131,7 +139,7 @@ try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     dj.includes('function loadSampleData') ? ok('loadSampleData 示例函数存在') : bad('loadSampleData 缺失!');
     ij.includes('function showTabGuides') && ij.includes('GUIDE_CARDS') ? ok('分页引导逻辑在') : bad('showTabGuides 缺失!');
     ih.includes('id="guideRecords"') && ih.includes('id="guidePlans"') && ih.includes('id="guideSettings"') && ih.includes('id="welcomeDemoBtn"') ? ok('四页引导卡 DOM 在位') : bad('引导卡 DOM 缺失!');
@@ -152,7 +160,7 @@ try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     dj.includes('lowerText(r.notes).indexOf(q)') && dj.includes('lowerText(r.mood)') ? ok('搜索扩展小日记/心情等字段') : bad('全文搜索缺失!');
     dj.includes('function confirmWipeAllData') && dj.includes('function wipeAllDataExecute') ? ok('抹掉数据双重确认存在') : bad('wipe 函数缺失!');
     ih.includes('id="wipeAllBtn"') ? ok('设置页抹掉按钮在位') : bad('wipeAllBtn 缺失!');
@@ -199,7 +207,7 @@ try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     dj.includes('edit-merge-box') ? ok('用时/里程复合框带 edit-merge-box') : bad('edit-merge-box 缺失!');
     ih.includes('body.dark-mode .edit-merge-box') && ih.includes('background: rgba(55, 65, 81, 0.9) !important;') ? ok('深色模式盒底深灰化规则在') : bad('dark edit-merge-box CSS 缺失!');
     ih.includes('.edit-input::placeholder') && ih.includes('body.dark-mode .edit-input::placeholder') ? ok('输入框占位深色提亮规则在') : bad('placeholder dark 规则缺失!');
@@ -214,7 +222,7 @@ console.log('-- 5g. 09-06 定稿v3 --');
 try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     dj.includes('function maybeShowOverdueCare') && dj.includes('oc-go') && dj.includes('oc-ignore') && !dj.includes('oc-shift') ? ok('过期弹窗只留 去处理/忽略(顺延已删)') : bad('过期弹窗按钮不对!');
     dj.includes('去计划页改个日期或删掉吧') ? ok('过期文案同步更新') : bad('过期文案未更新!');
     ij.includes('function dismissGuide(cardId)') && ij.includes("'hiking_guide_seen_' + cardId") ? ok('引导 ✕ 逐卡独立(dismissGuide)') : bad('dismissGuide 缺失!');
@@ -228,7 +236,7 @@ try {
 console.log('-- 5h. 09-06 概览单位等 --');
 try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     ih.includes('id="totalCount"') && ih.includes('次</span>') && ih.includes('total-count-value') ? ok('总记录数带「次」单位(HTML span)') : bad('总记录单位缺失!');
     ih.includes('id="avgDifficultyMiniU"') && ih.includes('.stat-unit') && ih.includes('avgDifficultyMini') ? ok('平均难度级单位=stat-unit 小字') : bad('难度单位缺失!');
     ih.includes('id="totalDistance"') && ih.includes('stat-unit">km') && ih.includes('id="maxElevation"') && ih.includes('stat-unit">m') ? ok('总里程km/最高海拔m 单位小字化') : bad('km/m 单位未拆!');
@@ -253,7 +261,7 @@ try {
 console.log('-- 5j. 更新日志三版 --');
 try {
     const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     cj.includes('history_edu</span>更新日志</div>') ? ok('更新日志标题去掉版本号') : bad('标题仍带版本号!');
     cj.includes('j === 0') && cj.includes('本次更新') && !cj.includes('上次更新') ? ok('徽章仅本次(上次/上上次无标签)') : bad('徽章逻辑不对!');
     cj.includes('parts.length < 3') ? ok('取最近三个版本逻辑在') : bad('三版截取缺失!');
@@ -269,7 +277,7 @@ console.log('-- 5l. 照片库上限 --');
 try {
     const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     cj.includes('PHOTO_LIMIT_BYTES = 300 * 1048576') ? ok('300MB 建议上限常量在') : bad('PHOTO_LIMIT_BYTES 缺失!');
     cj.includes('function openPhotoUsageDetailModal') && cj.includes('id="puModal"') ? ok('详情弹窗含样式锚点 id=puModal') : bad('详情弹窗/id 缺失!');
     !cj.includes('computePhotoTopRecords') && !cj.includes('pu-tr') && !cj.includes('最占空间的记录') ? ok('TOP10 排行已整体移除') : bad('TOP10 残留!');
@@ -299,7 +307,7 @@ try {
 // 5n. ★2026-09-07 CSS 健康回归（误删事故防复发：曾删 cl 段连带吞掉按钮/toast 全量样式）
 console.log('-- 5n. CSS 健康 --');
 try {
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     const styles = [...ih.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]);
     const allBalanced = styles.every(st => {
         // 容错计数：多余 } 忽略，结束深度必须 0（缺 } 必暴露）
@@ -345,7 +353,7 @@ try {
 console.log('-- 5o. 计划三态徽章 --');
 try {
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     dj.includes('function planRelBadgeHtml') ? ok('通用徽章函数 planRelBadgeHtml 在') : bad('徽章函数缺失!');
     dj.includes('class="pl-today"') && dj.includes('class="pl-tomorrow"') && dj.includes('class="pl-overdue"') ? ok('三态徽章 html 在(过期/今天/明天)') : bad('三态徽章缺失!');
     dj.indexOf('planRelBadgeHtml(trip.createdAt)') > 0 ? ok('列表行已接三态徽章') : bad('列表未接!');
@@ -378,7 +386,7 @@ try {
     /complete-planned-btn[\s\S]{0,1400}planIsDueOrOverdue\(trip\.createdAt\)\) showCompleteOrDelayModal/.test(dj) ? ok('守卫：列表点 ✓ 按状态分岔到两个弹窗') : bad('列表点击未分岔!');
     // ★2026-09-20 深色下弹窗标题靛蓝图标加深（实测：内联 #4f46e5 在深色弹窗底上仅 2.64:1 → 浅靛 8.33:1）
     (function () {
-        const ih2 = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+        const ih2 = readPage();
         ih2.includes('body.dark-mode .confirm-modal-title .material-icons[style*="#4f46e5"] { color: #a5b4fc !important; }') ? ok('守卫：深色弹窗标题靛蓝图标已加深（属性选择器精准命中）') : bad('深色弹窗标题靛蓝图标未加深!');
 
         // ★2026-09-20 更新日志「v1.2.2.5 条目」必须写明随版交付的列表视图「完成 / 延期」
@@ -397,7 +405,7 @@ try {
     const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
-    const ih = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+    const ih = readPage();
     const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
     const java = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
     cj.includes('hiking_crash_queue') && cj.includes('persistCrashEntry') ? ok('JS 崩溃持久队列(重启不丢)在') : bad('崩溃队列缺失!');
@@ -793,7 +801,7 @@ const _fixInit = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8'
 // ★2026-09-22 语义与一致性守卫（红色只给危险操作 / 标题不折行 / 输入框玻璃化 / 时间显示人话）
 //   背景：用户 2026-09-22 实测反馈三条 —— ① 红色（.check-go-btn）被 9 处非危险操作误用；
 //   ② 记录页标题被右侧按钮挤窄（窄屏折成竖排）；③ 编辑弹窗输入框是不透明白块 + 时间显示裸 ISO。
-const _semH = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
+const _semH = readPage();
 {
   const _cases = [
     ['保存', /id="save-btn-' \+ r\.id \+ '" data-testid="save-button-' \+ r\.id \+ '" class="ripple-effect btn-click-effect glass-btn"/],
