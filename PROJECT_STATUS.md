@@ -70,7 +70,12 @@ node tools/ship.js publish vX.Y.Z <Release文案>                        # GH同
 #   ★2026-09-29 起 publish 内含「②.5 官网下载链路核对」（自动跑 tools/dlcheck.js）
 
 # ⑧.5 ★官网（site/）相关（2026-09-29 起发版需同步官网）
-node tools/sitetest.js              # 官网 /download Function 离线自测（16 项，已并入 checkall）
+node tools/siteaudit.js             # ★线上站点体检（2026-10-10 新增，38 项）：官网 6 页 / App 网页版版本指纹 / 下载链路按 UA 分流 / 内链死链 / 线上政策==App 内 / 远端 raw==本地；纯 https+fs 不 spawn，--quick/--no-remote/--json
+node tools/legalgen.js              # ★官网政策页生成器（2026-10-10 新增）：App 内 app-data.js 是唯一源 → 生成 site/privacy.html + terms.html；--check 比对 / --dry-run 预览
+node tools/map.js                   # ★代码地图（2026-10-10 新增）：索引 www/ 顶层函数 + index.html 的 CSS 分区 → tools/notes/code-map.md；--check 判过期
+bash tools/churn.sh                 # ★改动热点分析（2026-10-10 新增）：git 历史统计文件改动频次/提交节奏/同号重发占比（读 git 必须用 bash）
+bash tools/checkall.sh              # ★全量门禁（bash 直跑版，2026-10-10 新增）：专治本机 node spawn EBUSY；--fast / --no-e2e / --online
+node tools/sitetest.js              # 官网 /download Function 离线自测（25 项，已并入 checkall）
 node tools/dlcheck.js               # 线上下载链路实测：跟重定向到底，验到 PK 字节才算过
 node tools/dlcheck.js --ua ios      # 换 UA 看分流（android|ios|mac|win）；--head 只测首跳
 node tools/dlcheck.js --base http://127.0.0.1:8795   # 测本地
@@ -790,11 +795,11 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
    → Function 走了 `fallback-error` 兜底。**这是本地调试环境问题，CF 边缘证书链正常**；
    `tools/_devserver.js` 已内置 `NODE_TLS_REJECT_UNAUTHORIZED=0` 仅用于本地预演。
 
-**配套工具（三个，均已入 checkall / smoke）**：
+**配套工具（均已入 checkall / smoke）**：
 | 工具 | 作用 |
 |---|---|
 | `site/functions/download.js` | Pages Function 本体（**唯一跑在 CF 边缘的代码**） |
-| `tools/sitetest.js` | **离线**自测 16 项：分流（安卓/iPhone/iPad/mac/win）+ 三层兜底 + 4 种历史资产名 + 源码卫生 |
+| `tools/sitetest.js` | **离线**自测 25 项：分流（安卓/iPhone/iPad/mac/win）+ 三层兜底 + 4 种历史资产名 + 镜像列表两端一致 + 源码卫生 |
 | `tools/dlcheck.js` | **线上/本地实测**：跟完整重定向链，验证最终响应体前两字节 = `PK`（真的是 APK 不是网页）；`--ua android\|ios\|mac\|win`、`--head` |
 | `tools/_devserver.js` | 本地官网预览（静态文件 + 真实执行 Function），补上「静态服务器不跑 Function」的空白 |
 
