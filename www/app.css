@@ -556,28 +556,8 @@
         
         
         /* 难度徽章（★2026-08-25 玻璃质感：半透明背景 + 细边框，内联覆盖 background/border-color） */
-        .difficulty-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 6px;
-            color: #374151 !important;   /* ★2026-08-25 浅色模式中灰字（#1f2937 太深 → #374151 浅一档仍清晰）；深色模式白字在下方覆盖 */
-            font-weight: 700 !important;
-            /* ★2026-08-27 性能优化：去掉 backdrop-filter（徽章小而密，blur 无视觉意义，一屏省 10 个合成层） */
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
-            transform: translateY(0);
-        }
         
-        .difficulty-badge:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-        }
         
-        body.dark-mode .difficulty-badge {
-            color: #ffffff !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        }
         
         /* ★2026-08-25 检查更新弹窗「检查」按钮：浅红玻璃质感——背景更透更浅、边框红更明显（用户要求）
            ★2026-08-25 !important 防被后定义的 .confirm-btn-delete（实色红）覆盖 */
@@ -1585,7 +1565,7 @@
             color: #cbd5e1;
         }
         /* ★2026-09-17 自绘勾选框：原用 accent-color（浏览器原生方框，iOS/APK 上外观不统一、与玻璃语言不符）
-           —— 改用 appearance:none + SVG 勾，配方对齐 .batch-check（同圆角/同阴影），色沿用品牌靛蓝 */
+           —— 改用 appearance:none + SVG 勾，配方对齐 .batch-check（同阴影；圆角按尺寸微调 5/6px），色沿用品牌靛蓝 */
         .chk-row input {
             appearance: none;
             -webkit-appearance: none;
@@ -1781,43 +1761,11 @@
         }
         
         /* 导入/导出弹窗 - 液态玻璃样式（亮暗自适应） */
-        .glass-modal {
-            /* ★2026-08-23 v15 严格底栏配方 */
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(2px) saturate(150%);
-            -webkit-backdrop-filter: blur(2px) saturate(150%);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 20px;
-            box-shadow: 
-                0 14px 40px rgba(0, 0, 0, 0.15),
-                0 2px 10px rgba(0, 0, 0, 0.05),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.03);
-        }
         
-        body.dark-mode .glass-modal {
-            background: rgba(16, 26, 48, 0.32);
-            border-color: rgba(148, 180, 255, 0.18);   /* ★设计语言统一：与 confirm-modal-content 深色完全一致 */
-            box-shadow:
-                0 14px 40px rgba(0, 0, 0, 0.15),
-                0 2px 10px rgba(0, 0, 0, 0.05),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.03);
-        }
         
         /* 弹窗取消按钮 - 跟随 App 主题的液态玻璃 */
         
         /* ★2026-08-20 v1.1.0.3 玻璃弹窗文字深浅自适应（修复浅色模式下白色文字看不见） */
-        .glass-modal h3, .glass-modal .modal-title {
-            color: #1e293b;
-        }
-        body.dark-mode .glass-modal h3, body.dark-mode .glass-modal .modal-title {
-            color: #f8fafc;
-        }
-        .glass-modal p {
-            color: rgba(30, 41, 59, 0.7);
-        }
-        body.dark-mode .glass-modal p {
-            color: rgba(248, 250, 252, 0.7);
-        }
         
         .glass-panel:hover {
             border-color: rgba(0, 0, 0, 0.06);
@@ -3424,15 +3372,7 @@
         }
         
         /* 12. 难度徽章动画 */
-        .difficulty-badge-advanced {
-            transition: transform 0.1s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-            transform-style: preserve-3d;
-        }
         
-        .difficulty-badge-advanced:hover {
-            transform: translateY(-4px) rotateX(10deg);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-        }
         
         /* 16. 空状态动画增强 */
         .empty-state-animate {
@@ -3462,22 +3402,7 @@
         }
         
         /* 21. 进度条动画 */
-        .progress-animate {
-            position: relative;
-            overflow: hidden;
-        }
         
-        .progress-animate::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            animation: progressShine 1.5s linear infinite;
-            will-change: transform;
-        }
         
         @keyframes progressShine {
             0% {
@@ -3590,31 +3515,9 @@
         }
         
         /* 30. 脉冲波纹动画 */
-        .pulse-ring {
-            position: relative;
-        }
         
-        .pulse-ring::before,
-        .pulse-ring::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid currentColor;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-        }
         
-        .pulse-ring::before {
-            animation: pulseRing 2s ease-out infinite;
-        }
         
-        .pulse-ring::after {
-            animation: pulseRing 2s ease-out infinite 1s;
-        }
         
         @keyframes pulseRing {
             0% {
@@ -4025,16 +3928,6 @@
         }
         /* ★2026-09-03 P0 复制选择弹窗（统一版）：复用 confirm-modal 玻璃体系；行卡同 dtp/mwp 玻璃格，
            选中整格靛蓝实心白字（与日期/心情选择器同款选中态） */
-        .hcm-sub {
-            font-size: 12px;
-            font-weight: 400;
-            color: #475569;
-            margin: -2px 2px 10px;
-            line-height: 1.5;
-        }
-        body.dark-mode .hcm-sub {
-            color: #a3b1c6;
-        }
         /* ★2026-09-03 「＋添加」下拉条内嵌展开形态：收起只一条栏，点开展开（直接新建置顶 + 最近记录），选即执行 */
         .ap-field {
             display: flex;

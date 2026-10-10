@@ -631,9 +631,7 @@ function renderSyncAccountCard() {
     off.style.display = bound ? 'none' : 'block';
     on.style.display = bound ? 'block' : 'none';
     if (!bound) return;
-    const provEl = document.getElementById('syncAcctProvider');
     const mailEl = document.getElementById('syncAcctMail');
-    if (provEl) provEl.textContent = syncProviderOf(syncConfig.server);
     if (mailEl) mailEl.textContent = syncConfig.username || '';
 }
 

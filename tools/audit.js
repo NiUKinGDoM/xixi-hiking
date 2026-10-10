@@ -94,7 +94,10 @@ if (runCss) {
 
   // ================= C. 死 CSS（自定义段定义但无人引用）=================
   const defined = new Set();
-  for (const m of custom.matchAll(/\.([a-zA-Z][a-zA-Z0-9_-]*)/g)) defined.add(m[1]);
+  // ★2026-10-10 五项优化：先去 CSS 注释再收集类名 —— 否则注释里提到的「已删类」
+  //   （如「.tooltip-animate 死 CSS 已删（零引用）」）会被误当成"定义了"，产生假阳性
+  const customNoComment = custom.replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const m of customNoComment.matchAll(/\.([a-zA-Z][a-zA-Z0-9_-]*)/g)) defined.add(m[1]);
   const haystack = html + '\n' + allJs;
   const deadCss = [...defined].filter((c) => {
     if (tokens.has(c)) return false;
