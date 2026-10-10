@@ -3336,13 +3336,13 @@
         }
 
         .glass-btn {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.05) 100%), rgba(255, 255, 255, var(--glass-alpha));   /* ★2026-08-23 液态玻璃：顶部微反光渐变 */
+            background: rgba(255, 255, 255, var(--glass-alpha));   /* ★2026-10-10 删「顶部微反光渐变」（光泽带）—— 遵守「禁光泽带/角反光/内光晕」铁律；原为 2026-08-23 液态玻璃方案 */
                     border: 1px solid rgba(0, 0, 0, 0.08);
             border-radius: 12px;
             color: #374151;
             cursor: pointer;   /* ★2026-09-17 补（原缺失 → computed 为 default，不像按钮） */
             box-shadow: 
-                0 2px 8px rgba(0, 0, 0, 0.04),;
+                0 2px 8px rgba(0, 0, 0, 0.04);
             transition: transform 0.1s ease, background-color 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
         }
         
