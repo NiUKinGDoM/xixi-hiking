@@ -103,6 +103,16 @@ const CHECK = WWW_FILES.map((f) => 'www/' + f)
 // ★注意：`docs/PROJECT_STATUS.md` 等三家文档由 doc-sync.js 从**会话根**同步，不在此核对
 //   （原先列在这里属于无效项：源不在 ROOT，核对永远命中不到 → 假绿）。
 
+// ══════════════════════════════════════════════════════════════════════════
+// ★2026-10-10 拆出 main() 并加 require 守卫 —— 让 status.js 能「只拿清单、不跑同步」：
+//   status.js 要核「主工程 vs GH 副本」差异，原先靠 spawnSync(node ghsync --dry-run)，
+//   而本机 node 的 spawn 会集体 EBUSY → 每次体检都误报「ghsync 输出无法解析」。
+//   现在它改为 require 本文件、直接取清单做纯 fs 比对（见 status.js）。
+//   ★被 require 时只定义常量 + 计算 plan/CHECK（纯读，无写入副作用），不执行同步。
+//   ★CLI 行为完全不变（仍由文件末尾的 `if (require.main === module) main()` 触发）。
+//   ★为最小化 diff，函数体保持原顶层缩进（JS 不介意）。
+// ══════════════════════════════════════════════════════════════════════════
+function main() {
 console.log(`== ghsync ${DRY ? '(DRY-RUN) ' : ''}==`);
 console.log(`主工程: ${ROOT}`);
 console.log(`GHT 副本: ${GH}\n`);
@@ -244,3 +254,17 @@ if (has('push') || has('push-only')) {
   if (p.status !== 0) { console.error('✗ push 失败（直连与钉 IP 均失败：见 MEMORY「网络排障顺序」）'); process.exit(1); }
   console.log('✅ 已 push ' + REPO_URL + ' master（若为发布推送，CF Pages 会自动部署）');
 }
+
+}
+
+// ★2026-10-10 导出（供 status.js 等做纯 fs 比对；不 spawn、不受本机 EBUSY 影响）
+//   ROOT/GH：路径基准；WWW_FILES/ROOT_FILES/ANDROID_FILES/DIRS：同步清单（唯一权威）
+//   plan：[[srcAbs, dstAbs], …] 全部待同步文件（含 assets 递归）
+//   CHECK：必须零差异的核对清单（相对路径，人可读）
+module.exports = {
+  ROOT, WORKSPACE, GH, REPO_URL,
+  WWW_FILES, ROOT_FILES, ANDROID_FILES, DIRS,
+  plan, CHECK, rel,
+};
+
+if (require.main === module) main();

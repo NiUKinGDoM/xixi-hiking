@@ -105,6 +105,11 @@ DOCS.concat(LOGS).forEach((d) => {
         [...ln.matchAll(/`([^`\n]+)`/g)].forEach((m) => {
             const p = m[1].trim();
             if (!/^(www|tools|e2e|docs|android|assets|backups|\.workbuddy)[\w./\-]*\.\w+$/.test(p)) return;
+            // ★2026-10-10 收紧：上面那条正则会把 **Java 全限定类名**误当路径 ——
+            //   `android.app.AlertDialog` 恰好命中「目录前缀 + .末段」的形状（前缀 android、末段 AlertDialog）。
+            //   两条排除：① 真实项目路径**必然含 `/`**（那些前缀本身就是目录名）；② 末段首字母大写 = 类名惯例（文件名几乎都是小写）。
+            if (!p.includes('/')) return;
+            if (/^[A-Z]/.test(p.split('.').pop())) return;
             if (seen.has(p)) return;
             seen.add(p);
             const cand = [
