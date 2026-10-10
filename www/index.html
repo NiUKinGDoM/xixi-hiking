@@ -113,13 +113,24 @@
                     </button>
                 </div>
             </div>
-            <!-- ★2026-09-14 新增「那年今日」：往年同月同日有记录时显示，无则整卡隐藏（不占位、不打扰） -->
+            <!-- ★2026-09-14 新增「那年今日」→ ★2026-10-10 P0-1 扩为「时光机」（三层回退，命中率大增）；无命中则整卡隐藏 -->
             <div id="onThisDayCard" class="glass-panel" style="display:none;margin:0.5rem 0 1rem;padding:14px 16px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                     <span class="material-icons" style="font-size:18px;color:#818cf8;">history</span>
-                    <span style="font-size:13px;font-weight:700;letter-spacing:0.5px;color:#818cf8;">那年今日</span>
+                    <span style="font-size:13px;font-weight:700;letter-spacing:0.5px;color:#818cf8;">时光机</span>
                 </div>
                 <div id="onThisDayBody"></div>
+            </div>
+            <!-- ★2026-10-10 P0-2 备份健康提示：页内 · 一次性（点「知道了」永久不再提）· 覆盖「未绑网盘/从未备份/超 30 天」 -->
+            <div id="backupHintCard" class="glass-panel" style="display:none;margin:0 0 1rem;padding:12px 14px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="material-icons" style="font-size:18px;color:#f59e0b;flex-shrink:0;">shield_moon</span>
+                    <div style="flex:1;min-width:0;font-size:13px;line-height:1.5;color:#52606f;"><span id="backupHintText"></span></div>
+                    <button id="backupHintGo" type="button" class="glass-btn ripple-effect" style="padding:6px 12px;border-radius:10px;font-size:12px;font-weight:600;flex-shrink:0;">去备份</button>
+                    <button id="backupHintClose" type="button" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;padding:2px;flex-shrink:0;line-height:1;" title="知道了，不再提醒">
+                        <span class="material-icons" style="font-size:18px;">close</span>
+                    </button>
+                </div>
             </div>
             <div class="glass-panel p-6 mb-6" style="margin-top: 0.5rem;">
                 <h2 id="statsTitle" class="text-2xl font-semibold text-white flex items-center gap-2 mb-4 px-3 py-1 rounded-lg transition-colors" data-testid="stats-title">

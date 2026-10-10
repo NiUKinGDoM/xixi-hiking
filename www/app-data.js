@@ -2337,16 +2337,46 @@ function renderOnThisDay() {
         var fp = yy + '-' + mm + '-' + dd + '_' + list.length + '_' + list.reduce(function (m, r) { var t = (r && (r.updatedAt || r.createdAt)) || ''; return t > m ? t : m; }, '');
         if (fp === onThisDayFp) return;
         onThisDayFp = fp;
-        var hits = list.filter(function (r) {
-            if (!r || !r.createdAt) return false;
-            var t = new Date(r.createdAt);
-            if (isNaN(t.getTime())) return false;
-            return (t.getMonth() + 1) === mm && t.getDate() === dd && t.getFullYear() < yy;
+        // ★2026-10-10 P0-1「时光机」：三层回退 —— ① 同月同日 ② 同月（往年）③ 整百/整年天（±1 天）
+        //   原实现只匹配「同月同日」，一年仅一次机会 → 绝大多数日子整卡不显示（与「打开就能看到回忆」相悖）
+        var __odTs = function (r0) { if (!r0 || !r0.createdAt) return 0; var t0 = new Date(r0.createdAt).getTime(); return isNaN(t0) ? 0 : t0; };
+        var r = null, hintLabel = '';
+        var byDay = list.filter(function (r0) {
+            var t0 = __odTs(r0); if (!t0) return false;
+            var d0 = new Date(t0);
+            return (d0.getMonth() + 1) === mm && d0.getDate() === dd && d0.getFullYear() < yy;
         });
-        if (!hits.length) { card.style.display = 'none'; body.innerHTML = ''; return; }
-        hits.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
-        var r = hits[0];
-        var years = yy - new Date(r.createdAt).getFullYear();
+        if (byDay.length) {
+            byDay.sort(function (a, b) { return __odTs(b) - __odTs(a); });
+            r = byDay[0];
+            hintLabel = (yy - new Date(__odTs(r)).getFullYear()) + ' 年前的今天';
+        } else {
+            var byMonth = list.filter(function (r0) {
+                var t0 = __odTs(r0); if (!t0) return false;
+                var d0 = new Date(t0);
+                return (d0.getMonth() + 1) === mm && d0.getFullYear() < yy;
+            });
+            if (byMonth.length) {
+                byMonth.sort(function (a, b) { return __odTs(b) - __odTs(a); });
+                r = byMonth[0];
+                hintLabel = (yy - new Date(__odTs(r)).getFullYear()) + ' 年前的 ' + mm + ' 月';
+            } else {
+                var __odMarks = [100, 200, 300, 365, 500, 730, 1000, 1460, 1825, 2555, 3650];
+                for (var mi = 0; mi < __odMarks.length && !r; mi++) {
+                    var tgt = __odMarks[mi];
+                    var hitM = list.filter(function (r0) {
+                        var t0 = __odTs(r0); if (!t0) return false;
+                        return Math.abs(Math.floor((now.getTime() - t0) / 86400000) - tgt) <= 1;
+                    });
+                    if (hitM.length) {
+                        hitM.sort(function (a, b) { return __odTs(b) - __odTs(a); });
+                        r = hitM[0];
+                        hintLabel = tgt + ' 天前';
+                    }
+                }
+            }
+        }
+        if (!r) { card.style.display = 'none'; body.innerHTML = ''; return; }
         var dark = document.body.classList.contains('dark-mode');
         var sub = dark ? 'rgba(255,255,255,0.72)' : '#52606f';
         var strong = dark ? '#ffffff' : '#0f172a';
@@ -2357,7 +2387,7 @@ function renderOnThisDay() {
         if (r.difficulty) meta.push(r.difficulty + ' 级');
         if (r.mood) meta.push(escapeHtml(r.mood));
         if (r.weather) meta.push(escapeHtml(r.weather));
-        body.innerHTML = '<div id="onThisDayRow" style="display:flex;align-items:center;gap:12px;cursor:pointer;">' + thumb + '<div style="flex:1;min-width:0;">' + '<div style="font-size:12px;color:' + sub + ';margin-bottom:2px;">' + years + ' 年前的今天</div>' + '<div style="font-size:16px;font-weight:700;color:' + strong + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(r.name || '未命名') + '</div>' + (meta.length ? '<div style="font-size:12px;color:' + sub + ';margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + meta.join(' · ') + '</div>' : '') + '</div>' + '<span class="material-icons" style="font-size:20px;color:' + sub + ';flex-shrink:0;">chevron_right</span>' + '</div>';
+        body.innerHTML = '<div id="onThisDayRow" style="display:flex;align-items:center;gap:12px;cursor:pointer;">' + thumb + '<div style="flex:1;min-width:0;">' + '<div style="font-size:12px;color:' + sub + ';margin-bottom:2px;">' + hintLabel + '</div>' + '<div style="font-size:16px;font-weight:700;color:' + strong + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(r.name || '未命名') + '</div>' + (meta.length ? '<div style="font-size:12px;color:' + sub + ';margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + meta.join(' · ') + '</div>' : '') + '</div>' + '<span class="material-icons" style="font-size:20px;color:' + sub + ';flex-shrink:0;">chevron_right</span>' + '</div>';
         card.style.display = 'block';
         var row = document.getElementById('onThisDayRow');
         if (row) row.addEventListener('click', function () { triggerHaptic(12); if (typeof openRecordDetailModal === 'function') openRecordDetailModal(r.id); });
@@ -2365,8 +2395,72 @@ function renderOnThisDay() {
     } catch (e) { /* 那年今日失败绝不影响概览渲染 */ }
 }
 
+// ★2026-10-10 P0-2 备份健康提示（页内 · 一次性 · 覆盖「未绑网盘」的沉默风险）
+//   与既有「系统通知版备份提醒」（app-sync.js：仅【已绑网盘】且 ≥7 天时触发、每天最多一次）**互补**：
+//   本提示 ① 不依赖通知权限 ② 对未绑网盘的用户同样生效 ③ 点「知道了」永久不再提。
+function renderBackupHint() {
+    try {
+        var el = document.getElementById('backupHintCard');
+        if (!el) return;
+        var txtEl = document.getElementById('backupHintText');
+        // 已点过「知道了」→ 永久不再提
+        try { if (AppStore.getItem('hiking_backup_hint_dismissed') === true) { el.style.display = 'none'; return; } } catch (e0) { }
+        // 没有任何数据 → 不需要备份
+        var hasData = (typeof records !== 'undefined' && records && records.length > 0) ||
+            (typeof plannedTrips !== 'undefined' && plannedTrips && plannedTrips.length > 0);
+        if (!hasData) { el.style.display = 'none'; return; }
+        // 最近一次成功备份 = max(云端同步时间, 本地自动备份时间)
+        var ts = 0;
+        try {
+            var st = AppStore.getItem('hiking_sync_status');
+            if (st && st.lastSyncAt) { var a1 = new Date(st.lastSyncAt).getTime(); if (a1 > ts) ts = a1; }
+        } catch (e1) { }
+        try {
+            var lb = AppStore.getItem('hiking_local_backup_at');
+            if (typeof lb === 'number' && lb > ts) ts = lb;
+        } catch (e2) { }
+        var days = ts ? Math.floor((Date.now() - ts) / 86400000) : -1;
+        if (ts && days < 30) { el.style.display = 'none'; return; }
+        // ★2026-10-10 体验门槛：从未备份过时，要求「最早一条数据距今 ≥ 14 天」才提示
+        //   —— 否则刚装好、刚记两条就跳出「还没备份过」太打扰（与「不要唠叨」冲突）
+        if (!ts) {
+            var __oldest = 0;
+            var __all = (typeof records !== 'undefined' && records ? records : []).concat(
+                (typeof plannedTrips !== 'undefined' && plannedTrips ? plannedTrips : []));
+            for (var __i = 0; __i < __all.length; __i++) {
+                var __t1 = Date.parse(__all[__i] && __all[__i].createdAt) || 0;
+                if (__t1 && (!__oldest || __t1 < __oldest)) __oldest = __t1;
+            }
+            if (!__oldest || (Date.now() - __oldest) < 14 * 86400000) { el.style.display = 'none'; return; }
+        }
+        if (txtEl) {
+            txtEl.textContent = ts
+                ? ('数据已 ' + days + ' 天没备份了')
+                : '还没备份过数据';
+        }
+        el.style.display = 'block';
+        var go = document.getElementById('backupHintGo');
+        if (go && !go.__bound) {
+            go.__bound = true;
+            go.addEventListener('click', function () {
+                try { triggerHaptic(10); } catch (eH) { }
+                try { var b = document.querySelector('.tab-btn[data-tab="settings"]'); if (b) b.click(); } catch (eS) { }
+            });
+        }
+        var cl = document.getElementById('backupHintClose');
+        if (cl && !cl.__bound) {
+            cl.__bound = true;
+            cl.addEventListener('click', function () {
+                try { AppStore.setItem('hiking_backup_hint_dismissed', true); } catch (eD) { }
+                el.style.display = 'none';
+            });
+        }
+    } catch (e) { /* 提示失败绝不影响概览 */ }
+}
+
 function updateStatistics() {
     renderOnThisDay(); // ★2026-09-14「那年今日」：置于指纹快照判断之前，跨天/切页回来也能刷新
+    renderBackupHint(); // ★2026-10-10 P0-2 备份健康提示（页内、一次性、覆盖未绑网盘）
     // ★2026-09-15 里程碑补领已移出此处：saveRecord() 内 updateStatistics() 先于 checkMilestones() 执行，
     //   静默补领会抢先标记新达成档位 → 庆祝卡永不弹（真 bug）。改由「启动 + 切到概览页」触发（见 app-init.js）
     renderMilestoneEntry(); // ★2026-09-15 入口计数跟随数据实时刷新（删/改记录后立即变化；纯展示无副作用）
@@ -3601,7 +3695,7 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
     var arr = groups[k];
     // ★2026-09-05 P0-1 大数量优化：组内单 pass 合并 4 个 reduce + comp；排序只在有照片时对照片记录做（无照片大组免整组 sort）
     var n = arr.length;
-    var km = 0, min = 0, el = 0, diffSum = 0;
+    var km = 0, min = 0, el = 0, diffSum = 0, lastTs = 0;   // ★2026-10-10 P1-2 该山最近一次
     var comp = [];
     var seen = {};
     var phRecs = [];
@@ -3611,6 +3705,8 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         min += Number(gr.duration) || 0;
         var gel = Number(gr.elevation) || 0;
         if (gel > el) el = gel;
+        var gt = Date.parse(gr.createdAt) || 0;   // ★2026-10-10 P1-2
+        if (gt > lastTs) lastTs = gt;
         diffSum += Number(gr.difficulty) || 0;
         cmpSet(gr.companions).forEach(function (c2) { if (!seen[c2]) { seen[c2] = 1; comp.push(c2); } });
         if (gr.photos && gr.photos.length) phRecs.push({ c: gr.createdAt || '', id: gr.id, ps: gr.photos });
@@ -3656,7 +3752,16 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         '<span class="mb-seal">' + no + '</span>' +
         '<div class="mb-body"><div class="mb-name">' + escapeHtml(k) + '</div></div>' +
         '<span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div></div>';
-    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + '</div>';
+    // ★2026-10-10 P1-2「上次来」：一行灰字放统计之后（最低调，避免抽屉臃肿）
+    var lastTxt = '';
+    if (lastTs) {
+        var ldays = Math.floor((Date.now() - lastTs) / 86400000);
+        var ld0 = new Date(lastTs);
+        var ldate = ld0.getFullYear() + '-' + String(ld0.getMonth() + 1).padStart(2, '0') + '-' + String(ld0.getDate()).padStart(2, '0');
+        lastTxt = '<div class="mb-last" style="text-align:center;font-size:11px;margin-top:6px;opacity:0.66;">' +
+            (n > 1 ? '最近一次' : '唯一一次') + ' · ' + (ldays <= 0 ? '今天' : ldays + ' 天前') + '（' + ldate + '）</div>';
+    }
+    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + lastTxt + '</div>';
     return { head: head, drawer: drawer };
 }
 
