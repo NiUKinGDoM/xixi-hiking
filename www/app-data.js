@@ -3631,6 +3631,20 @@ function applyRecordsView() {
 }
 // ★2026-09-02 山册渲染：按记录名（山）聚合卡片；点卡片头展开这座山的记录；点记录右侧 ↗ 定位打开
 // ★2026-09-03 双列名册：网格两列排卡片（山影天空带已按用户要求删除，卡只显示山名行）
+// ★2026-10-10 同山归并（用户：上次写「朱雀-草甸」、这次写「朱雀-冰晶顶」→ 应是同一座山，山册却分成两张卡）
+//   规则：按「- — – － · • ・ / ｜ | 、 ，」等分隔符取【第一段】作为分组键；无分隔符则用整名。
+//   「朱雀-草甸」「朱雀-冰晶顶」「朱雀」→ 键都是「朱雀」⇒ 归到同一座山，次数/里程/最高海拔一起累计。
+//   前段少于 2 字视为误切（如「东-峰」），退回整名，避免把不相干的合到一起。
+//   显示名不改观感：卡片仍显示【最近一次】写的那次完整名字（见 renderMountainCard）。
+function mtnKeyOf(name) {
+    var s = String(name == null ? '' : name).trim();
+    if (!s) return '';
+    var seg = s.split(/[-—–－·•・\/｜|、，,]+/)[0];
+    seg = (seg || '').trim();
+    return (seg.length >= 2) ? seg : s;
+}
+
+
 function renderMountainBook() {
     var wrap = safeGetElementById('mountainBookView');
     if (!wrap) return;
@@ -3642,7 +3656,7 @@ function renderMountainBook() {
     var diffName = { 1: '简单', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
     var groups = {};
     list.forEach(function (r) {
-        var k = String(r.name).trim();
+        var k = mtnKeyOf(r.name);   // ★2026-10-10 同山归并（原为 String(r.name).trim()，同山不同名会分成两张卡）
         if (!groups[k]) groups[k] = [];
         groups[k].push(r);
     });
@@ -3693,6 +3707,12 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         return Object.keys(out).slice(0, 3);
     }
     var arr = groups[k];
+    // ★2026-10-10 同山归并后，卡片显示名 = 组内【最近一次】写的那次完整名（分组用主名，观感保持原样）
+    var dispName = k, __latestAt = '';
+    for (var __di = 0; __di < arr.length; __di++) {
+        var __dc = arr[__di].createdAt || '';
+        if (__dc >= __latestAt) { __latestAt = __dc; dispName = String(arr[__di].name || '').trim() || k; }
+    }
     // ★2026-09-05 P0-1 大数量优化：组内单 pass 合并 4 个 reduce + comp；排序只在有照片时对照片记录做（无照片大组免整组 sort）
     var n = arr.length;
     var km = 0, min = 0, el = 0, diffSum = 0, lastTs = 0;   // ★2026-10-10 P1-2 该山最近一次
@@ -3750,7 +3770,7 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         '</div>';
     var head = '<div class="mb-card ' + ridgeCls + '" data-mountain="' + no + '"><div class="mb-head">' +
         '<span class="mb-seal">' + no + '</span>' +
-        '<div class="mb-body"><div class="mb-name">' + escapeHtml(k) + '</div></div>' +
+        '<div class="mb-body"><div class="mb-name">' + escapeHtml(dispName) + '</div></div>' +
         '<span class="mb-open-arrow material-icons" style="font-size:18px;">expand_more</span></div></div>';
     // ★2026-10-10 P1-2「上次来」：一行灰字放统计之后（最低调，避免抽屉臃肿）
     var lastTxt = '';
