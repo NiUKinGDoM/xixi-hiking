@@ -3690,31 +3690,31 @@ function openMtnMergeDialog(key) {
         var selectedKeys = [];   // ★2026-10-10 多选：一次可并入多座山
         var optRow = function (k0) {
             var on = selectedKeys.indexOf(k0) >= 0;
-            return '<div class="mtn-merge-opt" data-key="' + escapeHtml(k0) + '" style="padding:10px 12px;font-size:13px;color:' + (on ? '#4f46e5' : '#1e293b') + ';background:' + (on ? 'rgba(99,102,241,0.10)' : 'transparent') + ';border-bottom:1px solid rgba(148,163,184,0.14);cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;">' +
+            return '<div class="mtn-merge-opt' + (on ? ' on' : '') + '" data-key="' + escapeHtml(k0) + '">' +
                 '<span>' + escapeHtml(mtnLabelOf(k0)) + '</span>' +
-                (on ? '<span class="material-icons" style="font-size:16px;color:#4f46e5;">check</span>' : '') +
+                (on ? '<span class="material-icons mtn-merge-opt-check">check</span>' : '') +
                 '</div>';
         };
-        var opts = others.map(optRow).join('') || '<div style="padding:12px;font-size:12px;color:#334155;">还没有别的山可以连接</div>';
-        var inputStyle = 'width:100%;padding:9px 10px;border-radius:10px;font-size:13px;border:1px solid rgba(148,163,184,0.35);background:#fff;color:#1e293b;box-sizing:border-box;';
+        var opts = others.map(optRow).join('') || '<div class="mtn-merge-empty">还没有别的山可以连接</div>';
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="font-size:20px;vertical-align:-4px;color:#6366f1;">link</span> 连接山</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;text-align:left;">' +
-            '<div style="margin-bottom:6px;">把选中的山并入「<b>' + escapeHtml(mtnLabelOf(key)) + '</b>」<span style="font-size:11px;color:#334155;">（可多选）</span>：</div>' +
-            '<div id="mtnMergeList" style="max-height:180px;overflow-y:auto;border:1px solid rgba(148,163,184,0.25);border-radius:10px;margin-bottom:12px;">' + opts + '</div>' +
-            '<div style="margin-bottom:6px;">连接后叫什么名字？<span style="font-size:11px;color:#334155;">（留空则用目标山的名字）</span></div>' +
-            '<input type="text" id="mtnMergeName" maxlength="20" placeholder="例如：朱雀" value="' + escapeHtml(cur && cur.name ? cur.name : '') + '" style="' + inputStyle + '">' +
-            '<div style="font-size:12px;color:#334155;margin-top:10px;line-height:1.5;">只在「山册」里生效 —— 归类和名字变了，记录本身一条都不动。</div>' +
+            '<div style="margin-bottom:6px;">把选中的山并入「<b>' + escapeHtml(mtnLabelOf(key)) + '</b>」<span class="mtn-merge-note">（可多选）</span>：</div>' +
+            '<div id="mtnMergeList" class="mtn-merge-list">' + opts + '</div>' +
+            '<div style="margin-bottom:6px;">连接后叫什么名字？<span class="mtn-merge-note">（留空则用目标山的名字）</span></div>' +
+            '<input type="text" id="mtnMergeName" maxlength="20" placeholder="例如：朱雀" value="' + escapeHtml(cur && cur.name ? cur.name : '') + '" class="mtn-merge-input">' +
+            '<div class="mtn-merge-note-strong" style="margin-top:10px;line-height:1.5;">只在「山册」里生效 —— 归类和名字变了，记录本身一条都不动。</div>' +
             '</div>' +
-            '<div class="confirm-modal-buttons">' +
-            (canOff ? '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeOff">断开</button>'
-                  : '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeCancel">取消</button>') +
+            '<div class="confirm-modal-buttons" style="gap:10px;">' +
+            '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeCancel">取消</button>' +
+            (canOff ? '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeOff">断开</button>' : '') +
             '<button class="check-go-btn ripple-effect" id="mtnMergeOk">' + (conn ? '保存' : '连接') + '</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         var close = function () { try { document.body.removeChild(modal); } catch (e) { } };
+        document.getElementById('mtnMergeCancel').addEventListener('click', close);
         if (canOff) {
             document.getElementById('mtnMergeOff').addEventListener('click', function () {
                 var mm = mtnMerges();
@@ -3723,8 +3723,6 @@ function openMtnMergeDialog(key) {
                 try { AppStore.setItem('hiking_mtn_merge', mm); } catch (e) { }
                 close(); try { renderMountainBook(); } catch (e2) { }
             });
-        } else {
-            document.getElementById('mtnMergeCancel').addEventListener('click', close);
         }
         document.getElementById('mtnMergeOk').addEventListener('click', function () {
             var nm = document.getElementById('mtnMergeName');
@@ -3744,10 +3742,9 @@ function openMtnMergeDialog(key) {
                 if (i2 >= 0) selectedKeys.splice(i2, 1); else selectedKeys.push(kk);
                 modal.querySelectorAll('.mtn-merge-opt').forEach(function (o) {
                     var on = selectedKeys.indexOf(o.getAttribute('data-key')) >= 0;
-                    o.style.background = on ? 'rgba(99,102,241,0.10)' : 'transparent';
-                    o.style.color = on ? '#4f46e5' : '#1e293b';
-                    var chk = o.querySelector('.material-icons');
-                    if (on && !chk) o.insertAdjacentHTML('beforeend', '<span class="material-icons" style="font-size:16px;color:#4f46e5;">check</span>');
+                    if (on) o.classList.add('on'); else o.classList.remove('on');
+                    var chk = o.querySelector('.mtn-merge-opt-check');
+                    if (on && !chk) o.insertAdjacentHTML('beforeend', '<span class="material-icons mtn-merge-opt-check">check</span>');
                     else if (!on && chk) chk.remove();
                 });
                 return;

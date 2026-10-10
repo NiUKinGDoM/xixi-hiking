@@ -4535,6 +4535,90 @@
     }
 
 
+        /* ========== 山册「连接器」弹窗（2026-10-10 深色适配 + 选择框更明显） ========== */
+        .mtn-merge-list {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1.5px solid rgba(99, 102, 241, 0.45);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            background: rgba(148, 163, 184, 0.06);
+            box-sizing: border-box;
+        }
+        .mtn-merge-opt {
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #1e293b;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mtn-merge-opt:last-child { border-bottom: none; }
+        .mtn-merge-opt.on {
+            color: #4f46e5;
+            background: rgba(99, 102, 241, 0.10);
+        }
+        .mtn-merge-opt .mtn-merge-opt-check {
+            font-size: 16px;
+            color: #4f46e5;
+        }
+        .mtn-merge-empty {
+            padding: 12px;
+            font-size: 12px;
+            color: #334155;
+        }
+        .mtn-merge-note {
+            font-size: 11px;
+            color: #334155;
+        }
+        .mtn-merge-note-strong {
+            font-size: 12px;
+            color: #334155;
+        }
+        .mtn-merge-input {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: rgba(255, 255, 255, 0.6);
+            color: #1e293b;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .mtn-merge-input::placeholder { color: rgba(51, 65, 85, 0.7); opacity: 1; }
+        /* 深色模式：连接器弹窗文字/列表/输入框提亮 */
+        body.dark-mode .mtn-merge-list {
+            border-color: rgba(148, 180, 255, 0.42);
+            background: rgba(148, 163, 184, 0.08);
+        }
+        body.dark-mode .mtn-merge-opt {
+            color: #e5e7eb;
+            border-bottom-color: rgba(148, 163, 184, 0.22);
+        }
+        body.dark-mode .mtn-merge-opt.on {
+            color: #c7d2fe;
+            background: rgba(129, 140, 248, 0.22);
+        }
+        body.dark-mode .mtn-merge-opt .mtn-merge-opt-check { color: #c7d2fe; }
+        body.dark-mode .mtn-merge-empty { color: #cbd5e1; }
+        body.dark-mode .mtn-merge-note,
+        body.dark-mode .mtn-merge-note-strong { color: #cbd5e1; }
+        body.dark-mode .mtn-merge-input {
+            border-color: rgba(148, 180, 255, 0.42);
+            background: rgba(255, 255, 255, 0.07);
+            color: #f3f4f6;
+        }
+        body.dark-mode .mtn-merge-input::placeholder { color: #cbd5e1; }
+        /* 山册抽屉「连接到另一座山」按钮深色提亮 */
+        body.dark-mode .mtn-merge-btn { color: #cbd5e1 !important; }
+        /* 三按钮（取消/断开/保存）窄屏换行 */
+        .confirm-modal-buttons { flex-wrap: wrap; }
 /*! tailwindcss v4.1.13 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
