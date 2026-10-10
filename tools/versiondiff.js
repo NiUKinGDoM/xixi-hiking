@@ -44,7 +44,8 @@ const ANDROID_FILES = ['android/app/build.gradle',
     'android/app/src/main/java/com/xixi/hiking/ResGuard.java',
     'android/app/src/main/AndroidManifest.xml'];
 const DIRS = [
-    { src: 'tools', dst: 'tools', ok: (f) => f.endsWith('.js') || f.endsWith('.py') },
+    // ★必须与 ghsync.js 的 DIRS 保持一致（2026-10-10 加 .sh：checkall.sh）
+    { src: 'tools', dst: 'tools', ok: (f) => f.endsWith('.js') || f.endsWith('.py') || f.endsWith('.sh') },
     { src: 'e2e', dst: 'e2e', ok: (f) => f.endsWith('.js') },
     { src: 'docs', dst: 'docs', ok: (f) => f.endsWith('.md') },
 ];

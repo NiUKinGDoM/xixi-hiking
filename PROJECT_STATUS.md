@@ -325,6 +325,16 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - **⑦ 新增 `site/robots.txt` + `site/sitemap.xml`** —— 此前请求二者都返回 **21328 字节的首页 HTML**（CF Pages SPA fallback），爬虫读 robots.txt 会拿到 HTML；现 robots 为 `text/plain`（声明 Allow + Sitemap），sitemap 为 `application/xml`（4 个 URL）。
   - **验证**：本地 4 页渲染正常（隐私/免责各 11 条连续、零 JS 错误、零横向溢出）；远端 raw **8/8 文件 norm_equal**；**线上 CF Pages 已部署**（privacy/terms 11 条 10-09 无旧日期残留、robots `text/plain`、sitemap `application/xml` 4 URL、features 与 `/download` Android UA 拿 APK 未受影响）；门禁 **885 项全绿**（test 354 / test-ui 30 / P0P3 299 / E2E 126 / sitetest 25 / sitechangelog 1 / modalwidth 39 / ioscheck 11）。
   - **★踩坑（检测工具本身给假信号）**：用 `grep -c $'\r' file` 判换行风格，得到「92 行含 CR」→ 误以为 `site/*.html` 是 CRLF，据此写了「必须保持 CRLF」的断言 → 报红。改用 python 按字节统计才看清：**所有 site/*.html 与备份原件都是纯 LF（CRLF=0）**，一直是 LF。**⇒ 判换行风格一律用按字节统计，别用 grep 花式写法。**
+  - **⑧ ★新增两个「不 spawn」的自动化工具（本机 spawn 集体 EBUSY 是长期痛点）**
+    - **`tools/siteaudit.js` —— 线上站点体检（38 项）**：官网 6 页可访问性与关键内容 / App 网页版资源与**版本指纹**（`APP_VERSION`、`CACHE_NAME` 是否与本地一致）/ **下载链路按 UA 分流**（Android 拿 `PK` 头、iPhone 与桌面拿网页版）/ 官网页内链死链 / **线上政策是否与 App 内一致** / **远端 GitHub raw 是否与本地一致**（13 个关键文件，行尾归一化后比 sha256）。
+      **纯 `https` + `fs`、不 spawn 任何子进程** → EBUSY 环境下照样可用。本轮「查线上」从「临时写 3 个脚本、手工逐项看、20+ 分钟」压到**一条命令**。已并入 `checkall.sh --online`。
+    - **`tools/checkall.sh` —— bash 直跑版全量门禁（10 套 961 项）**：node 版 `checkall.js` 用 `child_process.spawn` 跑各套 → 本机**整批**「未解析（退出码 null / EBUSY）」，只能人工逐套直跑再肉眼汇总。shell 的 fork/exec 不受此影响 → 一条命令拿到同样结论（`--fast` / `--no-e2e` / `--online` 三个开关，套件清单与 node 版一致）。
+      **★含 `smoke.js` 的 EBUSY 自动降级**：识别「0 通过 + 错误信息为空的语法失败 ≥10 项」特征后，改用 `node --check` 直跑复刻语法校验（真语法错误仍报红），并在输出里注明「安全执行部分本机测不了」。
+      **`ghsync.js` / `versiondiff.js` 的 tools 同步 filter 已加 `.sh`**（否则换机就丢了这个能力）。
+    - **★两个新工具都做了反向验证**：siteaudit 注入一行差异 → 报「远端 161B / 本地 175B」并退出码 1；checkall.sh 注入语法错误 → 报 `❌ 语法错误: tools/_tmpbad.js`。
+  - **⑨ ★新增定时自动化任务**：「**XiXi 徒步小记 · 线上与文档体检**」**每周一 09:00**（id `304a5c67-448d-4020-91ef-1b3fbf8c0f50`）—— 自动跑 `siteaudit` + `status` + `docaudit` + `test`，**只读只报告**、不自动改文件、不 commit。**动因**：线上漂移是完全静默的（本轮官网政策漂了 17 天无人察觉），必须有机制定期看；prompt 已写成自包含（定时任务是新会话，读不到当前上下文）。
+  - **⑩ ★交接文档「给新模型的提示词.md」版本号严重过期（会误导新会话）** —— 里面写着 **「当前版本 v1.2.2.10（vc274）、`CACHE_NAME = xixi-hiking-v51`」**，而实际已是 **v1.2.3.7（vc282）/ v61**；自检项数（8 套 875 项）、官网 Function 项数（16 → 25）也全部过期。**已全部校准**，并补上 `checkall.sh` / `siteaudit` / 「定时自动化任务」三节，同时把「本机 checkall.js 会整批 EBUSY 假失败、要用 checkall.sh」写成显式提示。
+    > ⇒ **交接文档里的「当前版本」是最容易过期的一行**，发版流程里没有自动校准它的步骤 → 以后每次发版顺手核一下（`grep -n '当前版本' 给新模型的提示词.md`）。
   - **★发布范围**：只动 `site/`（官网，push 后 CF 自动部署）+ `README.md` + `test.js` + `tools/sitechangelog.js` + 文档，**未动 `www/`** → **不需要重发 APK、不升版本号**。
 - **正式版 v1.2.3.6（vc281）** —— 搜索框按视图收敛（山册 / 计划日历不再有）+ 隐私政策与免责声明补强（主体 xixi / 数据出境 / 安全事件通知 / 重新征同意 / 紧急报警）（2026-10-09）
 - **正式版 v1.2.3.5（vc280）** —— 折叠屏 / 大屏适配 + 弹窗宽度加固 + 键盘跟随节流（2026-10-08）

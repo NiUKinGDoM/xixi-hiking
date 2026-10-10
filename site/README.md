@@ -49,7 +49,7 @@ index.html 的下载按钮（导航条 / 移动菜单 / 收尾区主按钮）→
 
 ```bash
 cd hiking-app3
-node tools/sitetest.js                                   # 离线自测 16 项（分流 + 兜底 + 4 种历史资产名），已并入 checkall
+node tools/sitetest.js                                   # 离线自测 25 项（分流 + 兜底 + 4 种历史资产名 + 镜像列表两端一致），已并入 checkall
 node tools/_devserver.js 8795 &                          # 本地预览（静态文件 + 真实执行 Function）
 node tools/dlcheck.js --base http://127.0.0.1:8795        # 本地实测（会真的拉到 PK 字节）
 node tools/dlcheck.js                                     # 线上实测（打 pages.dev）
@@ -236,6 +236,22 @@ node tools/dlcheck.js --base http://127.0.0.1:8795     # 本地（配 _devserver
 node tools/_devserver.js 8795
 kill %1
 ```
+
+**⑦ 线上站点体检（★不需要 Chrome、也不 spawn 子进程）**：
+
+```bash
+node tools/siteaudit.js            # 全量 38 项
+node tools/siteaudit.js --quick    # 只跑官网 + App 网页版 + 下载链路
+```
+
+查什么：官网 6 页可访问性与关键内容 / App 网页版资源与**版本指纹**（`APP_VERSION`、`CACHE_NAME` 是否与本地一致）
+/ **下载链路按 UA 分流**（Android 拿到 APK 的 `PK` 头、iPhone 与桌面拿到网页版）/ 官网页内链死链
+/ **★线上政策是否与 App 内一致**（条款数、生效日期 == `LEGAL_VERSION`、5 个关键要素串）
+/ **★远端 GitHub raw 是否与本地一致**（13 个关键文件，行尾归一化后比 sha256）。
+
+> **改完官网、push 完、或怀疑线上漂移时都要跑它**。已并入 `hiking-app3/tools/checkall.sh --online`。
+> 它是纯 `https` + `fs` 实现、**不 spawn 任何子进程**（本机 spawn 集体 EBUSY），因此在 EBUSY 环境下照样可用。
+> 官网/App 网页版由 CF 在 push 后自动部署，**刚 push 完要等 30 秒~几分钟**再跑，否则会看到旧内容。
 
 **两个坑**：
 1. `siteshot.js` **必须先整页滚一遍**（脚本里已做）—— `captureBeyondViewport` 不会触发 `loading="lazy"` 解码，否则截图里图片是空白块。

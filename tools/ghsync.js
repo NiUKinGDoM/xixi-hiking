@@ -44,7 +44,9 @@ const ANDROID_FILES = [
 ];
 // 整目录同步（相对主工程）
 const DIRS = [
-  { src: 'tools', dst: 'tools', filter: (f) => f.endsWith('.js') || f.endsWith('.py') },
+  // ★2026-10-10 加 .sh：checkall.sh（bash 直跑版全量门禁，专治本机 spawn EBUSY）必须进库，
+  //   否则换机/新会话接手时「一条命令跑全量」的能力就丢了。
+  { src: 'tools', dst: 'tools', filter: (f) => f.endsWith('.js') || f.endsWith('.py') || f.endsWith('.sh') },
   { src: 'e2e', dst: 'e2e', filter: (f) => f.endsWith('.js') },
   { src: 'docs', dst: 'docs', filter: (f) => f.endsWith('.md') },
   // ★2026-09-23 官网（独立静态站，CF Pages 以 Root=site 部署；与 www 隔离，不被 App 的 SW 接管）
