@@ -156,6 +156,10 @@ node tools/siteshots.js --dump     # → tools/notes/app-tabs-text.txt（概览/
 App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`），官网在 `privacy.html` / `terms.html`。
 → **改一处必须同步另一处**，并 bump `LEGAL_VERSION` + 官网页「生效日期」。
 
+> ★**2026-10-10 已上守卫**：`test.js` 5r 段会核「官网页生效日期 == `LEGAL_VERSION`」「条款编号连续到十一」
+> 以及 5 个关键要素串（处理者身份 / 跨境告知 / 安全事件通知 / 定位求救提示 / 官方渠道条），
+> 任一项不符即 `❌ 官网政策未与 App 内同步`。**别再靠人记**（2026-10-09 的漏改就是这么发生的）。
+
 ## 内容维护：改哪儿
 
 | 要改什么 | 位置 |
@@ -176,6 +180,7 @@ App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`�
 |---|---|
 | `/download` 的 APK 直链 | **不用动** —— 运行时查 API，永远指向最新 Release |
 | `#s09` 更新日志段 | **要动** —— 写死的最近 2 版，把新版本号 + 日期 + 条目加上 |
+| **政策正文 `privacy.html` / `terms.html`** | **改了 App 内政策就必须动** —— 只改 `www/app-data.js` 会静默漂移（2026-10-09 就这么漏了 17 天，官网自称「与 App 内一致」却少一条、日期还停在旧版）。★已由 `test.js` 5r 守卫兜底：忘同步直接报红 |
 
 ```bash
 # 改完 site/index.html 的更新日志段后

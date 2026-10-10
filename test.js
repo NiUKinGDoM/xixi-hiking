@@ -503,6 +503,46 @@ try {
     const m1 = ps.match(/最后更新：\d{4}-\d{2}-\d{2}（v([\d.]+) \/ vc(\d+)）/);
     const av = (fs.readFileSync(path.join(wwwDir, 'app-core.js'), 'utf8').match(/APP_VERSION = '([\d.]+)'/) || [])[1];
     (m1 && av && m1[1] === av) ? ok('文档版本一致（PROJECT_STATUS = ' + av + '）') : bad('文档版本不一致: PROJECT_STATUS=' + (m1 ? m1[1] : '?') + ' APP=' + av);
+
+    // ★2026-10-10 官网政策一致性守卫（补流程缺口）
+    //   背景：2026-10-09 隐私政策重大更新（新增「个人信息处理者身份」「数据出境告知」
+    //   「个人信息安全事件的通知」，原六~十条顺延为七~十一条，生效日期 09-23→10-09），
+    //   只改了 App 内、漏了官网 → 官网 privacy.html / terms.html 自称「与 App 内展示的内容
+    //   一致」却少一条、日期还停在 09-23（静默漂移 17 天，2026-10-10 巡检才发现）。
+    //   site/README.md 早有「政策正文是两份拷贝，改一处必须同步另一处」的约定，
+    //   但发版清单没列、也无守卫 → 约定形同虚设。此断言把约定变成硬门禁。
+    try {
+        const siteDir = path.join(__dirname, 'site');
+        const adLegal = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
+        const lv = (adLegal.match(/const LEGAL_VERSION = '([^']+)'/) || [])[1];
+        const CN_NUM = ['一','二','三','四','五','六','七','八','九','十','十一'];
+        const pBad = [];
+        [['privacy.html', '隐私'], ['terms.html', '免责']].forEach(function (pair) {
+            const file = pair[0];
+            const fp = path.join(siteDir, file);
+            if (!fs.existsSync(fp)) { pBad.push(file + ':不存在'); return; }
+            const t2 = fs.readFileSync(fp, 'utf8');
+            // ① 生效日期必须 == LEGAL_VERSION（禁写死日期）
+            if (!lv || t2.indexOf('生效日期：' + lv) < 0) pBad.push(file + ':生效日期≠' + lv);
+            // ② 条款编号必须连续到「十一」（与 App 内 11 条对齐）
+            const nums = (t2.match(/<h2>[一二三四五六七八九十]+、/g) || [])
+                .map(function (s) { return s.replace(/<h2>|、/g, ''); });
+            if (nums.join(',') !== CN_NUM.join(',')) pBad.push(file + ':条款数=' + nums.length + '（应 11）');
+        });
+        const privT = fs.existsSync(path.join(siteDir, 'privacy.html'))
+            ? fs.readFileSync(path.join(siteDir, 'privacy.html'), 'utf8') : '';
+        const termsT = fs.existsSync(path.join(siteDir, 'terms.html'))
+            ? fs.readFileSync(path.join(siteDir, 'terms.html'), 'utf8') : '';
+        // ③ 2026-10-09 新增的关键要素必须在官网可见
+        if (privT.indexOf('个人信息处理者') < 0) pBad.push('privacy:缺处理者身份');
+        if (privT.indexOf('GitHub 的服务器位于中国境外') < 0) pBad.push('privacy:缺跨境告知');
+        if (privT.indexOf('个人信息安全事件的通知') < 0) pBad.push('privacy:缺安全事件通知条');
+        if (termsT.indexOf('本应用不具备定位与求救功能') < 0) pBad.push('terms:缺定位求救提示');
+        if (termsT.indexOf('官方渠道与内容来源') < 0) pBad.push('terms:缺官方渠道条');
+        pBad.length === 0
+            ? ok('官网政策与 App 内同步（隐私/免责各 11 条 · 生效日期 ' + lv + '）')
+            : bad('★官网政策未与 App 内同步: ' + pBad.join(' | ') + '（改 www/app-data.js 政策后必须同步 site/privacy.html 与 site/terms.html）');
+    } catch (e) { bad('5r 官网政策守卫失败: ' + e.message); }
     const jv = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
     const bal = (jv.split('{').length - 1) - (jv.split('}').length - 1);
     bal === 0 ? ok('MainActivity 花括号配平') : bad('MainActivity 花括号不平衡: ' + bal);

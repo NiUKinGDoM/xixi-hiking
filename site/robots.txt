@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# 本应用是纯本地工具，官网仅作介绍 / 截图 / 下载指引之用
+Sitemap: https://xixi-hiking-site.pages.dev/sitemap.xml

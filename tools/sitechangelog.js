@@ -68,13 +68,28 @@ const cmp = (a, b) => {
 };
 const versions = Object.keys(BUILTIN).sort(cmp).reverse().slice(0, COUNT);
 
-// ---------- 3) 日期：优先取 git tag 的提交日期，取不到用当天 ----------
+// ---------- 3) 日期：CHANGELOG.md（权威映射）→ git tag → 当天兜底 ----------
+//  ★2026-10-10 修复：原来只试 git tag，而 git 仓库在 `backups/github-同步目录/xixi-hiking/`，
+//  主工程目录里根本没有仓库 → `git log <tag>` 永远失败 → 每次落到「当天」。两个后果：
+//    ① 跨天后 `--check` **必然失败**（渲染出的日期变了），门禁假红；
+//    ② 一旦真跑写入，会把历史版本的发布日期全刷成「今天」——等于伪造发布日期。
+//  `CHANGELOG.md` 的 `### vX.Y.Z（vcN · YYYY-MM-DD）` 是发版时就写好的权威映射，
+//  读文件即可（无副作用、无 spawn、不受 EBUSY 影响）。
+let CHANGELOG_TXT = '';
+try { CHANGELOG_TXT = fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8'); } catch (e) { /* 忽略 */ }
+
 function tagDate(tag) {
+  // ① CHANGELOG.md 里的版本-日期映射（同一行内取日期，防跨行误匹配）
+  const esc = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const m = CHANGELOG_TXT.match(new RegExp('###\\s*' + esc + '[^\\r\\n]*?(\\d{4}-\\d{2}-\\d{2})'));
+  if (m) return m[1];
+  // ② git tag 的提交日期（仓库不在主工程目录时通常取不到）
   try {
     const r = spawnSync('git', ['log', '-1', '--format=%cs', tag], { cwd: ROOT, encoding: 'utf8' });
     const s = (r.stdout || '').trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   } catch (e) { /* 忽略，走当天 */ }
+  // ③ 当天（兜底）
   const d = new Date();
   const p = (n) => String(n).padStart(2, '0');
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
@@ -151,9 +166,23 @@ if (CHECK) {
     console.log('\n✅ 全过 —— 1 通过 / 0 失败（共 1 项）');
     process.exit(0);
   }
-  console.log('❌ 官网更新日志段落后于 App 内置日志！');
-  console.log('   官网当前首个版本: ' + ((curList.match(/rel-ver">([^<]+)</) || [])[1] || '?'));
-  console.log('   应为最新版本: ' + versions[0]);
+  // ★2026-10-10 提示精确化：原来无论什么差异都只说「落后于」——版本号明明相同时也照报，
+  //   极易误导（本轮就因此在「版本号都是 v1.2.3.7，为何报落后」上绕了一圈）。
+  //   现区分「版本号不同」与「版本号相同但内容/日期不同」两种情形。
+  const curVer = (curList.match(/rel-ver">([^<]+)</) || [])[1] || '?';
+  const diffDates = (curList.match(/<span>(\d{4}-\d{2}-\d{2})<\/span>/g) || []).join(',')
+    !== (newList.match(/<span>(\d{4}-\d{2}-\d{2})<\/span>/g) || []).join(',');
+  if (curVer === versions[0]) {
+    console.log('❌ 官网更新日志段与 App 内置日志**内容不一致**（版本号相同: ' + curVer + '）');
+    console.log(diffDates
+      ? '   ★差异在**日期** —— 官网显示: ' + ((curList.match(/<span>(\d{4}-\d{2}-\d{2})<\/span>/) || [])[1] || '?')
+        + ' ，应为: ' + ((newList.match(/<span>(\d{4}-\d{2}-\d{2})<\/span>/) || [])[1] || '?')
+      : '   ★差异在**条目文本**（日期一致）');
+  } else {
+    console.log('❌ 官网更新日志段落后于 App 内置日志！');
+    console.log('   官网当前首个版本: ' + curVer);
+    console.log('   应为最新版本: ' + versions[0]);
+  }
   console.log('   → 运行 node tools/sitechangelog.js 修复');
   console.log('\n❌ 有失败 —— 0 通过 / 1 失败（共 1 项）');
   process.exit(1);
