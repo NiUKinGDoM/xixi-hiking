@@ -350,6 +350,20 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
     - **`docaudit.js` I 段正则收紧**：`android.app.AlertDialog`（**Java 全限定类名**）恰好命中「目录前缀 + .末段」形状，被误当文件路径 → 加两条排除：① 真实项目路径**必然含 `/`**；② **末段首字母大写 = 类名惯例**。★反向验证 **10/10**：真实存在的文件不报、**真实不存在的路径照样报**（防收紧变假绿）、Java 类名与 `www/Nope.Class` 正确跳过。
     - **门禁**：`bash tools/checkall.sh --fast` **458 通过 / 0 失败**。
       > ⇒ **教训**：定时任务第一次跑就抓到两处「体检工具自己误报」——**说明「定期看」比「写守卫」更能暴露工具自身的问题**（守卫天天绿，没人会去怀疑守卫）。
+  - **⑫ ★政策正文改「生成式」—— 消灭「两份拷贝」这个架构性隐患（2026-10-10）**
+    - **旧结构**：App 内 `www/app-data.js` 与官网 `site/privacy.html` / `site/terms.html` 各存一份正文，靠人记得同步 → 就是它导致了「漂移 17 天」（见 ⑪ 前一段）。第一版守卫只查「5 个关键串 + 条款数 + 生效日期」，**能防整条漏掉，防不了改一个字**。
+    - **新结构**：**App 内是唯一源，官网两页是产物** ——
+      `www/app-data.js`（源，被 `LEGAL_VERSION` 绑定）──解析 `dmi-group`──▶ `site/privacy.html` / `site/terms.html`
+    - **新增 `tools/legalgen.js`**：从 App 内解析出条款（图标 + 标题 + 正文），套官网模板生成两页；只替换页面的 `doc-meta` 行与 `<article>` 块，**head / nav / footer 一字不改**。带 `--check` / `--dry-run`；并导出函数供 `test.js` `require`（**不 spawn**，且与生成器同一套实现，不会两边各写一份而漂移）。
+    - **官网化变换只有一条**：去掉链接上的 `target="_blank" rel="noopener"`（App 内是 WebView、外链必须带；官网同站不需要）。**除此外不做任何排版变换** —— 破折号、空格、标点一律以 App 内为准（少一层变换 = 少一个 bug 源，守卫也能用最简单的「整篇相等」比较）。
+    - **守卫升级（`test.js` 5r）**：改为调 `legalgen.check()` → **全量比对**，不一致时**逐块定位到具体条款**（例：`terms.html → 第 4 块不一致（四、出发前做好准备）`），并提示「跑 `node tools/legalgen.js` 重新生成，别手改官网政策页」。
+    - **★反向验证（双向都验了）**：① 改官网 → 报红并定位到第 2 块；② **改 App 内的源（官网未动）→ 报红** → 生成 → 官网跟上 → 转绿；③ 恢复源 → 再生成 → 转绿；`app-data.js` 与备份 sha256 一致（无残留）。
+    - **验证**：本地渲染 12 / 11 条、零 JS 错误、零横向溢出，**视觉与手写版一致**（破折号 `——` 显示正常）。
+  - **⑬ ★新增 `tools/map.js` 代码地图**（治「单文件过大」）—— `app-data.js` 5089 行 / `index.html` 6722 行，改一个函数要翻半天；但拆文件会踩「4 个 JS 按序引入、缺一即白屏」的铁律。**折中：不拆，先给地图**。索引 `www/` 的**顶层函数**（缩进 ≤ 4）与 index.html 的 **CSS 分区 / style / script 段**，生成 `tools/notes/code-map.md`（当前 389 个顶层函数）。带 `--check`：地图头部记录各文件行数，行数变了就报「地图已过期」→ ★已反向验证（给 sw.js 加一行 → 精确报出该文件过期）。
+  - **⑭ ★新增 `tools/churn.sh` 改动热点分析**（给「迭代速度快」提供数据）—— 从 git 历史统计文件改动频次 / 提交节奏 / 同号重发占比。**用 bash 而不是 node**：读 git 历史必须调 git 命令，而本机 node 的 spawn 会集体 EBUSY。
+    - **★它当场推翻了一个判断**：313 个提交里改动最多的依次是 `www/index.html` **201 次**、`build.gradle` 181、`CHANGELOG.md` 168、`PROJECT_STATUS.md` 154、`README.md` 119，而 **`www/app-data.js` 只有 67 次**。
+      ⇒ 后四个的高频是**机械性**的（发版必然改版本号/日志/文档），不是设计问题；**真正的痛点是 `index.html`（201 次）** —— UI 与 CSS 混在一个 6700 行文件里，每次样式微调都要动它。**而 `app-data.js` 是「大但稳定」**（5089 行、改动只占 index.html 的 1/3）。
+      ⇒ **结论修正**：原以为该优先拆 `app-data.js`，数据说明**该优先考虑把 `index.html` 的 CSS 拆出去**（`www/app.css`）。但那是中风险改动（新增文件要三处同步），先记着不动。
   - **★发布范围**：只动 `site/`（官网，push 后 CF 自动部署）+ `README.md` + `test.js` + `tools/sitechangelog.js` + 文档，**未动 `www/`** → **不需要重发 APK、不升版本号**。
 - **正式版 v1.2.3.6（vc281）** —— 搜索框按视图收敛（山册 / 计划日历不再有）+ 隐私政策与免责声明补强（主体 xixi / 数据出境 / 安全事件通知 / 重新征同意 / 紧急报警）（2026-10-09）
 - **正式版 v1.2.3.5（vc280）** —— 折叠屏 / 大屏适配 + 弹窗宽度加固 + 键盘跟随节流（2026-10-08）
@@ -794,7 +808,7 @@ iPhone / mac / win 三种 UA 全部 302 到网页版。官网七档宽度（320/
 - **独立 Cloudflare Pages 项目（Root=`site`）**：与 App 的 PWA 站点（Root=`www`）**刻意隔离** —— 放进 `www/` 会被 `sw.js` 接管，用户打开官网会被拉进 App 本体
 - **★首次部署需用户在 CF 控制台操作**：Pages → Connect to Git → 选本仓库 → Build command 留空 / Build output directory `site`（详细步骤见 `site/README.md`）
 - 已纳入 `tools/ghsync.js` 同步清单（DIRS + diff 核对 15 项）→ `ghsync --push` 即上远端，push master 后 CF 自动部署
-- **★政策正文是两份拷贝**：App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`），官网在 `site/privacy.html` / `site/terms.html` → **改一处必须同步另一处**，并 bump `LEGAL_VERSION` + 官网页「生效日期」
+- **★★政策正文已是「生成式」（2026-10-10 起，不再是两份拷贝）**：**App 内 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`）是唯一源**，官网 `site/privacy.html` / `site/terms.html` 是**产物** → 改了源跑 `node tools/legalgen.js` 重新生成（**别再手改官网页**）；`test.js` 5r 做全量比对。只有一条官网化变换（去掉链接的 `target="_blank" rel="noopener"`），其余排版以源为准。**只在源正文变更时才 bump `LEGAL_VERSION`**
 - 界面截图**一律是真机渲染**（`tools/siteshots.js` 从 `www/` 生成，见下）；想换图就重跑脚本，别手改。
 
 - **★2026-09-28 v11（用户：「再核对一下内容，哪些没有就补充，哪些没有的，就去掉。示例页面全换为真实截图，分享卡那里也一样」）**：

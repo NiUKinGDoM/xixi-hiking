@@ -151,10 +151,13 @@ node tools/siteshots.js --dump     # → tools/notes/app-tabs-text.txt（概览/
 
 > 想彻底摆脱外部依赖：把 Fraunces / Noto Serif SC 下载到 `assets/fonts/` 自托管（中文字体需子集化，否则体积过大）。
 
-**2）政策正文是两份拷贝**
+**2）政策正文现在是「生成式」—— 官网两页别手改**
 
-App 内在 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`），官网在 `privacy.html` / `terms.html`。
-→ **改一处必须同步另一处**，并 bump `LEGAL_VERSION` + 官网页「生效日期」。
+**App 内 `www/app-data.js`（`showPrivacyPolicyModal` / `showDisclaimerModal`）是唯一源**，
+官网 `privacy.html` / `terms.html` 是**产物**。
+→ 改了源：跑 `node tools/legalgen.js` 重新生成（只替换页面的 `doc-meta` 行与 `<article>` 块，head / nav / footer 一字不改）。
+→ **别手改官网政策页** —— 手改会被 `node tools/legalgen.js --check` 判为漂移，`test.js` 5r 也会报红并指出是第几块。
+→ 只在**源正文**变更时才 bump `LEGAL_VERSION`。
 
 > ★**2026-10-10 已上守卫**：`test.js` 5r 段会核「官网页生效日期 == `LEGAL_VERSION`」「条款编号连续到十一」
 > 以及 5 个关键要素串（处理者身份 / 跨境告知 / 安全事件通知 / 定位求救提示 / 官方渠道条），
