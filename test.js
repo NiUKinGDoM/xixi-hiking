@@ -241,6 +241,9 @@ try {
     ih.includes('id="avgDifficultyMiniU"') && ih.includes('.stat-unit') && ih.includes('avgDifficultyMini') ? ok('平均难度级单位=stat-unit 小字') : bad('难度单位缺失!');
     ih.includes('id="totalDistance"') && ih.includes('stat-unit">km') && ih.includes('id="maxElevation"') && ih.includes('stat-unit">m') ? ok('总里程km/最高海拔m 单位小字化') : bad('km/m 单位未拆!');
     dj.includes('var durationHTML = function') && dj.includes('<span class=\"stat-unit\">h</span>') ? ok('时长 h/m 单位小字渲染函数在') : bad('durationHTML 缺失!');
+    // ★2026-10-12 矮卡「平均用时」必须用小时小数短格式：原 durationHTML 的 &nbsp; 在中文全角字体下占 17.4px，
+    //   三列矮卡仅 58px 可用宽 → 真机截断成「6h···」。短格式（6.4h / 48m）实测量宽 ≤40px，390/360/320 全档位安全。
+    dj.includes("(avgMin / 60).toFixed(1)") && dj.includes("avgDurationMini.innerHTML = avgMin + '<span class=\"stat-unit\">m</span>'") ? ok('矮卡平均用时=小时小数短格式(防空宽截断)') : bad('矮卡平均用时短格式缺失!');
     ih.includes('.about-logo') && ih.includes('font-size: 60px') ? ok('App 主 logo 放大至 60px(用户定稿)') : bad('logo 未放大!');
     dj.includes('jd-lab') && dj.includes('jd-body') && dj.includes('color:#334155') ? ok('小日记 view 标签/正文加深（2026-09-18 再提一档到 #334155）') : bad('小日记色加深缺失!');
     ih.includes('.record-detail-modal .jd-body') && ih.includes('body.dark-mode .record-detail-modal .jd-body { color: #e5e7eb !important; }') ? ok('小日记 dark 适配 CSS') : bad('jd dark CSS 缺失!');

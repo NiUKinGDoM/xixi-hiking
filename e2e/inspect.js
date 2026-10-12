@@ -13,6 +13,8 @@
  *   --keep          不关闭浏览器（调试用）
  *   --url <url>     指定页面地址（默认本地 127.0.0.1:8123/index.html）
  *   --no-server     不自动起本地静态服务
+ *   --vw <n>        视口宽（默认 390）
+ *   --vh <n>        视口高（默认 844）
  * 说明：
  *   - snippets 里写函数体（可 return 任意可 JSON 化值），在页面里以 new Function 执行
  *   - 自动上报 pageerror / console.error（排查隐藏 JS 错误用）
@@ -76,7 +78,10 @@ async function ensureServer() {
   const exe = fs.existsSync(EDGE) ? EDGE : ALT;
 
   const browser = await chromium.launch({ executablePath: exe, headless: !has('head') });
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, acceptDownloads: true });
+  // ★2026-10-12 --vw/--vh：多档位视口实测（窄屏适配/截断类问题必须多档验证，默认 390×844 不变）
+  const VW = Number(argv('vw', 390)) || 390;
+  const VH = Number(argv('vh', 844)) || 844;
+  const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, acceptDownloads: true });
   const page = await ctx.newPage();
 
   // ★2026-09-10 --offline：阻断一切外部域名请求（只放行本地 127.0.0.1/localhost）

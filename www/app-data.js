@@ -2553,7 +2553,18 @@ function updateStatistics() {
     // ★2026-09-03 A 布局：矮副卡 平均难度/平均用时（原总爬升卡精简移除，累计爬升回到热力图底部汇总行）
     updateWithAnimation(avgDifficultyMini, averageDifficulty);
     const avgMin = total ? Math.round(totalMin / total) : 0;
-    if (avgDurationMini) avgDurationMini.innerHTML = avgMin ? durationHTML(avgMin) : '—';
+    // ★2026-10-12 矮卡「平均用时」改用小时小数短格式（6.4h / 48m）——原 durationHTML 里的 &nbsp; 在中文全角字体
+    //   （SimSun/Noto CJK）下宽达 17.4px，而三列矮卡在 390px 屏上只剩 58px 可用宽 → 被 text-overflow 截成「6h···」。
+    //   短格式最宽约 40px（12.5h），320~412px 全档位均不截断。总用时主卡格式不变（宽度充裕，保留 h/m 精确值）。
+    if (avgDurationMini) {
+        if (!avgMin) {
+            avgDurationMini.innerHTML = '—';
+        } else if (avgMin >= 60) {
+            avgDurationMini.innerHTML = (avgMin / 60).toFixed(1) + '<span class="stat-unit">h</span>';
+        } else {
+            avgDurationMini.innerHTML = avgMin + '<span class="stat-unit">m</span>';
+        }
+    }
     // ★2026-08-25 总里程/总用时（卡片渐入由 .stat-card 行级 stagger 控制）
     updateWithAnimation(totalDistance, totalKm ? totalKm.toFixed(2) : '0'); // ★2026-09-01 里程两位小数
     if (totalDuration) totalDuration.innerHTML = durationHTML(totalMin);

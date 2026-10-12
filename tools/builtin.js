@@ -15,6 +15,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -39,6 +40,17 @@ function readVersion(core) {
 
 function syntaxCheck(file) {
   const r = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+  // ★2026-10-12 EBUSY 降级：本机 spawn 会整体失效（有 r.error / status 为 null / stderr 为空）——
+  //   旧实现此时 status===0 不成立 → 误判「语法错误」→ 每次 BUILTIN 注入都被还原（假失败，信息为空）。
+  //   降级改用 vm.Script 在同一进程内做等价语法校验（与 node --check 同一解析器）。
+  if (r.error || r.status === null) {
+    try {
+      new vm.Script(fs.readFileSync(file, 'utf8'), { filename: file }); // eslint-disable-line no-new
+      return { ok: true, msg: '' };
+    } catch (e) {
+      return { ok: false, msg: String((e && e.message) || e).split('\n')[0] };
+    }
+  }
   return { ok: r.status === 0, msg: (r.stderr || '').split('\n')[0] };
 }
 
