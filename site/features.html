@@ -71,7 +71,7 @@
 
     <div class="split">
       <figure class="phone phone-single phone-lg reveal">
-        <img src="assets/shots/shot-overview.png" alt="概览页真机截图：统计主卡、平均海拔与难度、我的里程碑、徒步足迹日历与回顾入口" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-overview.webp" alt="概览页真机截图：统计主卡、平均海拔与难度、我的里程碑、徒步足迹日历与回顾入口" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">01</span><span class="t">概览</span><span class="e">Overview</span></figcaption>
       </figure>
 
@@ -183,7 +183,7 @@
       </div>
 
       <figure class="phone phone-single reveal d1">
-        <img src="assets/shots/shot-records-album.png" alt="山册视图真机截图：去过的山按最高海拔着色，一座山一张卡片" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-records-album.webp" alt="山册视图真机截图：去过的山按最高海拔着色，一座山一张卡片" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">02</span><span class="t">山册</span><span class="e">Album</span></figcaption>
       </figure>
     </div>
@@ -204,7 +204,7 @@
 
     <div class="split">
       <figure class="phone phone-single phone-lg reveal">
-        <img src="assets/shots/shot-record-detail.png" alt="记录详情真机截图：照片墙、海拔里程用时、心情天气同行人与小日记" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-record-detail.webp" alt="记录详情真机截图：照片墙、海拔里程用时、心情天气同行人与小日记" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">03</span><span class="t">详情与照片</span><span class="e">Detail</span></figcaption>
       </figure>
 
@@ -246,7 +246,7 @@
 
     <div class="split">
       <figure class="phone phone-single reveal">
-        <img src="assets/shots/shot-plan-list.png" alt="计划页列表视图真机截图：过期计划带红标，右侧是完成延期与删除按钮" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-plan-list.webp" alt="计划页列表视图真机截图：过期计划带红标，右侧是完成延期与删除按钮" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">04</span><span class="t">计划 · 列表</span><span class="e">Plans</span></figcaption>
       </figure>
 
@@ -308,7 +308,7 @@
       </div>
 
       <figure class="phone phone-single reveal d1">
-        <img src="assets/shots/shot-search.png" alt="搜索真机截图：在记录页搜「雪」，命中两条 —— 天气为雪的那次，和小日记里写着雪线的那次" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-search.webp" alt="搜索真机截图：在记录页搜「雪」，命中两条 —— 天气为雪的那次，和小日记里写着雪线的那次" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">05</span><span class="t">搜索「雪」</span><span class="e">Search</span></figcaption>
       </figure>
     </div>
@@ -329,7 +329,7 @@
 
     <div class="share">
       <figure class="card-frame reveal d1">
-        <img src="assets/shots/shot-share-card.png" alt="分享卡真机截图：插画山景背景，标注日期、山名、海拔、里程、用时、心情、天气与同行人" width="1080" height="1440" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-share-card.webp" alt="分享卡真机截图：插画山景背景，标注日期、山名、海拔、里程、用时、心情、天气与同行人" width="1080" height="1440" loading="lazy" decoding="async">
         <figcaption>由一次真实记录生成的分享卡 · 1080 × 1440</figcaption>
       </figure>
 
@@ -531,6 +531,14 @@
 
     <div class="rel-list">
       <div class="rel-item reveal d1">
+        <div class="rel-ver">v1.2.3.9<span>2026-10-12</span></div>
+        <ul>
+          <li><b>官网详情页的滚动进度条修好了</b> —— 页面顶部那条随滚动前进的细进度条，在官网「功能详情」页里以前一直不显示（代码两处写法对不上导致的），现在正常了</li>
+          <li><b>网页版的浏览器外观跟随主题</b> —— 用手机浏览器打开网页版时，深色模式下浏览器地址栏和滚动条也跟着变暗，不再和界面割裂</li>
+          <li><b>官网打开更快了</b> —— 官网截图全部换成更省空间的格式，图片总体积从 5.5MB 降到 0.6MB，打开更快、更省流量</li>
+        </ul>
+      </div>
+      <div class="rel-item reveal d2">
         <div class="rel-ver">v1.2.3.8<span>2026-10-10</span></div>
         <ul>
           <li><b>时光机</b> —— 概览页的「那年今日」升级了。以前只认“去年的今天”（同月同日），一年就一次机会，大多数日子卡片是空的。现在会依次找「去年的今天」→「去年的这个月」→「恰好 N 天前」，总能翻出点回忆；实在没有就整卡收起、不占地方</li>
@@ -538,13 +546,6 @@
           <li><b>备份安心提示</b> —— 有记录但超过 30 天没备份、或从没备份过时，概览页会温和地提醒一句「该备份了」；点「知道了」以后就再也不打扰</li>
           <li><b>山册每座山显示「最近一次」</b> —— 展开山卡后，统计下面多了一行小字，告诉你上次去是「X 天前（日期）」，重访前心里有数</li>
           <li><b>连接弹窗深色模式看得清了</b> —— 深色模式下弹窗里的字、选山的框都清晰可见，选山的框也更醒目了；还补了「取消」按钮，随时能退出</li>
-        </ul>
-      </div>
-      <div class="rel-item reveal d2">
-        <div class="rel-ver">v1.2.3.7<span>2026-10-09</span></div>
-        <ul>
-          <li><b>折叠屏外屏（窄屏）也能看清了</b> —— 用折叠屏合起来的小外屏打开 App 时（屏幕特别窄），以前会有几个地方显示不全：底部的四个标签按钮会被挤出屏幕、概览里「平均海拔 / 平均难度 / 平均用时」三张小卡会显示成「平均…」、设置页的云备份状态文字会被截断成「还没连接云端 · 点…」，整个页面还能左右拖动。现在这些都修好了：窄屏下底部按钮自动收窄、三张小卡改成竖着一列排、标题和状态文字允许换行完整显示；<b>普通手机（宽于 360px）的界面完全不变</b>，不受影响</li>
-          <li><b>山册展开后的数据不再叠字了</b> —— 在山册里点开一座山，下面那排统计（累计 / 总里程 / 总用时 / 最高海拔 / 平均难度 / 一起走过）在小外屏上原来挤成一团、「一起走过」的朋友名字会和旁边的数字叠在一起看不清。现在窄屏下这排统计自动改成 <b>3 列 2 行</b>排布，名字长的时候会自己换行，每一项都清清爽爽；<b>普通手机上的样子和以前一模一样</b></li>
         </ul>
       </div>
     </div>
@@ -632,22 +633,30 @@
   const nav = document.getElementById('nav');
   const toneSections = [...document.querySelectorAll('[data-tone]')];
 
+  /* ★2026-10-12 流畅度：本页原来直接绑 scroll（没有 rAF 节流），且「写→读→写」交替触发同步布局。
+     现改为 rAF 节流 + 先读后写，与 index.html 做法统一。 */
+  let ticking = false;
   const onScroll = ()=>{
-    const st = window.scrollY || document.documentElement.scrollTop;
-    const h = document.documentElement.scrollHeight - window.innerHeight;
-    if(progress) progress.style.transform = 'scaleX(' + (h>0 ? Math.min(st/h,1) : 0) + ')';
-    if(nav){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(()=>{
+      // ── 读阶段 ──
+      const st = window.scrollY || document.documentElement.scrollTop;
+      const h = document.documentElement.scrollHeight - window.innerHeight;
       let tone = 'dark';
-      toneSections.forEach(sec=>{
+      for(const sec of toneSections){
         const r = sec.getBoundingClientRect();
         if(r.top <= 72 && r.bottom > 72) tone = sec.getAttribute('data-tone') || 'dark';
-      });
-      nav.setAttribute('data-tone', tone);
-    }
+      }
+      // ── 写阶段 ──
+      if(progress) progress.style.transform = 'scaleX(' + (h>0 ? Math.min(st/h,1) : 0) + ')';
+      if(nav) nav.setAttribute('data-tone', tone);
+      ticking = false;
+    });
   };
   onScroll();
   window.addEventListener('scroll', onScroll, {passive:true});
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onScroll, {passive:true});
  }catch(e){ /* 渐进增强：脚本失败也要保证内容可见（上面已有 revealAll 兜底路径） */ }
 })();
 </script>

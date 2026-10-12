@@ -259,16 +259,16 @@ function getJSON(p) {
   })()`;
 
   const SHOTS = [
-    { name: 'overview',      file: 'shot-overview.png',        setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"overview\"]').click(); if(typeof updateStatistics==='function') updateStatistics(); if(typeof initHeatmap==='function') initHeatmap();" },
-    { name: 'records-list',  file: 'shot-records-list.png',    setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='list'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderTable==='function') renderTable();" },
-    { name: 'records-album', file: 'shot-records-album.png',   setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='mountain'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderMountainBook==='function') renderMountainBook();" },
-    { name: 'record-detail', file: 'shot-record-detail.png',   setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='list'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderTable==='function') renderTable(); try{ closeOpenModals(); }catch(e){} openRecordDetailModal(window.__demoRecordId,'view');" },
-    { name: 'plan-calendar', file: 'shot-plan-calendar.png',   setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"plans\"]').click(); plansViewMode='calendar'; if(typeof applyPlansView==='function') applyPlansView(); if(typeof renderPlannedCalendar==='function') renderPlannedCalendar();" },
-    { name: 'plan-list',     file: 'shot-plan-list.png',       setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"plans\"]').click(); plansViewMode='list'; if(typeof applyPlansView==='function') applyPlansView(); if(typeof renderPlannedTripsTable==='function') renderPlannedTripsTable();" },
-    { name: 'search',        file: 'shot-search.png',          setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='list'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderTable==='function') renderTable(); await new Promise(r=>setTimeout(r,700)); var i=document.getElementById('globalSearchInput'); i.value='雪'; i.dispatchEvent(new Event('input',{bubbles:true}));" },
-    { name: 'settings',      file: 'shot-settings.png',        setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"settings\"]').click(); var d=document.getElementById('syncDemoBtn'); if(d) d.style.display='none';" },   // ★隐藏「网页预览示例」按钮 —— APK 里本来就不显示，官网截的是 APK 的样子
+    { name: 'overview',      file: 'shot-overview.webp',        setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"overview\"]').click(); if(typeof updateStatistics==='function') updateStatistics(); if(typeof initHeatmap==='function') initHeatmap();" },
+    { name: 'records-list',  file: 'shot-records-list.webp',    setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='list'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderTable==='function') renderTable();" },
+    { name: 'records-album', file: 'shot-records-album.webp',   setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='mountain'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderMountainBook==='function') renderMountainBook();" },
+    { name: 'record-detail', file: 'shot-record-detail.webp',   setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='list'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderTable==='function') renderTable(); try{ closeOpenModals(); }catch(e){} openRecordDetailModal(window.__demoRecordId,'view');" },
+    { name: 'plan-calendar', file: 'shot-plan-calendar.webp',   setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"plans\"]').click(); plansViewMode='calendar'; if(typeof applyPlansView==='function') applyPlansView(); if(typeof renderPlannedCalendar==='function') renderPlannedCalendar();" },
+    { name: 'plan-list',     file: 'shot-plan-list.webp',       setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"plans\"]').click(); plansViewMode='list'; if(typeof applyPlansView==='function') applyPlansView(); if(typeof renderPlannedTripsTable==='function') renderPlannedTripsTable();" },
+    { name: 'search',        file: 'shot-search.webp',          setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"records\"]').click(); recordsViewMode='list'; if(typeof applyRecordsView==='function') applyRecordsView(); if(typeof renderTable==='function') renderTable(); await new Promise(r=>setTimeout(r,700)); var i=document.getElementById('globalSearchInput'); i.value='雪'; i.dispatchEvent(new Event('input',{bubbles:true}));" },
+    { name: 'settings',      file: 'shot-settings.webp',        setup: "document.querySelector('#bottomTabBar .tab-btn[data-tab=\"settings\"]').click(); var d=document.getElementById('syncDemoBtn'); if(d) d.style.display='none';" },   // ★隐藏「网页预览示例」按钮 —— APK 里本来就不显示，官网截的是 APK 的样子
     // ★深色模式放最后（改完主题后面的图都会变深色）
-    { name: 'overview-dark', file: 'shot-overview-dark.png',   setup: "themeMode='dark'; if(typeof applyThemeMode==='function') applyThemeMode(); document.querySelector('#bottomTabBar .tab-btn[data-tab=\"overview\"]').click(); if(typeof updateStatistics==='function') updateStatistics(); if(typeof initHeatmap==='function') initHeatmap();" },
+    { name: 'overview-dark', file: 'shot-overview-dark.webp',   setup: "themeMode='dark'; if(typeof applyThemeMode==='function') applyThemeMode(); document.querySelector('#bottomTabBar .tab-btn[data-tab=\"overview\"]').click(); if(typeof updateStatistics==='function') updateStatistics(); if(typeof initHeatmap==='function') initHeatmap();" },
   ];
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -341,7 +341,8 @@ function getJSON(p) {
     try { await evalJs(expr, true); } catch (e) { done.push('⚠ ' + s.name + ' setup 出错: ' + e.message); }
     await new Promise(r => setTimeout(r, 1100));
     done.push('   [' + s.name + '] 残留弹窗=' + JSON.stringify(await evalJs(DIAG)));
-    const shot = await send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: 390, height: 844, scale: 1.5 }, fromSurface: true });
+    // ★2026-10-12 改用 WebP（CDP 原生支持）：同图 PNG 313KB → WebP 30KB，官网整体 5.5MB → 0.6MB
+    const shot = await send('Page.captureScreenshot', { format: 'webp', quality: 85, clip: { x: 0, y: 0, width: 390, height: 844, scale: 1.5 }, fromSurface: true });
     fs.writeFileSync(path.join(OUT_DIR, s.file), Buffer.from(shot.data, 'base64'));
     done.push('✅ ' + s.file);
     // 关掉可能残留的弹窗，回到干净状态
@@ -353,9 +354,21 @@ function getJSON(p) {
   if (!ONLY.length || ONLY.indexOf('share') >= 0) {
     try {
       const dataUrl = await evalJs(SHARE_JS, true);
-      if (dataUrl && dataUrl.indexOf('data:image/png;base64,') === 0) {
-        fs.writeFileSync(path.join(OUT_DIR, 'shot-share-card.png'), Buffer.from(dataUrl.split(',')[1], 'base64'));
-        done.push('✅ shot-share-card.png');
+      if (dataUrl) {
+        // ★2026-10-12 分享卡转 WebP（原 PNG 2.4MB → ~130KB）：借页面 canvas 重编码
+        const webpB64 = await evalJs(`(async function(){
+          var img = new Image(); img.src = window.__shareCard;
+          await img.decode();
+          var c = document.createElement('canvas');
+          c.width = img.naturalWidth; c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          var b = await new Promise(function(r){ c.toBlob(r, 'image/webp', 0.85); });
+          var u = new Uint8Array(await b.arrayBuffer());
+          var s = ''; for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+          return btoa(s);
+        })()`, true);
+        fs.writeFileSync(path.join(OUT_DIR, 'shot-share-card.webp'), Buffer.from(webpB64, 'base64'));
+        done.push('✅ shot-share-card.webp');
       } else { done.push('⚠ 分享卡未取到数据'); }
     } catch (e) { done.push('⚠ 分享卡失败: ' + e.message); }
   }

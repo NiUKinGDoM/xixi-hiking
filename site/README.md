@@ -16,7 +16,7 @@ App 的介绍站：**首页 + 隐私政策 + 免责声明**，纯静态（无构
 | `privacy.html` | 隐私政策（10 节，与 App 内同口径） |
 | `terms.html` | 免责声明（10 节，与 App 内同口径） |
 | `assets/site.css` | **共享样式**（三页共用；改样式只改这一个文件） |
-| `assets/shots/` | **10 张真机截图**（由 `tools/siteshots.js` 从 `www/` 真实渲染生成，585×1266；分享卡 1080×1440） |
+| `assets/shots/` | **10 张真机截图**（由 `tools/siteshots.js` 从 `www/` 真实渲染生成，**WebP 格式**，585×1266；分享卡 1080×1440） |
 | `assets/icons/` | 图标（复用 App 的 192 / 512 / 180） |
 | **`functions/download.js`** | **★下载入口（Pages Function）** —— 官网 `/download` 路由，详见下节 |
 
@@ -173,7 +173,7 @@ node tools/siteshots.js --dump     # → tools/notes/app-tabs-text.txt（概览/
 | 统计卡演示数字 | `#s01` 的 `.stat-grid`（已标「示例数据」，建议保留标注） |
 | 更新日志 | `#s09` 的 `.rel-list`（**写死的最近 2 版 → 每次发版要同步**） |
 | 下载入口 | 页面三处指向 `/download`（导航条 / 移动菜单 / 收尾区 `.store-row` 主按钮）；收尾区次要入口 `.dl-note` 指 GitHub |
-| 界面截图 | 别手改图；改 `www/` 的界面后跑 `node tools/siteshots.js` 重出（素材在 `assets/shots/`） |
+| 界面截图 | 别手改图；改 `www/` 的界面后跑 `node tools/siteshots.js` 重出（素材在 `assets/shots/`，**输出 WebP**） |
 | 配色 / 字体 / 间距 | `assets/site.css` 顶部的 `:root` |
 | 下载分流 / 兜底 | `functions/download.js` |
 

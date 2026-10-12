@@ -46,7 +46,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .leader .fill{flex:1;height:1px;border-bottom:1px dotted var(--hair);transform:translateY(-5px)}
 
 /* ---------- nav ---------- */
-#progress{position:fixed;top:0;left:0;height:1.5px;width:0;background:var(--clay);z-index:70;transition:width .12s linear}
+#progress{position:fixed;top:0;left:0;height:1.5px;width:100%;background:var(--clay);z-index:70;transform:scaleX(0);transform-origin:0 50%;will-change:transform;transition:transform .12s linear}
 nav{
   position:fixed;top:0;left:0;right:0;z-index:60;
   display:flex;align-items:center;justify-content:space-between;

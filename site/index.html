@@ -175,23 +175,23 @@
 
     <div class="shot-row">
       <figure class="phone reveal d1">
-        <img src="assets/shots/shot-overview.png" alt="概览页：统计卡、我的里程碑、徒步足迹日历" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-overview.webp" alt="概览页：统计卡、我的里程碑、徒步足迹日历" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">01</span><span class="t">概览</span><span class="e">Overview</span></figcaption>
       </figure>
       <figure class="phone reveal d2">
-        <img src="assets/shots/shot-records-list.png" alt="记录页：列表视图，按年份分组，每行可删除" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-records-list.webp" alt="记录页：列表视图，按年份分组，每行可删除" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">02</span><span class="t">记录</span><span class="e">Records</span></figcaption>
       </figure>
       <figure class="phone reveal d3">
-        <img src="assets/shots/shot-plan-calendar.png" alt="计划页：日历视图，过期的那天带红标" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-plan-calendar.webp" alt="计划页：日历视图，过期的那天带红标" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">03</span><span class="t">计划</span><span class="e">Plans</span></figcaption>
       </figure>
       <figure class="phone reveal d4">
-        <img src="assets/shots/shot-settings.png" alt="设置页：数据管理、网盘同步、外观、杂项" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-settings.webp" alt="设置页：数据管理、网盘同步、外观、杂项" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">04</span><span class="t">设置</span><span class="e">Settings</span></figcaption>
       </figure>
       <figure class="phone reveal d5">
-        <img src="assets/shots/shot-overview-dark.png" alt="深色模式下的概览页" width="585" height="1266" loading="lazy" decoding="async">
+        <img src="assets/shots/shot-overview-dark.webp" alt="深色模式下的概览页" width="585" height="1266" loading="lazy" decoding="async">
         <figcaption><span class="n">05</span><span class="t">深色模式</span><span class="e">Dark</span></figcaption>
       </figure>
     </div>
@@ -341,12 +341,11 @@
     try{
       const r = hero ? hero.getBoundingClientRect() : null;
       if(!force && !(r && r.bottom > 0 && r.top < window.innerHeight)) return;
-      document.querySelectorAll('.hero-title .mask > span').forEach(s=>{
-        if(force || parseFloat(getComputedStyle(s).opacity) < 0.9){
-          s.style.transform = 'translateY(0)';
-          s.style.opacity = '1';
-        }
-      });
+      /* ★2026-10-12 流畅度：先收集要处理的 span（读），再统一写，避免逐个子元素「读-写」交替触发同步布局 */
+      const spans = document.querySelectorAll('.hero-title .mask > span');
+      const need = [];
+      spans.forEach(s=>{ if(force || parseFloat(getComputedStyle(s).opacity) < 0.9) need.push(s); });
+      need.forEach(s=>{ s.style.transform = 'translateY(0)'; s.style.opacity = '1'; });
     }catch(e){}
   };
   setTimeout(()=>lockHeroTitle(true), 1700);
@@ -385,27 +384,36 @@
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let ticking = false;
 
+  /* ★2026-10-12 流畅度：把每一帧拆成「先读完所有布局量 → 再统一写」两段。
+     原写法是 写(width) → 读(rect) → 写(transform) → 读(rect) 交替，每次「写后读」都会强制同步布局（layout thrashing）。*/
   const update = ()=>{
+    // ── 读阶段 ──
     const y = window.scrollY;
-    const h = document.documentElement.scrollHeight - window.innerHeight;
-    progress.style.width = (y / (h||1) * 100) + '%';
-    nav.classList.toggle('shrunk', y > 60);
-
+    const vh = window.innerHeight;
+    const h = document.documentElement.scrollHeight - vh;
     let tone = 'dark';
     for(const s of toneSections){
       if(s.getBoundingClientRect().top <= 80) tone = s.dataset.tone;
     }
-    nav.classList.toggle('light', tone === 'light');
-
+    let pOff = null;
     if(!reduce){
-      for(const el of parallaxEls){
+      pOff = parallaxEls.map(el=>{
         const r = el.getBoundingClientRect();
-        if(r.bottom > -200 && r.top < window.innerHeight + 200){
+        if(r.bottom > -200 && r.top < vh + 200){
           const depth = parseFloat(el.dataset.parallax);
-          const offset = (r.top + r.height/2 - window.innerHeight/2) * depth * -1;
-          el.style.transform = 'translate3d(0,' + offset.toFixed(1) + 'px,0)';
+          return (r.top + r.height/2 - vh/2) * depth * -1;
         }
-      }
+        return null;
+      });
+    }
+    // ── 写阶段 ──
+    if(progress) progress.style.transform = 'scaleX(' + Math.min(y / (h||1), 1) + ')';
+    nav.classList.toggle('shrunk', y > 60);
+    nav.classList.toggle('light', tone === 'light');
+    if(pOff){
+      parallaxEls.forEach((el,i)=>{
+        if(pOff[i] !== null) el.style.transform = 'translate3d(0,' + pOff[i].toFixed(1) + 'px,0)';
+      });
     }
     lockHeroTitle();          // ★探针：经过 hero 时确保标题可见（rAF 节流内，开销可忽略）
     ticking = false;
