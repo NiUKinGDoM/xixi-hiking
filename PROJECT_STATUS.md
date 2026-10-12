@@ -84,7 +84,8 @@ node tools/siteshot.js <url> <out.png> [宽] [scale] [forceReveal]   # 官网整
 node tools/siteshots.js             # 从 www/ 重生成 10 张真机截图；--dump 导 App 真实文案（写官网文案的唯一事实来源）
 #   ★官网改动后必须 `ghsync --push`（site/ 整目录含 functions/）→ CF Pages 自动重新部署
 #   ★改了 site/index.html 的「更新日志」段才算官网跟上版本；/download 直链是动态查 API、无需改
-# ★补正类改动（文案 / 日志 / 文档 / 守卫；不影响用户可见功能行为）→ **一律「同号修正重发」，不升号**（用户 2026-09-20 定：「以后像这种的，都同号修正重发」）
+# ★★发版**默认一律升号**（用户 2026-10-12 改定：「**以后除非我说同号发，要不就都是升号**」）
+#   → **同号重发仅当用户明说「同号发」时使用**；旧政策「补正类自动同号」**已作废**，别自行判、也不必再问
 #   ★禁跑 prepare（含 bump）→ 手动：prev-snapshot → sw CACHE_NAME+1 → checkall → audit（先清 .latest.png）→ release.js → verify-apk.js
 #   ★发布：ghsync -m "release: vX (开发者可读的修正说明)" --push  +  ghrelease.js vX <Release文案>（幂等：复用 Release + PATCH body + 删旧 asset 重传）
 #   ★网页版复核看**内容指纹**（sw CACHE_NAME + 新增文本）而非版本号；手机同号不会提示更新 → Release 说明里必写“请手动下载覆盖安装”
@@ -210,9 +211,9 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 > **★写更新文案的格式约定**（`tools/notes/<版本>-doc.txt`，`docrelease.js` 按行原样插入，**支持多行**）：
 > 第 1 行 `### 🔧 待发：官网入口 + 五项优化（2026-09-29 · 用户「在app里增加官网链接，也作为新增写到更新日志里」）
 
-> **★当前状态（2026-10-12）：线上/已发布 = v1.2.3.9（vc284）** —— v1.2.3.8 已于 10-10 升号发布（时光机 + 山册连接器 + 备份提示）；v1.2.3.9 于 10-12 发布（官网优化 + 网页适配，见下）。### v1.2.3.9（vc284 · 2026-10-12）✅ 已发布
+> **★当前状态（2026-10-12）：线上/已发布 = v1.2.3.9（vc284）** —— v1.2.3.8 已于 10-10 升号发布（时光机 + 山册连接器 + 备份提示）；v1.2.3.9 于 10-12 发布（官网优化 + 网页适配，见下）。
 
-
+### v1.2.3.9（vc284 · 2026-10-12）✅ 已发布
 
 **① 官网优化（两轮）**
 
@@ -224,8 +225,6 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 
 - **★工具盲区**：`tools/ghsync.js` **只拷不删** —— 源端删文件（本轮 10 张 PNG）后副本仍残留、`git status` 不显，须**手动去副本删**。
 
-
-
 **② 网页（App）适配**
 
 - `theme-color` + `color-scheme` **随主题同步**（深色下手机浏览器地址栏不再亮紫、原生控件跟随配色）—— 启动脚本 + `applyThemeMode()` 两处同步，打开无闪烁。
@@ -233,8 +232,6 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - 背景光斑层加 `contain: layout style paint`（限制重绘范围）。
 
 - ✗ **撤销**：`prefers-reduced-transparency` 规则 —— headless 下该媒体查询匹配 `reduce` ⇒ 弹窗被强制变不透明、E2E 8 项视觉爆红（41~57%）；**不同环境行为不可控，风险大于收益，撤掉**。
-
-
 
 **发版**：v1.2.3.8→v1.2.3.9（vc283→284）；`CACHE_NAME` v64→v65；ResGuard 10 项重算、**验包逐项重算 10/10 匹配**；Release id=410255565、APK 2,527,681 B、下载回验 md5+PK 全过；线上体检 38/0；ioscheck 7/0。
 
