@@ -63,6 +63,51 @@ const MIRRORS = [
 ];
 const PROBE_TIMEOUT_MS = 4000;
 
+/**
+ * ★★ 2026-10-12 下载计数（可选 · Cloudflare Analytics Engine）
+ *
+ * 目的：回答「有多少独立访客真的点了下载」（**同一 IP 只算一次**）。
+ *
+ * ★为什么不做「前端埋点」：Cloudflare Web Analytics 只提供 Country / Host / Path /
+ *   Referer / Device type / Browser / OS / Navigation type 这些维度，**不提供自定义事件**；
+ *   而且前端拿不到 IP、也统计不到「直接访问 /download」的请求 ⇒ 前端埋点既无接收端、
+ *   又做不到去重。**唯一同时「能拿到 IP」且「能区分跳转结果」的位置就是本 Function。**
+ *
+ * ★为什么用 Analytics Engine：它是 Cloudflare 的托管服务（我们**没有自己的服务器**，
+ *   守住"零服务端"定位）；写入按条计费、查询用 SQL，`count(DISTINCT index1)` 天然就是
+ *   「同一访客只算一次」。
+ *
+ * ★隐私：只写「盐 + IP + UA 前缀」的 SHA-256 **前 12 字节**（不可逆、仅用于去重），
+ *   不落明文 IP。要清空数据在 CF 控制台删数据集即可。
+ *
+ * ★★铁律（比功能更重要）：这是**纯附加**埋点 ——
+ *   ① 未绑定数据集（env 里没有 DL_ANALYTICS）时**静默跳过**；
+ *   ② 任何异常都被吞掉，**绝不允许影响 302 跳转**（下载是核心功能，优先级远高于统计）。
+ */
+const DL_SALT = 'xixi-hiking-dl-2026-10';
+const DL_BINDING = 'DL_ANALYTICS';
+
+async function trackDownload(env, req, info) {
+  try {
+    const ds = env && env[DL_BINDING];
+    if (!ds || typeof ds.writeDataPoint !== 'function') return; // 未绑定 → 静默跳过
+    const ip = req.headers.get('CF-Connecting-IP') || '';
+    const ua = req.headers.get('User-Agent') || '';
+    let key = 'anon';
+    try {
+      const src = new TextEncoder().encode(DL_SALT + '|' + ip + '|' + ua.slice(0, 120));
+      const buf = await crypto.subtle.digest('SHA-256', src);
+      key = Array.from(new Uint8Array(buf)).slice(0, 12)
+        .map((b) => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) { key = 'anon'; }
+    ds.writeDataPoint({
+      indexes: [key],                                   // ← 去重键：count(DISTINCT index1)
+      blobs: [String(info.target || ''), String(info.version || ''), String(info.kind || '')],
+      doubles: [1, Number(info.size) || 0],
+    });
+  } catch (e) { /* 埋点失败绝不影响下载 */ }
+}
+
 function isAndroid(ua) {
   return /android/i.test(ua);
 }
@@ -110,8 +155,19 @@ export async function onRequest(context) {
   const req = context.request;
   const ua = req.headers.get('User-Agent') || '';
 
+  // ★2026-10-12 非阻塞埋点：优先用 waitUntil（统计在响应返回之后继续跑，绝不拖慢跳转）；
+  //   测试/无 waitUntil 的环境退化为「自己catch」，同样不影响响应。
+  const track = (info) => {
+    try {
+      const p = trackDownload(context.env, req, info);
+      if (p && typeof context.waitUntil === 'function') context.waitUntil(p);
+      else if (p && typeof p.catch === 'function') p.catch(() => { });
+    } catch (e) { /* 绝不影响下载 */ }
+  };
+
   // 1) 非安卓 → 网页版（iPhone / iPad / 桌面都走这里）
   if (!isAndroid(ua)) {
+    track({ target: 'webapp', kind: isIOS(ua) ? 'ios' : 'desktop' });
     return redirect(WEBAPP, { 'X-Download-Target': 'webapp' });
   }
 
@@ -125,14 +181,14 @@ export async function onRequest(context) {
       },
       cf: { cacheTtl: CACHE_S, cacheEverything: true },
     });
-    if (!r.ok) return redirect(FALLBACK, { 'X-Download-Target': 'fallback-api' });
+    if (!r.ok) { track({ target: 'fallback', kind: 'api-fail' }); return redirect(FALLBACK, { 'X-Download-Target': 'fallback-api' }); }
 
     const rel = await r.json();
     const assets = Array.isArray(rel.assets) ? rel.assets : [];
     // 优先取 .apk 资产；若没有则退回 Release 页面（绝不给出坏链接）
     let asset = assets.find((a) => /\.apk$/i.test(a.name || ''));
     if (!asset) asset = assets.find((a) => /apk/i.test(a.name || ''));
-    if (!asset) return redirect(FALLBACK, { 'X-Download-Target': 'fallback-no-apk' });
+    if (!asset) { track({ target: 'fallback', kind: 'no-apk' }); return redirect(FALLBACK, { 'X-Download-Target': 'fallback-no-apk' }); }
 
     // GitHub 上的真实资产路径（镜像与官方共用同一段）
     const ghPath = `https://github.com/${REPO}/releases/download/${rel.tag_name}/${encodeURIComponent(asset.name)}`;
@@ -143,6 +199,7 @@ export async function onRequest(context) {
     //   同时避免并发探测造成 4 个镜像被无谓地各挨一次请求。
     for (const prefix of MIRRORS) {
       if (await mirrorAlive(prefix, ghPath)) {
+        track({ target: 'apk', kind: 'android-mirror', version: rel.tag_name, size: asset.size });
         return redirect(prefix + ghPath, {
           'X-Download-Target': 'mirror:' + new URL(prefix).hostname,
           'X-APK-Version': rel.tag_name,
@@ -153,6 +210,7 @@ export async function onRequest(context) {
     }
 
     // 4) 镜像全灭 → GitHub 官方直链（保持老行为，至少不是死链）
+    track({ target: 'apk', kind: 'android-github', version: rel.tag_name, size: asset.size });
     return redirect(ghPath, {
       'X-Download-Target': 'github',
       'X-APK-Version': rel.tag_name,
@@ -161,6 +219,7 @@ export async function onRequest(context) {
     });
   } catch (e) {
     // 网络 / API 异常也不能让用户点到死链
+    track({ target: 'fallback', kind: 'error' });
     return redirect(FALLBACK, { 'X-Download-Target': 'fallback-error' });
   }
 }
