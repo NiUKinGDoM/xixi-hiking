@@ -5980,4 +5980,38 @@
                 font-size: 9px;
                 line-height: 1.25;
             }
+            /* ★⑥ 设置项改「可换行」三件套（2026-10-12）：原布局（图标38 + 文字 flex:1 min-width:0 + 开关）
+                  在 260px 外屏下把文字块挤到只剩 44px —— 「跟随系统外观模式」被压成 6 行、
+                  「数据变更后自动上传备份」变 5 行。现给文字块起码 130px 宽；放不下时
+                  右侧控件（开关 / 按钮）自动换到下一行并靠右，文字恢复正常单行。 */
+            .settings-item {
+                flex-wrap: wrap;
+                row-gap: 10px;
+            }
+            .settings-item-text {
+                flex: 1 1 130px;
+                min-width: 120px;
+            }
+            .settings-item > :last-child:not(.settings-item-text) {
+                margin-left: auto;
+            }
+            /* 「已绑定」卡内的横向行（文字 + 网盘信息/解绑）允许换行（260px 下按钮落到第二行） */
+            #syncAcctOn > div {
+                flex-wrap: wrap;
+                row-gap: 10px;
+            }
+            /* autoSyncCard / syncAccountCard 的内层横向 wrapper 也需允许换行 ——
+               它们不是 .settings-item，不受上面的规则管；不加会在 260px 下把开关挤出屏幕（实测 +23px） */
+            #autoSyncCard > div,
+            #syncAccountCard > div {
+                flex-wrap: wrap;
+                row-gap: 10px;
+            }
+            /* ★⑦ 概览 4 主卡：标签 13→12px、图标 24→18px，避免「最高海拔」被折成「最高海 / 拔」 */
+            .ov-main-grid .stat-card p:first-of-type {
+                font-size: 12px;
+            }
+            .ov-main-grid .stat-card .material-icons {
+                font-size: 18px;
+            }
         }

@@ -631,8 +631,6 @@ function renderSyncAccountCard() {
     off.style.display = bound ? 'none' : 'block';
     on.style.display = bound ? 'block' : 'none';
     if (!bound) return;
-    const mailEl = document.getElementById('syncAcctMail');
-    if (mailEl) mailEl.textContent = syncConfig.username || '';
 }
 
 // 弹窗内「选网盘」辅助：账号框的「占位提示 / 预填值」随网盘类型切换

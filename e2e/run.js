@@ -673,7 +673,7 @@ function serverUp() {
     var off = document.getElementById('syncAcctOff');
     var on = document.getElementById('syncAcctOn');
     out.boundState = !!(off && on) && off.style.display === 'none' && on.style.display !== 'none';
-    out.shownMail = (document.getElementById('syncAcctMail') || {}).textContent || '';
+    out.mailGone = !document.getElementById('syncAcctMail');   // ★2026-10-12 账号卡不再显示邮箱（用户要求）
     out.boundTitle = (document.querySelector('#syncAcctOn .settings-item-title') || {}).textContent || '';
     try { await saveSyncConfigFromForm(); } catch (e) { out.guardErr = String(e); }
     await sleep(150);
@@ -718,7 +718,7 @@ function serverUp() {
   ok('选坚果云：地址自动填好且输入框隐藏', entry.serverFilled.indexOf('jianguoyun.com') >= 0 && entry.serverHidden === true, entry.serverFilled);
   ok('切「其他 WebDAV」：显示地址框并清空预填', entry.serverShown === true && entry.serverCleared === true);
   ok('切回坚果云：地址恢复', entry.serverBack.indexOf('jianguoyun.com') >= 0, entry.serverBack);
-  ok('提交后弹窗关闭且账号卡变已绑定', entry.modalClosed === true && entry.boundState === true && entry.shownMail === 'e2e@test.com', JSON.stringify([entry.modalClosed, entry.boundState, entry.shownMail]));
+  ok('提交后弹窗关闭且账号卡变已绑定（且不再显示账号）', entry.modalClosed === true && entry.boundState === true && entry.mailGone === true, JSON.stringify([entry.modalClosed, entry.boundState, entry.mailGone]));
   ok('已绑定态标题只显示「已绑定」（不再重复网盘名）', entry.boundTitle.trim() === '已绑定' && entry.boundTitle.indexOf('坚果云') < 0, JSON.stringify(entry.boundTitle));
   ok('★弹窗关闭后保存不清空配置（空表单守卫）', entry.keptUser === 'e2e@test.com' && entry.keptPwdLen === 'e2epassword1234'.length, entry.keptUser + '/' + entry.keptPwdLen);
   ok('解绑后回到未绑定态', entry.unboundBack === true && !entry.unbindErr, entry.unbindErr || '');
