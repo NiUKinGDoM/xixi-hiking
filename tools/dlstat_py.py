@@ -131,7 +131,8 @@ def main():
     print('  · 要「多少人（同一 IP 只算一次）」→ 看 Cloudflare Analytics Engine：')
     print('    需先在 CF 控制台绑定数据集（见 CF-下载统计-配置步骤.md），')
     print('    然后在 Analytics Engine 里跑：')
-    print("      SELECT count(DISTINCT index1) FROM xixi_hiking_dl WHERE blob1='apk'")
+    print("      SELECT count(DISTINCT index1) AS people FROM xixi_hiking_dl WHERE blob1='apk'")
+    print('    ★别名一律写英文：CF 的 SQL 解析器不认中文标识符（写「AS 人数」会报 sql parser error）')
     print('  · 「多少人打开了官网」→ CF Pages 项目 → Metrics 里的 Unique visitors')
 
     try:
