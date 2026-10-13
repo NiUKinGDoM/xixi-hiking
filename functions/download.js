@@ -77,7 +77,12 @@ const PROBE_TIMEOUT_MS = 4000;
  *   守住"零服务端"定位）；写入按条计费、查询用 SQL，`count(DISTINCT index1)` 天然就是
  *   「同一访客只算一次」。
  *
- * ★隐私：只写「盐 + IP + UA 前缀」的 SHA-256 **前 12 字节**（不可逆、仅用于去重），
+ * ★去重口径（2026-10-13 修正）：**只按 IP**（用户明确要求「同一 IP 不算」）。
+ *   早期版本把 UA 也并进哈希 → 同一个人换浏览器、或被不同 UA 的探针/爬虫打到，
+ *   会被算成多人（实测：本机同一出口 IP 打几次不同 UA 的请求，竟被算成 6 人）。
+ *   **代价**：同一 WiFi 下手机+电脑一起下载会合并成 1 人（少算，但符合"不重复计数"的诉求）。
+ *
+ * ★隐私：只写「盐 + IP」的 SHA-256 **前 12 字节**（不可逆、仅用于去重），
  *   不落明文 IP。要清空数据在 CF 控制台删数据集即可。
  *
  * ★★铁律（比功能更重要）：这是**纯附加**埋点 ——
@@ -94,10 +99,12 @@ async function trackDownload(env, req, info) {
     const ds = env && env[DL_BINDING];
     if (!ds || typeof ds.writeDataPoint !== 'function') return; // 未绑定 → 静默跳过
     const ip = req.headers.get('CF-Connecting-IP') || '';
-    const ua = req.headers.get('User-Agent') || '';
     let key = 'anon';
     try {
-      const src = new TextEncoder().encode(DL_SALT + '|' + ip + '|' + ua.slice(0, 120));
+      // ★去重键**只含 IP**（不含 UA）：口径 = 「同一 IP 只算一次」。
+      //   手机机型/系统这类信息已经用 blob3（android-mirror / ios / desktop）单独记着，
+      //   既能看分布，又不会因为 UA 细微差异把同一个人拆成多个。
+      const src = new TextEncoder().encode(DL_SALT + '|' + ip);
       const buf = await crypto.subtle.digest('SHA-256', src);
       key = Array.from(new Uint8Array(buf)).slice(0, 12)
         .map((b) => b.toString(16).padStart(2, '0')).join('');

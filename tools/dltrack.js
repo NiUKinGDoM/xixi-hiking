@@ -117,6 +117,23 @@ const rec = (name, ok, note) => { results.push(ok); console.log((ok ? '✅' : '�
     rec('C9 无 req.url：回落 direct 且 302 正常', r.status === 302 && !!(dps[0] && dps[0].blobs[3] === 'direct'), dps[0] ? 'blob4=' + dps[0].blobs[3] : 'no dp');
   }
 
+  // C10 ★去重口径（2026-10-13）：同一 IP + 不同 UA → 必须落到同一个 key（=「同一 IP 只算一次」）。
+  //   早期把 UA 并进哈希，导致同一出口 IP 的几种 UA 被算成多个人（实测 6 人），已被修正。
+  {
+    mode = 'mirror';
+    const keys = [];
+    const env10 = { DL_ANALYTICS: { writeDataPoint: (dp) => keys.push(((dp.indexes || [])[0]) || '') } };
+    const uas = [ANDROID, IPHONE, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120 Safari/537.36'];
+    for (const ua of uas) {
+      const pending10 = [];
+      await onRequest({ request: mkReq(ua, '7.7.7.7'), env: env10, waitUntil: (p) => pending10.push(p) });
+      await Promise.all(pending10);
+    }
+    rec('C10 同 IP 不同 UA → 同一个去重键（同一 IP 只算一次）',
+      keys.length === 3 && new Set(keys).size === 1 && /^[0-9a-f]{24}$/.test(keys[0]),
+      'keys=' + JSON.stringify(keys));
+  }
+
   const bad = results.filter((x) => !x).length;
   console.log('\n===== ' + (results.length - bad) + ' 通过 / ' + bad + ' 失败 =====');
   process.exit(bad ? 1 : 0);
