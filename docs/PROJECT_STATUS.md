@@ -381,13 +381,17 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - **★发版期间的工具改进（EBUSY 沙箱绕过）**：
   - `tools/ghrelease.js` 支持 **`GH_TOKEN` 环境变量**（优先于 `ghtoken.py`）—— 沙箱下 `spawnSync` 会 EBUSY，报「未取到 token」属误判；由调用方用 python 侧读出后经环境变量传入即可。
   - **★`ship.js prepare` 不幂等**：第 ③ 步 `bump.js` **无条件自增**，若版本号已就位（如本轮已是 1.2.3.2）直接跑会被推到下一版 → 须**手动补跑 ②④~⑨**、跳过 bump/CACHE_NAME。
-  - **★publish 全流程在 EBUSY 下的手工路径**：`sitechangelog`（node 可跑）→ push 用 **python `subprocess` + `ghtoken.py` 读 token + 手拼 `git push`**（`-c credential.helper= -c http.proxy= -c https.proxy=` + `GIT_SSL_NO_VERIFY=true`）→ Release/上传用 **python `urllib` + `ProxyHandler({})`**（★curl 对本沙箱 GitHub 一律 000，但 urllib 直连 200）→ 线上核对同样 urllib。
-  - **★push 结果必须实证**：`git push` 输出无异常 ≠ 已生效；用 `git ls-remote <url> refs/heads/master` 比对本地 `HEAD`（`git fetch <url> master` 不带 refspec 时 `FETCH_HEAD` 不可靠，本轮踩到误判）。
+  - **★publish 全流程在 EBUSY 下的手工路径**：`sitechangelog`（node 可跑）→ push 用 **python `subprocess` + `ghtoken.py` 读 token + 手拼 `git push`**
+    （`-c credential.helper= -c http.proxy= -c https.proxy=` + `GIT_SSL_NO_VERIFY=true`）→ Release/上传用 **python `urllib` + `ProxyHandler({})`**（★curl 对本沙箱 GitHub 一律 000，但 urllib 直连 200）→ 线上核对同样 urllib。
+  - **★push 结果必须实证**：`git push` 输出无异常 ≠ 已生效；用 `git ls-remote <url> refs/heads/master` 比对本地 `HEAD`
+    （`git fetch <url> master` 不带 refspec 时 `FETCH_HEAD` 不可靠，本轮踩到误判）。
   - **★GH 双落点复核**：`docrelease.js` 只更新 `docs/PROJECT_STATUS.md`，**根目录那份不会自动跟** → 必须补跑 `node tools/doc-sync.js --apply` 再 push，否则 GitHub 网页（默认打开根目录）看到的仍是旧版。复核用 API 抓 raw + 比字节（GitHub 会 CRLF→LF，比较前先归一化）。
 - **发布链路（v1.2.3.2 实测）**：回退点 `backups/prev-1.2.3.2/` → 版本三处已就位（vc277 / `APP_VERSION` / sw v54）→ BUILTIN 注入 → 文档三处 → 自检 → audit → 构建 2.40MB → APK 验证（签名有效 / vc277 / v1.2.3.2 / 资源齐全 / sha256 `2260a7d8…`）→ push `f405a53` + 文档补同步 `67dad48` → Release `v1.2.3.2`（id 399036625）+ APK 上传（服务端 digest 与本地 sha256 一致）→ 线上：`/download` 302 `mirror:gh-proxy.com` + `X-Download-Gateway: xixi-hiking` + iPhone 跳网页版 + 官网首页 v1.2.3.2 + App 站 `APP_VERSION=1.2.3.2`。
 ### v1.2.4.0 —— 概览「平均用时」截断修复
 
-- 【修复】**概览矮卡「平均用时」被截断成「6h···」** —— 根因：三列矮卡在 390px 屏上只剩 **58px 可用宽**，而原 `durationHTML` 输出的 `&nbsp;` 在中文全角字体（SimSun / Noto CJK）下宽达 **17.4px**，「6h 23m」实测需 **64px** → 被 `text-overflow:ellipsis` 截断。改用**小时小数短格式**（≥1h 显示 `6.4h`、<1h 显示 `48m`，最宽约 40px）；**总用时主卡保持 h/m 精确格式不变**。
+- 【修复】**概览矮卡「平均用时」被截断成「6h···」** —— 根因：三列矮卡在 390px 屏上只剩 **58px 可用宽**，
+  而原 `durationHTML` 输出的 `&nbsp;` 在中文全角字体（SimSun / Noto CJK）下宽达 **17.4px**，「6h 23m」实测需 **64px** → 被 `text-overflow:ellipsis` 截断。
+  改用**小时小数短格式**（≥1h 显示 `6.4h`、<1h 显示 `48m`，最宽约 40px）；**总用时主卡保持 h/m 精确格式不变**。
 - 【测试】新增 `test.js` 守卫「矮卡平均用时=小时小数短格式」（**反向验证**：改坏 → 354/1 报红 → 还原 → 355/0）；`e2e/inspect.js` 新增 **`--vw/--vh`** 多档位视口参数，四档 320/360/390/412 × 11 组时长（30m~12.5h）实测全部不截断。
 - 【验证】全量门禁 `bash tools/checkall.sh` **923 通过 / 0 失败**。
 - **正式版 v1.2.3.7（vc282）** —— 折叠屏【外屏】窄屏适配（≤350px：底栏收窄 302→198px / 概览矮卡 3 列→1 列 / 标题与同步文案允许折行 / 整页横向溢出归零）（2026-10-09）
