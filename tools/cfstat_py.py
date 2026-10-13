@@ -22,12 +22,15 @@ tools/cfstat_py.py —— Cloudflare Analytics Engine 下载统计查询（2026-
 import ctypes
 import ctypes.wintypes as wt
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
 
 TARGET = 'cloudflare:xixi-analytics'
-DATASET = 'xixi_hiking_dl'
+# ★2026-10-13 换到新数据集：旧的 xixi_hiking_dl 装的是「IP+UA」旧口径的测试数据，
+#   已弃用（Analytics Engine 不支持 SQL 清空，只能换名重来）。可用 CF_DATASET 临时覆盖。
+DATASET = os.environ.get('CF_DATASET', 'xixi_hiking_dl_v2')
 
 
 class CREDENTIAL(ctypes.Structure):
