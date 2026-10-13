@@ -86,6 +86,8 @@ const PROBE_TIMEOUT_MS = 4000;
  */
 const DL_SALT = 'xixi-hiking-dl-2026-10';
 const DL_BINDING = 'DL_ANALYTICS';
+// ★下载入口白名单（对应官网里的 download?src=…）—— 只认这几个值，其余归 other，避免任意字符串污染统计
+const DL_SRC_OK = ['nav', 'menu', 'store'];
 
 async function trackDownload(env, req, info) {
   try {
@@ -100,9 +102,16 @@ async function trackDownload(env, req, info) {
       key = Array.from(new Uint8Array(buf)).slice(0, 12)
         .map((b) => b.toString(16).padStart(2, '0')).join('');
     } catch (e) { key = 'anon'; }
+    // ★入口来源（官网里写作 /download?src=nav|menu|store）：白名单校验，
+    //   非法值一律归 'other'、无参数归 'direct' —— 统计里永远只有预期内的取值。
+    let src = 'direct';
+    try {
+      const raw = (req && req.url) ? (new URL(req.url).searchParams.get('src') || '') : '';
+      src = raw ? (DL_SRC_OK.indexOf(raw) >= 0 ? raw : 'other') : 'direct';
+    } catch (e) { src = 'unknown'; }
     ds.writeDataPoint({
       indexes: [key],                                   // ← 去重键：count(DISTINCT index1)
-      blobs: [String(info.target || ''), String(info.version || ''), String(info.kind || '')],
+      blobs: [String(info.target || ''), String(info.version || ''), String(info.kind || ''), src],
       doubles: [1, Number(info.size) || 0],
     });
   } catch (e) { /* 埋点失败绝不影响下载 */ }

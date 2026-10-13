@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+  ★2026-10-13 官网独立隐私说明页（**手改页面，不是 tools/legalgen.js 的产物**）
+  - 只讲「官网访问 + 下载计数」；App 自身的《隐私政策》是 privacy.html（由 legalgen 从 www/app-data.js 生成）
+  - ★改本页**不影响 App 政策版本号（LEGAL_VERSION）**，也不需要用户重新同意 —— 两件事彼此独立，别混
+  - 内容依据：functions/download.js 的下载计数（Cloudflare Analytics Engine，只存 IP 哈希前缀，不存明文 IP）
+  - tools/siteaudit.js 的 A 段页面清单与 F 段「远端 raw == 本地」清单都登记了本页，新增页面记得两处同步
+-->
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>官网隐私说明 · XiXiの徒步小记</title>
+<meta name="description" content="XiXiの徒步小记官网隐私说明：本站不注册、不登录、不使用 Cookie、不做跨站追踪；唯一的统计是下载点击计数，仅保存不可逆的去重标识，不保存明文 IP。">
+<meta name="theme-color" content="#0E110F">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300&family=Inter:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;500;700&display=swap"></noscript>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="doc-page">
+
+<nav id="nav">
+  <a href="index.html" class="wordmark">
+    <span class="cn">徒步小记</span>
+    <span class="en">XiXi&#39;s Hiking Notes</span>
+  </a>
+  <div class="nav-right">
+    <a href="index.html" class="btn-line">返回首页</a>
+  </div>
+</nav>
+
+<main class="doc">
+  <div class="wrap">
+    <div class="doc-head">
+      <div class="sec-idx">Website</div>
+      <h1>官网隐私说明</h1>
+      <p class="doc-meta">适用范围：本站（xixi-hiking-site.pages.dev）的访问与下载 &nbsp;·&nbsp; 最近更新：2026-10-13<br>本页只说明<b>官网</b>；App 自身的数据处理见《隐私政策》，两者相互独立。</p>
+    </div>
+
+    <article>
+      <h2>一句话概括</h2>
+      <p>官网只是一张介绍页加一个下载入口：<b>不注册、不登录、不使用 Cookie、不做跨站追踪、不接入广告</b>。唯一的统计是「下载按钮被点了多少次」——它只用来知道你大概有多少人下载，而且<b>不保存你的明文 IP</b>，也无法识别出你是谁。</p>
+
+      <h2>一、官网不做哪些事</h2>
+      <p><b>不要账号</b>：本站没有任何注册、登录、评论、留言功能，不收集你的姓名、手机号、邮箱或任何身份信息。<b>不使用 Cookie</b>：本站不写入 Cookie，也不使用 localStorage、IndexedDB 记录你的访问痕迹。<b>不做跨站追踪</b>：不接入广告平台、受众画像或再营销工具，不存在把你在本站的行为与其他网站关联起来的做法。<b>不看你浏览了哪几页</b>：本站<b>未启用页面级访问统计</b>，所以我们并不知道你看了哪几页、停留多久、从哪里跳转而来。</p>
+
+      <h2>二、唯一的统计：下载计数</h2>
+      <p>为了知道「大概多少人真的下载了」，每当有人点击任一「下载」按钮，我们会记录 <b>1 条</b>计数，内容仅包括以下三类：<b>① 时间</b>（服务器自动记录）；<b>② 一个不可逆的去重标识</b>——把你的 IP 与浏览器标识拼接上一段固定盐值后做 SHA-256，<b>只取前 12 字节</b>（24 位十六进制）。它唯一的用途是把「同一个人反复点击」合并成一次，让「下载人数」尽量接近真实人数；<b>③ 下载结果</b>——走了哪条下载通道（镜像或官方直链）、下载的是哪个版本、点的是官网哪个位置的按钮（导航栏 / 手机菜单 / 页面底部）。</p>
+      <p>需要特别说明的是：我们<b>不保存你的明文 IP 地址</b>（上述标识无法反推出 IP），不记录你的浏览历史，不记录你下载到的文件内容，也不会把这些计数与你的任何账号、邮箱或身份信息建立关联。</p>
+
+      <h2>三、这项统计存在哪里、会不会出境</h2>
+      <p>计数存储在 <b>Cloudflare</b> 的分析服务上，由 Cloudflare 负责托管——我们没有自己的服务器，这些计数也不经过任何第三方中转、不落入开发者自建的任何数据库。Cloudflare 的节点<b>遍布全球（含中国境外）</b>，所以这项计数可能构成个人信息的<b>跨境传输</b>。我们只用它做「计数与去重」这一件事：不用于识别个人、不用于广告投放、不做用户画像，也不与任何其他数据源合并。保留期限遵循 Cloudflare 对分析数据的保留策略，我们不做额外的长期归档。</p>
+
+      <h2>四、如果你不想被统计</h2>
+      <p>由于这项统计不依赖 Cookie，所以不存在「关闭 Cookie 即退出」的开关。如果你不希望贡献这项计数，可以：<b>①</b> 使用浏览器的<b>无痕 / 隐私模式</b>访问（不产生持久标识）；<b>②</b> 使用广告拦截类浏览器扩展拦截统计请求；<b>③</b> 直接前往 <b>GitHub Releases</b> 页面下载安装包。以上任一做法<b>都不会影响你下载、安装与使用 App 的任何功能</b>。</p>
+
+      <h2>五、官网上的第三方请求</h2>
+      <p><b>① 网页字体</b>：为了让排版好看，本站会向 Google Fonts 请求网页字体，这意味着你的浏览器会向 Google 发出一次请求（Google 会看到你的 IP 与浏览器标识）。如希望完全避免，可用扩展拦截 Google 域名——页面会退回系统字体，不影响阅读。<b>② 下载文件托管</b>：APK 安装包托管在 <b>GitHub Releases</b>（服务器位于中国境外），下载时 GitHub 会记录常规网络请求信息（IP、浏览器标识），该请求同样属于跨境传输，其处理行为适用 GitHub 的服务条款与隐私政策。<b>③ 没有其他第三方脚本</b>：本站未接入广告、统计、客服、热力图等任何第三方脚本。</p>
+
+      <h2>六、与 App 的关系</h2>
+      <p>本页仅适用于<b>官网</b>。App 自身（Android 客户端与网页版）是纯本地工具：记录、计划、备注、照片全部保存在你的设备上，<b>不设账号、不接入统计或广告 SDK</b>，其数据处理规则请见<a href="privacy.html">《隐私政策》</a>；使用与免责条款见<a href="terms.html">《免责声明》</a>。两页与本页相互独立：官网的下载计数不会与 App 内的任何数据发生关联。</p>
+
+      <h2>七、你的权利与联系方式</h2>
+      <p>由于去重标识不可逆、且不与任何身份信息关联，我们<b>无法定位到具体某个人</b>，因此无法按人查询或删除单条计数——这正是「不识别个人」这一设计的结果。如果你希望<b>整体停止</b>这项统计，可通过下方邮箱告知我们，我们会删除统计数据集并停止记录。任何疑问、意见或投诉，欢迎通过 <a href="mailto:Xixihiking@foxmail.com">Xixihiking@foxmail.com</a> 或 <a href="https://github.com/NiUKinGDoM/xixi-hiking/issues" target="_blank" rel="noopener">GitHub Issues</a> 联系我们，我们将在合理期限内（一般不超过 15 个工作日）答复。本页的订立、效力与解释均适用<b>中华人民共和国法律</b>。</p>
+
+      <p class="back"><a href="index.html">← 返回首页</a>　·　<a href="privacy.html">阅读《隐私政策》</a>　·　<a href="terms.html">阅读《免责声明》</a></p>
+    </article>
+
+    <div class="doc-foot">
+      <a href="index.html">← 返回首页</a> &nbsp;·&nbsp;
+      <a href="privacy.html">隐私政策</a> &nbsp;·&nbsp;
+      <a href="terms.html">免责声明</a> &nbsp;·&nbsp;
+      <a href="https://github.com/NiUKinGDoM/xixi-hiking/issues" target="_blank" rel="noopener">问题反馈</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="f-bottom">
+      <span>© 2026 XiXiの徒步小记 · Made by XiXi</span>
+      <span>联系：<a href="mailto:Xixihiking@foxmail.com" style="border-bottom:1px solid rgba(233,227,214,.25)">Xixihiking@foxmail.com</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

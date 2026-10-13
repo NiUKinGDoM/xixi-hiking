@@ -127,6 +127,7 @@ async function main() {
     { p: '/features.html', key: ['更新日志'] },
     { p: '/privacy.html', key: [] },
     { p: '/terms.html', key: [] },
+    { p: '/site-privacy.html', key: ['官网隐私说明'] },   // ★2026-10-13 官网独立隐私说明页（下载统计的数据说明）
     { p: '/robots.txt', key: ['Sitemap:'], ct: 'text/plain' },
     { p: '/sitemap.xml', key: ['<urlset'], ct: 'xml' },
   ];
@@ -240,6 +241,7 @@ async function main() {
       'README.md', 'CHANGELOG.md', 'test.js',
       'www/index.html', 'www/app-core.js', 'www/app-data.js', 'www/sw.js',
       'site/index.html', 'site/features.html', 'site/privacy.html', 'site/terms.html',
+      'site/site-privacy.html',
       'site/robots.txt', 'site/sitemap.xml',
     ];
     for (const rel of FILES) {

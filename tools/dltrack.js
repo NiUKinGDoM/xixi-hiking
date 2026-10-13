@@ -28,7 +28,10 @@ globalThis.fetch = async (url) => {
   return new Response('', { status: mode === 'github' ? 503 : 206 });
 };
 
-const mkReq = (ua, ip) => ({ headers: { get: (k) => { const s = String(k).toLowerCase(); return s === 'user-agent' ? ua : (s === 'cf-connecting-ip' ? ip : null); } } });
+const mkReq = (ua, ip, src) => ({
+  url: 'https://xixi-hiking-site.pages.dev/download' + (src ? '?src=' + src : ''),
+  headers: { get: (k) => { const s = String(k).toLowerCase(); return s === 'user-agent' ? ua : (s === 'cf-connecting-ip' ? ip : null); } },
+});
 
 const results = [];
 const rec = (name, ok, note) => { results.push(ok); console.log((ok ? '✅' : '❌') + ' ' + name + (note ? '  —— ' + note : '')); };
@@ -92,6 +95,27 @@ const rec = (name, ok, note) => { results.push(ok); console.log((ok ? '✅' : '�
   r = await onRequest({ request: mkReq(ANDROID, '4.4.4.4'), env, waitUntil: (p) => pending.push(p) });
   await Promise.all(pending);
   rec('C7 镜像全灭：记 android-github', r.status === 302 && dps[0] && dps[0].blobs[2] === 'android-github', r.headers.get('X-Download-Target') || '');
+
+  // C8 入口来源白名单：nav/store 原样记；非法值归 other；无参数归 direct
+  for (const [src, want] of [['nav', 'nav'], ['menu', 'menu'], ['store', 'store'], ['evil-xss', 'other'], ['', 'direct']]) {
+    mode = 'mirror';
+    dps = []; pending = [];
+    env = { DL_ANALYTICS: { writeDataPoint: (dp) => dps.push(dp) } };
+    r = await onRequest({ request: mkReq(ANDROID, '6.6.6.6', src), env, waitUntil: (p) => pending.push(p) });
+    await Promise.all(pending);
+    rec('C8 src=' + (src || '(无参数)') + ' → blob4=' + want, !!(dps[0] && dps[0].blobs[3] === want), dps[0] ? 'got=' + dps[0].blobs[3] : 'no dp');
+  }
+
+  // C9 无 req.url（老客户端/测试 mock）→ 回落 direct，不抛错
+  {
+    mode = 'mirror';
+    dps = []; pending = [];
+    env = { DL_ANALYTICS: { writeDataPoint: (dp) => dps.push(dp) } };
+    const noUrl = { headers: { get: () => ANDROID } };
+    r = await onRequest({ request: noUrl, env, waitUntil: (p) => pending.push(p) });
+    await Promise.all(pending);
+    rec('C9 无 req.url：回落 direct 且 302 正常', r.status === 302 && !!(dps[0] && dps[0].blobs[3] === 'direct'), dps[0] ? 'blob4=' + dps[0].blobs[3] : 'no dp');
+  }
 
   const bad = results.filter((x) => !x).length;
   console.log('\n===== ' + (results.length - bad) + ' 通过 / ' + bad + ' 失败 =====');
