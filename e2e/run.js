@@ -365,6 +365,12 @@ function serverUp() {
   if (hasPrivacy > 0) {
     await page.locator('#privacyPolicyBtn').click();
     await page.waitForTimeout(400);
+    // ★2026-10-17 加固：Playwright 的 click 会自动把按钮滚进视口，滚动量随「设置页内容高度」变化，
+    //   而本项目视觉基线截的是**整视口** ⇒ 只要设置页里有新增内容（本次是「关于应用」加了一行说明），
+    //   背景就跟着位移 → 弹窗本体没变也会报 diff 6%+（04/05 双双假失败）。
+    //   弹窗自身是视口居中定位，滚到顶不影响它，只让背景稳定在页面顶部。
+    await page.evaluate(() => { window.scrollTo(0, 0); });
+    await page.waitForTimeout(150);
     const modalText = await page.locator('.confirm-modal-content').textContent().catch(() => '');
     ok('隐私弹窗打开(玻璃卡片+条目)', modalText.indexOf('隐私政策') >= 0 && modalText.indexOf('数据存储位置') >= 0 && modalText.indexOf('联网行为') >= 0, modalText.slice(0, 40));
     // ★2026-09-18 法律要素：生效日期/权利/未成年人/适用法律缺一不可（政策专业化后不得被后续改文案删掉）

@@ -1087,6 +1087,20 @@
             max-width: 310px;
             font-weight: 500;
         }
+        /* ★2026-10-17 定位说明：明确它只是「手工填写的日记本」，不采集 GPS 轨迹、
+           不含路线规划与地图导航。动因：用户希望官网与 App 都直白讲清产品边界，
+           避免下载后误以为带轨迹记录能力（措辞与官网首屏 .hero-note 保持一致）。 */
+        .about-card .about-note {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.7;
+            max-width: 310px;
+            font-weight: 400;
+        }
+        body.dark-mode .about-card .about-note {
+            color: rgba(255, 255, 255, 0.55);
+        }
         .about-highlight {
             color: #4f46e5;
         }

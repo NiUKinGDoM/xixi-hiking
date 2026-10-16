@@ -112,15 +112,22 @@ h1.hero-title{
 }
 .mask{overflow:hidden;display:block;padding-bottom:.06em}
 .mask > span{display:block}
-.js .mask > span{transform:translateY(112%);opacity:0}
-.js .hero-ready .mask > span{animation:rise 1.35s var(--ease) forwards}
-.js .hero-ready .m2 > span{animation-delay:.14s}
-@keyframes rise{to{transform:translateY(0);opacity:1}}
-.hero-tagline{margin-top:34px;display:flex;flex-wrap:wrap;align-items:center;gap:26px}
+/* ★2026-10-17 用户定调「大标题一直显示，去掉动画」→ 原「先隐藏（translateY(112%)+opacity:0）
+   + 加 .hero-ready 后播 rise 动画」的入场方案**整段删除**（含 @keyframes rise 与 .m2 延迟）。
+   动因：该方案曾两次导致首屏标题不可见 —— 动画在滚动重排 / 后台标签页 / 省电模式下未播放或
+   被中断，就会永久停在下移 112% 的隐藏态，为此先后打过「rAF + 1.6s 兜底」与「滚动探针」两个
+   补丁。直接常显才是根治，同时省掉首屏对 JS 时序的依赖。 */
+.hero-tagline{margin-top:24px;display:flex;flex-wrap:wrap;align-items:center;gap:26px}
 .hero-tagline .rule-v{width:1px;height:44px;background:var(--hair)}
 .hero-tagline p{font-family:var(--display);font-size:clamp(17px,2.1vw,27px);letter-spacing:.22em;color:var(--paper);opacity:.92}
-.hero-body{margin-top:30px;max-width:46ch;color:var(--bone);opacity:.72;font-size:14.5px;line-height:2.15;font-weight:300;letter-spacing:.02em}
-.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:28px;margin-top:44px}
+.hero-body{margin-top:18px;max-width:46ch;color:var(--bone);opacity:.72;font-size:14.5px;line-height:2.15;font-weight:300;letter-spacing:.02em}
+/* ★2026-10-17 首屏「定位说明」：明确它只是手工填写的日记本，不涉及 GPS 与路线，
+   避免访客误以为本应用带轨迹记录 / 路线规划能力。措辞与 App 内「关于应用」保持一致。
+   ★为容纳这一段，本文件里的 `.hero-tagline / .hero-body / .hero-actions` 三处间距同步收紧
+     （34→24 / 30→18 / 44→20），确保下载按钮仍留在 1440×900 首屏内的原有位置。 */
+.hero-note{margin-top:14px;max-width:50ch;font-size:12px;line-height:2;font-weight:300;letter-spacing:.03em;color:var(--bone);opacity:.62}
+.hero-note b{font-weight:500;color:var(--paper);opacity:.92}
+.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:28px;margin-top:20px}
 .cta{
   display:inline-flex;align-items:center;gap:16px;
   font-size:11px;font-weight:500;letter-spacing:.32em;text-transform:uppercase;
@@ -418,7 +425,6 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition-duration:.01ms!important}
   .reveal,.js .reveal,.js .reveal.on{opacity:1!important;transform:none!important}
-  .mask > span,.js .mask > span{transform:none!important;opacity:1!important}
 }
 /* ---------- 真机截图 ----------
    ★官网所有「示例」一律用 App 自己渲染出来的真机截图，不做假界面。

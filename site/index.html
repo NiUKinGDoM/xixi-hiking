@@ -135,6 +135,10 @@
       难度、里程、用时、小日记、心情、天气、同行人，最多 24 张照片，一并留在这本子里。
     </p>
 
+    <p class="hero-note">
+      它是一本<b>手工填写</b>的徒步日记：不采集 GPS 轨迹，不含路线规划与地图导航，里程、海拔等数据均需你亲手记录。
+    </p>
+
     <div class="hero-actions">
       <a href="#download" class="cta primary">
         下载徒步小记
@@ -210,6 +214,10 @@
       无账号、无统计、无广告。<br>
       唯一可选的联网只有两处：你主动配置的<b>坚果云 WebDAV</b>，数据同步到你自己的账号；
       以及「检查更新」查一次版本号。
+    </p>
+    <p class="body reveal d2" style="margin-top:16px">
+      无定位、无 GPS 轨迹。<br>
+      本应用只做「记录与回顾」：不含路线规划、地图导航与位置共享，里程、海拔等数据由你手工填写。
     </p>
     <div class="attrib reveal d3">
       完整说明见 App 内「设置 → 关于应用 → 隐私政策」
@@ -328,28 +336,9 @@
     if (legal) legal.innerHTML = '免费 · 无广告 · 无账号<br>打开网页版 → 点「分享」→「添加到主屏幕」，像 App 一样用';
   }
 
-  /* ---------- hero entrance ---------- */
-  const hero = document.querySelector('.hero');
-  const raiseHero = ()=>{ if(hero) hero.classList.add('hero-ready'); };
-  requestAnimationFrame(raiseHero);
-  setTimeout(raiseHero, 1600);              // ★兜底：首屏标题必须出现，不能永远等动画
-
-  /* ★加固（2026-09-30）：标题原本只靠 animation 的 forwards 保持终态 —— 一旦动画
-     在滚动重排 / 后台标签页 / 省电模式下未播放或被中断，标题会永久停在
-     translateY(112%)+opacity:0（用户反馈「往上划时标题不显示」）。这里双保险：
-     ① 动画窗口结束后显式锁定终态；② 滚动经过 hero 时探针纠正。视觉零改动。 */
-  const lockHeroTitle = (force)=>{
-    try{
-      const r = hero ? hero.getBoundingClientRect() : null;
-      if(!force && !(r && r.bottom > 0 && r.top < window.innerHeight)) return;
-      /* ★2026-10-12 流畅度：先收集要处理的 span（读），再统一写，避免逐个子元素「读-写」交替触发同步布局 */
-      const spans = document.querySelectorAll('.hero-title .mask > span');
-      const need = [];
-      spans.forEach(s=>{ if(force || parseFloat(getComputedStyle(s).opacity) < 0.9) need.push(s); });
-      need.forEach(s=>{ s.style.transform = 'translateY(0)'; s.style.opacity = '1'; });
-    }catch(e){}
-  };
-  setTimeout(()=>lockHeroTitle(true), 1700);
+  /* ★2026-10-17 首屏标题入场动画已移除（用户定调「大标题一直显示」）⇒ 原 `raiseHero`
+     （rAF + 1.6s 兜底）与 `lockHeroTitle`（1.7s 锁定终态 + 滚动探针）一并删除：
+     标题不再有隐藏态，也就无需这些「确保它出现」的补丁。 */
 
   /* ---------- reveal ---------- */
   const reveals = [...document.querySelectorAll('.reveal')];
@@ -416,7 +405,6 @@
         if(pOff[i] !== null) el.style.transform = 'translate3d(0,' + pOff[i].toFixed(1) + 'px,0)';
       });
     }
-    lockHeroTitle();          // ★探针：经过 hero 时确保标题可见（rAF 节流内，开销可忽略）
     ticking = false;
   };
   window.addEventListener('scroll',()=>{
