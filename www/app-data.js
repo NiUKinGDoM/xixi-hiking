@@ -554,7 +554,7 @@ function openRecordDetailModal(id, startMode) {
         modal.className = 'record-detail-modal modal-backdrop-animate';
         recordDetailModalEl = modal;
         var modalInner =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width:440px;width:calc(100vw - 44px);box-sizing:border-box;max-height:86vh;overflow-y:auto;border-radius:20px;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-lg" style="overflow-y:auto;border-radius:20px">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#4f46e5;">' + (detailModalMode === 'edit' ? 'edit_note' : 'landscape') + '</span>' +
             '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (detailModalMode === 'edit' ? '编辑记录' : '记录详情') + '</span>' +
@@ -762,7 +762,7 @@ function deleteBatchSelected() {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>批量删除</div>' +
         '<div class="confirm-modal-message">确定删除选中的 ' + ids.length + ' 条记录？照片将一并删除，此操作无法撤销。</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="batch-confirm-cancel">取消</button>' +
@@ -827,7 +827,7 @@ function deletePlannedBatchSelected() {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>批量删除</div>' +
         '<div class="confirm-modal-message">确定删除选中的 ' + ids.length + ' 条计划？此操作无法撤销。</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="pbatch-confirm-cancel">取消</button>' +
@@ -1224,7 +1224,7 @@ window.__showTamperWarn = function (file) {
         modal.id = 'tamperWarnModal';
         modal.setAttribute('data-persist', '1');
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;width: calc(100vw - 44px);box-sizing: border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-md">' +
                 '<div class="confirm-modal-title">' +
                     '<span class="material-icons" style="color: #d97706;">shield_moon</span>' +
                     '资源校验提示' +
@@ -1289,7 +1289,7 @@ function lbDeleteCurrent() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
+<div class="confirm-modal-content modal-fade-scale mdl-sm">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #dc2626;">warning</span>
                 删除照片
@@ -1378,7 +1378,7 @@ function openDateTimePicker(inputId, currentValue) {
         modal.className = 'confirm-modal modal-backdrop-animate';
         // ★2026-09-01 v3：时/分改步进器（- 数字 +），彻底告别 select 全屏原生列表；★09-01 弹窗缩小 360→320px
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event</span>选择日期时间</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="dtp-nav" id="dtpNav"></div>' +
@@ -1486,7 +1486,7 @@ function openDifficultyPicker(inputId) {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">signal_cellular_alt</span>选择难度</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="df-grid" id="dfGrid"></div>' +
@@ -1543,7 +1543,7 @@ function openMoodWeatherPicker(type, recordId) {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 300px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">' + icon + '</span>' + title + '</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="mwp-grid" id="mwpGrid"></div>' +
@@ -1733,7 +1733,7 @@ function showEditTitleModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
+<div class="confirm-modal-content modal-fade-scale mdl-sm">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">edit</span>
                 编辑标题
@@ -1787,7 +1787,7 @@ function showDataInfoModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">
+<div class="confirm-modal-content modal-fade-scale mdl-lg">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
@@ -1835,7 +1835,7 @@ function showDisclaimerModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">
+<div class="confirm-modal-content modal-fade-scale mdl-lg">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">hiking</span>
                 免责声明
@@ -1948,7 +1948,7 @@ function showLegalConsentModal() {
         // ★2026-09-18 声明为常驻弹窗：查看条款时不会被条款弹窗内部的 closeOpenModals() 清掉
         modal.setAttribute('data-persist', '1');
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width:340px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-lg">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">verified_user</span> 使用前请确认</div>' +
             '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">' +
                 '<div class="dmi-group">' +
@@ -2037,7 +2037,7 @@ function showPrivacyPolicyModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">
+<div class="confirm-modal-content modal-fade-scale mdl-lg">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">security</span>
                 隐私政策
@@ -2171,7 +2171,7 @@ function showSupportModal() {
     var dark = document.body.classList.contains('dark-mode');
     var bodyTxt = dark ? '#cbd5e1' : '#334155';
     var subTxt = dark ? '#94a3b8' : '#64748b';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 330px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
         '<div class="confirm-modal-title">支持作者</div>' +
         '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:14px;">' +
         '<div style="font-size:13px;color:' + bodyTxt + ';line-height:1.7;">徒步小记是 XiXi 亲手做的小软件，完全免费、没有广告。如果你用得开心，欢迎请作者喝杯奶茶支持一下——纯自愿，不付费也拥有全部功能。</div>' +
@@ -2215,7 +2215,7 @@ function showDeleteConfirmModal(recordId, recordName) {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
+<div class="confirm-modal-content modal-fade-scale mdl-sm">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #dc2626;">warning</span>
                 确认删除
@@ -2601,7 +2601,7 @@ function openHmYmPicker() {
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 380px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">calendar_view_month</span>选择年月</div>' +
             '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="hmyp-yrs" id="hmypYrs"></div>' +
@@ -2821,7 +2821,7 @@ function showHeatmapDayDetail(year, month, day) {
             picBox +
             '</div>';
     }).join('');
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">local_fire_department</span>' + year + '年' + month + '月' + day + '日</div>' +
         '<div class="confirm-modal-message" style="text-align:left;">' + items + '</div>' +
         '<div class="confirm-modal-buttons"><button class="ripple-effect hm-share-btn glass-btn" id="hm-share" data-share="' + dayRecords[0].id + '">分享</button><button class="confirm-btn-cancel ripple-effect" id="hm-close">关闭</button></div></div>';
@@ -3709,7 +3709,7 @@ function openMtnMergeDialog(key) {
         var opts = others.map(optRow).join('') || '<div class="mtn-merge-empty">还没有别的山可以连接</div>';
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="font-size:20px;vertical-align:-4px;color:#6366f1;">link</span> 连接山</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;text-align:left;">' +
             '<div style="margin-bottom:6px;">把选中的山并入「<b>' + escapeHtml(mtnLabelOf(key)) + '</b>」<span class="mtn-merge-note">（可多选）</span>：</div>' +
@@ -3919,7 +3919,7 @@ function confirmWipeAllData() {
         var nRec = (records || []).length, nPl = (plannedTrips || []).length;
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">delete_forever</span>抹掉所有足迹？</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;">将删除 <b>' + nRec + ' 条记录、' + nPl + ' 个计划</b> 和 <b>全部照片</b>，<b>不可恢复</b>。<br>建议先点「导出数据」留一份备份。</div>' +
             '<div class="confirm-modal-buttons">' +
@@ -3938,7 +3938,7 @@ function wipeConfirmSecond() {
     try {
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">warning</span>最后确认</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;">这一步会<b>永久删除全部徒步数据与照片</b>，并<b>解除网盘绑定</b>；<b>云端备份文件不受影响</b>（坚果云里的旧备份还在，需要时仍可恢复）。确定要抹掉吗？</div>' +
             '<div class="confirm-modal-buttons">' +
@@ -4041,7 +4041,7 @@ function handleAddRecordFlow() {
         }).join('');
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:400px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">add_circle_outline</span>添加徒步记录</div>' +
             '<div class="confirm-modal-message" style="text-align:left;margin-bottom:14px;">' +
             '<div class="ap-new" id="apNew" role="button" tabindex="0">' +
@@ -4180,7 +4180,7 @@ function maybeShowOverdueCare() {
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         // ★2026-09-06 定稿：只留「去处理 / 忽略」两按钮横排各半宽（顺延入口删除，过期计划改日期/删除都在计划页）；字 13px 不折行
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title" style="font-size:15px;"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;font-size:13px;">到日子没去的：<b>' + escapeHtml(label) + '</b>。<br>去计划页改个日期或删掉吧。</div>' +
             '<div style="display:flex;gap:8px;margin-top:16px;">' +
@@ -4518,7 +4518,7 @@ function openPlannedDetailModal(id, startMode) {
         modal.className = 'record-detail-modal modal-backdrop-animate'; // 独立层，子弹窗可叠加
         plannedDetailModalEl = modal;
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width:420px;width:calc(100vw - 44px);box-sizing:border-box;max-height:86vh;overflow-y:auto;border-radius:20px;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-lg" style="overflow-y:auto;border-radius:20px">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#4f46e5;">' + (isEdit ? 'edit_note' : 'hiking') + '</span>' +
             '<span class="rd-tt" style="font-size:15px;font-weight:700;flex:1;color:#334155;">' + (isEdit ? '编辑计划' : '计划详情') + '</span>' +
@@ -4640,7 +4640,7 @@ function showCompleteOrDelayModal(tripId, tripName) {
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML =
-        '<div class="confirm-modal-content modal-fade-scale" style="width:calc(100vw - 44px);max-width:400px;box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event_repeat</span>完成 / 延期</div>' +
         '<div class="confirm-modal-message">「' + escapeHtml(tripName || '未命名计划') + '」的日子到了。已经走完就点「完成」，会转入徒步记录；还没走就点「延期」，改个新日期。</div>' +
         '<div style="display:flex;gap:10px;margin-top:12px;">' +
@@ -4666,7 +4666,7 @@ function showConfirmCompleteModal(tripId, tripName) {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
+<div class="confirm-modal-content modal-fade-scale mdl-sm">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #22c55e;">check_circle</span>
                 确认完成
@@ -5023,7 +5023,7 @@ function showMilestoneList() {
         var modal = document.createElement('div');
         modal.className = 'modal-backdrop-animate';
         modal.style.cssText = 'position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;background:' + (dark ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.35)') + ';padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width:440px;width:calc(100vw - 44px);box-sizing:border-box;max-height:70vh;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-lg" style="border-radius:20px;overflow:hidden;display:flex;flex-direction:column">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#f59e0b;">emoji_events</span>' +
             '<span style="font-size:15px;font-weight:700;flex:1;color:' + (dark ? '#fff' : '#334155') + ';">我的里程碑</span>' +
@@ -5122,7 +5122,7 @@ function showDeletePlannedTripConfirmModal(tripId, tripName) {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale">
+<div class="confirm-modal-content modal-fade-scale mdl-sm">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #dc2626;">warning</span>
                 确认删除

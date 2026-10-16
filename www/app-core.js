@@ -206,7 +206,7 @@ function showChangelogModal() {
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     // ★2026-09-06 标题去掉版本号；内容显示最近三个版本（本次/上次/上上次），本地内置不联网
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color:#667eea;">history_edu</span>更新日志</div>' +
         '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:420px;overflow-y:auto;" id="changelogBody">正在加载…</div>' +
         '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="changelogClose">关闭</button></div></div>';
@@ -1063,7 +1063,7 @@ function openPhotoUsageDetailModal() {
     if (document.getElementById('puModal')) return;   // 幂等：委托+行绑定双通道下防弹窗开两份
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" id="puModal" style="max-width:392px;width:calc(100vw - 44px);box-sizing:border-box;padding:18px 16px 14px;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md" id="puModal">' +
         '<div class="confirm-modal-title" style="font-size:16px;"><span class="material-icons" style="color:#667eea;">photo_library</span>照片占用</div>' +
         '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:2px;">' +
         '<div style="max-height:54vh;overflow-y:auto;padding-right:4px;" id="puScroll">' +
@@ -1184,7 +1184,7 @@ function confirmDeleteOrphanPhotos() {
         var sizeTxt = o.bytes >= 1048576 ? (o.bytes / 1048576).toFixed(1) + ' MB' : Math.ceil(o.bytes / 1024) + ' KB';
         var modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
-        modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#dc2626;">cleaning_services</span>清理孤立照片</div>' +
             '<div class="confirm-modal-message">发现 ' + o.count + ' 张<b>没用的缓存照片</b>（已不属于任何记录，约 ' + sizeTxt + '）。<br>记录里保存的照片不受影响。删除后释放空间，此操作不可撤销。</div>' +
             '<div class="confirm-modal-buttons"><button class="confirm-btn-cancel ripple-effect" id="orphan-cancel">取消</button>' +

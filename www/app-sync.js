@@ -478,7 +478,7 @@ function showUpdateModal(info) {
     var pal = changelogPalette();   // ★2026-09-18 与「更新日志」共用配色
     // ★2026-09-07 直装判定：本地已下载过且版本一致 → 不再重下，直接弹「立即安装」
     const localReady = hasLocalApkFor('v' + info.tag);
-    modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>发现新版本 v' + escapeHtml(info.tag) + '</div>' +
         '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;">' +
         '<div style="font-weight:600;margin-bottom:4px;">当前 v' + APP_VERSION + ' → 新 v' + escapeHtml(info.tag) + '</div>' +
@@ -688,7 +688,7 @@ function openSyncBindModal() {
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.id = 'syncBindModal';
     modal.innerHTML =
-        '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-md">' +
             '<div class="confirm-modal-title">' +
                 '<span class="material-icons" style="color: #4f46e5;">link</span>' +
                 '绑定账号' +
@@ -793,7 +793,7 @@ function showSyncInfoModal() {
             '<span style="color:' + VL + ';font-weight:600;text-align:right;' + (wrap ? 'word-break:break-all;min-width:0;' : '') + '">' + v + '</span></div>';
     };
     modal.innerHTML =
-        '<div class="confirm-modal-content modal-fade-scale" style="max-width: 360px;width:calc(100vw - 44px);box-sizing:border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-md">' +
             '<div class="confirm-modal-title">' +
                 '<span class="material-icons" style="color: #4f46e5;">cloud</span>' +
                 '网盘信息' +
@@ -1143,7 +1143,7 @@ function showRestoreFileModal(files) {
         </button>
     `).join('');
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px; width: 90vw;">
+<div class="confirm-modal-content modal-fade-scale mdl-md">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">cloud_download</span>
                 选择备份文件
@@ -1789,7 +1789,7 @@ async function showSyncStatusModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 320px;width:calc(100vw - 44px);box-sizing:border-box;">
+<div class="confirm-modal-content modal-fade-scale mdl-sm">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">sync_alt</span>
                 同步状态
@@ -2050,7 +2050,7 @@ function askConfirm(opts) {
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.id = 'askConfirmModal';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
                 '<div class="confirm-modal-title">' +
                     '<span class="material-icons" style="color: ' + (opts.danger ? '#dc2626' : '#4f46e5') + ';">' +
                     (opts.icon || 'help_outline') + '</span>' +
@@ -2102,7 +2102,7 @@ function showManageBackupsModal(files) {
         </div>
     `).join('');
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 92vw;">
+<div class="confirm-modal-content modal-fade-scale mdl-md">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">folder_open</span>
                 管理云端备份
@@ -2198,7 +2198,7 @@ function showExportModal() {
 
     const modalHtml = `
         <div id="exportModal" class="confirm-modal modal-backdrop-animate">
-            <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 90vw;">
+<div class="confirm-modal-content modal-fade-scale mdl-md">
                 <div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">backup</span>导出备份</div>
 
                 <div class="space-y-3">
@@ -2401,7 +2401,7 @@ function showImportModal() {
     modal.id = 'importMethodModal';
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-        <div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: 90vw;">
+<div class="confirm-modal-content modal-fade-scale mdl-md">
             <div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">upload_file</span>导入</div>
             <div class="space-y-3">
                 <button id="selectFileBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
@@ -2574,7 +2574,7 @@ function askRestoreSyncConfig(cfg) {
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.id = 'syncRestoreAskModal';
         modal.innerHTML =
-            '<div class="confirm-modal-content modal-fade-scale" style="max-width: 340px; width: calc(100vw - 44px); box-sizing: border-box;">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-md">' +
                 '<div class="confirm-modal-title">' +
                     '<span class="material-icons" style="color: #4f46e5;">cloud_download</span>' +
                     '发现网盘配置' +

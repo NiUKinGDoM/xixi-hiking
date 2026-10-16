@@ -6015,3 +6015,35 @@
                 font-size: 18px;
             }
         }
+
+        /* ===== 弹窗尺寸档位（★2026-10-16 统一）=====
+           改前：40 个弹窗各自内联 max-width —— 实测有 10 种取值（300/320/330/340/360/380/
+                 392/400/420/440），width 写法另有 4 套（calc(100vw - 44px) / 90vw / 92vw / 不写）
+                 ⇒ 同一块 390px 屏幕上实际宽度出现 8 种（246~350），同类功能宽度互不相同。
+                 其中 askConfirm 既没写 width 也没写 max-width，父容器又是 display:grid
+                 ⇒ 网格轨道按 max-content 自适应，宽度随文案漂移（短 246px ↔ 长 350px）。
+           现在：收敛成三档，全部改为显式 width，消灭碎片。
+                 mdl-sm 320px  极简确认 / 短提示 / 选择器
+                 mdl-md 360px  表单 / 说明 / 备份列表
+                 mdl-lg 400px  政策与日志正文 / 大卡片
+           ★手机（≤430px，覆盖所有竖屏）三档一律等宽 = calc(100vw - 44px)，彻底不再"乱"；
+             仅 >430px（平板 / 桌面）才按档分宽。想把手机上也改成"小框更小"，只需把下面
+             那个 @media 的 431px 调小即可，无需动 40 处调用点。
+           ★必须置于样式表末尾：与基类 .confirm-modal-content 同特异性，靠"后出现者胜"。 */
+        .confirm-modal-content.mdl-sm,
+        .confirm-modal-content.mdl-md,
+        .confirm-modal-content.mdl-lg {
+            /* ★必须显式 width：父容器 .modal-backdrop-animate 是 display:grid，
+               只给 max-width（或依赖基类 width:100%）会退化成 max-content 随内容跳。 */
+            width: calc(100vw - 44px);
+            box-sizing: border-box;
+            /* ★高度兜底：改前多数弹窗没有上限，长内容（政策/日志）在矮屏上会顶出可视区，
+               且 flex 居中时顶部滚不到。统一限高 + 内部滚动。 */
+            max-height: 86vh;
+            overflow-y: auto;
+        }
+        @media (min-width: 431px) {
+            .confirm-modal-content.mdl-sm { max-width: 320px; }
+            .confirm-modal-content.mdl-md { max-width: 360px; }
+            .confirm-modal-content.mdl-lg { max-width: 400px; }
+        }

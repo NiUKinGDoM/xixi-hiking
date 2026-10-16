@@ -12,8 +12,14 @@
  *   → 与其每次手工 grep，不如固化成体检项，随 checkall 一起跑。
  *
  * 判定规则（对每个含 `confirm-modal-content` 的标签）：
- *   ① 内联 style 出现 `max-width: N` ⇒ 必须同时有 `width:`（**非** max-width）
- *   ② 有 `width: calc(100vw - N)` ⇒ 必须同时有 `box-sizing: border-box`
+ *   ① ★2026-10-16 新增：必须挂尺寸档位 `mdl-sm` / `mdl-md` / `mdl-lg` 之一
+ *      —— 宽度由 app.css 里的档位统一提供（显式 width + box-sizing）。
+ *      背景：此前 40 个弹窗各自内联 max-width，实测出现 10 种取值、同屏 8 种实际宽度；
+ *      其中 askConfirm 既无 width 也无 max-width，grid 容器下退化成 max-content
+ *      ⇒ 宽度随文案漂移（短 246px ↔ 长 350px）。现全部收敛进三档。
+ *   ② 若内联 style 出现 `max-width: N` ⇒ 必须同时有 `width:`（**非** max-width）
+ *      （档位已提供宽度；此条用于拦截"又有人手写内联尺寸"的回退）
+ *   ③ 有 `width: calc(100vw - N)` ⇒ 必须同时有 `box-sizing: border-box`
  *      （否则 padding 会把这 100vw 撑破，弹窗溢出屏幕）
  *
  * 用法：
@@ -45,7 +51,10 @@ for (const rel of FILES) {
     const p = path.join(ROOT, rel);
     if (!fs.existsSync(p)) continue;
     const src = fs.readFileSync(p, 'utf8');
-    const re = /<[^>]*confirm-modal-content[^>]*>/g;
+    // ★2026-10-16 修正：原 `[^>]*` 会**跨行**匹配 —— app-sync.js 里 JS 的 `< 300) {`
+    //   一路吃到 43 行之后的真标签（实测单次匹配长 2306 字符），把 481 行的弹窗误报成 438 行、
+    //   且吞掉了那个真标签本身。加 `\n` 排除后只在同一行内匹配，行号才可信。
+    const re = /<[^>\n]*confirm-modal-content[^>\n]*>/g;
     let m;
     while ((m = re.exec(src)) !== null) {
         const tag = m[0];
@@ -55,7 +64,9 @@ for (const rel of FILES) {
         const hasCalc = /width\s*:\s*calc\(100vw/.test(style);
         const hasBox = /box-sizing\s*:\s*border-box/.test(style);
         const line = src.slice(0, m.index).split('\n').length;
+        const hasTier = /(^|\s)mdl-(sm|md|lg)([\s"']|$)/.test(tag);
         const why = [];
+        if (!hasTier) why.push('未挂尺寸档位（缺 mdl-sm / mdl-md / mdl-lg）——grid 容器下宽度会退化成按内容自适应、随文案跳');
         if (hasMaxW && !hasWidth) why.push('只写了 max-width 没有显式 width（grid 自适应用下宽度不确定）');
         if (hasCalc && !hasBox) why.push('width: calc(100vw - N) 缺 box-sizing: border-box（padding 会撑破）');
         const rec = { rel, line, name: describe(tag, src, m.index + tag.length), style, why };
@@ -77,9 +88,10 @@ if (bad.length) {
         for (const w of r.why) console.log(`      → ${w}`);
     }
     console.log('');
-    console.log('  修法：加 `width:calc(100vw - 44px);box-sizing:border-box;`（照抄导出弹窗那套）');
+        console.log('  修法：给标签加尺寸档位 class —— `mdl-sm`(320px) / `mdl-md`(360px) / `mdl-lg`(400px)，');
+        console.log('        手机端三档一律等宽 calc(100vw - 44px)；宽屏才分档。档位定义在 www/app.css 末尾。');
 } else if (!QUIET) {
-    console.log('✅ 弹窗宽度写法全部合规（共 ' + pass + ' 个弹窗容器：凡有明确宽度意图者均已锁定 width）');
+    console.log('✅ 弹窗宽度全部合规（共 ' + pass + ' 个容器：均已挂 mdl 档位、无残留内联尺寸）');
 }
 
 console.log(`===== 内联弹窗宽度: ${pass} 通过 / ${fail} 失败 =====`);
