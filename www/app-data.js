@@ -1001,8 +1001,12 @@ function ensureLightbox() {
         '<span id="lb-index" style="color:rgba(255,255,255,0.55);font-size:12px;flex-shrink:0;"></span>' +
         '<button id="lb-close" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>' +
         '</div>' +
-        // 图片（垂直空间留给上下控件）
-        '<img id="lb-img" style="position:relative;z-index:1;max-width:94%;max-height:56%;object-fit:contain;flex-shrink:1;min-height:0;transform-origin:center;will-change:transform;touch-action:pan-y;">' +
+        // 图片（占满标题栏与操作栏之间的全部剩余空间）
+        // ★2026-10-17 用户反馈「看照片时太小」：原 `max-height:56%` 是相对容器（已扣 28px 内边距后的
+        //   高度），390×844 屏上只有 ~441px；而扣掉标题栏/操作栏与两处 gap 后实际可用 ~680px
+        //   ⇒ 白白浪费 239px。现改为 flex:1 1 auto + min-height:0 让它撑满剩余空间，
+        //   max-height:100% 兜底、object-fit:contain 保证不变形、max-width:94% 保留左右呼吸。
+        '<img id="lb-img" style="position:relative;z-index:1;max-width:94%;max-height:100%;flex:1 1 auto;min-height:0;object-fit:contain;transform-origin:center;will-change:transform;touch-action:pan-y;">' +
         // ★2026-09-01 缩放指示（放大时显示 ×N，还原隐藏）
         '<div id="lb-zoom-ind" style="position:absolute;top:64px;right:16px;background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;display:none;z-index:5;"></div>' +
         // 底部操作栏（图片下方）
@@ -3681,12 +3685,16 @@ function mtnMergeRowHtml(key) {
     for (var k0 in m) { if (m[k0] && m[k0].to === key) sources.push(k0); }
     var txt;
     if (conn) txt = '已连接到「' + mtnLabelOf(m[key].to) + '」';
-    else if (sources.length) txt = '已并入 ' + sources.length + ' 座山';
-    else txt = '连接到另一座山';
-    return '<div style="text-align:center;margin-top:10px;">' +
-        '<button type="button" class="mtn-merge-btn" data-mtn-key="' + escapeHtml(key) + '" ' +
-        'style="background:transparent;border:none;color:#64748b;font-size:11px;cursor:pointer;padding:4px 8px;border-radius:8px;">' +
-        '<span class="material-icons" style="font-size:13px;vertical-align:-2px;">link</span> ' + escapeHtml(txt) + '</button></div>';
+    else if (sources.length) txt = '已并入 ' + sources.length + ' 座';
+    // ★2026-10-17 用户反馈：「山册下每一个打开后都有『连接到另一座山』那句话，有点臃肿」
+    //   ⇒ 未连接时收敛成 2 字「连接」（状态文案保留，因为「已连接到 X / 已并入 N 座」是有信息量的）；
+    //     同时把这行的视觉权重压低：下距 10→6px、内边距 4/8→2/6px、颜色 #64748b→#94a3b8。
+    else txt = '连接';
+    // ★2026-10-17 用户：「可不可以别单独一行了」→ 本函数只返回按钮本身，
+    //   由调用处与「最近一次」并排成一行（不再自带一行 + 上下边距）。
+    return '<button type="button" class="mtn-merge-btn" data-mtn-key="' + escapeHtml(key) + '" ' +
+        'style="background:transparent;border:none;color:#94a3b8;font-size:11px;cursor:pointer;padding:2px 6px;border-radius:8px;white-space:nowrap;flex-shrink:0;">' +
+        '<span class="material-icons" style="font-size:13px;vertical-align:-2px;">link</span> ' + escapeHtml(txt) + '</button>';
 }
 // 连接弹窗（选目标 + 自定义名字）
 function openMtnMergeDialog(key) {
@@ -3906,10 +3914,14 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
         var ldays = Math.floor((Date.now() - lastTs) / 86400000);
         var ld0 = new Date(lastTs);
         var ldate = ld0.getFullYear() + '-' + String(ld0.getMonth() + 1).padStart(2, '0') + '-' + String(ld0.getDate()).padStart(2, '0');
-        lastTxt = '<div class="mb-last" style="text-align:center;font-size:11px;margin-top:6px;opacity:0.66;">' +
+        lastTxt = '<div class="mb-last" style="font-size:11px;opacity:0.66;">' +
             (n > 1 ? '最近一次' : '唯一一次') + ' · ' + (ldays <= 0 ? '今天' : ldays + ' 天前') + '（' + ldate + '）</div>';
     }
-    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + lastTxt + mtnMergeRowHtml(k) + '</div>';
+    // ★2026-10-17 「最近一次」与「连接」并排一行（用户：连接按钮别单独占一行）
+    //   无「最近一次」时用一个空 span 占位，保证「连接」仍靠右对齐。
+    var footRow = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;">' +
+        (lastTxt || '<span></span>') + mtnMergeRowHtml(k) + '</div>';
+    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + footRow + '</div>';
     return { head: head, drawer: drawer };
 }
 

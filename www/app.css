@@ -5941,6 +5941,37 @@
              · 主卡字号：13px 下「总记录数」仅 **≤260px** 折行（280/300/320/360 实测均单行）
                ⇒ 旧阈值 350 属过度适配，一并收进 ≤300。
              · 山册 3×2 网格 / 设置项换行：均为 260px 抽屉与外屏场景，同收进 ≤300。 */
+        /* ★★2026-10-17 山册抽屉统计（≤430px 全手机）
+           基础样式是 flex 一行均分 6 项（`.mb-stat > div { flex: 1 }`）—— 实测各档位格宽：
+             320px→45px / 350→50 / 375→54 / 390→57 / 412→60
+           而最长值「老王/小李/张三」在 15px 下需 ~104px ⇒ 折 3 行；「12.4km」「2860m」直接溢出。
+           ★根因是**均分**不可能给长值留空间 ⇒ 改 3 列 × 2 行网格（每格 ≈ 容器/3 ≈ 110px），
+             值字号 15→12 并允许任意断行。
+           ★阈值取 430（= 手机上限）：即便 412px 屏，6 项均分仍让「一起走过」折 2 行 ⇒ 全手机都应改。
+             原先这条只写在 ≤300 内，导致 301~430 的机型全部回退到均分（用户 2026-10-17 反馈「又挤在一起了」）。 */
+        @media (max-width: 430px) {
+            .mb-stat {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                row-gap: 8px;
+            }
+            .mb-stat > div {
+                min-width: 0;
+                padding: 0 2px;
+            }
+            .mb-stat .sv {
+                font-size: 12px;
+                line-height: 1.3;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+            .mb-stat .sl {
+                font-size: 9px;
+                line-height: 1.25;
+            }
+        }
+
         @media (max-width: 374px) {
             /* ★唯一在「窄屏直板机」上也必须生效的一条：矮卡改纵向（图标在上、文字在下）
                ⇒ 文字区独占整行宽，3 列不再需要退化成 1 列。 */
@@ -5991,29 +6022,9 @@
                 white-space: normal;
                 line-height: 1.2;
             }
-            /* 山册：抽屉里 6 项统计原为 flex 一行均分 —— 窄屏抽屉仅约 200px，每格只剩 ~31px，
-                 而「一起走过」的值是「老王/小李/张三」这类长串，溢出的文字会压到相邻格上
-                 （用户反馈：展开后数据字重合）。⇒ 改 3 列 × 2 行网格，值字号 15→12 且允许折行。 */
-            .mb-stat {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                row-gap: 8px;
-            }
-            .mb-stat > div {
-                min-width: 0;
-                padding: 0 2px;
-            }
-            .mb-stat .sv {
-                font-size: 12px;
-                line-height: 1.3;
-                white-space: normal;
-                overflow-wrap: anywhere;
-                word-break: break-word;
-            }
-            .mb-stat .sl {
-                font-size: 9px;
-                line-height: 1.25;
-            }
+            /* 山册统计已上移到 @media (max-width: 430px) —— 见上方「山册统计」块。
+               ★2026-10-17：它原先只写在 ≤300，导致 301~430 的机型回到「flex 一行均分」，
+                 6 项每格仅 45~60px、「一起走过」折 3 行且「12.4km/2860m」直接溢出。 */
             /* 设置项改「可换行」三件套：原布局（图标38 + 文字 flex:1 min-width:0 + 开关）在
                   260px 外屏下把文字块挤到只剩 44px（「跟随系统外观模式」被压成 6 行）。
                   现给文字块起码 130px 宽；放不下时右侧控件自动换到下一行并靠右。 */
