@@ -149,9 +149,15 @@ if (gateway === 'xixi-hiking') {
 }
 
 const target = first.target;
-const expected = UA_KIND === 'android' ? 'apk' : 'webapp';
+// ★2026-10-17 修正：安卓分支现在返回的是 `mirror:<镜像名>`（如 mirror:gh-proxy.com）——
+//   镜像直链是设计如此（不跳 GitHub 网页、直接下 APK）。原判定只认 'apk'
+//   ⇒ 每次发版都会误报「分流异常」，而实际上已经正确跳到 GitHub 拿到了真 APK
+//   （可对照上面的「最终响应体前两字节 = PK」+ 文件大小两项确认）。
+const androidOk = target === 'apk' || /^mirror:/.test(target || '');
+const okTarget = UA_KIND === 'android' ? androidOk : target === 'webapp';
+const expected = UA_KIND === 'android' ? 'apk 或 mirror:<镜像>' : 'webapp';
 if (target) {
-  if (target === expected) console.log('  ✅ 分流正确：' + UA_KIND + ' → ' + target);
+  if (okTarget) console.log('  ✅ 分流正确：' + UA_KIND + ' → ' + target);
   else { console.log('  ❌ 分流异常：' + UA_KIND + ' 期望 ' + expected + '，实际 ' + target); fail++; }
 } else if (UA_KIND !== 'android' || !wentToGithub) {
   console.log('  ⚠ 未拿到 X-Download-Target 头（可能是 CF 改写了响应头）');
