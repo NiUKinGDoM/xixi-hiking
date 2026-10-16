@@ -2698,13 +2698,17 @@
            ★2026-09-23 补：把 .glass-btn 一并纳入 —— 中性按钮改造后（check-go-btn → glass-btn）
            没内联尺寸的那几个（日期选择器「确定」/ 保存二维码 / 同意并继续 / 分享）不再命中本规则，
            与旁边的取消按钮出现「一大一小」 */
+        /* ★★2026-10-17 用户定调「按钮字号统一」
+           ★这里是弹窗按钮的**真正生效层**：下面 4 个 class 的尺寸全被 !important 锁死，
+             所以 JS 里各弹窗写的 13 / 13.5 / 14px 内联字号**本来就被这条覆盖**（等于白写）。
+             把内联全删干净后，改这里才是真的改到外观 —— 统一为 16px（与 .confirm-btn-cancel 的声明一致）。 */
         .confirm-modal-buttons .confirm-btn-cancel,
         .confirm-modal-buttons .confirm-btn-delete,
         .confirm-modal-buttons .check-go-btn,
         .confirm-modal-buttons .glass-btn {
             padding: 10px 24px !important;
             border-radius: 12px !important;
-            font-size: 14px !important;
+            font-size: 16px !important;
             min-width: 96px !important;
             font-weight: 600 !important;
             display: inline-flex !important;
@@ -2727,7 +2731,10 @@
                 inset 0 -1px 0 rgba(0, 0, 0, 0.03);
         }
         .confirm-modal-title {
-            font-size: 20px;
+            /* ★2026-10-17 窄屏自动缩字号：≤320px 时「发现新版本 vX.Y.Z」这类含版本号的
+               长标题在 20px 下会折成两行 ⇒ clamp 让 320px 降到 18px（仍单行），
+               ≥375px 恢复 20px，中间连续过渡、不新增断点。 */
+            font-size: clamp(18px, 5.2vw, 20px);
             font-weight: 900;
             color: #0f172a;   /* ★v1.1.2.8 浅色加深（原 #111827 偏淡） */
             margin-bottom: 6px;  /* 2026-08-11 紧凑：原 8px */
@@ -5960,18 +5967,9 @@
             .ov-mini-row {
                 grid-template-columns: 1fr;
             }
-            /* 底栏收窄：按钮内边距 18→8px、底栏内边距 16→10px，确保 <302px 也能完整放下 */
-            .bottom-tabbar {
-                padding: 10px 10px;
-                gap: 0;
-                max-width: calc(100vw - 12px);
-            }
-            .bottom-tabbar .tab-btn {
-                padding: 8px 8px;
-            }
-            .bottom-tabbar .tab-btn + .tab-btn {
-                margin-left: 2px;
-            }
+            /* ★2026-10-17 用户定调：「底栏在任何分辨率都不用改窄」—— 底栏自然宽 301.9px，
+               实测在 ≥320px 屏上右边界 311 < 320 完全放得下，故原有「padding 18→8 + gap 0」
+               的硬收窄规则已整段删除（不再为窄屏改按钮尺寸）。 */
             /* 同步状态文案允许折行，不再截断 */
             .sync-health-text,
             .sync-dim .sync-dim-tx {

@@ -1069,11 +1069,11 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md" id
         '<div style="max-height:54vh;overflow-y:auto;padding-right:4px;" id="puScroll">' +
         '<div style="font-size:12px;color:#64748b;padding:16px 2px;text-align:center;">统计中…</div></div></div>' +
         '<div class="confirm-modal-buttons">' +
-        // ★2026-10-16 统一：弹窗内「flex:1 平分的操作按钮」字号 = 14px
-        //   （与计划详情 pd-edit-btn/pd-complete-btn、计划过期 cod-* 同档；原为 13.5px / 13px 两种特例，
-        //     且「优化」padding 7px 与「知道了」10px 不等 → 两按钮一高一矮）
-        '<button class="confirm-btn-cancel ripple-effect" type="button" id="puClose" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;">知道了</button>' +
-        '<button class="glass-btn ripple-effect" type="button" id="puOpt" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">优化</button></div></div>';
+        // ★2026-10-17 全站弹窗按钮字号统一 = 16px（继承 .confirm-btn-cancel，不再有 13/13.5/14px 特例）；
+        //   几何仍按「flex:1 平分」：padding 统一 10px 0、圆角 12px（原「优化」padding 7px 与「知道了」10px
+        //   不等 → 两按钮一高一矮，已修）。
+        '<button class="confirm-btn-cancel ripple-effect" type="button" id="puClose" style="flex:1;padding:10px 0;border-radius:12px;">知道了</button>' +
+        '<button class="glass-btn ripple-effect" type="button" id="puOpt" style="flex:1;padding:10px 0;border-radius:12px;font-weight:600;">优化</button></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 

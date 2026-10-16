@@ -37,6 +37,7 @@ const probe = (label, fn) => {
     按钮高: b ? b.offsetHeight : null,
     按钮数: b ? b.children.length : 0,
     按钮外边距上: gt(b, 'marginTop'),
+    按钮字号: b && b.children[0] ? getComputedStyle(b.children[0]).fontSize : null,
   });
 };
 

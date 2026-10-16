@@ -27,6 +27,7 @@ const probe = (label, fn) => {
     高: el.offsetHeight,
     越界: el.offsetWidth > vw - 8,
     标题宽: t ? t.offsetWidth : null,
+    标题字号: t ? parseFloat(getComputedStyle(t).fontSize) : null,
     标题折行: t ? Math.round(t.clientHeight / (parseFloat(getComputedStyle(t).lineHeight) || 24)) > 1 : null,
     按钮行宽: b ? b.offsetWidth : null,
     按钮溢出: b ? b.scrollWidth > b.clientWidth + 1 : null,

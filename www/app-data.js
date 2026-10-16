@@ -488,7 +488,7 @@ function recordViewBodyHTML(r) {
         // ★2026-09-05 小日记：记录弹窗里的回忆段落（编辑时写的 notes；有内容才展示）
         // ★2026-09-06 小日记字色提亮：标签/图标加深至 #334155（原 #64748b 偏浅）、正文加深 #1e293b；dark 由 .jd-lab/.jd-body CSS 覆盖
         (r.notes && String(r.notes).trim() ? '<div style="background:rgba(148,163,184,0.1);border-radius:12px;padding:10px 12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;"><span class="material-icons jd-ic" style="font-size:14px;color:#334155;">edit_note</span><span class="jd-lab" style="font-size:12px;color:#334155;letter-spacing:0.3px;">小日记</span></div><div class="jd-body" style="font-size:13px;color:#1e293b;line-height:1.75;white-space:pre-wrap;word-break:break-word;">' + escapeHtml(String(r.notes).trim()) + '</div></div>' : '') +
-        '<button id="rd-edit-btn" class="glass-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
+        '<button id="rd-edit-btn" class="glass-btn ripple-effect" type="button" style="width:100%;padding:10px 0;border-radius:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑这条记录</button>';
 }
 
 // 编辑态弹窗 body（与行内编辑同 id 体系：保存/照片/日期/难度/心情/天气全复用）
@@ -1397,8 +1397,8 @@ function openDateTimePicker(inputId, currentValue) {
             '</div>' +
             '</div></div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="confirm-btn-cancel ripple-effect" id="dtpCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
-            '<button class="glass-btn ripple-effect" id="dtpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" id="dtpCancel" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
+            '<button class="glass-btn ripple-effect" id="dtpOk" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         document.getElementById('dtpCancel').addEventListener('click', function () { document.body.removeChild(modal); });
@@ -1492,8 +1492,8 @@ function openDifficultyPicker(inputId) {
             '<div class="df-grid" id="dfGrid"></div>' +
             '</div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="confirm-btn-cancel ripple-effect" id="dfCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
-            '<button class="glass-btn ripple-effect" id="dfOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" id="dfCancel" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
+            '<button class="glass-btn ripple-effect" id="dfOk" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         let selected = current;
@@ -1550,8 +1550,8 @@ function openMoodWeatherPicker(type, recordId) {
             '<div class="mwp-clear-wrap"><button type="button" class="mwp-clear-btn ripple-effect" id="mwpClear">清空</button></div>' +
             '</div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="confirm-btn-cancel ripple-effect" id="mwpCancel" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
-            '<button class="glass-btn ripple-effect" id="mwpOk" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" id="mwpCancel" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">取消</button>' +
+            '<button class="glass-btn ripple-effect" id="mwpOk" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         let selected = current;
@@ -2177,8 +2177,8 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' 
         '<div style="font-size:13px;color:' + bodyTxt + ';line-height:1.7;">徒步小记是 XiXi 亲手做的小软件，完全免费、没有广告。如果你用得开心，欢迎请作者喝杯奶茶支持一下——纯自愿，不付费也拥有全部功能。</div>' +
         '</div>' +
         '<div class="confirm-modal-buttons">' +
-        '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-size:13px;font-weight:700;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:16px;">chat</span>微信</button>' +
-        '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-size:13px;font-weight:700;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:16px;">account_balance_wallet</span>支付宝</button>' +
+        '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-weight:700;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:16px;">chat</span>微信</button>' +
+        '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-weight:700;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:16px;">account_balance_wallet</span>支付宝</button>' +
         '<button class="confirm-btn-cancel ripple-effect" id="support-close" style="flex:0 0 auto;padding:9px 16px;">关闭</button>' +
         '</div></div>';
     document.body.appendChild(modal);
@@ -2608,8 +2608,8 @@ function openHmYmPicker() {
             '<div class="hmyp-months" id="hmypMonths"></div>' +
             '</div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="confirm-btn-cancel ripple-effect" id="hmyp-cancel" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">取消</button>' +
-            '<button class="glass-btn ripple-effect" id="hmyp-ok" type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;">确定</button>' +
+            '<button class="confirm-btn-cancel ripple-effect" id="hmyp-cancel" type="button" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;">取消</button>' +
+            '<button class="glass-btn ripple-effect" id="hmyp-ok" type="button" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;">确定</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         const yrsEl = modal.querySelector('#hmypYrs');
@@ -4058,7 +4058,7 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' 
             '<div class="hcm-list" data-count="' + srcs.length + '" style="max-height:42vh;">' + items + '</div>' +
             '</div></div></div>' +
             '<div class="confirm-modal-buttons">' +
-            '<button class="glass-btn ripple-effect" id="apOk" disabled type="button" style="padding:10px 24px;border-radius:12px;font-size:14px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;margin-top:2px;">填充</button>' +
+            '<button class="glass-btn ripple-effect" id="apOk" disabled type="button" style="padding:10px 24px;border-radius:12px;min-width:96px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:1;margin-top:2px;">填充</button>' +
             '</div></div>';
         document.body.appendChild(modal);
         var field = modal.querySelector('#apField');
@@ -4482,8 +4482,8 @@ function plannedViewBodyHTML(t) {
         '<div class="rd-met" style="background:rgba(148,163,184,0.1);border-radius:10px;padding:8px 12px;"><div style="font-size:11px;color:#334155;">难度</div><div style="font-size:15px;font-weight:700;color:#1e293b;margin-top:2px;">' + t.difficulty + ' 级</div></div>' +
         '</div>' +
         '<div style="display:flex;gap:10px;">' +
-        '<button id="pd-edit-btn" class="glass-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑计划</button>' +
-        '<button id="pd-complete-btn" class="glass-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;background:rgba(22,163,74,0.16);border:1px solid rgba(22,163,74,0.5);color:#15803d;" onclick="showConfirmCompleteModal(\'' + t.id + '\',\'' + escapeHtml(t.name).replace(/'/g, "\\'") + '\')">完成了 ✓</button>' +
+        '<button id="pd-edit-btn" class="glass-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">编辑计划</button>' +
+        '<button id="pd-complete-btn" class="glass-btn ripple-effect" type="button" style="flex:1;padding:10px 0;border-radius:12px;font-weight:600;display:flex;align-items:center;justify-content:center;background:rgba(22,163,74,0.16);border:1px solid rgba(22,163,74,0.5);color:#15803d;" onclick="showConfirmCompleteModal(\'' + t.id + '\',\'' + escapeHtml(t.name).replace(/'/g, "\\'") + '\')">完成了 ✓</button>' +
         '</div>';
 }
 // 计划编辑态 body（id 沿用 edit-planned-*，保存/取消复用 savePlannedTrip/cancelPlannedEdit）
@@ -4644,8 +4644,8 @@ function showCompleteOrDelayModal(tripId, tripName) {
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event_repeat</span>完成 / 延期</div>' +
         '<div class="confirm-modal-message">「' + escapeHtml(tripName || '未命名计划') + '」的日子到了。已经走完就点「完成」，会转入徒步记录；还没走就点「延期」，改个新日期。</div>' +
         '<div style="display:flex;gap:10px;margin-top:16px;">' +
-        '<button class="glass-btn ripple-effect" id="cod-complete" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">完成</button>' +
-        '<button class="glass-btn ripple-effect" id="cod-delay" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">延期</button>' +
+        '<button class="glass-btn ripple-effect" id="cod-complete" style="flex:1;padding:10px 0;border-radius:12px;font-weight:600;">完成</button>' +
+        '<button class="glass-btn ripple-effect" id="cod-delay" style="flex:1;padding:10px 0;border-radius:12px;font-weight:600;">延期</button>' +
         '</div>' +
         '<div class="confirm-modal-buttons">' +
         '<button class="confirm-btn-cancel ripple-effect" id="cod-cancel" style="flex:1;">取消</button>' +
@@ -4931,7 +4931,7 @@ function showMilestoneCelebration(ms, st) {
             '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">' + escapeHtml(ms.title) + '</div>' +
             '<div style="font-size:14px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';">' + escapeHtml(ms.desc) + '</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
-            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">收下</button>';
+            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-weight:700;">收下</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var escHandler = function (e) { if (e.key === 'Escape') close(); };
@@ -5063,7 +5063,7 @@ function showMilestoneSummary(list, st) {
             '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">解锁了 ' + list.length + ' 个</div>' +
             '<div style="font-size:13px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';line-height:1.7;">' + names + '</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
-            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">去看看</button>';
+            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-weight:700;">去看看</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var escHandler = function (e) { if (e.key === 'Escape') close(); };
@@ -5098,7 +5098,7 @@ function showPlanCompleteCelebration(tripName, onContinue) {   // ★2026-09-04 
             '<div style="font-size:20px;font-weight:800;margin:10px 0 6px;color:' + (dark ? '#fff' : '#0f172a') + ';">完成！</div>' +
             '<div style="font-size:15px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.92)' : '#334155') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">「' + escapeHtml(tripName || '未命名计划') + '」已加入徒步记录</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:8px;line-height:1.7;">新的足迹已点亮，期待下一座山 🏔️</div>' +
-            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-size:14px;font-weight:700;">继续补全</button>';
+            '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-weight:700;">继续补全</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var close = function () {
