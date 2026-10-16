@@ -1506,7 +1506,9 @@
             gap: 9px;
             align-items: flex-start;
             cursor: pointer;
-            font-size: 12.5px;
+            /* ★2026-10-17 设计统一性：12.5px 是全站唯一的非标字号（梯度为 16/13/12/11/10）
+               ⇒ 归入 13px 档 */
+            font-size: 13px;
             font-weight: 600;
             color: #1e293b;
             line-height: 1.5;
@@ -1606,7 +1608,7 @@
             color: rgba(255, 255, 255, 0.55);
         }
         .sync-restore-warn {
-            font-size: 12.5px;
+            font-size: 13px;   /* ★2026-10-17 同 .chk-row：12.5px 非标值已归入 13px 档 */
             font-weight: 700;
             color: #b45309;
         }
