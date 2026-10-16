@@ -206,13 +206,17 @@ if (mode === 'publish') {
   // ③.6 线上核对：官网更新日志段是否已随部署刷新
   console.log('\n▶ 官网更新日志段线上核对（CF Pages 部署站点 site/ 是否已刷新）');
   if (!DRY) {
+    // ★2026-10-17 修复：`rel-ver` 版本块在 **site/features.html**（更新日志页），不在首页 `/`
+    //   —— 原实现查 `/` 永远找不到该块 ⇒ 每次发版都误报 TIMEOUT（同 dlcheck 那类"判定规则与实现脱节"）。
     const py2 = `
 import urllib.request, time, re, sys
 op = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-url = 'https://xixi-hiking-site.pages.dev/'
+url = 'https://xixi-hiking-site.pages.dev/features'
+UA = {'User-Agent': 'Mozilla/5.0 (compatible; xixi-release-check/1.0)'}
 for i in range(6):
     try:
-        t = op.open(url + '?v=' + str(int(time.time())), timeout=20).read().decode('utf-8','ignore')
+        req = urllib.request.Request(url + '?v=' + str(int(time.time())), headers=UA)
+        t = op.open(req, timeout=20).read().decode('utf-8','ignore')
         m = re.search(r'<div class="rel-ver">(v[\\d.]+)<span>', t)
         got = m.group(1) if m else '?'
         if got == '${tag}':
@@ -224,8 +228,8 @@ print('TIMEOUT'); sys.exit(1)
 `;
     const r2 = spawnSync('python', ['-c', py2], { encoding: 'utf8' });
     console.log('   ' + ((r2.stdout || '').trim().split('\n').slice(-1)[0] || ''));
-    if (r2.status !== 0) console.log('   ⚠ 官网首页版本未在等待窗口内刷新，请稍后手动确认 xixi-hiking-site.pages.dev');
-    else console.log('   ✅ 官网首页已显示 ' + tag);
+    if (r2.status !== 0) console.log('   ⚠ 官网更新日志页未在等待窗口内刷新，请稍后手动确认 xixi-hiking-site.pages.dev/features');
+    else console.log('   ✅ 更新日志页已显示 ' + tag);
   }
 
   // ③ pages.dev 校验
@@ -237,9 +241,11 @@ print('TIMEOUT'); sys.exit(1)
 import urllib.request, time, re, sys
 url = 'https://xixi-hiking.pages.dev/app-core.js'
 op = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-for i in range(8):
+UA = {'User-Agent': 'Mozilla/5.0 (compatible; xixi-release-check/1.0)'}
+for i in range(12):
     try:
-        t = op.open(url + '?v=' + str(int(time.time())), timeout=20).read().decode('utf-8','ignore')
+        req = urllib.request.Request(url + '?v=' + str(int(time.time())), headers=UA)
+        t = op.open(req, timeout=20).read().decode('utf-8','ignore')
         m = re.search(r"APP_VERSION = '([\\d.]+)'", t)
         if m and m.group(1) == '${tag.replace('v', '')}':
             print('OK ' + m.group(1)); sys.exit(0)
