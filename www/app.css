@@ -2737,14 +2737,23 @@
             font-family: 'SimSun', '宋体', 'STSong', 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', serif;
             letter-spacing: 0.02em;
         }
+        /* ★★2026-10-16 弹窗内部间距统一 —— 改前这里**没有任何间距声明**，
+           全靠各弹窗 message 内部 <p> 的默认 margin 偶然撑开 ⇒ 实测「正文 → 按钮」出现
+           0px(14 个) / 2px / 14px / 16px(5 个) **五种**，常用确认弹窗正文紧贴按钮、长文弹窗却有空隙。 */
         .confirm-modal-message {
             color: #1f2937;  /* ★v1.1.2.8 浅色加深（原 #4b5563 偏淡） */
+            margin: 0;       /* ★清掉外部下距，改由按钮组的 margin-top 统一提供 */
+        }
+        /* 清掉 message 内部最后一段的下距，避免与按钮组上距叠加成 32px */
+        .confirm-modal-message > :last-child {
+            margin-bottom: 0;
         }
         #photoUsageRow:active { background: rgba(100, 116, 139, 0.10); }
         .confirm-modal-buttons {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            margin-top: 16px;   /* ★★统一「正文/标题 → 按钮」间距（改前 0/2/14/16 五种） */
         }
         .confirm-btn-cancel {
             /* ★2026-09-01 浅色统一可见灰蓝（根治白玻璃底在白底不可见）：与行内删除/取消按钮同配方，
@@ -5912,16 +5921,46 @@
            .bottom-tabbar / .bottom-tabbar .tab-btn / .ov-mini-row / .sync-health-text
            定义全在文件后段（900~2000 行），同特异性下【后出现者胜】——
            放前面会被反向覆盖（2026-10-09 真实踩到：改了一次发现完全没生效）。 */
-        /* ★2026-10-09 折叠屏【外屏】适配（窄屏；小折叠外屏实测约 260~350px）
-           实测三处问题（仅 ≤350px 出现，≥360px 全干净）：
-             ① 底栏撑破页面：4 个按钮 padding 8px 18px → 底栏总宽 302px，
-                视口 260px 时整页横向溢出 35px（页面能左右拖动）
-             ② 概览三张矮卡固定 3 列 → 列宽仅 ~70px，而「平均海拔」需 46px
-                只分到 15~41px → 被截断显示成「平均…」
-             ③ 设置页同步状态文案 nowrap + ellipsis → 「还没连接云端 · 点这里配置」被截成「还没连接云端 · 点…」
-           ⇒ 阈值取 350px（常规手机 ≥360px 布局零影响）。 */
-        @media (max-width: 350px) {
-            /* ① 底栏收窄：按钮内边距 18px→8px、底栏内边距 16px→10px，确保 <302px 也能完整放下 */
+        /* ★★2026-10-16 窄屏适配重构（原「折叠屏外屏 ≤350px」块）
+           旧版按 350px 一刀切 ⇒ 320/350px 的**普通直板机**也整块走「外屏紧凑版」：
+           底栏从 302px 砍到 198px（实测 320px 屏上 302px 完全放得下、零溢出），
+           矮卡从 3 列变 1 列 → 用户反馈「窄一点的直板机也被识别成折叠屏外屏」。
+           ⇒ 现按「每条规则的真实需要」拆两段，只有矮卡这一条真的需要放宽到 374：
+             · 矮卡：横向布局下 `.ov-txt` 可用宽 = 列宽 − 53px，需 ≥52px（4 汉字 ×13px）
+               ⇒ 列宽 ≥105px ⇒ 行宽 ≥331px ⇒ 视口 ≥375px。**唯一需要 ≤374 的规则。**
+             · 底栏：自然宽 302px，居中需视口 ≥302px 才不越界（320px 实测右边界 311 ✓）⇒ 只需 ≤300。
+             · 主卡字号：13px 下「总记录数」仅 **≤260px** 折行（280/300/320/360 实测均单行）
+               ⇒ 旧阈值 350 属过度适配，一并收进 ≤300。
+             · 山册 3×2 网格 / 设置项换行：均为 260px 抽屉与外屏场景，同收进 ≤300。 */
+        @media (max-width: 374px) {
+            /* ★唯一在「窄屏直板机」上也必须生效的一条：矮卡改纵向（图标在上、文字在下）
+               ⇒ 文字区独占整行宽，3 列不再需要退化成 1 列。 */
+            .ov-mini {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 3px;
+            }
+            .ov-mini .ov-ic {
+                font-size: 16px;
+            }
+        }
+
+        /* ★★≤300px 真·超窄屏（折叠屏外屏实测 260~300px）—— 其余规则都只在这里生效 */
+        @media (max-width: 300px) {
+            /* 矮卡：1 列宽度已足够 ⇒ 恢复横排（纵向会让卡片变三行高），图标回 18px */
+            .ov-mini {
+                flex-direction: row;
+                align-items: center;
+                gap: 9px;
+            }
+            .ov-mini .ov-ic {
+                font-size: 18px;
+            }
+            /* 矮卡 1 列（超窄屏下列宽不足以放 4 字标签） */
+            .ov-mini-row {
+                grid-template-columns: 1fr;
+            }
+            /* 底栏收窄：按钮内边距 18→8px、底栏内边距 16→10px，确保 <302px 也能完整放下 */
             .bottom-tabbar {
                 padding: 10px 10px;
                 gap: 0;
@@ -5933,18 +5972,14 @@
             .bottom-tabbar .tab-btn + .tab-btn {
                 margin-left: 2px;
             }
-            /* ② 概览矮卡 3 列 → 1 列（列宽不足必然截断标签） */
-            .ov-mini-row {
-                grid-template-columns: 1fr;
-            }
-            /* ③ 同步状态文案允许折行，不再截断 */
+            /* 同步状态文案允许折行，不再截断 */
             .sync-health-text,
             .sync-dim .sync-dim-tx {
                 white-space: normal;
                 overflow: visible;
                 text-overflow: clip;
             }
-            /* ④ 顶栏：标题原为 whitespace-nowrap（不可收缩），窄屏下把右侧 FPS 挤出屏幕右边界
+            /* 顶栏：标题原为 whitespace-nowrap（不可收缩），窄屏下把右侧 FPS 挤出屏幕右边界
                   → 整个页面横向溢出 35px（260px 屏实测）。改为允许折行 + 容器可收缩。 */
             .header-bar > .flex:first-child {
                 min-width: 0;
@@ -5956,10 +5991,9 @@
                 white-space: normal;
                 line-height: 1.2;
             }
-            /* ★⑤ 山册（窄屏）：抽屉里 6 项统计原为 flex 一行均分 —— 窄屏抽屉仅约 200px，
-                 每格只剩 ~31px，而「一起走过」的值是「老王/小李/张三」这类长串，
-                 溢出的文字会压到相邻格上（用户反馈：展开后数据字重合）。
-                 ⇒ 改成 3 列 × 2 行网格，值字号 15→12 且允许折行，彻底消除横向挤压。 */
+            /* 山册：抽屉里 6 项统计原为 flex 一行均分 —— 窄屏抽屉仅约 200px，每格只剩 ~31px，
+                 而「一起走过」的值是「老王/小李/张三」这类长串，溢出的文字会压到相邻格上
+                 （用户反馈：展开后数据字重合）。⇒ 改 3 列 × 2 行网格，值字号 15→12 且允许折行。 */
             .mb-stat {
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5980,10 +6014,9 @@
                 font-size: 9px;
                 line-height: 1.25;
             }
-            /* ★⑥ 设置项改「可换行」三件套（2026-10-12）：原布局（图标38 + 文字 flex:1 min-width:0 + 开关）
-                  在 260px 外屏下把文字块挤到只剩 44px —— 「跟随系统外观模式」被压成 6 行、
-                  「数据变更后自动上传备份」变 5 行。现给文字块起码 130px 宽；放不下时
-                  右侧控件（开关 / 按钮）自动换到下一行并靠右，文字恢复正常单行。 */
+            /* 设置项改「可换行」三件套：原布局（图标38 + 文字 flex:1 min-width:0 + 开关）在
+                  260px 外屏下把文字块挤到只剩 44px（「跟随系统外观模式」被压成 6 行）。
+                  现给文字块起码 130px 宽；放不下时右侧控件自动换到下一行并靠右。 */
             .settings-item {
                 flex-wrap: wrap;
                 row-gap: 10px;
@@ -6001,13 +6034,13 @@
                 row-gap: 10px;
             }
             /* autoSyncCard / syncAccountCard 的内层横向 wrapper 也需允许换行 ——
-               它们不是 .settings-item，不受上面的规则管；不加会在 260px 下把开关挤出屏幕（实测 +23px） */
+               它们不是 .settings-item，不受上面的规则管；不加会在 260px 下把开关挤出屏幕（+23px） */
             #autoSyncCard > div,
             #syncAccountCard > div {
                 flex-wrap: wrap;
                 row-gap: 10px;
             }
-            /* ★⑦ 概览 4 主卡：标签 13→12px、图标 24→18px，避免「最高海拔」被折成「最高海 / 拔」 */
+            /* 概览 4 主卡：标签 13→12px、图标 24→18px（实测仅 ≤260px 时「总记录数」折行） */
             .ov-main-grid .stat-card p:first-of-type {
                 font-size: 12px;
             }

@@ -1792,7 +1792,7 @@ function showDataInfoModal() {
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
             </div>
-            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:16px;">   <!-- ★2026-09-06 内容与按钮间距拉开（原 2px 贴太近） -->
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;">   <!-- ★2026-09-06 内容与按钮间距拉开（原 2px 贴太近） -->
                 <!-- ★2026-09-03 排版统一：大段文字改分组条目（小图标+标题+12px 说明，深浅色自适应 dmi-* 类） -->
                 <div class="dmi-group">
                     <span class="material-icons dmi-ic">inventory_2</span>
@@ -1840,7 +1840,7 @@ function showDisclaimerModal() {
                 <span class="material-icons" style="color: #4f46e5;">hiking</span>
                 免责声明
             </div>
-            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;">
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">hiking</span>
                         <div style="min-width:0;"><div class="dmi-title">一、服务性质：记录工具，不是领队</div>
@@ -1950,7 +1950,7 @@ function showLegalConsentModal() {
         modal.innerHTML =
 '<div class="confirm-modal-content modal-fade-scale mdl-lg">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">verified_user</span> 使用前请确认</div>' +
-            '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">' +
+            '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;">' +
                 '<div class="dmi-group">' +
                     '<span class="material-icons dmi-ic">shield</span>' +
                     '<div style="min-width:0;"><div class="dmi-title">关于你的数据</div>' +
@@ -2042,7 +2042,7 @@ function showPrivacyPolicyModal() {
                 <span class="material-icons" style="color: #4f46e5;">security</span>
                 隐私政策
             </div>
-            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;margin-bottom:16px;">
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;">
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">info</span>
                         <div style="min-width:0;"><div class="dmi-title">适用范围与生效</div>
@@ -2173,10 +2173,10 @@ function showSupportModal() {
     var subTxt = dark ? '#94a3b8' : '#64748b';
 modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
         '<div class="confirm-modal-title">支持作者</div>' +
-        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:14px;">' +
+        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;">' +
         '<div style="font-size:13px;color:' + bodyTxt + ';line-height:1.7;">徒步小记是 XiXi 亲手做的小软件，完全免费、没有广告。如果你用得开心，欢迎请作者喝杯奶茶支持一下——纯自愿，不付费也拥有全部功能。</div>' +
         '</div>' +
-        '<div class="confirm-modal-buttons" style="gap:8px;">' +
+        '<div class="confirm-modal-buttons">' +
         '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-size:13px;font-weight:700;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:16px;">chat</span>微信</button>' +
         '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-size:13px;font-weight:700;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:16px;">account_balance_wallet</span>支付宝</button>' +
         '<button class="confirm-btn-cancel ripple-effect" id="support-close" style="flex:0 0 auto;padding:9px 16px;">关闭</button>' +
@@ -2189,7 +2189,7 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' 
         var box = modal.querySelector('.confirm-modal-content');
         if (!box) return;
         box.innerHTML = '<div class="confirm-modal-title">' + label + '</div>' +
-            '<div class="confirm-modal-message" style="text-align:center;padding:0 2px;margin-bottom:14px;">' +
+            '<div class="confirm-modal-message" style="text-align:center;padding:0 2px;">' +
             '<div style="margin:8px auto 12px;width:min(70vw,254px);border-radius:12px;background:#fff;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);">' +
             '<img src="' + b64 + '" alt="' + label + '" data-testid="support-qr-img" style="width:100%;display:block;border-radius:8px;background:#fff;"></div>' +
             '<div style="font-size:12px;color:' + subTxt + ';line-height:1.65;">保存二维码到相册后，打开' + (isWx ? '微信' : '支付宝') + '「扫一扫」点右上角相册图标选图即可识别付款</div>' +
@@ -3718,7 +3718,7 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' 
             '<input type="text" id="mtnMergeName" maxlength="20" placeholder="例如：朱雀" value="' + escapeHtml(cur && cur.name ? cur.name : '') + '" class="mtn-merge-input">' +
             '<div class="mtn-merge-note-strong" style="margin-top:10px;line-height:1.5;">只在「山册」里生效 —— 归类和名字变了，记录本身一条都不动。</div>' +
             '</div>' +
-            '<div class="confirm-modal-buttons" style="gap:10px;">' +
+            '<div class="confirm-modal-buttons">' +
             '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeCancel">取消</button>' +
             (canOff ? '<button class="confirm-btn-cancel ripple-effect" id="mtnMergeOff">断开</button>' : '') +
             '<button class="check-go-btn ripple-effect" id="mtnMergeOk">' + (conn ? '保存' : '连接') + '</button>' +
@@ -4043,7 +4043,7 @@ function handleAddRecordFlow() {
         modal.className = 'confirm-modal modal-backdrop-animate';
 modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">add_circle_outline</span>添加徒步记录</div>' +
-            '<div class="confirm-modal-message" style="text-align:left;margin-bottom:14px;">' +
+            '<div class="confirm-modal-message" style="text-align:left;">' +
             '<div class="ap-new" id="apNew" role="button" tabindex="0">' +
             '<span class="material-icons ic">edit_note</span>' +
             '<span class="ap-t"><span class="m1">新建空白记录</span><span class="s1">从零开始填，日期自动是今天</span></span></div>' +
@@ -4181,7 +4181,7 @@ function maybeShowOverdueCare() {
         modal.className = 'confirm-modal modal-backdrop-animate';
         // ★2026-09-06 定稿：只留「去处理 / 忽略」两按钮横排各半宽（顺延入口删除，过期计划改日期/删除都在计划页）；字 13px 不折行
 modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
-            '<div class="confirm-modal-title" style="font-size:15px;"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#f59e0b;">event_busy</span>有 ' + overdue.length + ' 个计划过期了</div>' +
             '<div class="confirm-modal-message" style="line-height:1.7;font-size:13px;">到日子没去的：<b>' + escapeHtml(label) + '</b>。<br>去计划页改个日期或删掉吧。</div>' +
             '<div style="display:flex;gap:8px;margin-top:16px;">' +
             '<button class="glass-btn ripple-effect" id="oc-go" style="flex:1;padding:10px 0;border-radius:10px;font-size:13px;font-weight:600;">去处理</button>' +
@@ -4643,11 +4643,11 @@ function showCompleteOrDelayModal(tripId, tripName) {
 '<div class="confirm-modal-content modal-fade-scale mdl-sm">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #4f46e5;">event_repeat</span>完成 / 延期</div>' +
         '<div class="confirm-modal-message">「' + escapeHtml(tripName || '未命名计划') + '」的日子到了。已经走完就点「完成」，会转入徒步记录；还没走就点「延期」，改个新日期。</div>' +
-        '<div style="display:flex;gap:10px;margin-top:12px;">' +
+        '<div style="display:flex;gap:10px;margin-top:16px;">' +
         '<button class="glass-btn ripple-effect" id="cod-complete" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">完成</button>' +
         '<button class="glass-btn ripple-effect" id="cod-delay" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">延期</button>' +
         '</div>' +
-        '<div class="confirm-modal-buttons" style="margin-top:12px;">' +
+        '<div class="confirm-modal-buttons">' +
         '<button class="confirm-btn-cancel ripple-effect" id="cod-cancel" style="flex:1;">取消</button>' +
         '</div>' +
         '</div>';

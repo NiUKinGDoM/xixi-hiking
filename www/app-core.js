@@ -1064,13 +1064,16 @@ function openPhotoUsageDetailModal() {
     var modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
 modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md" id="puModal">' +
-        '<div class="confirm-modal-title" style="font-size:16px;"><span class="material-icons" style="color:#667eea;">photo_library</span>照片占用</div>' +
-        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;margin-bottom:2px;">' +
+        '<div class="confirm-modal-title"><span class="material-icons" style="color:#667eea;">photo_library</span>照片占用</div>' +
+        '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;">' +
         '<div style="max-height:54vh;overflow-y:auto;padding-right:4px;" id="puScroll">' +
         '<div style="font-size:12px;color:#64748b;padding:16px 2px;text-align:center;">统计中…</div></div></div>' +
-        '<div class="confirm-modal-buttons" style="margin-top:14px;">' +
-        '<button class="confirm-btn-cancel ripple-effect" type="button" id="puClose" style="flex:1;padding:10px 0;border-radius:10px;font-size:13.5px;">知道了</button>' +
-        '<button class="glass-btn ripple-effect" type="button" id="puOpt" style="flex:1;padding:7px 0;border-radius:10px;font-size:13px;font-weight:600;margin-left:8px;">优化</button></div></div>';
+        '<div class="confirm-modal-buttons">' +
+        // ★2026-10-16 统一：弹窗内「flex:1 平分的操作按钮」字号 = 14px
+        //   （与计划详情 pd-edit-btn/pd-complete-btn、计划过期 cod-* 同档；原为 13.5px / 13px 两种特例，
+        //     且「优化」padding 7px 与「知道了」10px 不等 → 两按钮一高一矮）
+        '<button class="confirm-btn-cancel ripple-effect" type="button" id="puClose" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;">知道了</button>' +
+        '<button class="glass-btn ripple-effect" type="button" id="puOpt" style="flex:1;padding:10px 0;border-radius:12px;font-size:14px;font-weight:600;">优化</button></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 

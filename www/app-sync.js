@@ -480,7 +480,7 @@ function showUpdateModal(info) {
     const localReady = hasLocalApkFor('v' + info.tag);
 modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
         '<div class="confirm-modal-title"><span class="material-icons" style="color: #185fa5;">system_update_alt</span>发现新版本 v' + escapeHtml(info.tag) + '</div>' +
-        '<div class="confirm-modal-message" style="text-align:left;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;">' +
+        '<div class="confirm-modal-message" style="text-align:left;line-height:1.7;max-height:200px;overflow-y:auto;">' +
         '<div style="font-weight:600;margin-bottom:4px;">当前 v' + APP_VERSION + ' → 新 v' + escapeHtml(info.tag) + '</div>' +
         (localReady ? '<div style="margin-bottom:6px;font-size:12px;color:#16a34a;background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.3);border-radius:10px;padding:7px 10px;">安装包已下载好，点下面按钮直接安装，不用重新下载</div>' : '') +
         // ★2026-09-18 与「更新日志」统一走 renderChangelogBody（此前纯文本，** 与 - 会原样露出来；用户报「更新弹窗又是 **XX** 形式」）
@@ -693,7 +693,7 @@ function openSyncBindModal() {
                 '<span class="material-icons" style="color: #4f46e5;">link</span>' +
                 '绑定账号' +
             '</div>' +
-            '<div class="confirm-modal-message" style="margin-bottom: 12px;">' +
+            '<div class="confirm-modal-message">' +
                 '<div class="sync-bind-steps"><b>① 选网盘</b> ── ② 填账号</div>' +
                 '<div class="sync-provider-card sel" id="syncProvJianguo" data-testid="sync-prov-jianguo">' +
                     '<div><div class="sync-provider-name">坚果云</div>' +
@@ -798,7 +798,7 @@ function showSyncInfoModal() {
                 '<span class="material-icons" style="color: #4f46e5;">cloud</span>' +
                 '网盘信息' +
             '</div>' +
-            '<div class="confirm-modal-message" style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-bottom: 16px;">' +
+            '<div class="confirm-modal-message" style="text-align:left;display:flex;flex-direction:column;gap:10px;">' +
                 row('网盘类型', esc(prov)) +
                 row('服务器地址', esc(srv || '—'), true) +
                 row('账号', esc(usr || '—'), true) +
@@ -1795,7 +1795,7 @@ async function showSyncStatusModal() {
                 同步状态
             </div>
             <!-- ★2026-09-17 与「弹窗间距规范」对齐：内容 → 按钮 固定 12px（原先实测 0px，文字贴着按钮） -->
-            <div class="confirm-modal-message" style="margin-bottom: 12px;">
+            <div class="confirm-modal-message">
                 ${statusHtml}
                 ${timeHtml}
                 ${dimHtml}
@@ -2579,7 +2579,7 @@ function askRestoreSyncConfig(cfg) {
                     '<span class="material-icons" style="color: #4f46e5;">cloud_download</span>' +
                     '发现网盘配置' +
                 '</div>' +
-                '<div class="confirm-modal-message" style="margin-bottom: 12px;">' +
+                '<div class="confirm-modal-message">' +
                     '<div class="sync-restore-warn">这份备份里带有网盘配置</div>' +
                     '<div class="sync-restore-info">' + esc(syncProviderOf(cfg.server)) + ' · ' + esc(cfg.username) + '</div>' +
                     '<div class="sync-bind-hint">恢复后本机就能直接同步，不必重新填地址与账号。' +
