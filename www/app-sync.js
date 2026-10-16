@@ -2204,12 +2204,12 @@ function showExportModal() {
                 <div class="space-y-3">
                     <button id="exportRecordsBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">backup</span>
-                        <span>导出完整备份压缩包（含照片）</span>
+                        <span>导出完整备份压缩包</span>
                     </button>
                     <!-- 2026-08-21 v1.1.1.6 纯数据备份（不含照片，体积小，适合日常快速备份） -->
                     <button id="exportDataOnlyBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">
                         <span class="material-icons text-xl">description</span>
-                        <span>导出纯数据备份（不含照片）</span>
+                        <span>导出纯数据备份</span>
                     </button>
                     <!-- 2026-08-21 v1.1.2.1 导出诊断报告（并入导出弹窗） -->
                     <button id="exportDiagBtn" class="w-full py-3 px-4 glass-btn flex items-center justify-center gap-2">

@@ -1087,20 +1087,6 @@
             max-width: 310px;
             font-weight: 500;
         }
-        /* ★2026-10-17 定位说明：明确它只是「手工填写的日记本」，不采集 GPS 轨迹、
-           不含路线规划与地图导航。动因：用户希望官网与 App 都直白讲清产品边界，
-           避免下载后误以为带轨迹记录能力（措辞与官网首屏 .hero-note 保持一致）。 */
-        .about-card .about-note {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #64748b;
-            line-height: 1.7;
-            max-width: 310px;
-            font-weight: 400;
-        }
-        body.dark-mode .about-card .about-note {
-            color: rgba(255, 255, 255, 0.55);
-        }
         .about-highlight {
             color: #4f46e5;
         }
@@ -2292,7 +2278,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            /* ★2026-10-17 用户反馈「时间的加减这一排按钮都贴着边框」——
+               实测时间行内容宽 304px（= 4×38 按钮 + 2×52 数字 + gap），而弹窗内容区
+               390px 屏只有 306（边距仅 21）、375px 屏 291（13px）、**320px 屏 236（按钮溢出弹窗 14px）**。
+               ⇒ 基准档收紧 gap 与数字宽：内容 304 → 272，375px 屏边距 13 → 29.5px。
+                 极窄屏（≤360px）另有一档，见样式表末尾。 */
+            gap: 6px;
             /* ★2026-09-16：与下方取消/确定拉开（4→12） */
             margin: 14px 0 12px;
         }
@@ -2300,12 +2291,12 @@
         .dtp-stepper {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
         }
         .dtp-num {
             font-size: 24px;
             font-weight: 900;
-            min-width: 52px;
+            min-width: 36px;
             text-align: center;
             font-variant-numeric: tabular-nums;
             color: #334155;
@@ -6122,4 +6113,20 @@
            ★与上面 `.confirm-modal-content.mdl-lg` 同特异性 → 靠"后出现者胜"覆盖，必须留在样式表末尾。 */
         .record-detail-modal .confirm-modal-content {
             max-height: 78vh;
+        }
+
+        /* ★★2026-10-17 日期时间选择器「时 / 分」行 —— 极窄屏（≤360px）再收一档。
+           320px 屏上该弹窗内容区只有 236px，而基准档内容宽仍 272px ⇒ 会溢出。
+           这里缩数字宽 + 收紧间距，并用 `!important` 压掉按钮上的内联 `width/height:38px`
+           （内联样式优先级高于普通 class 声明，必须 !important 才压得住）。
+           收后内容宽 212px（320px 屏内容区 236）⇒ 左右各留 ≈32px，按钮不再贴边。
+           ★与上一条同理，靠"后出现者胜"，必须留在样式表末尾。 */
+        @media (max-width: 360px) {
+            .dtp-time-row { gap: 2px; }
+            .dtp-stepper { gap: 2px; }
+            .dtp-num { min-width: 30px; }
+            .dtp-time-row .icon-glass-btn {
+                width: 32px !important;
+                height: 32px !important;
+            }
         }
