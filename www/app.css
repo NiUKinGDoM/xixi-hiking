@@ -5972,29 +5972,33 @@
             }
         }
 
-        @media (max-width: 374px) {
-            /* ★唯一在「窄屏直板机」上也必须生效的一条：矮卡改纵向（图标在上、文字在下）
-               ⇒ 文字区独占整行宽，3 列不再需要退化成 1 列。 */
+        /* ★★2026-10-17 用户反馈「矮卡弄成图标在上、文字在下的上下行不好看」→ 竖排整段取消，
+           全宽度一律横排。实测根因：竖排时 .ov-txt 只按内容宽（46px）收缩，而列宽已 89px
+           ⇒ 右侧白空 43px，卡片高度还从 59px 涨到 80px（又空又高）；且在 320px 下「2860m」
+           仍被截 1px —— 竖排其实没解决溢出，只是把问题换了个位置。
+           ★精确测量（canvas 量真实文字宽）后定阈值：横排所需文字区 = **45px**
+           （标签「平均海拔」45 / 值「2860m」45），另需 ≥3px 余量防亚像素截断 ⇒ 需 48px。
+             · ≥366px：列宽 104.7+ ⇒ 文字区 50+ 天然够（**350~365 够不上，必须压缩**）
+             · ≤365px：列宽 ≤103.7 ⇒ 靠「gap 9→5 + 左右内边距 11/12→7」挤出 9px
+               ⇒ 320px 时文字区 48.7px（余量 3.7px）
+           ★注意：图标**不用缩**也别想缩 —— `.material-icons` 在本文件 @media(≤640px) 里被
+           `font-size:18px !important` 锁死（原 `.ov-ic` 与超窄屏块里的图标字号声明一直是死代码），
+           实测 18px 图标下文字区已够，故本块不再写图标字号。 */
+        @media (max-width: 365px) {
             .ov-mini {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 3px;
-            }
-            .ov-mini .ov-ic {
-                font-size: 16px;
+                gap: 5px;
+                padding-left: 7px;
+                padding-right: 7px;
             }
         }
 
         /* ★★≤300px 真·超窄屏（折叠屏外屏实测 260~300px）—— 其余规则都只在这里生效 */
         @media (max-width: 300px) {
-            /* 矮卡：1 列宽度已足够 ⇒ 恢复横排（纵向会让卡片变三行高），图标回 18px */
+            /* 矮卡（本档位已改 1 列，卡片很宽）：间距放宽回常态
+               （图标字号不在这里写 —— 由 @media(≤640px) 的 .material-icons{18px!important} 决定，
+                 此处若再写普通声明是死代码） */
             .ov-mini {
-                flex-direction: row;
-                align-items: center;
                 gap: 9px;
-            }
-            .ov-mini .ov-ic {
-                font-size: 18px;
             }
             /* 矮卡 1 列（超窄屏下列宽不足以放 4 字标签） */
             .ov-mini-row {

@@ -1080,6 +1080,51 @@ function serverUp() {
   await page.waitForTimeout(400);
   await page.evaluate(() => { try { localStorage.removeItem('__e2e_legal_clear'); } catch (e) { } });
 
+  // ★2026-10-17 回归：山册「照片回忆」条按**山**汇总（同一座山的多条记录都进同一条），
+  //   点开灯箱必须能翻到**全部**照片；旧实现只取「起始记录」的 rec.photos
+  //   → 照片条显示 5 张、点开却只能翻 3 张（用户反馈「翻不到组合后的其他数据的几张」）。
+  console.log('== E2E: 山册照片条 → 灯箱跨记录翻页 ==');
+  const mbLightbox = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const out = {};
+    try { closeOpenModals(true); } catch (e) { }
+    const backup = records.slice();
+    // 造「同一座山（同名）+ 两条记录」：3 张 + 2 张
+    records.length = 0;
+    records.push(
+      { id: 'e2e-mb-1', name: 'E2E测试峰', difficulty: 3, elevation: 1500, duration: 200, distance: 10, companions: '', photos: ['e2e-p1', 'e2e-p2', 'e2e-p3'], createdAt: '2026-09-01T10:00:00', updatedAt: '2026-09-01T10:00:00' },
+      { id: 'e2e-mb-2', name: 'E2E测试峰', difficulty: 3, elevation: 1600, duration: 220, distance: 12, companions: '', photos: ['e2e-p4', 'e2e-p5'], createdAt: '2026-10-01T10:00:00', updatedAt: '2026-10-01T10:00:00' }
+    );
+    try { initRecordsView(); } catch (e) { }
+    renderMountainBook();
+    const wrap = document.getElementById('mountainBookView');
+    const items = wrap.querySelectorAll('.mbp-item');
+    out.thumbs = items.length;
+    out.cards = wrap.querySelectorAll('.mb-card').length;
+    // 点第 1 张（属于第 1 条记录）
+    items[0].click();
+    await sleep(80);
+    const lb = document.getElementById('photoLightbox');
+    if (!lb) { records.length = 0; backup.forEach((r) => records.push(r)); return { err: '灯箱未打开' }; }
+    out.lbTotal = lb._ids ? lb._ids.length : -1;
+    out.lbIndex = lb.querySelector('#lb-index') ? lb.querySelector('#lb-index').textContent : null;
+    // 连点「下一张」到最后一张（第 5 张属于第 2 条记录）
+    for (let i = 0; i < 4; i++) { lbStep(1); }
+    out.lastPid = lb._ids ? lb._ids[lb._idx] : null;
+    out.lastRid = lb._rids ? lb._rids[lb._idx] : null;
+    out.lastIndex = lb.querySelector('#lb-index') ? lb.querySelector('#lb-index').textContent : null;
+    out.lastTitle = lb.querySelector('#lb-title') ? lb.querySelector('#lb-title').textContent : null;
+    lbStep(1);   // 环形：再翻一次应回到第 1 张
+    out.wrapIdx = lb._idx;
+    try { closePhotoLightbox(); } catch (e) { }
+    records.length = 0;
+    backup.forEach((r) => records.push(r));
+    return out;
+  });
+  ok('山册照片条汇总同一座山的多条记录（3+2=5 张）', mbLightbox.thumbs === 5 && mbLightbox.cards === 1, 'thumbs=' + mbLightbox.thumbs + ' cards=' + mbLightbox.cards);
+  ok('★点开灯箱可翻到其他记录的照片（修复前只有 3 张）', mbLightbox.lbTotal === 5 && mbLightbox.lastPid === 'e2e-p5' && mbLightbox.lastRid === 'e2e-mb-2', 'total=' + mbLightbox.lbTotal + ' last=' + mbLightbox.lastPid + '/' + mbLightbox.lastRid);
+  ok('灯箱索引随翻页更新、环形可回第 1 张', mbLightbox.lbIndex === '1 / 5' && mbLightbox.lastIndex === '5 / 5' && mbLightbox.wrapIdx === 0, 'idx=' + mbLightbox.lbIndex + '→' + mbLightbox.lastIndex + ' wrap=' + mbLightbox.wrapIdx);
+
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
   console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');

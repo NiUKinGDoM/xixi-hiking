@@ -1111,16 +1111,30 @@ function lbToggleZoom() {
     else { lbScale = 2.5; }
     lbApplyTransform();
 }
-function openPhotoLightbox(recordId, startPid, editing) {
+function openPhotoLightbox(recordId, startPid, editing, ctxItems) {
     var rec = records.find(r => r.id === recordId);
     if (!rec) return;
     editing = !!editing;
-    // ★2026-08-25 编辑模式数据源用 editingPhotoIds（含编辑中新增未保存的照片）
-    var ids = editing ? editingPhotoIds.slice() : (rec.photos || []).slice();
+    // ★2026-10-17 修复（用户反馈「山册里组合后打开照片，翻不到其他数据的几张」）：
+    //   山册「照片回忆」条是按**山**汇总的（同一座山的多条记录都进同一条），
+    //   而原实现只取「起始那一条记录」的 rec.photos ⇒ 照片条显示 8 张、点开却只能翻其中 2 张。
+    //   现支持第 4 参 ctxItems = [{rid,pid},…]（照片条的完整顺序）：
+    //     · _ids  = 全部 pid（翻页 / 预加载 用它，逻辑不变）
+    //     · _rids = 与 _ids 平行，用于翻页时显示当前这张所属记录的名字
+    //   编辑模式（记录详情页）仍走原逻辑（含未保存照片），不受影响。
+    var ids, rids;
+    if (!editing && ctxItems && ctxItems.length) {
+        ids = ctxItems.map(function (it) { return it.pid; });
+        rids = ctxItems.map(function (it) { return it.rid; });
+    } else {
+        ids = editing ? editingPhotoIds.slice() : (rec.photos || []).slice();
+        rids = null;
+    }
     if (!ids.length) return;
     var lb = ensureLightbox();
     lb._recordId = recordId;
     lb._ids = ids;
+    lb._rids = rids;
     lb._idx = ids.indexOf(startPid);
     if (lb._idx < 0) lb._idx = 0;
     lb._editing = editing;
@@ -1159,7 +1173,10 @@ function lbLoadImg() {
     var img = lb.querySelector('#lb-img');
     var title = lb.querySelector('#lb-title');
     var idxEl = lb.querySelector('#lb-index');
-    var rec = records.find(r => r.id === lb._recordId);
+    // ★2026-10-17 跨记录翻页（山册照片条）时，标题显示「当前这张所属记录」，
+    //   否则翻到别的记录的照片，标题还停在起始记录名 → 误导。
+    var curRid = (lb._rids && lb._rids[lb._idx]) || lb._recordId;
+    var rec = records.find(r => r.id === curRid);
     title.textContent = rec ? rec.name : '';
     idxEl.textContent = (lb._idx + 1) + ' / ' + lb._ids.length;
     var pid = lb._ids[lb._idx];
@@ -3580,7 +3597,20 @@ function initRecordsView() {
         var ph = e.target.closest ? e.target.closest('.mbp-item') : null;
         if (ph) {
             var rid = ph.getAttribute('data-rid'), pid = ph.getAttribute('data-pid');
-            if (rid && pid && typeof openPhotoLightbox === 'function') { try { openPhotoLightbox(rid, pid, false); } catch (e2) { /* 忽略 */ } }
+            if (rid && pid && typeof openPhotoLightbox === 'function') {
+                try {
+                    // ★2026-10-17 修复：把整条「照片回忆」的照片按顺序带进灯箱。
+                    //   该条汇集了同一座山**多条记录**的照片，原实现只传起始记录 → 翻不到其余记录的照片。
+                    var strip = ph.closest('.mb-photos-strip');
+                    var ctx = null;
+                    if (strip) {
+                        ctx = Array.prototype.slice.call(strip.querySelectorAll('.mbp-item')).map(function (el) {
+                            return { rid: el.getAttribute('data-rid'), pid: el.getAttribute('data-pid') };
+                        }).filter(function (x) { return x.rid && x.pid; });
+                    }
+                    openPhotoLightbox(rid, pid, false, ctx);
+                } catch (e2) { /* 忽略 */ }
+            }
             return;
         }
         // ★2026-09-03 点卡头 → 抽屉整行展开（drawer 在同 .mb-row 内、data-mountain 与卡一致）
