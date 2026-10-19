@@ -41,6 +41,11 @@ const ANDROID_FILES = [
   'android/app/src/main/java/com/xixi/hiking/MainActivity.java',
   'android/app/src/main/java/com/xixi/hiking/ResGuard.java',
   'android/app/src/main/AndroidManifest.xml',
+  // ★2026-10-19 补齐：res 下**人工维护**的配置与矢量图（二进制 mipmap/位图仍不同步）
+  //   背景：这两类一直不在清单里 ⇒ 远端仓库缺 shortcuts.xml、缺快捷方式图标，
+  //   从远端 clone 无法复现相同 APK。凡 res 下手写的 xml（非生成物）都应在这里登记。
+  'android/app/src/main/res/xml/shortcuts.xml',
+  'android/app/src/main/res/drawable/ic_shortcut_hike.xml',
 ];
 // 整目录同步（相对主工程）
 const DIRS = [

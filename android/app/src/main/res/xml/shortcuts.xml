@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ★2026-09-04 桌面快捷方式「记一笔」：长按 App 图标 → 直达添加记录（复用 navigate 透传通道，navigate=quickadd）
-     Android 7.1+ 支持；图标复用启动图标（不新增 drawable，避免 aapt/多密度资源风险） -->
+     ★2026-10-19 用户要求两处改动：
+        ① 图标由「复用启动图标」改为**专用矢量图** @drawable/ic_shortcut_hike（一个人爬山）；
+        ② 点击后改为**直达「添加计划」弹窗**（navigate=addplan，Web 侧见 app-init.js 的同名分支）。
+           原 quickadd（直达添加记录）分支仍保留在 JS 里，需要时可改回来。
+     Android 7.1+ 支持。 -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
         android:shortcutId="quick_add"
         android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_shortcut_hike"
         android:shortcutShortLabel="@string/shortcut_quick_add_short"
         android:shortcutLongLabel="@string/shortcut_quick_add_long">
         <intent
@@ -14,7 +18,7 @@
             android:targetClass="com.xixi.hiking.MainActivity">
             <extra
                 android:name="navigate"
-                android:value="quickadd" />
+                android:value="addplan" />
         </intent>
     </shortcut>
 </shortcuts>
