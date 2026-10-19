@@ -2010,7 +2010,7 @@
             border: none;
             outline: none;
             color: inherit;
-            font-size: 14px;
+            font-size: 16px;   /* ★2026-10-19 14→16：iOS Safari 忽略 user-scalable=no（iOS 10+），输入控件 <16px 聚焦时页面会被强制放大；记录表单已全 16px，只剩搜索框漏网 */
             font-family: inherit;
         }
         .global-search-box input::placeholder {
@@ -6147,4 +6147,14 @@
         }
         body.dark-mode .dmi-group.dmi-plain {
             background: none;
+        }
+
+
+        /* ★★2026-10-19 里程碑一览弹窗「特别高」（用户反馈）：8 档里程碑 + 收集类子清单内容约 1045px，
+           落在 mdl-lg 的 86vh 上限上 ⇒ 三个屏实测都占屏 86%（844→726px / 667→574px / 932→802px），
+           上下只剩 ~47~65px，几乎顶满。这是纯阅读列表（内部 .ms-scroll 本就 overflow-y:auto），
+           没必要占这么高 ⇒ 单独限 72vh，上下留白翻倍，内容照旧可滚。
+           ★双 class 提特异性：.confirm-modal-content.mdl-lg 是 0,2,0，单 class 压不过它。 */
+        .confirm-modal-content.ms-list-modal {
+            max-height: 72vh;
         }

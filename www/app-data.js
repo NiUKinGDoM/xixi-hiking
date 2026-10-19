@@ -5123,7 +5123,7 @@ function showMilestoneList() {
         var modal = document.createElement('div');
         modal.className = 'modal-backdrop-animate';
         modal.style.cssText = 'position:fixed;inset:0;z-index:1050;display:flex;align-items:center;justify-content:center;background:' + (dark ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.35)') + ';padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px));';
-modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-lg" style="border-radius:20px;overflow:hidden;display:flex;flex-direction:column">' +
+modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-lg ms-list-modal" style="border-radius:20px;overflow:hidden;display:flex;flex-direction:column">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">' +
             '<span class="material-icons" style="color:#f59e0b;">emoji_events</span>' +
             '<span style="font-size:15px;font-weight:700;flex:1;color:' + (dark ? '#fff' : '#334155') + ';">我的里程碑</span>' +
