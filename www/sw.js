@@ -23,7 +23,7 @@
  * ★2026-10-10 v61→v62：CSS 外置到 www/app.css（index.html 6721→726 行）—— 必须 bump 强制作废旧缓存
  * ★2026-10-10 v62→v63：同号重发(第4次) —— .glass-btn 去光泽带渐变 + 修 box-shadow 声明失效（www 内容变了，必须 bump 强制旧壳失效）
  */
-const CACHE_NAME = 'xixi-hiking-v72';   // ★2026-10-12 v1.2.4.0 升号：概览「平均用时」改小时小数短格式（不再被截断成「6h···」）
+const CACHE_NAME = 'xixi-hiking-v73';   // ★2026-10-12 v1.2.4.0 升号：概览「平均用时」改小时小数短格式（不再被截断成「6h···」）
 const CORE_ASSETS = ['./', './index.html', './app.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
