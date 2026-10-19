@@ -140,9 +140,14 @@ try {
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ih = readPage();
-    dj.includes('function loadSampleData') ? ok('loadSampleData 示例函数存在') : bad('loadSampleData 缺失!');
+    // ★2026-10-19 用户要求「去掉新手指引的示例功能」→ 断言反向化：示例函数必须不存在、按钮必须不在 DOM。
+    //   原因：示例数据绕过保存流程写入 records ⇒ 下次启动 silent 补领会把已达成的里程碑静默标记为已庆祝，
+    //   导致那几个里程碑的弹窗永远不出现（用户实测反馈）。
+    !dj.includes('function loadSampleData') ? ok('示例函数已移除（不可再一键灌示例数据）') : bad('loadSampleData 又回来了!');
     ij.includes('function showTabGuides') && ij.includes('GUIDE_CARDS') ? ok('分页引导逻辑在') : bad('showTabGuides 缺失!');
-    ih.includes('id="guideRecords"') && ih.includes('id="guidePlans"') && ih.includes('id="guideSettings"') && ih.includes('id="welcomeDemoBtn"') ? ok('四页引导卡 DOM 在位') : bad('引导卡 DOM 缺失!');
+    ih.includes('id="guideRecords"') && ih.includes('id="guidePlans"') && ih.includes('id="guideSettings"') && !ih.includes('id="welcomeDemoBtn"') && !ih.includes('先看看示例') ? ok('四页引导卡 DOM 在位（示例按钮已移除）') : bad('引导卡 DOM 缺失或示例按钮残留!');
+    // ★2026-10-19 新增守卫：概览欢迎卡必须交代「记录 / 计划」两个 ＋ 入口的位置（替代原示例按钮的引导作用）
+    (/id="wbWhereHint"/.test(ih) && /切到下方 <b>记录<\/b> 页/.test(ih) && /<b>计划<\/b> 页/.test(ih)) ? ok('守卫：欢迎卡说明「记录/计划」的 ＋ 入口位置') : bad('欢迎卡缺少添加入口说明!');
     // ★2026-09-18 计划页引导卡必须说明「日历 / 列表」两种视图可切换、入口在右上角
     //   （此前只写了「日历上看清」——新用户不知道还能切列表；记录页引导卡早有「右上角的山册」对照）
     (/把下一个山头定好日子/.test(ih) && /右上角可切换/.test(ih) && /<b>日历<\/b>/.test(ih) && /<b>列表<\/b>/.test(ih)) ? ok('守卫：计划页引导卡说明视图可切换（日历/列表 + 右上角）') : bad('计划页引导卡缺少视图切换说明!');

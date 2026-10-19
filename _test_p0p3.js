@@ -203,19 +203,16 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
     // 6e) 全部 ✕ 后切任意页均无卡（重启态由 loadGuideSeenState 保证，见源码断言）
     if (tabBtnP) { click(tabBtnP); await delay(50); }
     assert('全 ✕ 后切页不再出现任何卡', gPl && gPl.style.display === 'none', gPl ? gPl.style.display : 'no');
-    // 7) 示例按钮（先看看示例）：重置后显示 → 点击载入 3 条示例 + 跳记录页卡跟随（不自关）→ ✕ 记录卡
+    // 7) ★2026-10-19 用户要求「去掉示例功能」→ 本段断言反向化：
+    //    重置后概览卡仍能正常出现，但**示例按钮必须不存在**，且卡片上要交代「记录 / 计划」两个 ＋ 入口。
     if (typeof window.resetGuideSeen === 'function') window.resetGuideSeen();
     ['hiking_guide_seen_welcomeBanner', 'hiking_guide_seen_guideRecords', 'hiking_guide_seen_guidePlans', 'hiking_guide_seen_guideSettings'].forEach(function (k) { try { window.AppStore.removeItem(k); } catch (e9) { /* 忽略 */ } });
     window.__testSetRecords([]);
     if (tabBtnO) { click(tabBtnO); await delay(50); }
-    assert('重置后概览卡可见(示例入口就绪)', wb2 && wb2.style.display === 'block', wb2 ? wb2.style.display : 'no');
-    click(document.getElementById('welcomeDemoBtn'));
-    await delay(200);
-    assert('点示例灌入 3 条记录', window.__getState().records.length >= 3, 'n=' + window.__getState().records.length);
-    assert('载示例后跳记录页且记录卡显示(不自动关闭)', gRec && gRec.style.display === 'block', gRec ? gRec.style.display : 'no');
-    const recClose2 = gRec ? gRec.querySelector('.wb-guide-close') : null;
-    if (recClose2) click(recClose2); await delay(30);
-    assert('✕ 记录卡后隐藏', gRec && gRec.style.display === 'none', gRec ? gRec.style.display : 'no');
+    assert('重置后概览卡可见(引导入口就绪)', wb2 && wb2.style.display === 'block', wb2 ? wb2.style.display : 'no');
+    assert('示例按钮已移除', !document.getElementById('welcomeDemoBtn'), document.getElementById('welcomeDemoBtn') ? '仍存在' : '已移除');
+    const whereHint = document.getElementById('wbWhereHint');
+    assert('欢迎卡说明「记录/计划」入口', !!whereHint && /记录/.test(whereHint.textContent) && /计划/.test(whereHint.textContent), whereHint ? whereHint.textContent.slice(0, 40) : 'no');
     // 8) 复位（后续段自行注入数据）
     window.__testSetRecords([]); window.__testSetPlanned([]);
     __rmAnyModal();

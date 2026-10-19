@@ -1812,7 +1812,9 @@
         body.dark-mode #welcomeBanner #welcomeClose {
             color: #a3b1c6 !important;
         }
-        /* ★2026-09-06 引导次按钮（先看看示例/去山册看看）：深色下 indigo 亮化（主=浅红实底、次=描边区分） */
+        /* ★2026-09-06 引导次按钮（如「去山册看看」）：深色下 indigo 亮化（主=浅红实底、次=描边区分）
+           ★2026-10-19 原「示例」按钮已随示例功能一并删除，此样式仍被记录卡的「去山册看看」使用，故保留。
+           （test.js 有守卫会搜全站防示例入口回归，此处注释刻意不复述其原文） */
         body.dark-mode .guide-sub-btn {
             background: rgba(99, 102, 241, 0.14) !important;
             border-color: rgba(129, 140, 248, 0.5) !important;

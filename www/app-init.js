@@ -52,7 +52,8 @@ function bindTabGuides() {
             var card = c.closest ? c.closest('#welcomeBanner,#guideRecords,#guidePlans,#guideSettings') : null;
             dismissGuide(card ? card.id : null);
         });
-        // 概览卡：去记录页写第一笔 / 先看看示例
+        // 概览卡：去记录页写第一笔（★2026-10-19 用户要求「去掉示例功能」→ 「先看看示例」按钮与其绑定已删除，
+        //   改为在卡片上用一句话说明「记录 / 计划」两个 ＋ 入口的位置，见 index.html 的 #wbWhereHint）
         var go = document.getElementById('welcomeGoBtn');
         if (go) go.addEventListener('click', function () {
             try { switchTab('records'); showTabGuides(); } catch (e) { /* 忽略 */ }
@@ -60,11 +61,6 @@ function bindTabGuides() {
                 var h = (typeof handleAddRecordFlow === 'function') ? handleAddRecordFlow : (typeof addNewRecord === 'function' ? addNewRecord : null);
                 if (h) h();
             }, 350);
-        });
-        var demo = document.getElementById('welcomeDemoBtn');
-        if (demo) demo.addEventListener('click', function () {
-            if (typeof loadSampleData === 'function') { try { loadSampleData(); } catch (e) { /* 忽略 */ } }
-            showTabGuides();
         });
         // 记录卡：记下第一笔 / 去山册看看（均不关闭引导）
         var rg = document.getElementById('rGoBtn');

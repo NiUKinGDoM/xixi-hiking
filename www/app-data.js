@@ -4081,30 +4081,11 @@ function wipeAllDataExecute() {
     try { showSuccessMessage('已抹掉所有足迹，欢迎重新开始'); } catch (e5) { /* 忽略 */ }
     setTimeout(function () { try { location.reload(); } catch (e6) { /* 忽略 */ } }, 600);
 }
-// ★2026-09-05 P1-5 一键示例足迹：零记录时灌 3 条真实感记录 + 1 条计划（无照片），帮新用户/演示一眼看懂 App
-function loadSampleData() {
-    try {
-        var now = new Date();
-        function daysAgo(n, h) { var d = new Date(now.getTime() - n * 86400000); if (h) d.setHours(h, 0, 0, 0); else d.setHours(15, 0, 0, 0); return d.toISOString(); }
-        var demoRecords = [
-            { id: generateId(), name: '沣峪口 · 秦岭', difficulty: 2, elevation: 1250, duration: 240, distance: 18.6, mood: '轻松', weather: '晴', companions: '周末小队', notes: '第一次进秦岭，溪水边歇了会儿脚。', photos: [], createdAt: daysAgo(3, 9), updatedAt: daysAgo(3, 9) },
-            { id: generateId(), name: '华山', difficulty: 4, elevation: 2154, duration: 330, distance: 22.3, mood: '超棒', weather: '晴', companions: '', notes: '北峰看日出，值了。', photos: [], createdAt: daysAgo(21, 8), updatedAt: daysAgo(21, 8) },
-            { id: generateId(), name: '太白山', difficulty: 5, elevation: 3767, duration: 480, distance: 45.5, mood: '感叹', weather: '多云', companions: '俱乐部', notes: '拔仙台的风大到站不稳，下次轻装。', photos: [], createdAt: daysAgo(70, 7), updatedAt: daysAgo(70, 7) }
-        ];
-        var demoPlan = { id: generateId(), name: '终南山 · 秦楚古道', difficulty: 3, elevation: 2604, duration: '', distance: '', createdAt: new Date(now.getTime() + 7 * 86400000).toISOString(), updatedAt: new Date(now.getTime() + 7 * 86400000).toISOString() };
-        records = (records || []).concat(demoRecords);
-        plannedTrips = (plannedTrips || []).concat([demoPlan]);
-        saveToStorage();
-        savePlannedTripsToStorage();
-        try { updateStatistics(); } catch (e) {}
-        try {
-            switchTab('records');
-            if (typeof recordsViewMode !== 'undefined') recordsViewMode = 'list';
-            renderTable();
-        } catch (e2) {}
-        try { showSuccessMessage('示例已载入：3 条足迹 + 1 条计划，去逛逛吧'); triggerHaptic(20); } catch (e3) {}
-    } catch (e4) { try { showErrorMessage('示例载入失败，请重试'); } catch (e5) {} }
-}
+// ★2026-10-19 用户要求「去掉新手指引的示例功能」：原 loadSampleData()（一键灌 3 条足迹 + 1 条计划）已移除。
+//   原因有二：① 示例会让人误以为"已经有内容"，反而不知道从哪开始写；
+//   ② 示例是直接写 records 的，绕过了保存流程 ⇒ 下次启动的 silent 补领会把已达成的里程碑
+//      静默标记为「已庆祝」，导致那几个里程碑的弹窗永远不会出现（用户反馈的现象）。
+//   现改为在概览欢迎卡上用一句话说明「记录 / 计划」两个 ＋ 入口的位置（见 index.html #wbWhereHint）。
 
 // ★2026-09-03 P0 从历史记录复制（方案定稿：点「＋添加」先弹选择卡；行内不再有复制条）：
 // 可复制的历史记录 = 有名字的记录

@@ -313,14 +313,32 @@ function serverUp() {
   try { await page.evaluate(() => { try { switchTab('overview'); } catch (e) { } }); } catch (e) { }
   await page.waitForTimeout(1300);
 
-  console.log('== E2E: 记录 tab + 示例数据 ==');
+  console.log('== E2E: 记录 tab + 造测试数据 ==');
   await page.locator('[data-testid="tab-records"]').click().catch(async () => { await page.evaluate(() => { try { switchTab('records'); } catch (e) {} }); });
   await page.waitForTimeout(500);
   const recEmpty = await page.locator('text=还没有记录, 或是没有更多了').count();
-  // 加载示例数据（App 内置 API）
+  // ★2026-10-19 用户要求去掉「示例数据」功能（loadSampleData 已删）→ 测试改为**直接注入** 3 条记录。
+  //   注意：走页面内的 generateId / saveToStorage / renderTable，等价于原示例数据，但不经过已删除的产品代码。
+  //   里程碑不受影响：本段只造数据供后续 UI 用例使用，不关心庆祝弹窗。
   await page.evaluate(() => {
-    try { if (typeof window.loadSampleData === 'function') { window.loadSampleData(); return 'ok'; } return 'no-fn'; } catch (e) { return 'err:' + e.message; }
-  }).then(async (r) => { console.log('  sampleData:', r); });
+    try {
+      const now = new Date();
+      const daysAgo = (n, h) => { const d = new Date(now.getTime() - n * 86400000); d.setHours(h || 15, 0, 0, 0); return d.toISOString(); };
+      const mk = (name, difficulty, elevation, duration, distance, mood, weather, companions, notes, n) => ({
+        id: generateId(), name, difficulty, elevation, duration, distance, mood, weather, companions, notes,
+        photos: [], createdAt: daysAgo(n, 9), updatedAt: daysAgo(n, 9),
+      });
+      records = [
+        mk('沣峪口 · 秦岭', 2, 1250, 240, 18.6, '轻松', '晴', '周末小队', '第一次进秦岭，溪水边歇了会儿脚。', 3),
+        mk('华山', 4, 2154, 330, 22.3, '超棒', '晴', '', '北峰看日出，值了。', 21),
+        mk('太白山', 5, 3767, 480, 45.5, '感叹', '多云', '俱乐部', '拔仙台的风大到站不稳，下次轻装。', 70),
+      ];
+      saveToStorage();
+      try { updateStatistics(); } catch (e) {}
+      try { switchTab('records'); if (typeof recordsViewMode !== 'undefined') recordsViewMode = 'list'; renderTable(); } catch (e) {}
+      return 'ok:' + records.length;
+    } catch (e) { return 'err:' + e.message; }
+  }).then(async (r) => { console.log('  seedData:', r); });
   await page.waitForTimeout(800);
   await shotAndCheck('03-records-with-sample', '.table-row-advanced, .rd-name-main', { noCompare: true });
 
