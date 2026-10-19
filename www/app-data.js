@@ -2034,7 +2034,7 @@ function showLegalConsentModal() {
                     '<div style="min-width:0;"><div class="dmi-title">关于你的数据</div>' +
                     '<div class="dmi-body">记录与照片只保存在本机；只有你主动配置网盘后，数据才会同步到<b>你自己的</b>账号。本应用没有开发者服务器，不收集、不上传任何使用数据。唯一的联网是启动时的「检查更新」——仅向 GitHub 查询版本号（该服务器位于中国境外），传输 IP 与浏览器标识，<b>不含你的记录与照片</b>，详见《隐私政策》第四条。</div></div>' +
                 '</div>' +
-                '<div class="dmi-group">' +
+                '<div class="dmi-group dmi-plain">' +
                     '<span class="material-icons dmi-ic">description</span>' +
                     '<div style="min-width:0;"><div class="dmi-title">请先阅读以下条款</div>' +
                     '<div class="dmi-body">' +

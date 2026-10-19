@@ -6130,3 +6130,19 @@
                 height: 32px !important;
             }
         }
+
+        /* ★★2026-10-19 「使用前请确认」弹窗中部空白过大（用户反馈）——
+           实测 390×844：「关于你的数据」正文末行 → 「请先阅读以下条款」标题共 **45px**（≈3.7 行），
+           拆解：正文行距余量 6 + 组 padding-bottom 9 + 组 margin-bottom 8 + 下组 padding-top 9 + 标题行高上半 10。
+           根因 = 两块都画成"灰底卡片"，上下各 9px 内边距 + 8px 外边距叠加，视觉上成了两个对峙的块。
+           修法：第二块「请先阅读以下条款」本质是链接列表、不是信息卡 ⇒ 去掉灰底与上下内边距，
+           只保留左右 10px 让它的文字与上面正文**左边对齐**。空白 45px → ≈27px。
+           ★不影响其余 27 处 .dmi-group（该 class 只用于法律类弹窗，见 app-data.js）。 */
+        .dmi-group.dmi-plain {
+            background: none;
+            padding: 0 10px;
+            margin-bottom: 0;
+        }
+        body.dark-mode .dmi-group.dmi-plain {
+            background: none;
+        }

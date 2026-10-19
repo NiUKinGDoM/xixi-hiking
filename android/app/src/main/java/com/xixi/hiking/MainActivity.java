@@ -248,6 +248,34 @@ public class MainActivity extends BridgeActivity {
         handleNotifyIntent(intent);
     }
 
+    // ★2026-10-19 回前台刷新通知权限状态：
+    //   用户从「系统设置-通知」按返回键回到 App 时，WebView 的 visibilitychange 在部分机型/场景下
+    //   不触发（尤其从 Settings 返回、或 App 被系统冻结过），导致设置页「通知权限未开启」一直挂着。
+    //   这里在原生 onResume 主动让 JS 重新查一次；JS 侧函数幂等，重复调用无副作用。
+    @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            final WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+            if (wv != null) {
+                wv.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            wv.evaluateJavascript(
+                                    "try{if(typeof refreshNotifyPermRow==='function')refreshNotifyPermRow();}catch(e){}",
+                                    null);
+                        } catch (Exception e) {
+                            Log.w(TAG, "refresh notify perm failed", e);
+                        }
+                    }
+                });
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "onResume notify refresh skipped", e);
+        }
+    }
+
     // ===== 导出文件下载：JS 层把 base64 交给原生保存 =====
     private void setupJsBridge(WebView webView) {
         if (webView == null) return;

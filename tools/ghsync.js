@@ -46,6 +46,9 @@ const ANDROID_FILES = [
   //   从远端 clone 无法复现相同 APK。凡 res 下手写的 xml（非生成物）都应在这里登记。
   'android/app/src/main/res/xml/shortcuts.xml',
   'android/app/src/main/res/drawable/ic_shortcut_hike.xml',
+  // ★2026-10-19 再补一处同类漏项：strings.xml 含 app_name 与快捷方式文案，属人工维护的源文件，
+  //   缺它远端同样复现不出相同 APK（改快捷方式名字时尤其明显）。
+  'android/app/src/main/res/values/strings.xml',
 ];
 // 整目录同步（相对主工程）
 const DIRS = [

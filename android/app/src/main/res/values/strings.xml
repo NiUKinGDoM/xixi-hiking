@@ -4,7 +4,9 @@
     <string name="title_activity_main">徒步小记</string>
     <string name="package_name">com.xixi.hiking</string>
     <string name="custom_url_scheme">com.xixi.hiking</string>
-    <!-- ★2026-09-04 桌面快捷方式「记一笔」标签（AAPT 中文字面量 incompatible → 走资源引用） -->
-    <string name="shortcut_quick_add_short">记一笔</string>
-    <string name="shortcut_quick_add_long">记一笔徒步</string>
+    <!-- ★2026-09-04 桌面快捷方式标签（AAPT 中文字面量 incompatible → 走资源引用）
+         ★2026-10-19 改文案：行为已由「添加记录」改为「添加计划」，名字必须跟着行为走
+         （原「记一笔徒步」点开却是新建计划，语义不符） -->
+    <string name="shortcut_quick_add_short">新建计划</string>
+    <string name="shortcut_quick_add_long">新建一次徒步计划</string>
 </resources>

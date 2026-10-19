@@ -1131,6 +1131,70 @@ function serverUp() {
   ok('★点开灯箱可翻到其他记录的照片（修复前只有 3 张）', mbLightbox.lbTotal === 5 && mbLightbox.lastPid === 'e2e-p5' && mbLightbox.lastRid === 'e2e-mb-2', 'total=' + mbLightbox.lbTotal + ' last=' + mbLightbox.lastPid + '/' + mbLightbox.lastRid);
   ok('灯箱索引随翻页更新、环形可回第 1 张', mbLightbox.lbIndex === '1 / 5' && mbLightbox.lastIndex === '5 / 5' && mbLightbox.wrapIdx === 0, 'idx=' + mbLightbox.lbIndex + '→' + mbLightbox.lastIndex + ' wrap=' + mbLightbox.wrapIdx);
 
+  // ================= 弹窗互斥（2026-10-19：不叠弹窗，关掉当前再回到上一个）=================
+  console.log('== E2E: 弹窗互斥（同时只显示一个，关闭后恢复上一个）==');
+  const modalStack = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const vis = () => [...document.querySelectorAll('.confirm-modal, .record-detail-modal')]
+      .filter((e) => e.parentNode && e.style.display !== 'none');
+    const out = {};
+    try { localStorage.removeItem('hiking_legal_agree'); } catch (e) { }
+    try { closeOpenModals(true); } catch (e) { }
+    document.querySelectorAll('.record-detail-modal').forEach((e) => e.remove());
+    await sleep(250);
+
+    // ① 同意弹窗 → 条款弹窗（旧行为是"盖在上面"，新行为应"收起上一个"）
+    showLegalConsentModal();
+    await sleep(200);
+    const legal = document.getElementById('legalConsentModal');
+    out.before = vis().length;
+    legal.querySelector('#legalOpenPrivacy').click();
+    await sleep(340);
+    out.afterOpen = vis().length;
+    out.legalHidden = legal.style.display === 'none';
+    out.legalAlive = !!legal.parentNode;          // 必须仍在 DOM（只是隐藏），否则勾选状态就丢了
+    out.visibleTitle = [...document.querySelectorAll('.confirm-modal')]
+      .filter((e) => e.style.display !== 'none')
+      .map((e) => (e.querySelector('.confirm-modal-title') || {}).textContent || '')
+      .join('|').indexOf('隐私政策') >= 0;
+    const chk = document.getElementById('legalAgreeChk');
+    if (chk) chk.checked = true;
+    document.getElementById('privacy-close').click();
+    await sleep(360);
+    out.afterClose = vis().length;
+    out.legalBack = legal.parentNode
+      ? (legal.style.display !== 'none' && !legal.hasAttribute('data-stack-hidden')) : false;
+    out.chkKept = !!(document.getElementById('legalAgreeChk') || {}).checked;
+    try { closeOpenModals(true); } catch (e) { }
+    await sleep(180);
+
+    // ② 云端备份列表 → 删除确认（取消后列表必须回来，不能被删掉）
+    showManageBackupsModal([{ name: 'xixi_hiking_backup_20261019_120000.zip' }]);
+    await sleep(220);
+    const list = [...document.querySelectorAll('.confirm-modal')].find((m) => m.querySelector('.manage-delete-btn'));
+    if (list) {
+      list.querySelector('.manage-delete-btn').click();
+      await sleep(320);
+      out.confirmShown = !!document.getElementById('askConfirmModal');
+      out.listHiddenNotRemoved = !!list.parentNode && list.style.display === 'none';
+      const cancelBtn = document.getElementById('askConfirmCancel');
+      if (cancelBtn) cancelBtn.click();
+      await sleep(360);
+      out.listBack = !!list.parentNode && list.style.display !== 'none';
+      out.confirmGone = !document.getElementById('askConfirmModal');
+    }
+    out.residual = document.querySelectorAll('[data-stack-hidden]').length;
+    try { closeOpenModals(true); } catch (e) { }
+    return out;
+  });
+  ok('打开条款弹窗时同意弹窗被收起（不再盖着）', modalStack.afterOpen === 1 && modalStack.legalHidden === true && modalStack.visibleTitle === true,
+    'vis=' + modalStack.afterOpen + ' hidden=' + modalStack.legalHidden);
+  ok('★关闭条款后回到同意弹窗，勾选状态保留', modalStack.afterClose === 1 && modalStack.legalBack === true && modalStack.chkKept === true,
+    'vis=' + modalStack.afterClose + ' back=' + modalStack.legalBack + ' chk=' + modalStack.chkKept);
+  ok('★删除确认关闭后云端备份列表自动恢复', modalStack.confirmShown === true && modalStack.listHiddenNotRemoved === true && modalStack.listBack === true && modalStack.confirmGone === true,
+    'shown=' + modalStack.confirmShown + ' hidden=' + modalStack.listHiddenNotRemoved + ' back=' + modalStack.listBack);
+  ok('无残留的栈隐藏标记', modalStack.residual === 0, 'residual=' + modalStack.residual);
+
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
   console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');

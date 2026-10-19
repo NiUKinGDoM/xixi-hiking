@@ -189,7 +189,12 @@ async function loadSyncState() {
 
 // ★2026-09-01 通知权限引导行：仅原生 App + 权限未开启时显示「通知权限未开启 → 点击去开启」
 // 网页版（无桥/无通知栏）永远隐藏；权限已开隐藏；点击跳系统通知设置
+// ★2026-10-19 修复「系统里已开权限、App 内仍一直显示未开启」：
+//   旧实现只在①启动首帧 ②切到设置页 两处检测 —— 用户点引导行进系统设置、开完权限返回时，
+//   这两处都不会再跑 ⇒ 行一直挂着。现补三路监听：visibilitychange / pageshow / 原生 resume
+//   （原生 onResume 会主动 evaluateJavascript 调本函数，见 MainActivity.onResume）。
 let notifyPermRowBound = false;
+let notifyPermVisibleBound = false;
 function refreshNotifyPermRow() {
     try {
         const el = document.getElementById('notifyPermItem');
@@ -208,6 +213,22 @@ function refreshNotifyPermRow() {
                     }
                 } catch (e) { /* 跳转失败忽略 */ }
             });
+        }
+        // 注册"回前台再检测"—— 只注册一次（全局），避免重复绑定
+        if (!notifyPermVisibleBound) {
+            notifyPermVisibleBound = true;
+            const recheck = function () {
+                if (document.visibilityState === 'hidden') return;
+                refreshNotifyPermRow();
+            };
+            document.addEventListener('visibilitychange', recheck);
+            window.addEventListener('pageshow', recheck);
+            // Capacitor / 自定义桥可能派发 resume（若存在则一并响应）
+            window.addEventListener('resume', recheck);
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App
+                && typeof window.Capacitor.Plugins.App.addListener === 'function') {
+                try { window.Capacitor.Plugins.App.addListener('resume', recheck); } catch (e) { /* 忽略 */ }
+            }
         }
     } catch (e) { /* 忽略 */ }
 }
@@ -2056,9 +2077,113 @@ function showSyncDemoModal() {
 function closeOpenModals(force) {
     document.querySelectorAll('.confirm-modal').forEach(function (m) {
         if (!force && m.hasAttribute && m.hasAttribute('data-persist')) return;   // 常驻弹窗豁免
+        // ★2026-10-19 被「弹窗栈」临时隐藏的弹窗不删：它正在等上层关闭后恢复原样
+        //   （例：编辑记录 → 打开日期选择器 → 确定时内部 closeOpenModals()，若把下层表单删了就全丢了）
+        if (!force && m.hasAttribute && m.hasAttribute('data-stack-hidden')) return;
         if (m && m.parentNode) m.parentNode.removeChild(m);
     });
 }
+
+// ★★2026-10-19 全局弹窗互斥（用户要求：**不要弹窗盖着弹窗**——改为"先收起上一个、显示当前的，
+//   当前弹窗关掉后再把上一个恢复回来"）
+//   机制：任何 .confirm-modal / .record-detail-modal 插入 body 时，把当时其它**可见**弹窗
+//        `display:none` 并压栈；当前弹窗被移除后，若已无可见弹窗，则恢复栈顶（原 display 与勾选状态都不丢）。
+//   ★为什么不逐处改 showXxxModal：全站 30+ 处弹窗、各写各的 append/remove，逐处改必漏；
+//     用 MutationObserver 统一拦截，新增弹窗零改造即生效。
+//   ★与 data-persist 的关系：#legalConsentModal（同意弹窗）本来就常驻下层，
+//     现在它会被**真正隐藏**而不是被条款弹窗盖住 —— 正是用户要的观感；关闭条款后原样恢复。
+//   ★110ms 延迟恢复：留给"替换型"操作（旧弹窗被移除、新弹窗紧接着插入）的窗口，
+//     否则会闪一下旧弹窗。真关闭（用户点确定/取消）时多 110ms 无感。
+(function () {
+    try {
+        if (window.__modalStackInited) return;
+        window.__modalStackInited = true;
+
+        var SEL = '.confirm-modal, .record-detail-modal';
+        var HIDDEN_ATTR = 'data-stack-hidden';
+        var PREV_ATTR = 'data-stack-prev-display';
+        var stack = [];
+        var pendingRestore = null;
+        var applying = false;
+
+        function isShown(el) {
+            return !!(el && el.parentNode && el.style.display !== 'none');
+        }
+
+        // 新弹窗出现：把其它仍在显示的弹窗藏起来（最后插入的那个视为"当前"，保留显示）
+        function hideForNew() {
+            var list = document.querySelectorAll(SEL);
+            var current = null;
+            Array.prototype.forEach.call(list, function (m) { if (isShown(m)) current = m; });
+            if (!current) return;
+            Array.prototype.forEach.call(list, function (m) {
+                if (m === current) return;
+                if (!isShown(m)) return;
+                if (m.hasAttribute(HIDDEN_ATTR)) return;
+                m.setAttribute(HIDDEN_ATTR, '1');
+                m.setAttribute(PREV_ATTR, m.style.display || '');
+                m.style.display = 'none';
+                stack.push(m);
+            });
+        }
+
+        function restoreTop() {
+            if (applying) return;
+            var anyShown = Array.prototype.some.call(document.querySelectorAll(SEL), isShown);
+            if (anyShown) return;   // 已换成新弹窗了，不恢复
+            while (stack.length) {
+                var m = stack.pop();
+                if (!m || !m.parentNode) continue;   // 已被真正删除 → 跳过
+                applying = true;
+                try {
+                    var prev = m.getAttribute(PREV_ATTR);
+                    m.style.display = (prev && prev !== 'none') ? prev : '';
+                    m.removeAttribute(HIDDEN_ATTR);
+                    m.removeAttribute(PREV_ATTR);
+                } catch (e) { /* 忽略 */ }
+                applying = false;
+                return;
+            }
+        }
+
+        function scheduleRestore() {
+            if (pendingRestore) clearTimeout(pendingRestore);
+            pendingRestore = setTimeout(function () {
+                pendingRestore = null;
+                restoreTop();
+            }, 110);
+        }
+
+        function start() {
+            var obs = new MutationObserver(function (muts) {
+                var added = false;
+                var removed = false;
+                for (var i = 0; i < muts.length; i++) {
+                    var mu = muts[i];
+                    for (var j = 0; j < mu.addedNodes.length; j++) {
+                        var n = mu.addedNodes[j];
+                        if (!n || n.nodeType !== 1) continue;
+                        if ((n.matches && n.matches(SEL)) || (n.querySelector && n.querySelector(SEL))) added = true;
+                    }
+                    for (var k = 0; k < mu.removedNodes.length; k++) {
+                        var r = mu.removedNodes[k];
+                        if (!r || r.nodeType !== 1) continue;
+                        if (r.matches && r.matches(SEL)) removed = true;
+                    }
+                }
+                if (added) {
+                    if (pendingRestore) { clearTimeout(pendingRestore); pendingRestore = null; }
+                    hideForNew();
+                }
+                if (removed) scheduleRestore();
+            });
+            try { obs.observe(document.body, { childList: true }); } catch (e) { /* 忽略 */ }
+        }
+
+        if (document.body) start();
+        else document.addEventListener('DOMContentLoaded', start);
+    } catch (e) { /* 栈机制异常不应影响任何弹窗 */ }
+})();
 // ★2026-09-17 通用确认弹窗（Promise）——彻底替代原生 confirm()，统一设计语言
 //   原生 confirm() 在 APK / iOS 网页里都是系统样式（灰底方块 + 系统字体），与全站玻璃语言完全不搭且不可控。
 //   用法：askConfirm({ title, message, okText, cancelText, icon, danger }).then(function (ok) { ... })
@@ -2067,7 +2192,13 @@ function closeOpenModals(force) {
 function askConfirm(opts) {
     opts = opts || {};
     return new Promise(function (resolve) {
-        closeOpenModals();
+        // ★2026-10-19 改为「只清其它确认框」而非 closeOpenModals()：
+        //   原行为会把下层业务弹窗直接删掉（例：管理云端备份 → 点删除 → 备份列表弹窗消失，关掉确认框回不去）。
+        //   现在只处理连点重入（旧确认框的 Promise 会被它自己的 MutationObserver resolve(false)，不会挂起），
+        //   下层弹窗交给「弹窗栈」隐藏，本框关闭后自动恢复。
+        document.querySelectorAll('#askConfirmModal').forEach(function (m) {
+            if (m && m.parentNode) m.parentNode.removeChild(m);
+        });
         const modal = document.createElement('div');
         modal.className = 'confirm-modal modal-backdrop-animate';
         modal.id = 'askConfirmModal';
