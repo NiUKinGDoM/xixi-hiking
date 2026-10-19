@@ -86,10 +86,51 @@ console.log('④ 生成资源哈希 ResGuard.java …');
 if (!run(process.execPath, [path.join(ROOT, 'tools/security.js'), 'hash', TEMP_ASSETS])) fail('哈希生成失败');
 
 // ⑤ 同步原生文件到构建目录
-console.log('⑤ 同步 build.gradle / ResGuard / MainActivity / Manifest …');
+console.log('⑤ 同步 build.gradle / ResGuard / MainActivity / Manifest / res 资源 …');
 ['build.gradle'].forEach(f => cp(path.join(ROOT, 'android/app', f), path.join(TEMP_ANDROID, 'app', f)));
 ['ResGuard.java', 'MainActivity.java'].forEach(f => cp(path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking', f), path.join(TEMP_JAVA, f)));
 cp(path.join(ROOT, 'android/app/src/main/AndroidManifest.xml'), path.join(TEMP_ANDROID, 'app/src/main/AndroidManifest.xml'));
+
+// ★★2026-10-19 把 src/main/res **整目录镜像**到构建目录 —— 此前本步只拷上面 4 类文件，
+//   `res/` 停留在首次建骨架时的状态，之后对它的任何修改都进不了 APK。两处实锤：
+//     ① v1.2.4.5 把快捷方式改名为「新建计划」、改了 shortcuts.xml 的图标与跳转
+//        ⇒ 构建目录里的 strings.xml 仍是旧文案「记一笔」，那一版改名实际没生效；
+//     ② 修「图标模糊」新建的 mipmap-anydpi-v26 根本不会出现；且删掉的旧文件
+//        （drawable-v24/ic_launcher_foreground.xml = Capacitor 默认安卓机器人）**仍残留**，
+//        反而会以 anydpi-v24 覆盖新前景 ⇒ 图标变成安卓机器人。
+//   ⇒ 改为镜像：主工程有的拷过来（内容不同才拷），主工程没有的从构建目录删掉。
+//   res 是纯源目录（不含 gradle 生成物，后者在 intermediates/），镜像语义安全。
+(function syncResDir() {
+  const SRC = path.join(ROOT, 'android/app/src/main/res');
+  const DST = path.join(TEMP_ANDROID, 'app/src/main/res');
+  let copied = 0, removed = 0;
+  const walk = (rel) => {
+    const srcDir = path.join(SRC, rel);
+    const dstDir = path.join(DST, rel);
+    fs.mkdirSync(dstDir, { recursive: true });
+    const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+    const srcNames = new Set(entries.map((e) => e.name));
+    for (const e of entries) {
+      const r = path.join(rel, e.name);
+      if (e.isDirectory()) { walk(r); continue; }
+      const s = path.join(SRC, r), d = path.join(DST, r);
+      if (!fs.existsSync(d) || !fs.readFileSync(s).equals(fs.readFileSync(d))) {
+        fs.copyFileSync(s, d);
+        copied++;
+      }
+    }
+    // 删除构建目录里「主工程已不存在」的残留（否则旧文件会盖住新资源）
+    for (const e of fs.readdirSync(dstDir, { withFileTypes: true })) {
+      if (srcNames.has(e.name)) continue;
+      const p = path.join(dstDir, e.name);
+      if (e.isDirectory()) fs.rmSync(p, { recursive: true, force: true });
+      else fs.unlinkSync(p);
+      removed++;
+    }
+  };
+  walk('');
+  console.log('   res 目录镜像完成：更新 ' + copied + ' 个，清除残留 ' + removed + ' 个');
+})();
 // ★2026-09-30 回读校验：拷贝后构建目录的 ResGuard.java 必须与工程目录逐字节一致
 //   （2026-09-29 曾漏掉本步，导致 APK 内嵌旧哈希清单 → 启动弹「资源校验提示」误报，差 5 小时才定位）
 const rgSrc = path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking/ResGuard.java');

@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- ★★2026-10-19 自适应图标（Android 8.0 / API 26+）—— 「图标模糊」的根治点。
+     此目录此前**根本不存在**，所以所有机型都只能用 mipmap-xxxhdpi 的 192px 位图；
+     现代高分屏 + 大图标启动器把它放大后必然发虚。（drawable-v24 里那份 foreground 其实是
+     Capacitor 默认的安卓机器人、从未被引用，已删。）
+
+     ★设计**一个字没改**：用的就是项目里原有的高清源 drawable/ic_launcher_foreground_raw.png（1600×1600，透明背景），
+       按原 192px 成品的构图比例生成 432px 前景（= 108dp @xxxhdpi），远高于原来的 192px。
+     ★background 用纯色 @color/ic_launcher_background（#28431a，与原图标同色）。
+     ★未加 monochrome：Android 13「主题图标」需要单色剪影，那等于另画一套图形 —— 按用户要求不动设计，故不提供。 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
 </adaptive-icon>

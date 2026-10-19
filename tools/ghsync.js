@@ -49,6 +49,13 @@ const ANDROID_FILES = [
   // ★2026-10-19 再补一处同类漏项：strings.xml 含 app_name 与快捷方式文案，属人工维护的源文件，
   //   缺它远端同样复现不出相同 APK（改快捷方式名字时尤其明显）。
   'android/app/src/main/res/values/strings.xml',
+  // ★2026-10-19 自适应图标（修「图标模糊」）：anydpi-v26 的两个声明 + 108dp 前景图 + 背景色定义。
+  //   缺任一项，从远端 clone 都构建不出同款图标（前景图是二进制，但它是**源**、必须可复现）。
+  //   legacy 的 mipmap-*dpi 位图仍不同步（历史位图，体积大且非本版产物）。
+  'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml',
+  'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml',
+  'android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png',
+  'android/app/src/main/res/values/ic_launcher_background.xml',
 ];
 // 整目录同步（相对主工程）
 const DIRS = [
