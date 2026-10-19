@@ -952,33 +952,44 @@ function click(el) { el.dispatchEvent(new window.MouseEvent('click', { bubbles: 
         const cfBtn = document.getElementById('celebrateOkBtn');
         if (cfBtn) cfBtn.click();
 
-        // 保存记录场景（非静默）：一次达成多个 → 汇总卡
+        // ★2026-10-19 用户要求「解锁几个就弹几个」：一次达成多个 → **逐个弹庆祝卡**（原先是合并成一张「汇总卡」）
+        //   断言比原先更强：第 1 张内容 / 彩屑粒数 / 「还有 N 个」提示 / 队列长度 / 第 2 张接续
         window.localStorage.removeItem('hiking_milestones');
         window.checkMilestones();
-        const smOv = document.getElementById('celebrateOverlay');
-        assert('非静默-汇总卡出现', !!smOv, smOv ? smOv.textContent.slice(0, 30) : 'no');
-        assert('非静默-文案含解锁数量', !!smOv && smOv.textContent.indexOf('解锁了 2 个') >= 0, smOv ? smOv.textContent.slice(0, 40) : '');
-        assert('非静默-按钮=去看看', !!smOv && smOv.textContent.indexOf('去看看') >= 0);
+        const q1 = document.getElementById('celebrateOverlay');
+        assert('多档-第 1 张弹出', !!q1, q1 ? q1.textContent.slice(0, 30) : 'no');
+        assert('多档-第 1 张是庆祝卡(非汇总)', !!q1 && q1.textContent.indexOf('里程碑达成') >= 0 && q1.textContent.indexOf('解锁了') < 0);
+        let q1N = 0;
+        if (q1) q1.querySelectorAll(':scope > div').forEach(function (el) {
+            if (String(el.className || '').indexOf('confirm-modal-content') < 0) q1N++;
+        });
+        assert('多档-第 1 张带彩屑 400 粒', q1N === 400, String(q1N));
+        assert('多档-第 1 张提示「还有 1 个」', !!q1 && q1.textContent.indexOf('还有 1 个里程碑待解锁') >= 0);
+        assert('多档-队列还剩 1 个', (window.msCelebrateQueue || []).length === 1, String((window.msCelebrateQueue || []).length));
+        const qBtn1 = document.getElementById('celebrateOkBtn');
+        if (qBtn1) qBtn1.click();
+        assert('多档-第 1 张可关闭', !document.getElementById('celebrateOverlay'));
+        window.showNextMilestoneCelebration(window.milestoneStats());   // 手动推进（真实由 close 里 280ms 后自动触发）
+        const q2 = document.getElementById('celebrateOverlay');
+        assert('多档-第 2 张接着弹出', !!q2);
+        assert('多档-第 2 张不再提示剩余', !!q2 && q2.textContent.indexOf('还有') < 0);
+        assert('多档-队列已清空', (window.msCelebrateQueue || []).length === 0);
+        const qBtn2 = document.getElementById('celebrateOkBtn');
+        if (qBtn2) qBtn2.click();
 
-        const smBtn = document.getElementById('celebrateOkBtn');
-        if (smBtn) smBtn.click();
-        assert('汇总卡关闭', !document.getElementById('celebrateOverlay'));
-        assert('一览弹窗已打开', !!document.getElementById('msListClose'));
+        // 一览弹窗：改从独立入口打开（原「汇总卡 → 去看看」入口已随汇总卡退场）
+        const msEntry = document.getElementById('milestoneEntry');
+        if (msEntry) msEntry.click();
+        assert('点入口→打开一览', !!document.getElementById('msListClose'));
         assert('一览-打开后红点清除', document.getElementById('milestoneNewDot').style.display === 'none', document.getElementById('milestoneNewDot').style.display);
         const mlBody = document.querySelector('.confirm-modal-content');
         const mlIcons = mlBody ? (mlBody.innerHTML.match(/material-icons/g) || []).length : 0;
         assert('一览-8 档全列(含标题图标)', mlIcons === window.MILESTONES.length + 1, String(mlIcons));
         assert('一览-含已达成标记', !!mlBody && mlBody.textContent.indexOf('已达成') >= 0);
         assert('一览-含未达成进度', !!mlBody && /\d+ \/ \d+/.test(mlBody.textContent));
-        const mlClose = document.getElementById('msListClose');
-        if (mlClose) mlClose.click();
-        assert('一览可关闭', !document.getElementById('msListClose'));
-
-        const msEntry = document.getElementById('milestoneEntry');
-        if (msEntry) msEntry.click();
-        assert('点入口→打开一览', !!document.getElementById('msListClose'));
         const mlClose2 = document.getElementById('msListClose');
         if (mlClose2) mlClose2.click();
+        assert('一览可关闭', !document.getElementById('msListClose'));
 
         // 回归：单个达成仍走庆祝卡，不是汇总卡
         window.localStorage.removeItem('hiking_milestones');

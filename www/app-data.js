@@ -4945,8 +4945,12 @@ function checkMilestones(silent) {
         if (newly.length) {
             msSetCelebrated(cel.concat(newly.map(function (x) { return x.id; })));
             if (!silent) {
-                if (newly.length === 1) showMilestoneCelebration(newly[0], st);
-                else showMilestoneSummary(newly, st);
+                // ★★2026-10-19 用户要求「每一个里程碑完成之后加解锁弹窗、加彩带，解锁几个就弹几个」
+                //   —— 原实现是「1 个 → 庆祝卡；多个 → 合并成一张汇总卡（showMilestoneSummary）」。
+                //   现改为**逐个排队弹出**：全部入队，先弹第一个；用户点「收下」/关闭后再弹下一个。
+                //   彩带由 spawnConfetti 在每次弹窗里各撒一次（400 粒），所以每个弹窗都有。
+                msCelebrateQueue = newly.slice();
+                showNextMilestoneCelebration(st);
             }
         } else {
             msSetCelebrated(cel);   // 回收已失效档位
@@ -4955,7 +4959,18 @@ function checkMilestones(silent) {
         renderMilestoneEntry();
     } catch (e) { /* 里程碑失败绝不影响保存流程 */ }
 }
-function showMilestoneCelebration(ms, st) {
+// ★2026-10-19 逐个解锁弹窗的队列（配合 checkMilestones 的改动）
+//   设计：一次解锁 N 个 → 全部入队，先弹第一个；每张点「收下」后 280ms 再弹下一张。
+//   280ms 是为了让上一张的遮罩淡出与彩带撤离不与新一张叠在一起（视觉不突跳）。
+var msCelebrateQueue = [];
+function showNextMilestoneCelebration(st) {
+    if (!msCelebrateQueue || !msCelebrateQueue.length) return;
+    var ms = msCelebrateQueue.shift();
+    showMilestoneCelebration(ms, st, msCelebrateQueue.length);
+}
+
+function showMilestoneCelebration(ms, st, remaining) {
+    remaining = remaining || 0;
     try {
         var old = document.getElementById('celebrateOverlay');
         if (old && old.parentNode) old.parentNode.removeChild(old);
@@ -4973,13 +4988,18 @@ function showMilestoneCelebration(ms, st) {
             '<div style="font-size:22px;font-weight:800;margin:6px 0;color:' + (dark ? '#ffffff' : '#0f172a') + ';">' + escapeHtml(ms.title) + '</div>' +
             '<div style="font-size:14px;font-weight:600;color:' + (dark ? 'rgba(255,255,255,0.9)' : '#334155') + ';">' + escapeHtml(ms.desc) + '</div>' +
             '<div style="font-size:12px;color:' + (dark ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.9)') + ';margin-top:10px;line-height:1.7;">目前 ' + st.peaks + ' 座山 · ' + st.km.toFixed(1) + ' km</div>' +
+            (remaining > 0 ? '<div style="font-size:11px;margin-top:7px;color:#f59e0b;font-weight:700;">还有 ' + remaining + ' 个里程碑待解锁</div>' : '') +
             '<button id="celebrateOkBtn" class="glass-btn ripple-effect" style="margin-top:18px;padding:10px 30px;border-radius:12px;font-weight:700;">收下</button>';
         overlay.appendChild(card);
         document.body.appendChild(overlay);
         var escHandler = function (e) { if (e.key === 'Escape') close(); };
-        var close = function () {
+                var close = function () {
             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
             document.removeEventListener('keydown', escHandler);
+            // ★2026-10-19 队列推进：关掉当前这张后，若还有待解锁的就接着弹下一张（解锁几个弹几个）
+            if (msCelebrateQueue && msCelebrateQueue.length) {
+                setTimeout(function () { showNextMilestoneCelebration(st); }, 280);
+            }
         };
         document.addEventListener('keydown', escHandler);
         var btn = document.getElementById('celebrateOkBtn');
@@ -5086,6 +5106,9 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-lg" st
     } catch (e) { /* 一览失败不影响页面 */ }
 }
 // ★2026-09-15 汇总卡：一次补领多个时用（升级老用户首次打开会走到这里）
+// ★2026-10-19 起**不再被调用**：用户要求「解锁几个就弹几个」后，多档解锁改走
+//   `msCelebrateQueue` + `showNextMilestoneCelebration` 逐个弹庆祝卡，不再合并成汇总卡。
+//   保留此函数（含「去看看」按钮跳一览的旧路径）以便日后需要时恢复汇总视图。
 function showMilestoneSummary(list, st) {
     try {
         var oldOv = document.getElementById('celebrateOverlay');
