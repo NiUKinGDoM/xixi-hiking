@@ -32,6 +32,9 @@ const PROJ = path.resolve(ROOT, '..');
 const GH = path.join(PROJ, 'backups/github-同步目录/xixi-hiking');
 const OFFLINE = process.argv.includes('--offline');
 const REPO = 'NiUKinGDoM/xixi-hiking';
+// ★2026-10-19 由【本地 git】段填充，供文件末尾 async 段【远端 master】比对
+//   （原 `local` 声明在 `else {}` 块内，作用域出不来，末尾拿不到）
+let localMasterSha = null;
 
 const issues = [];
 const ok = (s) => console.log('  ✅ ' + s);
@@ -89,15 +92,13 @@ else if (!fs.existsSync(path.join(GH, '.git'))) { warn('GH 副本不是 git 工�
 else {
   const head = readGitRef('HEAD');
   const local = readGitRef('refs/heads/master');
-  const remote = readGitRef('refs/remotes/origin/master');
+  localMasterSha = local;   // ★外提到模块作用域，供末尾【远端 master】比对
   console.log('  HEAD: ' + (head ? head.slice(0, 8) : '?') + '  (master ' + (local ? local.slice(0, 8) : '?') + ')');
-  if (!local || !remote) {
-    skip('本地/远端 ref 读不到（仓库状态异常或 ref 未落盘）');
-  } else if (local === remote) {
-    ok('本地 master 与 origin/master 齐平');
-  } else {
-    warn('本地 master (' + local.slice(0, 8) + ') ≠ origin/master (' + remote.slice(0, 8) + ')—— 可能有不曾 push 的提交');
-  }
+  // ★★2026-10-19 修复（每周自动体检的固定误报）：这里原先比对 `refs/remotes/origin/master`
+  //   —— 那是**本地缓存的远程跟踪引用**。但本项目一直用 `git push <URL> https://...` 直推，
+  //   从不走 `git push origin`，所以该缓存引用**永不更新** ⇒ 每周一必报
+  //   「本地 master ≠ origin/master，可能有不曾 push 的提交」，而实测远端与本地早已齐平（ls-remote 一致）。
+  //   ⇒ 改为在文件末尾的 async 段用 **GitHub API 查真实 master SHA** 比对（见【远端 master】）。
   if (head !== local) skip('HEAD 与 master 不同（可能处于游离/其他分支状态）');
 }
 
@@ -154,6 +155,29 @@ function summary() {
 }
 
 (async () => {
+  // ---------- ⑤' 远端 master 齐平（★2026-10-19 新增：替代已失效的 origin/* 本地缓存比对） ----------
+  //   为什么放这里：查 GitHub API 需要 await；而第 ③ 段在顶层同步流程里，不能 await。
+  //   为什么不用 `git ls-remote`：本文件刻意全程不 spawn 子进程（本机 spawn 会 EBUSY），
+  //   故与第 ⑤ 项一致，走 node https 直连。放在【远程 Release】之前，避免被它的 return summary() 跳过。
+  console.log('\n【远端 master】');
+  if (OFFLINE) {
+    console.log('  （--offline 跳过）');
+  } else {
+    const rm = await httpsGetJson('https://api.github.com/repos/' + REPO + '/git/ref/heads/master');
+    let remoteSha = null;
+    if (!rm.err && rm.status === 200) {
+      const mm = rm.body.match(/"sha"\s*:\s*"([0-9a-f]{40})"/);
+      if (mm) remoteSha = mm[1];
+    }
+    if (!remoteSha) {
+      skip('远端 master 查询失败' + (rm.err ? '：' + rm.err : (rm.status ? '（HTTP ' + rm.status + '）' : '')));
+    } else {
+      console.log('  远端 master: ' + remoteSha.slice(0, 8) + '   本地 master: ' + (localMasterSha ? localMasterSha.slice(0, 8) : '?'));
+      if (localMasterSha && localMasterSha === remoteSha) ok('远端 master 与本地齐平');
+      else if (localMasterSha) warn('远端 master (' + remoteSha.slice(0, 8) + ') ≠ 本地 master (' + localMasterSha.slice(0, 8) + ')—— 先查明再提交（可能有并行会话已推送）');
+    }
+  }
+
   console.log('\n【远程 Release】');
   if (OFFLINE) { console.log('  （--offline 跳过）'); return summary(); }
   const r = await httpsGetJson('https://api.github.com/repos/' + REPO + '/releases/latest');
