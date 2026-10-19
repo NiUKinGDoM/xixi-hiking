@@ -152,6 +152,24 @@ public class MainActivity extends BridgeActivity {
             public void onPageLoaded(WebView webView) {
                 setupDownloadListener(webView);
                 setupJsBridge(webView);
+                // ★★2026-10-19 桥注入后主动补一次「消费待处理动作」——
+                //   根因：addJavascriptInterface 挂在**本回调**（≈ onPageFinished），而页面 JS 早已执行完，
+                //   冷启动时 JS 里 `window.XixiFileBridge` 还不存在 ⇒ 快捷方式 / 通知点击的 navigate 动作
+                //   被直接丢弃（用户反馈「长按点新建计划，没跳到弹窗」）。JS 侧已加「桥未就绪则重试」，
+                //   这里再补一刀，两边都兜住。
+                //   JS 侧 consumeNotifyAction 是「取走即清空」，重复调用安全（第二次拿到空串直接返回）。
+                webView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            webView.evaluateJavascript(
+                                    "try{if(typeof window.__consumeNotifyAction==='function')window.__consumeNotifyAction();}catch(e){}",
+                                    null);
+                        } catch (Exception e) {
+                            Log.w(TAG, "consume notify action after bridge failed", e);
+                        }
+                    }
+                });
                 // ★2026-09-30 资源校验提示：网页就绪后把待提示项推给网页玻璃弹窗（复用 confirm-modal）
                 flushTamperWarn();
                 // ★2026-08-14 禁用双指捏合缩放（软件感，非网页感）：关闭内置缩放/手势缩放/缩放按钮

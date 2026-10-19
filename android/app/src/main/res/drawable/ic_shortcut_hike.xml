@@ -1,73 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ★2026-10-19 桌面快捷方式专用图标「一个人爬山」（用户要求：原来复用启动图标，现改为爬山人形矢量图）
-     设计：
-       · 左侧 —— 实心人形：头 + 前倾躯干 + 双腿 + 前伸手臂 + 一根登山杖，脚下踩一段斜坡线；
-       · 右侧 —— 一座实心三角形山；
-       · 实心体 + 细线条混合，保证在快捷方式实际尺寸（32~48dp）下仍能看出「人往山上走」。
-     ★配色用深灰蓝 #1E293B（与 App 文字色同族）：快捷方式图标由系统放在浅色/中灰圆角底上，
-       深色剪影对比最稳；纯白在浅底上会看不见。
-     ★本文件只在 shortcuts.xml 里被引用，不影响启动图标。 -->
+<!-- ★2026-10-19 桌面快捷方式专用图标（v3）——「背背包的人」
+     用户要求：**去掉登山杖、去掉脚下地面线**，只保留「一个人背个包」。
+
+     v3 的造型要点（都为小尺寸可辨）：
+       · **头（实心圆）+ 直立躯干 + 两条腿成干净 A 形**（不交叉）；
+       · **背包用圆角矩形**，贴在背后、**包顶略高过肩**（轮廓上凸出一块，这是「背包」最核心的识别特征），
+         包右边缘与躯干**重叠约 0.2dp** ⇒ 连成一整块剪影，不会看成「人 + 一个不相干的方块」；
+       · 背包原本试过「描边空心 / 与身体留缝」，实测 24dp 下描边会糊成门框、留缝会裂成两块，故改成实心相连；
+       · 去掉上一版的登山杖与地平线（用户明确不需要），线条从 6 条降到 4 条，32dp 下更干净；
+       · 内容落在 3.2~20.3 之内（快捷方式图标会被系统放进圆形浅底，撑满会裁边）。
+
+     ★配色 #1E293B（与 App 文字色同族）：快捷方式图标由系统放在浅色圆角底上，深色剪影对比最稳。
+     ★本文件只被 shortcuts.xml 引用，不影响启动图标。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- 脚下斜坡 -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#1E293B"
-        android:strokeWidth="1.8"
-        android:strokeLineCap="round"
-        android:pathData="M1.5,21.5 L9.2,13.2" />
-
-    <!-- 右侧山 -->
+    <!-- 背包：圆角矩形，贴在背后，包顶(5.5) 高过肩(6.4) ⇒ 轮廓凸出 -->
     <path
         android:fillColor="#1E293B"
-        android:pathData="M12,21 L17.2,9.6 L22.5,21 Z" />
+        android:pathData="M10.6,5.5 L11.6,5.5 A2.3,2.3 0 0 1 13.9,7.8 L13.9,11.1 A2.3,2.3 0 0 1 11.6,13.4 L10.6,13.4 A2.3,2.3 0 0 1 8.3,11.1 L8.3,7.8 A2.3,2.3 0 0 1 10.6,5.5 Z" />
 
     <!-- 头 -->
     <path
         android:fillColor="#1E293B"
-        android:pathData="M5.5,7.2 a1.9,1.9 0 1,0 3.8,0 a1.9,1.9 0 1,0 -3.8,0 Z" />
+        android:pathData="M13.15,4.3 A2.05,2.05 0 1 1 17.25,4.3 A2.05,2.05 0 1 1 13.15,4.3 Z" />
 
-    <!-- 躯干（略前倾） -->
+    <!-- 躯干（略前倾，与背包重叠相连） -->
     <path
         android:fillColor="#00000000"
         android:strokeColor="#1E293B"
-        android:strokeWidth="2.6"
+        android:strokeWidth="2.4"
         android:strokeLineCap="round"
-        android:pathData="M7.9,9.4 L5.9,14.8" />
+        android:pathData="M15.2,6.4 L14.4,12.5" />
 
-    <!-- 后腿（蹬地） -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#1E293B"
-        android:strokeWidth="2.2"
-        android:strokeLineCap="round"
-        android:pathData="M5.9,14.8 L4.3,18.6" />
-
-    <!-- 前腿（抬起迈步） -->
+    <!-- 后腿 -->
     <path
         android:fillColor="#00000000"
         android:strokeColor="#1E293B"
         android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:pathData="M5.9,14.8 L7.9,17.8" />
+        android:pathData="M14.4,12.5 L12.4,19.7" />
 
-    <!-- 手臂 -->
+    <!-- 前腿（行走姿态，前后错开） -->
     <path
         android:fillColor="#00000000"
         android:strokeColor="#1E293B"
-        android:strokeWidth="1.6"
+        android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:pathData="M7.7,10.4 L10,12.2" />
-
-    <!-- 登山杖 -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#1E293B"
-        android:strokeWidth="1.4"
-        android:strokeLineCap="round"
-        android:pathData="M10,9.4 L10.9,18.8" />
+        android:pathData="M14.4,12.5 L16.6,20.3" />
 </vector>

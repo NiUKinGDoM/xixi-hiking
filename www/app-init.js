@@ -264,9 +264,18 @@ async function init() {
         // ★2026-08-30 通知点击动作消费（冷启动路径）：点通知本体 → 按 navigate 跳转
         //（consumeNotifyAction 取走即清空，重复调用幂等）
         // ★2026-09-01 通知分级：备份提醒点通知 → 跳设置页（navigate=settings）
+        var _notifyConsumeRetry = 0;   // ★2026-10-19 桥就绪前的重试计数（见函数内注释）
         function consumeNotifyActionOnce() {
             try {
-                if (!window.XixiFileBridge || typeof window.XixiFileBridge.consumeNotifyAction !== 'function') return;
+                if (!window.XixiFileBridge || typeof window.XixiFileBridge.consumeNotifyAction !== 'function') {
+                    // ★★2026-10-19 修「点快捷方式/通知没反应」：原生把 addJavascriptInterface 挂在
+                    //   `onPageLoaded`（≈ onPageFinished）里，而页面 JS 在那之前就跑完了
+                    //   ⇒ 冷启动时这里读不到 XixiFileBridge，旧代码第一行就 return，**动作被彻底丢掉**。
+                    //   现改为延迟重试（300ms × 8 ≈ 2.4s），等桥注入后继续消费；桥永远不可用（网页版）也只是空跑。
+                    _notifyConsumeRetry = (_notifyConsumeRetry || 0) + 1;
+                    if (_notifyConsumeRetry <= 8) setTimeout(consumeNotifyActionOnce, 300);
+                    return;
+                }
                 var notifyAction = window.XixiFileBridge.consumeNotifyAction();
                 if (!notifyAction) return;
                 var notifyObj = JSON.parse(notifyAction);
@@ -313,11 +322,16 @@ async function init() {
                 }
             } catch (e) { /* 消费失败不影响启动 */ }
         }
+        // ★2026-10-19 暴露给原生：桥注入完成后（onPageLoaded）由原生主动调一次，
+        //   兜住「JS 先跑完、桥后注入」造成的丢动作（详见函数内注释）
+        window.__consumeNotifyAction = function () { _notifyConsumeRetry = 0; consumeNotifyActionOnce(); };
         consumeNotifyActionOnce();
         // ★2026-08-30 热启动路径：App 存活时点通知回前台 → visibilitychange visible 触发消费（幂等，不会重复执行）
         document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible') {
-                try { consumeNotifyActionOnce(); } catch (e) { /* 忽略 */ }
+                // ★2026-10-19 每次回前台都重置重试计数：否则上一次启动把 8 次配额耗尽后，
+                //   再点快捷方式/通知就永远不重试了（桥可能此时才可用）
+                try { _notifyConsumeRetry = 0; consumeNotifyActionOnce(); } catch (e) { /* 忽略 */ }
             }
         });
 
