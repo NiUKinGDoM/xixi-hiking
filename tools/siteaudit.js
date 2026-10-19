@@ -61,6 +61,11 @@ function bad(name, extra) {
   if (!JSON_OUT) console.log('  ❌ ' + name + (extra ? '  ' + extra : ''));
 }
 function chk(name, cond, extra) { cond ? ok(name, extra) : bad(name, extra); }
+// ★2026-10-19 环境限制专用：如实标注但**不计入失败**（同 tools/status.js 的 skip 语义）
+//   场景：本机 raw.githubusercontent.com 可能整体不可达 —— 那是网络问题，不该让体检变红。
+function skipEnv(name, extra) {
+  if (!JSON_OUT) console.log('  ⏭️  跳过 ' + name + (extra ? '  ' + extra : ''));
+}
 
 // ---------- HTTP（跟随重定向 + 重试；不 spawn） ----------
 function request(url, { ua = UA_DESKTOP, timeout = 30000, redirects = 0 } = {}) {
@@ -244,15 +249,30 @@ async function main() {
       'site/site-privacy.html',
       'site/robots.txt', 'site/sitemap.xml',
     ];
+    // ★★2026-10-19 加固：本段曾让整轮体检卡死。原因如上 —— `get()` 默认「重试 3 次 × 每次 30s 超时」
+    //   ⇒ 单个文件最坏 92s，14 个文件合计 **约 21 分钟**；而本机 raw.githubusercontent.com 实测
+    //   整体不可达（代理与 `--noproxy '*'` 直连都返回 0 字节，同时 github.com 的 git 端点却正常）⇒
+    //   2026-10-19 那轮跑了 14 分钟仍无任何输出。三层处理：
+    //   ① raw 专用短超时 8s、**不重试**；
+    //   ② **首败即短路**：第一次网络层失败就判定不可达，剩余文件全部跳过；
+    //   ③ 网络层失败改用 skipEnv（**不计失败**），只有「抓到了但内容不一致 / HTTP 非 200」才算真问题。
+    //   ⇒ 不可达时整段只花 ~8s 并给出明确说明；正常网络下行为与改前完全一致。
+    const RAWT = { timeout: 8000 };
+    let rawErr = null, rawSkipped = 0;
     for (const rel of FILES) {
       let lb;
       try { lb = fs.readFileSync(path.join(ROOT, rel)); } catch (e) { bad('本地缺文件 ' + rel); continue; }
-      const r = await get(RAW + rel.split('/').map(encodeURIComponent).join('/'), {}, 3);
-      if (r.err) { bad('远端抓取 ' + rel, r.err); continue; }
+      if (rawErr) { rawSkipped++; continue; }               // ② 已判定不可达 → 跳过
+      const r = await get(RAW + rel.split('/').map(encodeURIComponent).join('/'), RAWT, 1);
+      if (r.err) { rawErr = r.err; skipEnv('远端抓取 ' + rel, r.err); continue; }   // ③ 网络层失败
       if (r.status !== 200) { bad('远端抓取 ' + rel, 'HTTP ' + r.status); continue; }
       const same = crypto.createHash('sha256').update(norm(r.body)).digest('hex')
         === crypto.createHash('sha256').update(norm(lb)).digest('hex');
       chk('远端 == 本地  ' + rel, same, same ? '' : '远端 ' + r.body.length + 'B / 本地 ' + lb.length + 'B');
+    }
+    if (rawSkipped) {
+      skipEnv('其余 ' + rawSkipped + ' 个文件的 raw 比对',
+        'raw.githubusercontent.com 不可达（' + rawErr + '）—— 属网络环境问题、非项目问题；需要完全跳过本段可用 --no-remote');
     }
   } else if (!JSON_OUT) {
     groupTitle('【F】远端 GitHub raw == 本地 —— 已跳过');
