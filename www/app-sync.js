@@ -99,6 +99,13 @@ async function removeSyncFileFromIndex(name) {
 // 反射发非标准方法在真机上不可靠（字段改了但实际按 GET 发出，导致假 403/404）。
 // 社区共识（CSDN 踩坑实录/PT-Plugin-Plus）：云盘 WebDAV 阉割版不支持 MKCOL，
 // 正确做法 = 目录由用户手动创建，App 只做 GET 检查 + PUT/GET。
+// ★★2026-10-19 修复（用户反馈「点上传显示目录检查失败」）：
+//   原实现只把 200/301/302/403 视为「目录存在」，而 **WebDAV 上 GET 一个目录经常返回 405
+//   Method Not Allowed**（多数服务端不允许 GET 目录）⇒ 被误判成「检查目录失败」。
+//   另外 429（坚果云限流）与 status=0（网络异常）也只会吐出一句含糊的「检查目录失败」。
+//   现三点改动：① 405 加入「视为存在」白名单；② 真 404（目录确实不存在）时**自动 MKCOL 创建**
+//   （幂等：201/200=建成、405/409=已存在），不再要求用户去坚果云网页端手建；
+//   ③ 认证失败 / 限流 / 网络异常分别给出可读提示，便于定位。
 async function ensureSyncParentDirs(fileUrl) {
     try {
         const u = new URL(fileUrl);
@@ -107,20 +114,28 @@ async function ensureSyncParentDirs(fileUrl) {
         let dir = u.origin;
         for (const seg of segs) {
             dir += '/' + seg;
-            // GET 目录探测：200/301/302=存在；★403=坚果云对目录的 GET 常返回 403（禁止列目录），
-            // 但目录本身存在，视为可继续（真正的权限问题交给 PUT 暴露）；
-            // 404=目录不存在；401=认证失败
+            // ① GET 探测：2xx / 301 / 302 / 403（禁止列目录，但目录存在）/ 405（不允许 GET 目录，同样说明存在）
             const r = await webdavRequest(dir + '/', 'GET', '');
-            if (r.status === 200 || r.status === 301 || r.status === 302 || r.status === 403 || (r.status >= 200 && r.status < 300)) {
+            const st = r.status;
+            if ((st >= 200 && st < 300) || st === 301 || st === 302 || st === 403 || st === 405) {
                 continue; // 目录存在，进入下一级
             }
-            if (r.status === 404) {
-                return { ok: false, exists: false, detail: '云端缺少目录 ' + dir + '/，请在坚果云网页端手动创建后再同步' };
+            // ② 目录确实不存在 → 尝试自动创建（MKCOL 幂等：已存在返回 405/409）
+            if (st === 404) {
+                const mk = await webdavRequest(dir + '/', 'MKCOL', '');
+                const mst = mk.status;
+                if (mst === 201 || mst === 200 || mst === 405 || mst === 409) continue;
+                return {
+                    ok: false, exists: false,
+                    detail: '目录 ' + dir + '/ 不存在，自动创建也失败（HTTP ' + (mst || mk.error || '?') + '），请在网盘里手动创建该目录后再试'
+                };
             }
-            if (r.status === 401) {
-                return { ok: false, exists: false, detail: '认证失败，请检查账号/应用密码' };
-            }
-            return { ok: false, exists: false, detail: '检查目录 ' + dir + ' 失败：' + (r.error ? r.error : ('HTTP ' + r.status)) };
+            // ③ 分因提示
+            if (st === 401) return { ok: false, exists: false, detail: '认证失败，请检查账号 / 应用密码' };
+            if (st === 403) return { ok: false, exists: false, detail: '无权访问该目录（HTTP 403），请确认应用密码权限' };
+            if (st === 429) return { ok: false, exists: false, detail: '请求过于频繁（网盘限流 HTTP 429），请等 1~2 分钟再试' };
+            if (st === 0) return { ok: false, exists: false, detail: '网络异常：' + (r.error || '请求未完成，请检查网络') };
+            return { ok: false, exists: false, detail: '检查目录 ' + dir + ' 失败：' + (r.error ? r.error : ('HTTP ' + st)) };
         }
         return { ok: true, exists: true, detail: '' };
     } catch (e) {
@@ -1103,11 +1118,18 @@ async function listSyncFilesFromCloud() {
             const h = decodeURIComponent(m[1]).trim();
             if (h) hrefs.push(h);
         }
-            // 转成备份文件列表（统一 .html 格式，★2026-08-20 v1.1.0.5 不再兼容老 .json）
+            // 转成备份文件列表
+            // ★2026-10-19 修复（用户反馈「上传了一堆，不是说最多两个吗」）：原实现只认
+            //   `name.endsWith(SYNC_FILE_EXT)`（.zip，2026-08-25 改的）⇒ 8-25 之前上传的
+            //   `.html` 备份**永远列不出来**，云端清理逻辑（保留最近 2 份）也就看不见它们，
+            //   于是老备份一直堆着、越堆越多。
+            //   ⇒ 现同时接受 .zip 与 .html（老备份仍可被下载导入），清理时一并纳入排序与删除。
+            const BACKUP_EXTS = ['.zip', '.html'];
             const files = [];
             for (const h of hrefs) {
                 const name = h.split('/').filter(Boolean).pop() || '';
-                if (name.startsWith(SYNC_FILE_PREFIX) && name.endsWith(SYNC_FILE_EXT)) {
+                const lower = name.toLowerCase();
+                if (name.startsWith(SYNC_FILE_PREFIX) && BACKUP_EXTS.some((ext) => lower.endsWith(ext))) {
                 files.push({
                     name: name,
                     time: '',
