@@ -274,6 +274,23 @@ async function init() {
                     try { switchTab('plans'); } catch (e) { /* 跳转失败不影响 */ }
                 } else if (notifyObj && notifyObj.navigate === 'settings') {
                     try { switchTab('settings'); } catch (e) { /* 跳转失败不影响 */ }
+                } else if (notifyObj && notifyObj.navigate === 'addplan') {
+                    // ★2026-10-19 用户要求：桌面快捷方式「记一笔徒步」→ **直达「添加计划」弹窗**
+                    //   （原先 quickadd 是直达「添加记录」；两条分支并存，改 shortcuts.xml 的 value 即可切换）
+                    //   沿用 quickadd 的「轮询直到弹窗出现」思路：先检测是否已弹出，未弹出才调 addNewPlannedTrip，
+                    //   避免重复新建空计划（addNewPlannedTrip 会 unshift 一条空 trip 并打开编辑弹窗）。
+                    try {
+                        switchTab('plans');
+                        var _apTry = 0;
+                        var _apTimer = setInterval(function () {
+                            _apTry++;
+                            var _pdTitle = null;
+                            try { _pdTitle = document.querySelector('.record-detail-modal .rd-tt'); } catch (e6) { /* ignore */ }
+                            if (_pdTitle && _pdTitle.textContent.indexOf('计划') >= 0) { clearInterval(_apTimer); return; }
+                            try { if (typeof addNewPlannedTrip === 'function') addNewPlannedTrip(); } catch (e7) { /* 单次失败忽略，下轮重试 */ }
+                            if (_apTry > 10) clearInterval(_apTimer);
+                        }, 200);
+                    } catch (e) { /* 跳转失败不影响启动 */ }
                 } else if (notifyObj && notifyObj.navigate === 'quickadd') {
                     // ★2026-09-04 桌面快捷方式「记一笔」：切记录 tab 后直接打开添加流程
                     try {

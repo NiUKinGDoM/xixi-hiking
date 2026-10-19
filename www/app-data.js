@@ -1711,6 +1711,63 @@ function saveRecord(id) {
     }
     triggerHaptic(15); // ★2026-08-27 渐进增强：保存成功轻震动反馈
     checkMilestones(); // ★2026-09-14 新增：保存后判定里程碑（达成弹一次，已达成不再弹）
+    // ★★2026-10-19 用户要求：「记完第一条，不知道有啥用」→ 第一条记录保存后给**一次性**正反馈，
+    //   告诉新手去概览看第一张热力图（此后永不再弹，靠 localStorage 标记）。
+    //   注意：第一条记录必然同时解锁「第 1 座山」里程碑 → 庆祝卡会先弹，
+    //   这里会在检测到 celebrateOverlay 时等待其关闭后再弹，避免两个弹窗叠加。
+    try { showFirstRecordTip(); } catch (e) { /* 提示失败绝不影响保存 */ }
+}
+
+var FIRST_RECORD_TIP_KEY = 'hiking_first_record_tip_v1';
+function showFirstRecordTip() {
+    try {
+        if (localStorage.getItem(FIRST_RECORD_TIP_KEY)) return;          // 已弹过，永不再弹
+        if ((typeof records === 'undefined' ? 0 : (records || []).length) !== 1) return;  // 只在「第一条」时
+        var tries = 0;
+        var timer = setInterval(function () {
+            tries++;
+            // 里程碑庆祝卡仍在 → 等它关掉（最长约 16s，超时则放弃，下次保存再试）
+            if (document.getElementById('celebrateOverlay')) {
+                if (tries > 40) clearInterval(timer);
+                return;
+            }
+            clearInterval(timer);
+            if (localStorage.getItem(FIRST_RECORD_TIP_KEY)) return;
+            localStorage.setItem(FIRST_RECORD_TIP_KEY, '1');
+            renderFirstRecordTipCard();
+        }, 400);
+    } catch (e) { /* 静默 */ }
+}
+
+function renderFirstRecordTipCard() {
+    try {
+        if (document.getElementById('firstTipOverlay')) return;
+        var ov = document.createElement('div');
+        ov.id = 'firstTipOverlay';
+        ov.className = 'confirm-modal modal-backdrop-animate';
+        ov.innerHTML = '' +
+            '<div class="confirm-modal-content modal-fade-scale mdl-md">' +
+            '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">auto_awesome</span>第一笔已记下</div>' +
+            '<div class="confirm-modal-message">' +
+            '概览页已经亮起第一格 —— 你的<b>热力图、总里程、徒步年资</b>都从这一笔开始算。<br>' +
+            '以后每记一次，那里就多一格。' +
+            '</div>' +
+            '<div class="confirm-modal-buttons">' +
+            '<button type="button" class="glass-btn ripple-effect" id="firstTipOk">知道了</button>' +
+            '<button type="button" class="glass-btn ripple-effect corner-glow" id="firstTipGo">去概览看看</button>' +
+            '</div></div>';
+        document.body.appendChild(ov);
+        var close = function () { if (ov.parentNode) ov.parentNode.removeChild(ov); };
+        var okBtn = document.getElementById('firstTipOk');
+        if (okBtn) okBtn.addEventListener('click', close);
+        var goBtn = document.getElementById('firstTipGo');
+        if (goBtn) goBtn.addEventListener('click', function () {
+            close();
+            try { switchTab('overview'); } catch (e) { /* 跳转失败忽略 */ }
+        });
+        ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+        triggerHaptic(12);
+    } catch (e) { /* 静默 */ }
 }
 
 function handleSort(field) {
