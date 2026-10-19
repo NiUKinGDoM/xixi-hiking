@@ -252,8 +252,10 @@ public class MainActivity extends BridgeActivity {
     //   用户从「系统设置-通知」按返回键回到 App 时，WebView 的 visibilitychange 在部分机型/场景下
     //   不触发（尤其从 Settings 返回、或 App 被系统冻结过），导致设置页「通知权限未开启」一直挂着。
     //   这里在原生 onResume 主动让 JS 重新查一次；JS 侧函数幂等，重复调用无副作用。
+    //   ★必须 public：Capacitor 的 BridgeActivity.onResume() 声明为 public，
+    //     子类用 protected 覆盖会收窄访问权限 → javac 报「无法覆盖 onResume()」（本版踩过）。
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         try {
             final WebView wv = getBridge() != null ? getBridge().getWebView() : null;

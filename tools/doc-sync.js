@@ -48,6 +48,11 @@ const PAIRS = [
     // ★ 双落点（步骤 2）
     ['开发侧改动记录.md（根）', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, '开发侧改动记录.md')],
     ['docs/版本变更记录-存档.md', path.join(ROOT, 'docs/版本变更记录-存档.md'), path.join(GH, 'docs/版本变更记录-存档.md')],
+    // ★2026-10-19 用户「同步所有文档，包括 GitHub 上的，全部文档」→ 补齐 3 份一直只活在会话根、
+    //   从未进过仓库的文档（此前 11 组只覆盖了交接类文档，这些「方案/报告/运维」类一直是漏的）。
+    ['docs/功能与体验改进方案.md', path.join(PROJ, '功能与体验改进方案.md'), path.join(GH, 'docs/功能与体验改进方案.md')],
+    ['docs/CF-下载统计-配置步骤.md', path.join(PROJ, 'CF-下载统计-配置步骤.md'), path.join(GH, 'docs/CF-下载统计-配置步骤.md')],
+    ['docs/BUG彻查报告-2026-09-20.md', path.join(PROJ, 'BUG彻查报告-2026-09-20.md'), path.join(GH, 'docs/BUG彻查报告-2026-09-20.md')],
 ];
 
 // ★2026-09-29：比较时**归一化换行符**（CRLF → LF）。
@@ -65,6 +70,20 @@ for (const [name, a, b] of PAIRS) {
     const ea = fs.existsSync(a), eb = fs.existsSync(b);
     if (!ea || !eb) {
         const miss = !ea ? '主工程缺' : '副本缺';
+        // ★2026-10-19「副本缺」且主工程有 → --apply 时自动创建（新纳入清单的文档首次同步）。
+        //   背景：本工具原来对任一侧缺失一律跳过，导致新登记的文档永远同步不出去、只报「副本缺」。
+        //   只允许「主工程→副本」的创建：主工程缺时无从复制，仍按缺失报出。
+        if (ea && !eb && APPLY && !REVERSE) {
+            try {
+                fs.mkdirSync(path.dirname(b), { recursive: true });
+                fs.copyFileSync(a, b);
+                synced++;
+                console.log('  ↗  ' + name.padEnd(28) + '主工程→副本（新建）  ' + fs.statSync(a).size + 'B');
+                continue;
+            } catch (e) {
+                console.log('  ❌ ' + name.padEnd(28) + '创建失败：' + (e.message || e));
+            }
+        }
         console.log('  ❌ ' + name.padEnd(28) + miss);
         missing.push(name + '（' + miss + '）');
         continue;
