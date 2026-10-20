@@ -6137,6 +6137,40 @@
             .confirm-modal-content.mdl-lg { max-width: 400px; }
         }
 
+        /* ★★2026-10-20 用户反馈「数据管理说明的弹窗太大了，统一一下这种长弹窗的尺寸」——
+           实测折叠屏外屏（320×780 / 320×640）：mdl-lg 内容需 690px，落在 86vh 上限
+           ⇒ 占屏 **86%**、上下只剩 ≈55px，且内容溢出必须滚动（scrollH 690 > clientH 669）。
+           现代手机（390×844 / 412×915）内容自然高度仅 580/561px，占屏 69%/61%，不受影响。
+           ⇒ 长正文/说明类（mdl-lg：数据管理说明 / 隐私政策 / 免责声明 / 安全说明等）
+             统一收到 **72vh**，与里程碑一览、记录/详情弹窗口径一致（上下各留 ≈14%）。
+           ★只作用于 mdl-lg：mdl-sm/md 多为短确认与表单，内容自然高度本就低于 72vh，动它们无意义。
+           ★里程碑 `.ms-list-modal` 已是 72vh（双 class 特异性 0,2,0 更高），不受本规则影响。
+           ★与上方三档同特异性 → 靠"后出现者胜"覆盖，必须留在其后。 */
+        .confirm-modal-content.mdl-lg {
+            max-height: 72vh;
+        }
+
+        /* ★★2026-10-20 说明类长弹窗（数据管理说明 / 隐私政策 / 免责声明）收窄到 72vh 后，
+           实测「知道了」按钮会被滚出视野（数据管理说明全尺寸 BTN_HIDDEN；
+           隐私 / 免责在 320×640、375×667 等矮屏也 BTN_HIDDEN）—— 内容超长时按钮落在滚动区末尾。
+           ⇒ 改 flex 纵向布局：标题与按钮固定、内容区（message）吃满剩余空间并独立滚动，
+             按钮永远贴在弹窗底部可见。只挂 .doc-modal，不动记录/计划详情等 mdl-lg 表单
+             （它们的内容本身就是表单，结构不同，不能套 flex）。
+           ★隐私/免责 message 的内联 max-height:55vh 已在 JS 侧移除，改由 flex 自适应。 */
+        .confirm-modal-content.doc-modal {
+            display: flex;
+            flex-direction: column;
+        }
+        .confirm-modal-content.doc-modal > .confirm-modal-message {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+        }
+        .confirm-modal-content.doc-modal > .confirm-modal-title,
+        .confirm-modal-content.doc-modal > .confirm-modal-buttons {
+            flex: 0 0 auto;
+        }
+
         /* ★★2026-10-17 用户反馈「记录的弹窗有点太大，缩小一点，快顶着屏幕上下」——
            实测新建 / 编辑记录表单（内容高 607px）在各视口的占屏比：
              390×844 → 71%（上下各留 122 / 120px，本就舒服，**未触限高**）

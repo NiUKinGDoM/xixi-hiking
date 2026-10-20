@@ -1865,7 +1865,7 @@ function showDataInfoModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-<div class="confirm-modal-content modal-fade-scale mdl-lg">
+<div class="confirm-modal-content modal-fade-scale mdl-lg doc-modal">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">info</span>
                 数据管理说明
@@ -1913,12 +1913,12 @@ function showDisclaimerModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-<div class="confirm-modal-content modal-fade-scale mdl-lg">
+<div class="confirm-modal-content modal-fade-scale mdl-lg doc-modal">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">hiking</span>
                 免责声明
             </div>
-            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;">
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;">
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">hiking</span>
                         <div style="min-width:0;"><div class="dmi-title">一、服务性质：记录工具，不是领队</div>
@@ -2026,7 +2026,7 @@ function showLegalConsentModal() {
         // ★2026-09-18 声明为常驻弹窗：查看条款时不会被条款弹窗内部的 closeOpenModals() 清掉
         modal.setAttribute('data-persist', '1');
         modal.innerHTML =
-'<div class="confirm-modal-content modal-fade-scale mdl-lg">' +
+'<div class="confirm-modal-content modal-fade-scale mdl-lg" style="max-height:86vh;">' +
             '<div class="confirm-modal-title"><span class="material-icons" style="color:#4f46e5;">verified_user</span> 使用前请确认</div>' +
             '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;">' +
                 '<div class="dmi-group">' +
@@ -2115,12 +2115,12 @@ function showPrivacyPolicyModal() {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
     modal.innerHTML = `
-<div class="confirm-modal-content modal-fade-scale mdl-lg">
+<div class="confirm-modal-content modal-fade-scale mdl-lg doc-modal">
             <div class="confirm-modal-title">
                 <span class="material-icons" style="color: #4f46e5;">security</span>
                 隐私政策
             </div>
-            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;max-height:55vh;overflow-y:auto;">
+            <div class="confirm-modal-message" style="text-align:left;padding:0 2px;">
                     <div class="dmi-group">
                         <span class="material-icons dmi-ic">info</span>
                         <div style="min-width:0;"><div class="dmi-title">适用范围与生效</div>
