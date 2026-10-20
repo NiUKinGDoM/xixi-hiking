@@ -2715,14 +2715,57 @@
         .confirm-modal-buttons .confirm-btn-delete,
         .confirm-modal-buttons .check-go-btn,
         .confirm-modal-buttons .glass-btn {
-            padding: 10px 24px !important;
+            /* ★2026-10-20 用户「有些按钮的字不在正中间，而且太大」：
+               原 16px + 继承 line-height 1.6(25.6px) ⇒ 按钮被撑到 48px、汉字字形视觉重心偏上；
+               收到 15px + line-height 1.2(18px) ⇒ 按钮 40px。
+               ★垂直微调：宋体汉字墨迹重心天然偏上（实测几何 dy -0.5px 看着仍偏上）
+                 ⇒ 上 11 / 下 9 把它下压 1px，视觉回到正中（总高仍 40px）。 */
+            padding: 11px 24px 9px !important;
             border-radius: 12px !important;
-            font-size: 16px !important;
+            font-size: 15px !important;
+            line-height: 1.2 !important;
             min-width: 96px !important;
             font-weight: 600 !important;
             display: inline-flex !important;
             align-items: center;
             justify-content: center;
+        }
+        /* ★★2026-10-20 弹窗内按钮字号统一 15px（后代选择器 —— 覆盖嵌套容器里的，
+           如导出弹窗 .space-y-3 内的三个全宽按钮；实测它们继承 16px 比容器内 15px 大）。 */
+        .confirm-modal-content .confirm-btn-cancel,
+        .confirm-modal-content .confirm-btn-delete,
+        .confirm-modal-content .check-go-btn,
+        .confirm-modal-content .glass-btn {
+            font-size: 15px !important;
+            line-height: 1.2 !important;
+        }
+        /* ★★2026-10-20 弹窗内「独立按钮」（不在 .confirm-modal-buttons 容器里 ——
+           导出 / 导入 / 管理备份 / 选择备份文件 / 编辑标题 等全宽按钮）补 flex 垂直居中：
+           实测取消键原为 inline-block、文字垂直偏上 0.6px（用户「有些按钮的字不在正中间」）。
+           ★只给直接子：容器内的按钮已由 2714 规则 inline-flex 居中，不能再覆盖 display。 */
+        .confirm-modal-content > .confirm-btn-cancel,
+        .confirm-modal-content > .confirm-btn-delete,
+        .confirm-modal-content > .check-go-btn,
+        .confirm-modal-content > .glass-btn {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+        /* ★★2026-10-20 极窄屏（≤360px）弹窗按钮左右内边距收窄 —— 针对 Z Fold6 外屏（344×882）实测：
+           16px 字号 + padding 24×2 + min-width 96 ⇒「暂不同意」(119) +「同意并继续」(137) + gap 12 = 268px，
+           而 344 宽屏弹窗内容区仅 258px ⇒ 两键被迫换行成上下两行（按钮行高 48 → 107px，且宽度参差）。
+           收到 padding 18 ⇒ 总宽 100 + 116 + 12 = 228px < 258px ⇒ 一行放下（320 宽屏 234px 也放得下）。
+           ★min-width:96 保留（按钮宽度仍在 100/116 附近、视觉接近，不会一宽一窄过于突兀）。
+           ★2026-10-20 补测 320 宽屏：padding 18 时两键 107+125+12 = 244px > 可用 234px 仍差 10px ⇒ 再收到 **15px**
+             （两键 96+110+12 = 218px）：320 / 344 / 360 全部一行，且 16px 字号下左右 15px 仍不贴边。 */
+        @media (max-width: 360px) {
+            .confirm-modal-buttons .confirm-btn-cancel,
+            .confirm-modal-buttons .confirm-btn-delete,
+            .confirm-modal-buttons .check-go-btn,
+            .confirm-modal-buttons .glass-btn {
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+            }
         }
         .confirm-modal-content {
             /* ★2026-08-23 五项优化①补漏：统一底栏配方（此前 v15 静默失败，blur 从未生效） */
