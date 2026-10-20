@@ -693,6 +693,13 @@
             margin-bottom: 12px;
         }
         .hmyp-yr {
+            /* ★2026-10-20 用户「概览 / 热力图打开后的弹窗，文字都飘了，不在按钮框正中间」：
+               原 block + line-height 1.6(20.8px) ⇒ 文字垂直偏上 **0.7px**（12 个月份格子整排都歪）。
+               改 flex 居中 + 行高 1.2，实测 dy 归零。 */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
             padding: 6px 14px;
             border-radius: 10px;
             font-size: 13px;
@@ -728,6 +735,11 @@
             margin-bottom: 12px;
         }
         .hmyp-m {
+            /* ★2026-10-20 同上：原 block + 行高 1.6 ⇒ 文字偏上 0.7px ⇒ flex 居中 + 行高 1.2 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
             text-align: center;
             padding: 8px 0;
             border-radius: 10px;
@@ -2716,11 +2728,11 @@
         .confirm-modal-buttons .check-go-btn,
         .confirm-modal-buttons .glass-btn {
             /* ★2026-10-20 用户「有些按钮的字不在正中间，而且太大」：
-               原 16px + 继承 line-height 1.6(25.6px) ⇒ 按钮被撑到 48px、汉字字形视觉重心偏上；
-               收到 15px + line-height 1.2(18px) ⇒ 按钮 40px。
-               ★垂直微调：宋体汉字墨迹重心天然偏上（实测几何 dy -0.5px 看着仍偏上）
-                 ⇒ 上 11 / 下 9 把它下压 1px，视觉回到正中（总高仍 40px）。 */
-            padding: 11px 24px 9px !important;
+               16px + 继承 line-height 1.6(25.6px) ⇒ 按钮被撑到 48px；收到 15px + 行高 1.2 ⇒ 40px。
+               ★★内边距必须上下对称：上一版误加「上 11 / 下 9」当补偿，但实测宋体「取消」墨迹
+                 asc13 / desc1，本来就该居中 —— 那 1px 反而把字压到偏下 1px（墨迹中心 21 vs 按钮 20），
+                 用户就是在按钮内看出「飘」。改回 10/10 后墨迹偏差实测 = 0。 */
+            padding: 10px 24px 10px !important;
             border-radius: 12px !important;
             font-size: 15px !important;
             line-height: 1.2 !important;

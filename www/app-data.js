@@ -2255,9 +2255,9 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' 
         '<div style="font-size:13px;color:' + bodyTxt + ';line-height:1.7;">徒步小记是 XiXi 亲手做的小软件，完全免费、没有广告。如果你用得开心，欢迎请作者喝杯奶茶支持一下——纯自愿，不付费也拥有全部功能。</div>' +
         '</div>' +
         '<div class="confirm-modal-buttons" style="flex-wrap:nowrap;">' +
-        '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 0 9px;border-radius:12px;font-weight:700;font-size:15px;line-height:1.2;white-space:nowrap;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:15px;">chat</span>微信</button>' +
-        '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 0 9px;border-radius:12px;font-weight:700;font-size:15px;line-height:1.2;white-space:nowrap;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:15px;">account_balance_wallet</span>支付宝</button>' +
-        '<button class="confirm-btn-cancel ripple-effect" id="support-close" style="flex:0 0 auto;min-width:0 !important;padding:11px 12px 9px !important;white-space:nowrap;">关闭</button>' +
+        '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;border-radius:12px;font-weight:700;font-size:15px;line-height:1.2;white-space:nowrap;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:15px;">chat</span>微信</button>' +
+        '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;border-radius:12px;font-weight:700;font-size:15px;line-height:1.2;white-space:nowrap;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:15px;">account_balance_wallet</span>支付宝</button>' +
+        '<button class="confirm-btn-cancel ripple-effect" id="support-close" style="flex:0 0 auto;min-width:0 !important;padding:10px 12px !important;white-space:nowrap;">关闭</button>' +
         '</div></div>';
     document.body.appendChild(modal);
     function toStep2(kind) {
