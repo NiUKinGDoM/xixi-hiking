@@ -4307,8 +4307,42 @@
         .mb-drawer.open {
             display: block;
         }
-        /* ★2026-09-03 抽屉本身已是独立面板：展开后最上边的分隔线删掉（第一块不画 border-top） */
-        .mb-drawer > :first-child {
+        /* ★2026-10-20 抽屉山名标题：仅「同时展开 ≥2 个」时由 JS 显示（最上面那个不显示）。
+           序号沿用卡头集章样式的小号版，山名小字加粗，低调不抢统计。 */
+        .mb-drawer-title {
+            display: none;   /* 默认隐藏，JS 按展开数量切换为 flex */
+            align-items: center;
+            gap: 6px;
+            padding: 8px 2px 0;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+        }
+        body.dark-mode .mb-drawer-title { color: #cbd5e1; }
+        .mb-drawer-title .mb-drawer-seal {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            box-sizing: border-box;
+            border-radius: 9px;
+            background: rgba(100, 116, 139, 0.14);
+            border: 1px solid rgba(100, 116, 139, 0.35);
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        body.dark-mode .mb-drawer-title .mb-drawer-seal {
+            background: rgba(148, 163, 184, 0.16);
+            border-color: rgba(148, 163, 184, 0.4);
+            color: #cbd5e1;
+        }
+        /* ★2026-09-03 抽屉本身已是独立面板：展开后最上边的分隔线删掉（第一块不画 border-top）
+           ★2026-10-20 抽屉顶部新增山名标题 ⇒ 「第一个内容块」变成标题的下一个兄弟，也一并免掉 border-top */
+        .mb-drawer > :first-child,
+        .mb-drawer > .mb-drawer-title + * {
             border-top: none;
         }
         .mb-card {

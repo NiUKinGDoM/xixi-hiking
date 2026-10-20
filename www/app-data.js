@@ -2254,10 +2254,10 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-sm">' 
         '<div class="confirm-modal-message" style="text-align:left;padding:0 2px;">' +
         '<div style="font-size:13px;color:' + bodyTxt + ';line-height:1.7;">徒步小记是 XiXi 亲手做的小软件，完全免费、没有广告。如果你用得开心，欢迎请作者喝杯奶茶支持一下——纯自愿，不付费也拥有全部功能。</div>' +
         '</div>' +
-        '<div class="confirm-modal-buttons">' +
-        '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-weight:700;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:16px;">chat</span>微信</button>' +
-        '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-weight:700;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:16px;">account_balance_wallet</span>支付宝</button>' +
-        '<button class="confirm-btn-cancel ripple-effect" id="support-close" style="flex:0 0 auto;padding:9px 16px;">关闭</button>' +
+        '<div class="confirm-modal-buttons" style="flex-wrap:nowrap;">' +
+        '<button id="support-wx" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-weight:700;white-space:nowrap;color:#047857;background:rgba(7,193,96,0.14);border:1px solid rgba(7,193,96,0.5);"><span class="material-icons" style="font-size:16px;">chat</span>微信</button>' +
+        '<button id="support-ali" class="ripple-effect" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 0;border-radius:12px;font-weight:700;white-space:nowrap;color:#0057b8;background:rgba(22,119,255,0.14);border:1px solid rgba(22,119,255,0.5);"><span class="material-icons" style="font-size:16px;">account_balance_wallet</span>支付宝</button>' +
+        '<button class="confirm-btn-cancel ripple-effect" id="support-close" style="flex:0 0 auto;min-width:0 !important;padding:9px 12px !important;white-space:nowrap;">关闭</button>' +
         '</div></div>';
     document.body.appendChild(modal);
     function toStep2(kind) {
@@ -3681,6 +3681,7 @@ function initRecordsView() {
                 var rowEl = card.closest('.mb-row');
                 var drawer = rowEl ? rowEl.querySelector('.mb-drawer[data-mountain="' + mtn + '"]') : null;
                 if (drawer) drawer.classList.toggle('open', willOpen);
+                syncMtnDrawerTitles();
                 // ★2026-09-03 展开时才懒加载抽屉内照片（img data-record 占位 → loadPhotoThumbs 异步填图，_photoLoaded 防重复）
                 if (willOpen && drawer) {
                     var ridSet = {};
@@ -3780,8 +3781,8 @@ function mtnMergeRowHtml(key) {
     // ★2026-10-17 用户：「可不可以别单独一行了」→ 本函数只返回按钮本身，
     //   由调用处与「最近一次」并排成一行（不再自带一行 + 上下边距）。
     return '<button type="button" class="mtn-merge-btn" data-mtn-key="' + escapeHtml(key) + '" ' +
-        'style="background:transparent;border:none;color:#94a3b8;font-size:11px;cursor:pointer;padding:2px 6px;border-radius:8px;white-space:nowrap;flex-shrink:0;">' +
-        '<span class="material-icons" style="font-size:13px;vertical-align:-2px;">link</span> ' + escapeHtml(txt) + '</button>';
+        'style="display:inline-flex;align-items:center;gap:3px;background:transparent;border:none;color:#94a3b8;font-size:11px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px;white-space:nowrap;flex-shrink:0;">' +
+        '<span class="material-icons" style="font-size:13px;line-height:1;">link</span>' + escapeHtml(txt) + '</button>';
 }
 // 连接弹窗（选目标 + 自定义名字）
 function openMtnMergeDialog(key) {
@@ -3860,6 +3861,18 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' 
     } catch (e) { /* 连接弹窗失败不影响山册 */ }
 }
 
+
+// ★2026-10-20 抽屉标题显隐：按 DOM 顺序，第 1 个打开的抽屉不加标题（它紧贴卡头能对上），
+//   其余打开的抽屉都显示「序号 + 山名」，解决多个整行抽屉堆叠时看不出是哪个山的问题。
+function syncMtnDrawerTitles() {
+    var wrap = safeGetElementById('mountainBookView');
+    if (!wrap) return;
+    var open = wrap.querySelectorAll('.mb-drawer.open');
+    for (var i = 0; i < open.length; i++) {
+        var t = open[i].querySelector('.mb-drawer-title');
+        if (t) t.style.display = (i === 0) ? 'none' : 'flex';
+    }
+}
 
 function renderMountainBook() {
     var wrap = safeGetElementById('mountainBookView');
@@ -4008,7 +4021,13 @@ function renderMountainCard(k, groups, sealNo, padLen, diffName) {
     //   无「最近一次」时用一个空 span 占位，保证「连接」仍靠右对齐。
     var footRow = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;">' +
         (lastTxt || '<span></span>') + mtnMergeRowHtml(k) + '</div>';
-    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + photosHtml + statHtml + footRow + '</div>';
+    // ★2026-10-20 用户要求：同时展开 ≥2 个山册抽屉时，除最上面那个，其余都加山名标题
+    //   —— 多个整行抽屉堆叠后离各自卡头太远，不标山名分不清是哪个山的统计。
+    //   默认隐藏，显示与否由 syncMtnDrawerTitles() 在展开/收起后统一判定。
+    var drawerTitle = '<div class="mb-drawer-title">' +
+        '<span class="mb-drawer-seal">' + no + '</span>' +
+        '<span class="mb-drawer-name">' + escapeHtml(dispName) + '</span></div>';
+    var drawer = '<div class="mb-drawer" data-mountain="' + no + '">' + drawerTitle + photosHtml + statHtml + footRow + '</div>';
     return { head: head, drawer: drawer };
 }
 
