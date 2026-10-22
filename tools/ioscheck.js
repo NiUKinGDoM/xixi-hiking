@@ -26,7 +26,7 @@ const ROOT = path.resolve(__dirname, '..');
 const WWW = path.join(ROOT, 'www');
 const PROJ = path.resolve(ROOT, '..');
 const GH = path.join(PROJ, 'backups', 'github-同步目录', 'xixi-hiking');
-const WWW_FILES = ['app-core.js', 'app-data.js', 'app-init.js', 'app-sync.js'];
+const WWW_FILES = ['app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-init.js', 'app-sync.js'];
 const INDEX = path.join(WWW, 'index.html');
 
 const ARGS = process.argv.slice(2);

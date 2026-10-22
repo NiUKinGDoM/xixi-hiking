@@ -2018,6 +2018,9 @@
         .global-search-box input {
             flex: 1;
             min-width: 0;
+            /* ★2026-10-22 可访问性：原 input 仅 26px 高（触控目标偏小），加垂直 padding 提到 36px；
+               form 元素默认行高 1.2，5px×2 + 26 = 36px，搜索栏整体仍在浮层内不影响主布局 */
+            padding: 5px 0;
             background: none;
             border: none;
             outline: none;
@@ -2780,8 +2783,9 @@
             }
         }
         .confirm-modal-content {
-            /* ★2026-08-23 五项优化①补漏：统一底栏配方（此前 v15 静默失败，blur 从未生效） */
-            background: rgba(255, 255, 255, 0.08);
+            /* ★2026-10-22 用户定：弹窗底色 0.08 → 0.15（浅色下弹窗更实一点，内容与背景不再糊）
+               注：深色模式另有 .dark-mode .confirm-modal-content（32% 深蓝）不受影响 */
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(2px) saturate(150%);
             -webkit-backdrop-filter: blur(2px) saturate(150%);
             border: 1px solid rgba(255, 255, 255, 0.5);

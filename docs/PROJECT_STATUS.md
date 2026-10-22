@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-10-20（v1.2.5.2 / vc299）  
+> 最后更新：2026-10-22（v1.2.5.3 / vc300）  
 > ★**本版 v1.2.3.10**：折叠屏外屏（≤350px）设置页文字不再被挤成竖排（改「可换行」布局，控件自动落到下一行）；概览统计卡标签不再折行（「最高海拔」）；设置页「数据管理」不再重复显示账号邮箱。sw 缓存 v66。  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
@@ -584,6 +584,21 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
   - `.hmyp-yr` / `.hmyp-m` 原 `display:block` + `line-height:1.6`（20.8px）⇒ 改 `flex` 居中 + `line-height:1.2` ⇒ 偏差 **0.00px**。
 - 【说明】**遮罩与弹窗底色未改动**：`.confirm-modal` 0.3 / `.confirm-modal-content` rgba(255,255,255,0.08) / 原 shadow 全部保持原值（上一轮误改已还原）。
 - 【验证】全量门禁 **926/0**；按钮与年月格子墨迹偏差均 0.00px。
+### v1.2.5.3 —— 代码结构重构（app-data 拆 6 文件 / toast 合并）+ 可访问性与可读性修复
+
+- 【重构】**app-data.js 5464 行 → 6 个文件**（纯物理切分，全局作用域与加载顺序不变）
+  - `app-data.js` 423（数据层/记录/表单/里程碑/搜索）、`app-data-detail.js` 566（阅读态详情）、`app-data-lightbox.js` 1662（灯箱+分享卡+政策正文）、`app-data-heatmap.js` 283（热力图）、`app-data-plans.js` 1623（计划+日历）、`app-data-plan-detail.js` 905（计划详情）。
+  - **同步 19 处清单**：index.html / sw.js CORE_ASSETS / security.js（HASH_FILES + **BUSINESS_JS 混淆清单**）/ prev-snapshot / ghsync / release / versiondiff / rollback / test.js（4 类 14 处）/ test-ui / _test_p0p3 / _test_batch3 / audit / deepcheck / ioscheck / map / modalwidth / verify-apk / siteaudit / siteshots / legalgen / e2e/run。
+  - 读取源码做断言的工具（LEGAL_VERSION、政策正文）改为**拼接 6 个 data 文件**，后续再挪位置也不会断。
+- 【重构】**三处 toast 合并**为 `_createToast()` + 三个薄封装（error/info/success 行为、图标、时长、同类去重全不变），app-core.js 净减 83 行。
+- 【优化】**弹窗底色 0.08 → 0.15**（浅色；深色 32% 深蓝不变）——浅色概览页上弹窗不再近乎全透明。
+- 【优化】**FPS 显示默认关闭**（`showFps=false` + 去掉 HTML `checked`）；偏好键只在手动切换时写入，从没动过的用户自动跟随新默认。
+- 【无障碍】**toast 补 `role`/`aria-live`**：错误 alert+assertive、提示/成功 status+polite，均 aria-atomic（原先全站 0 处，读屏完全不播）。
+- 【可读性】**小字对比度 2.56 → 4.76**（`#94a3b8` → `#64748b`，6 处：引导底注/照片占用/山册连接/暂无记录与计划）。**注意 `body.dark-mode` 下的 22 处 `#94a3b8` 是浅色字，未动**。
+- 【触控】**5 个关闭键 22×22 → 38×38+**（`padding:10px;margin:-8px`，视觉位置不变）、搜索框 26→36px、山册连接键 2→6px padding。
+- 【清理】删掉 9 个按钮身上被 `!important` 全覆盖的冗余内联（-1149 字节，渲染零变化）；补齐 `prev-snapshot` 提示文字为动态计数。
+- 【测试】**E2E 视觉回归加固**：截图前 `document.fonts.ready`（图标字体晚到会让图标退化成文字）+ `animations:'disabled'`（冻结动画，不再赌 650ms）；连续 8 次运行全绿。
+- 【验证】全量门禁 **926/0**；切页帧率 60fps（设置页首次 77ms，一次性成本）；12 个弹窗字号统一（标题 20 / 正文 16 / 按钮 15）。
 - **正式版 v1.2.3.7（vc282）** —— 折叠屏【外屏】窄屏适配（≤350px：底栏收窄 302→198px / 概览矮卡 3 列→1 列 / 标题与同步文案允许折行 / 整页横向溢出归零）（2026-10-09）
   - **用户指令**：「能否适配一下折叠屏外屏？外屏一般比较窄，app 里的字会显示不全，显示...」→ 随后「发」（并明确选择**升号**发布）。
   - **★升号判定**：外屏适配改了用户可见的排版行为（窄屏下底栏/矮卡/标题布局变化）→ 不适用「同号修正重发」，按常规**升号** v1.2.3.6 → **v1.2.3.7**（vc281 → vc282）。

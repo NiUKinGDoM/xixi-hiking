@@ -10,7 +10,7 @@ const { JSDOM } = require('C:/Users/NIU-XC/.workbuddy/binaries/node/workspace/no
 let html = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
 html = html.replace(/<style>[\s\S]*?<\/style>/gi, '');
 const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]).filter(s => s.trim());
-['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')));
+['app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')));
 const allJs = scripts.join('\n;\n');
 // ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都会连锁失败）
 const LEGAL_V = (allJs.match(/LEGAL_VERSION\s*=\s*'([^']+)'/) || [])[1] || '';

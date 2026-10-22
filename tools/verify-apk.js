@@ -66,7 +66,7 @@ import zipfile, json, sys
 z = zipfile.ZipFile(r'''${apk.replace(/\\/g, '/')}''')
 names = z.namelist()
 out = {'names': names}
-for f in ['index.html','app-core.js','app-data.js','app-sync.js','app-init.js','sw.js','manifest.json']:
+for f in ['index.html','app-core.js','app-data.js','app-data-detail.js','app-data-lightbox.js','app-data-heatmap.js','app-data-plans.js','app-data-plan-detail.js','app-sync.js','app-init.js','sw.js','manifest.json']:
     try:
         out[f] = z.read('assets/public/' + f).decode('utf-8','ignore')
     except KeyError:
@@ -98,7 +98,7 @@ ok('sw CACHE_NAME 版本化且收录离线资源',
   (Z['sw.js'] || '').includes('assets/fonts/material-icons.woff2') &&
   (Z['sw.js'] || '').includes('assets/vendor/tailwind4.1.13.js') &&
   (Z['sw.js'] || '').includes('manifest.json'));
-ok('app-data.js 无 base64 内联残留', !(Z['app-data.js'] || '').includes('data:image/jpeg;base64'));
+ok('app-data*.js 无 base64 内联残留', !['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].some(f => (Z[f] || '').includes('data:image/jpeg;base64')));
 
 const need = [
   ['assets/support-qr-wechat.jpg', '微信收款码'], ['assets/support-qr-alipay.jpg', '支付宝收款码'],
@@ -120,7 +120,8 @@ const syncSrc = fs.readFileSync(path.join(ROOT, 'www/app-sync.js'), 'utf8');
 const corePos = (coreSrc.match(/style\.position = 'fixed'/g) || []).length;
 const coreZ = (coreSrc.match(/style\.zIndex = '300'/g) || []).length;
 const corePad = (coreSrc.match(/style\.padding = '12px 20px'/g) || []).length;
-ok('[源] toast 内联 position/z-index/padding（各 3 处）', corePos === 3 && coreZ === 3 && corePad === 3,
+// ★2026-10-22 三处 toast 已合并为单一 _createToast ⇒ 内联写法各只 1 处（原 3 处），断言改 >=1
+ok('[源] toast 内联 position/z-index/padding（至少各 1 处）', corePos >= 1 && coreZ >= 1 && corePad >= 1,
   'pos=' + corePos + ' z=' + coreZ + ' pad=' + corePad);
 ok('[源] loading toast 带 loading 变体类', syncSrc.includes('toast-glass loading'));
 

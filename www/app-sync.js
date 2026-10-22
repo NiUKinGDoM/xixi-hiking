@@ -1586,8 +1586,8 @@ footer{text-align:center;color:#a8a29e;font-size:12px;margin-top:34px;}
         '<style>' + printCss + '</style></head><body>' +
         '<div class="tipbar">📄 想存成 PDF？按 Ctrl+P（手机：浏览器菜单「打印」），目标选「另存为 PDF」即可成册保存</div>' +
         '<h1>🥾 ' + escTitle + '</h1><p class="sub">完整备份 · 共 ' + (payload.records || []).length + ' 条徒步记录 · ' + (payload.plannedTrips || []).length + ' 条计划 · 导出于 ' + new Date(payload.exportedAt || Date.now()).toLocaleString() + '</p>' +
-        '<h2><span class="t">徒步记录</span></h2>' + (recCards || '<p style="color:#94a3b8;">暂无记录</p>') +
-        '<h2><span class="t">计划徒步</span></h2>' + (planCards || '<p style="color:#94a3b8;">暂无计划</p>') +
+        '<h2><span class="t">徒步记录</span></h2>' + (recCards || '<p style="color:#64748b;">暂无记录</p>') +
+        '<h2><span class="t">计划徒步</span></h2>' + (planCards || '<p style="color:#64748b;">暂无计划</p>') +
         '<footer>Made by XiXi 💛 · 此文件可在 App 内导入恢复</footer>' +
         '<script id="backup-data" type="application/json">' + dataJson + '</' + 'script>' +
         '</body></html>';

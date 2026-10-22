@@ -18,7 +18,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const WWW = path.join(ROOT, 'www');
-const JS_FILES = ['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'];
+const JS_FILES = ['app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js'];
 const JSON_OUT = process.argv.indexOf('--json') >= 0;
 
 const files = {};

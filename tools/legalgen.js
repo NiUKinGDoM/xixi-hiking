@@ -27,7 +27,10 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const APP_DATA = path.join(ROOT, 'www', 'app-data.js');
+// ★2026-10-22 app-data.js 已拆为 6 个文件（政策正文 dmi-group 落在 app-data-lightbox.js）
+//   ⇒ 拼接全部 data 文件后解析，后续再挪位置也不会断
+const APP_DATA_FILES = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js']
+  .map(f => path.join(ROOT, 'www', f));
 const SITE = path.join(ROOT, 'site');
 
 // ---------- 解析 App 内的政策正文 ----------
@@ -49,7 +52,7 @@ function parseSections(src) {
 
 /** 从源码里解析两套政策；返回 { legalVersion, privacy:{sections,effective,updated}, terms:{...} } */
 function parseApp() {
-  const src = fs.readFileSync(APP_DATA, 'utf8');
+  const src = APP_DATA_FILES.map(f => fs.readFileSync(f, 'utf8')).join('\n');
   const di = src.indexOf('function showDisclaimerModal(');
   const pi = src.indexOf('function showPrivacyPolicyModal(');
   if (di < 0) throw new Error('app-data.js 里找不到 showDisclaimerModal（结构变了？请同步更新本工具）');

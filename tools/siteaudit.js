@@ -114,7 +114,8 @@ const norm = (b) => Buffer.from(b.toString('binary').replace(/\r\n/g, '\n'), 'bi
 function localSrc(rel) {
   try { return fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch (e) { return ''; }
 }
-const APP_DATA = localSrc('www/app-data.js');
+// ★2026-10-22 app-data.js 已拆为 6 个文件（LEGAL_VERSION 落在 app-data-lightbox.js）⇒ 拼接全部 data
+const APP_DATA = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => localSrc('www/' + f)).join('\n;\n');
 const APP_CORE = localSrc('www/app-core.js');
 const LEGAL_V = (APP_DATA.match(/const LEGAL_VERSION = '([^']+)'/) || [])[1] || '';
 const APP_VER = (APP_CORE.match(/APP_VERSION = '([\d.]+)'/) || [])[1] || '';
@@ -153,7 +154,7 @@ async function main() {
 
   // ── B App 网页版 ────────────────────────────────────
   groupTitle('【B】App 网页版资源与版本指纹');
-  const APP_ASSETS = ['/index.html', '/sw.js', '/app-core.js', '/app-data.js', '/app-sync.js', '/app-init.js', '/manifest.json'];
+  const APP_ASSETS = ['/index.html', '/sw.js', '/app-core.js', '/app-data.js', '/app-data-detail.js', '/app-data-lightbox.js', '/app-data-heatmap.js', '/app-data-plans.js', '/app-data-plan-detail.js', '/app-sync.js', '/app-init.js', '/manifest.json'];
   let appIdx = '';
   for (const a of APP_ASSETS) {
     const r = await get(APPWEB + a);
@@ -244,7 +245,7 @@ async function main() {
     groupTitle('【F】远端 GitHub raw == 本地');
     const FILES = [
       'README.md', 'CHANGELOG.md', 'test.js',
-      'www/index.html', 'www/app-core.js', 'www/app-data.js', 'www/sw.js',
+      'www/index.html', 'www/app-core.js', 'www/app-data.js', 'www/app-data-detail.js', 'www/app-data-lightbox.js', 'www/app-data-heatmap.js', 'www/app-data-plans.js', 'www/app-data-plan-detail.js', 'www/sw.js',
       'site/index.html', 'site/features.html', 'site/privacy.html', 'site/terms.html',
       'site/site-privacy.html',
       'site/robots.txt', 'site/sitemap.xml',

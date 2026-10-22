@@ -11,8 +11,8 @@ const crypto = require('crypto');
 const ROOT = path.resolve(__dirname, '..');
 const WWW = path.join(ROOT, 'www');
 const JAVA_DIR = path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking');
-const BUSINESS_JS = ['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'];
-const HASH_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'assets/support-qr-wechat.jpg', 'assets/support-qr-alipay.jpg', 'assets/fonts/material-icons.woff2', 'assets/vendor/tailwind4.1.13.js'];
+const BUSINESS_JS = ['app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js'];
+const HASH_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'assets/support-qr-wechat.jpg', 'assets/support-qr-alipay.jpg', 'assets/fonts/material-icons.woff2', 'assets/vendor/tailwind4.1.13.js'];
 
 function obfuscate(code, name) {
   const JavaScriptObfuscator = require('javascript-obfuscator');

@@ -18,6 +18,11 @@ function readPage() {
     try { _css = fs.readFileSync(_APP_CSS, 'utf8'); } catch (e) {}
     return fs.readFileSync(HTML, 'utf8') + '\n<style>' + _css + '</style>\n';
 }
+// ★2026-10-22 app-data.js 已按功能拆为 6 个文件（5464 -> 6）；统一从这里读「全部 data 内容」
+const DATA_FILES = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'];
+function readAllData() {
+    return DATA_FILES.map(f => fs.readFileSync(path.join(ROOT, 'www', f), 'utf8')).join('\n;\n');
+}
 const GRADLE = path.join(ROOT, 'android/app/build.gradle');
 const MANIFEST = path.join(ROOT, 'android/app/src/main/AndroidManifest.xml');
 const MAIN_ACTIVITY = path.join(ROOT, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java');
@@ -34,7 +39,7 @@ try {
     const html = readPage();
     const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
     // ★2026-08-30 方案A：主 JS 拆外部文件，脚本块 = 内联 + 4 个外部文件（按加载顺序）
-    ['www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, f), 'utf8')));
+    ['www/app-core.js', 'www/app-data.js', 'www/app-data-detail.js', 'www/app-data-lightbox.js', 'www/app-data-heatmap.js', 'www/app-data-plans.js', 'www/app-data-plan-detail.js', 'www/app-sync.js', 'www/app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, f), 'utf8')));
     let allOk = true;
     scripts.forEach((s, i) => { try { new vm.Script(s); } catch (e) { allOk = false; bad(`script块${i}: ${e.message}`); } });
     allOk ? ok(`全部 ${scripts.length} 个 script 块语法通过`) : bad('存在语法错误');
@@ -45,7 +50,7 @@ console.log('-- 2. 关键功能完整性 --');
 const html = readPage();
 // ★2026-08-30 方案A：allJs = 内联 script 内容 + 4 个外部 JS（关键函数/死代码/版本/单测均针对 JS 内容）
 const allJs = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n') + '\n;\n' +
-    ['www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'].map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n;\n');
+    ['www/app-core.js', 'www/app-data.js', 'www/app-data-detail.js', 'www/app-data-lightbox.js', 'www/app-data-heatmap.js', 'www/app-data-plans.js', 'www/app-data-plan-detail.js', 'www/app-sync.js', 'www/app-init.js'].map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n;\n');
 const critical = [
     ['AppStore（存储层）', 'var AppStore'],
     ['photoDBOpen（照片库）', 'function photoDBOpen'],
@@ -111,7 +116,7 @@ try {
 console.log('-- 5b. schema 迁移框架 --');
 try {
     const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     cj.includes('const DATA_SCHEMA_VERSION = 1') ? ok('DATA_SCHEMA_VERSION=1 已定义') : bad('DATA_SCHEMA_VERSION 缺失!');
     cj.includes('RECORD_SCHEMA_MIGRATIONS = []') && cj.includes('TRIP_SCHEMA_MIGRATIONS = []') ? ok('迁移链数组已注册') : bad('迁移链缺失!');
@@ -136,7 +141,7 @@ try {
 // 5d. P1 体验项（P1-5 示例 / P1-6 三步引导 / P1-7 本地备份）
 console.log('-- 5d. P1 体验项 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ih = readPage();
@@ -162,7 +167,7 @@ try {
 console.log('-- 5e. v1.1.9.7 新功能 --');
 try {
     const cj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ih = readPage();
@@ -180,7 +185,7 @@ try {
 // 5e-2. ★2026-10-09 搜索框按视图收敛（山册视图 / 计划日历视图不再提供搜索）
 console.log('-- 5e-2. 搜索框视图收敛 --');
 try {
-    const dj2 = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj2 = readAllData();
     dj2.includes('function isSearchUnavailableView') ? ok('搜索框：视图可用性判断在') : bad('isSearchUnavailableView 缺失!');
     /recordsViewMode === 'mountain'/.test(dj2) && /plansViewMode === 'calendar'/.test(dj2) ? ok('搜索框：山册 + 计划日历两视图已排除') : bad('视图排除不完整!');
     dj2.includes('function clearGlobalSearchQuery') ? ok('搜索框：切到这两个视图会清空搜索词（防过滤残留）') : bad('clearGlobalSearchQuery 缺失!');
@@ -209,7 +214,7 @@ try {
 // 5f. 2026-09-06 装机反馈第二波修复（深色用时里程框 / 导出说明迁 i / 引导 ✕ 四卡齐）
 console.log('-- 5f. 09-06 反馈修复 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const ih = readPage();
@@ -225,7 +230,7 @@ try {
 // 5g. 2026-09-06 定稿 v3（过期弹窗两按钮 / 引导每卡独立 ✕ + 重启恢复）
 console.log('-- 5g. 09-06 定稿v3 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const ih = readPage();
     dj.includes('function maybeShowOverdueCare') && dj.includes('oc-go') && dj.includes('oc-ignore') && !dj.includes('oc-shift') ? ok('过期弹窗只留 去处理/忽略(顺延已删)') : bad('过期弹窗按钮不对!');
@@ -240,7 +245,7 @@ try {
 // 5h. 2026-09-06 概览单位 + 小日记字色 + i 弹窗间距（v1.1.9.9）
 console.log('-- 5h. 09-06 概览单位等 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const ih = readPage();
     ih.includes('id="totalCount"') && ih.includes('次</span>') && ih.includes('total-count-value') ? ok('总记录数带「次」单位(HTML span)') : bad('总记录单位缺失!');
     ih.includes('id="avgDifficultyMiniU"') && ih.includes('.stat-unit') && ih.includes('avgDifficultyMini') ? ok('平均难度级单位=stat-unit 小字') : bad('难度单位缺失!');
@@ -258,7 +263,7 @@ try {
 // 5i. 2026-09-06 保存铁律（只有点保存才算保存；取消/点空白关闭一律丢弃）
 console.log('-- 5i. 保存铁律 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     dj.includes('detailModalMode === \'edit\') { try { cancelEdit(); }') && dj.includes('保存铁律') ? ok('记录编辑弹窗点空白=取消(丢弃)') : bad('记录 backdrop 铁律缺失!');
     dj.includes('if (isEdit) { try { cancelPlannedEdit(); }') ? ok('计划编辑弹窗点空白=取消(丢弃)') : bad('计划 backdrop 铁律缺失!');
     dj.includes('function cancelEdit') && dj.includes("editingRecord.name === ''") ? ok('cancelEdit 删空草稿逻辑在') : bad('cancelEdit 缺失!');
@@ -338,14 +343,15 @@ try {
         const toastsj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
         toastsj.indexOf('toast-glass loading') >= 0 ? ok('loading toast 带 loading 变体类') : bad('loading toast 缺变体类(会透明)!');
         const toastcj = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
+        // ★2026-10-22 三处 toast 已合并为单一 _createToast 实现 ⇒ 内联写法各只出现 1 次（原 3 次），断言改为 >=1
         const zCount = (toastcj.match(/style\.zIndex = '300'/g) || []).length;
-        (zCount === 3 && toastsj.indexOf('z-index:300') >= 0) ? ok('toast 内联层级 300(高于弹窗 260)') : bad('toast 层级缺失 core=' + zCount);
+        (zCount >= 1 && toastsj.indexOf('z-index:300') >= 0) ? ok('toast 内联层级 300(高于弹窗 260)') : bad('toast 层级缺失 core=' + zCount);
         const pCount = (toastcj.match(/style\.position = 'fixed'/g) || []).length;
-        (pCount === 3 && toastsj.indexOf('position:fixed') >= 0) ? ok('toast 内联 position:fixed(不依赖 Tailwind 类)') : bad('toast position 缺失 core=' + pCount);
+        (pCount >= 1 && toastsj.indexOf('position:fixed') >= 0) ? ok('toast 内联 position:fixed(不依赖 Tailwind 类)') : bad('toast position 缺失 core=' + pCount);
         const padCount = (toastcj.match(/style\.padding = '12px 20px'/g) || []).length;
-        (padCount === 3 && toastsj.indexOf('padding:12px 20px') >= 0) ? ok('toast 内联内边距 12px 20px(px-5 从未编译)') : bad('toast 内边距缺失 core=' + padCount);
+        (padCount >= 1 && toastsj.indexOf('padding:12px 20px') >= 0) ? ok('toast 内联内边距 12px 20px(px-5 从未编译)') : bad('toast 内边距缺失 core=' + padCount);
         (ih.indexOf('.border-red-500 {') >= 0 && ih.indexOf('border-color: #ef4444') >= 0) ? ok('.border-red-500 已补 CSS 定义') : bad('border-red-500 无定义(校验红边不生效)!');
-        const toastdj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+        const toastdj = readAllData();
         (toastdj.indexOf("classList.remove('border-red-500')") >= 0) ? ok('border-red-500 校验通过后清除') : bad('border-red-500 只加不删!');
         (ih.match(/align-items:baseline/g) || []).length >= 3 ? ok('统计卡数字/单位基线对齐(内联)') : bad('统计卡基线对齐缺失!');
         (function () { var a = ih.indexOf('.toast-glass.info {'), b = ih.indexOf('.toast-glass.loading {'); var ma = ih.slice(a, a + 300).match(/background:\s*([^;]+);/), mb = ih.slice(b, b + 300).match(/background:\s*([^;]+);/); (ma && mb && ma[1].trim() === mb[1].trim()) ? ok('loading 与 info 同配方(中性色统一)') : bad('loading/info 配方不一致!'); })();
@@ -360,7 +366,7 @@ try {
 // 5o. 2026-09-07 计划三态徽章（过期红/今天靛蓝/明天天蓝；列表+日历明细通用）
 console.log('-- 5o. 计划三态徽章 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const ih = readPage();
     dj.includes('function planRelBadgeHtml') ? ok('通用徽章函数 planRelBadgeHtml 在') : bad('徽章函数缺失!');
     dj.includes('class="pl-today"') && dj.includes('class="pl-tomorrow"') && dj.includes('class="pl-overdue"') ? ok('三态徽章 html 在(过期/今天/明天)') : bad('三态徽章缺失!');
@@ -374,7 +380,7 @@ try {
 // 5o2. 2026-09-20 日历「完成/延期」（用户需求）+ 崩溃上报提示改静默（用户反馈打扰）
 console.log('-- 5o2. 日历「完成/延期」+ 崩溃静默 --');
 try {
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     dj.includes('function planIsDueOrOverdue') ? ok('守卫：「已到期」判定函数在') : bad('已到期判定函数缺失!');
     // ★2026-09-20 口径统一改为「共用 planDayDiff」：两个函数都调它，不再各自复制日差算法
@@ -416,7 +422,7 @@ try {
     const sj = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
     const ij = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
     const ih = readPage();
-    const dj = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const dj = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')).join('\n;\n');
     const java = fs.readFileSync(path.join(__dirname, 'android/app/src/main/java/com/xixi/hiking/MainActivity.java'), 'utf8');
     cj.includes('hiking_crash_queue') && cj.includes('persistCrashEntry') ? ok('JS 崩溃持久队列(重启不丢)在') : bad('崩溃队列缺失!');
     cj.includes('__getCrashQueue') && cj.includes('__clearCrashQueue') ? ok('队列读写接口在') : bad('队列接口缺失!');
@@ -498,7 +504,7 @@ try {
     java.includes('android.app.AlertDialog') ? bad('MainActivity 仍残留系统 AlertDialog（应改走玻璃弹窗）') : ok('弹窗已统一玻璃体系（无 AlertDialog 残留）');
     java.includes('showFatalGlassDialog') && java.includes('flushTamperWarn') ? ok('原生玻璃弹窗 + 资源提示桥接在') : bad('玻璃弹窗桥接缺失!');
     // ★2026-09-30 资源提示桥接：JS 侧须有 window.__showTamperWarn（含「资源校验提示」文案）供原生 flushTamperWarn 调用
-    const adTamper = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+    const adTamper = readAllData();
     adTamper.includes('window.__showTamperWarn') && adTamper.includes('资源校验提示') ? ok('JS 侧资源校验提示（__showTamperWarn）已暴露') : bad('JS 侧 __showTamperWarn 缺失!');
     sec.includes('javascript-obfuscator') && sec.includes("cmd === 'obf'") && sec.includes("cmd === 'hash'") ? ok('安全工具链(obf/hash)在') : bad('工具链缺失!');
     // ★2026-09-30 守卫：hash 命令须带「构建目录 ResGuard 陈旧」报警（防漏拷导致误报弹窗）
@@ -509,7 +515,7 @@ try {
 console.log('-- 5r. 机制化自检 --');
 try {
     const wwwDir = path.join(__dirname, 'www');
-    const scanFiles = ['index.html', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'sw.js'];
+    const scanFiles = ['index.html', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'sw.js'];
     const badMarks = [];
     scanFiles.forEach(f => {
         const t = fs.readFileSync(path.join(wwwDir, f), 'utf8');
@@ -551,7 +557,7 @@ try {
     const qrFiles = ['assets/support-qr-wechat.jpg', 'assets/support-qr-alipay.jpg'];
     const qrMissing = qrFiles.filter(f => !fs.existsSync(path.join(wwwDir, f)));
     qrMissing.length === 0 ? ok('收款码外置文件在位（assets/ 两张）') : bad('收款码外置文件缺失: ' + qrMissing.join(', '));
-    const adRaw2 = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
+    const adRaw2 = readAllData();
     const swRaw = fs.readFileSync(path.join(wwwDir, 'sw.js'), 'utf8');
     swRaw.indexOf('assets/support-qr-wechat.jpg') >= 0 && swRaw.indexOf('assets/support-qr-alipay.jpg') >= 0 && /CACHE_NAME = 'xixi-hiking-v\d+'/.test(swRaw) ? ok('SW 离线收录收款码 + CACHE_NAME 版本化') : bad('SW 未收录收款码!');
     // ★2026-09-10 离线自足（野外无信号是徒步核心场景；原两个阿里 CDN 依赖曾致断网图标全失效+布局塌）
@@ -562,7 +568,7 @@ try {
     (offIdx.indexOf('rel="icon"') >= 0 && fs.existsSync(path.join(wwwDir, 'icon-192.png'))) ? ok('favicon 已声明（消除 404）') : bad('favicon 缺失!');
     (swRaw.indexOf('assets/fonts/material-icons.woff2') >= 0 && swRaw.indexOf('assets/vendor/tailwind4.1.13.js') >= 0 && swRaw.indexOf('manifest.json') >= 0) ? ok('SW 离线收录 字体/vendor/manifest') : bad('SW 未收录离线关键资源!');
     adRaw2.indexOf('function isIOSWeb') >= 0 && adRaw2.indexOf('长按二维码图片即可保存到相册') >= 0 ? ok('iOS 网页降级（保存二维码→提示长按）在') : bad('iOS 降级缺失!');
-    const adRaw = fs.readFileSync(path.join(wwwDir, 'app-data.js'), 'utf8');
+    const adRaw = readAllData();
     adRaw.indexOf('data:image/jpeg;base64') < 0 ? ok('app-data 无 base64 内联残留（已瘦身）') : bad('app-data 仍有 base64 内联!');
 } catch (e) { bad('5r 机制检查失败: ' + e.message); }
 
@@ -760,7 +766,7 @@ const syncBlockCss = cssBlockOf('.sync-input') || '';
 (/-webkit-autofill/.test(html) && /body\.dark-mode input:-webkit-autofill/.test(html)) ? ok('守卫：自动填充底色已玻璃化（浅色+深色）') : bad('未处理自动填充底色（浏览器会刷系统浅黄底）');
 (!/<select[\s>]/.test(html + allJs)) ? ok('守卫：全站无原生 <select>（统一自绘选择器弹窗）') : bad('出现原生 <select>，会露系统下拉框');
 // ★2026-09-18 源码守卫：同意留存（隐私政策/免责声明需显式勾选 + 留存条款版本与时间戳）
-const dataJsLegal = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+const dataJsLegal = readAllData();
 const initJsLegal = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');
 (/const LEGAL_VERSION = '\d{4}-\d{2}-\d{2}'/.test(dataJsLegal)) ? ok('同意留存：条款版本常量在') : bad('LEGAL_VERSION 缺失!');
 (/LEGAL_AGREE_KEY = 'hiking_legal_agree'/.test(dataJsLegal) && /function saveLegalAgreement/.test(dataJsLegal) && /new Date\(\)\.toISOString\(\)/.test(dataJsLegal)) ? ok('同意留存：记录条款版本 + ISO 时间戳') : bad('同意记录写入缺失!');
@@ -771,7 +777,7 @@ const initJsLegal = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'ut
 (/maybePromptLegalConsent\(\)/.test(initJsLegal) && /maybePromptLegalConsent\(true\)/.test(initJsLegal)) ? ok('同意触发：启动 + 首次进关于应用') : bad('同意触发时机缺失!');
 // ★2026-09-18 源码守卫：closeOpenModals 豁免机制（同意弹窗常驻下层，无需临时摘 DOM）
 const syncJsPersist = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
-const dataJsPersist = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+const dataJsPersist = readAllData();
 (/function closeOpenModals\(force\)/.test(syncJsPersist) && /hasAttribute\('data-persist'\)/.test(syncJsPersist)) ? ok('closeOpenModals 支持 data-persist 豁免 + force 强制清理') : bad('closeOpenModals 豁免机制缺失!');
 (/modal\.setAttribute\('data-persist', '1'\)/.test(dataJsPersist)) ? ok('同意弹窗声明 data-persist（免被条款弹窗的 closeOpenModals 清掉）') : bad('同意弹窗未声明 data-persist!');
 (!/detached/.test(dataJsPersist)) ? ok('同意弹窗不再依赖「临时摘 DOM + 挂回」的绕法') : bad('同意弹窗回退成了临时摘 DOM 的老方案!');
@@ -803,7 +809,7 @@ const _crCheck = (name, hex) => {
  ['照片占用 sub', (allJs.match(/sub: IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]],
  ['网盘信息 LB', (allJs.match(/const LB = IS_DARK \? '[^']*' : '(#[0-9a-f]{6})'/) || [])[1]]].forEach(([n, h]) => _crCheck(n, h));
 // ★2026-09-20 彻查修复守卫（P1×3 + P2×3 + P3×4）—— 每一条都对应一个实测确认过的真问题
-const _fixData = fs.readFileSync(path.join(__dirname, 'www/app-data.js'), 'utf8');
+const _fixData = readAllData();
 const _fixCore = fs.readFileSync(path.join(__dirname, 'www/app-core.js'), 'utf8');
 const _fixSync = fs.readFileSync(path.join(__dirname, 'www/app-sync.js'), 'utf8');
 const _fixInit = fs.readFileSync(path.join(__dirname, 'www/app-init.js'), 'utf8');

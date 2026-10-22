@@ -23,8 +23,8 @@
  * ★2026-10-10 v61→v62：CSS 外置到 www/app.css（index.html 6721→726 行）—— 必须 bump 强制作废旧缓存
  * ★2026-10-10 v62→v63：同号重发(第4次) —— .glass-btn 去光泽带渐变 + 修 box-shadow 声明失效（www 内容变了，必须 bump 强制旧壳失效）
  */
-const CACHE_NAME = 'xixi-hiking-v81';   // ★2026-10-20 v1.2.5.2 升号：按钮内文字改回对称内边距（墨迹精确居中）+ 年月格子居中
-const CORE_ASSETS = ['./', './index.html', './app.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
+const CACHE_NAME = 'xixi-hiking-v82';   // ★2026-10-22 v1.2.5.3 升号：app-data.js 拆 6 文件 + toast 合并 + 对比度/触控/aria + 弹窗底色 15% + FPS 默认关
+const CORE_ASSETS = ['./', './index.html', './app.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-data-detail.js', './app-data-lightbox.js', './app-data-heatmap.js', './app-data-plans.js', './app-data-plan-detail.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
     e.waitUntil(

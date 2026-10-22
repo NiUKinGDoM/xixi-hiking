@@ -34,7 +34,7 @@ const ROOT = path.resolve(__dirname, '..');
 const QUIET = process.argv.includes('--quiet');
 const LIST = process.argv.includes('--list');
 
-const FILES = ['www/index.html', 'www/app-core.js', 'www/app-data.js', 'www/app-sync.js', 'www/app-init.js'];
+const FILES = ['www/index.html', 'www/app-core.js', 'www/app-data.js', 'www/app-data-detail.js', 'www/app-data-lightbox.js', 'www/app-data-heatmap.js', 'www/app-data-plans.js', 'www/app-data-plan-detail.js', 'www/app-sync.js', 'www/app-init.js'];
 
 // 一眼看出这是哪个弹窗：取同标签内的 id，其次取其后的 title 文案
 function describe(tag, src, tagEnd) {

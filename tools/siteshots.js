@@ -39,7 +39,7 @@ const BASE = argOf('base') || 'http://127.0.0.1:8123/index.html';
 const ONLY = (argOf('only') || '').split(',').map(s => s.trim()).filter(Boolean);
 
 // ── 从源码读 LEGAL_VERSION（禁写死） ──────────────────────────────────────
-const APP_DATA_SRC = fs.readFileSync(path.join(WWW, 'app-data.js'), 'utf8');
+const APP_DATA_SRC = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js'].map(f => fs.readFileSync(path.join(WWW, f), 'utf8')).join('\n;\n');
 const LEGAL_VERSION = (APP_DATA_SRC.match(/const LEGAL_VERSION = '([^']+)'/) || [])[1];
 if (!LEGAL_VERSION) { console.error('✗ 读不到 LEGAL_VERSION'); process.exit(1); }
 const APP_VERSION = (fs.readFileSync(path.join(WWW, 'app-core.js'), 'utf8').match(/var APP_VERSION = '([^']+)'/) || [])[1];

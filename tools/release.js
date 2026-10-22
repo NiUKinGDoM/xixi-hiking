@@ -35,7 +35,7 @@ const JDK = process.env.JAVA_HOME_DIR || path.join(PROJ, 'jdk-21.0.12');
 const GRADLE_LIB = process.env.GRADLE_LIB || path.join(PROJ, 'gradle-8.2.1/lib/gradle-launcher-8.2.1.jar');
 
 // ★ 同步清单（2026-10-10 起 8 文件（+app.css） + assets/ 收款码 → 共 9 个文件 + assets 目录整体复制）
-const WWW_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
+const WWW_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
 const WWW_ASSETS = ['support-qr-wechat.jpg', 'support-qr-alipay.jpg'];
 
 function fail(msg) { console.error('\n✗ ' + msg); process.exit(1); }

@@ -13,7 +13,11 @@ const SHOTS = path.resolve(__dirname, 'shots');
 const BASELINE = path.join(SHOTS, process.env.E2E_BASELINE || 'baseline');   // E2E_BASELINE=baseline-obf 验证混淆副本
 const UPDATE = process.argv.includes('--update');
 // ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都连锁失败）
-const LEGAL_V = (fs.readFileSync(path.join(__dirname, '..', 'www', 'app-data.js'), 'utf8').match(/LEGAL_VERSION\s*=\s*'([^']+)'/) || [])[1] || '';
+// ★2026-10-22 app-data.js 已按功能拆为 6 个文件（LEGAL_VERSION 落在 app-data-lightbox.js）
+//   ⇒ 改为拼接全部 data 文件再匹配，避免后续再挪位置时又断
+const DATA_SRC = ['app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js']
+    .map(f => fs.readFileSync(path.join(__dirname, '..', 'www', f), 'utf8')).join('\n');
+const LEGAL_V = (DATA_SRC.match(/LEGAL_VERSION\s*=\s*'([^']+)'/) || [])[1] || '';
 let pass = 0, fail = 0;
 const fails = [];
 
@@ -87,7 +91,8 @@ function serverUp() {
 
   async function shot(name) {
     const fp = path.join(BASELINE, name + '.png');
-    await page.screenshot({ path: fp, fullPage: false });
+    // ★2026-10-22 同 shotAndCheck：冻结动画，保持截图确定性
+    await page.screenshot({ path: fp, fullPage: false, animations: 'disabled', caret: 'hide' });
     return fp;
   }
   // 与基线像素差（粗检：采样行 hash；完整 diff 可后续接 pixelmatch）
@@ -108,14 +113,19 @@ function serverUp() {
   }
   async function shotAndCheck(name, keySel, opts) {
     const cmp = !(opts && opts.noCompare);   // noCompare：动态数据区不做视觉比
+    // ★2026-10-22 视觉回归加固（治偶发 flaky）：
+    //   ① 先等 document.fonts.ready —— Material Icons / 宋体若晚到，图标会退化成字面量、字宽也变，整页差异巨大
+    //   ② 截图统一 animations:'disabled' —— 把 CSS 动画冻结到终态，不再依赖"等 650ms 恰好够"（CPU 被抢占时会不够）
+    await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(650);   // 等渐入/滚动动画结束再截（01/02 界面有 0.3-0.5s 入场动画）
+    const SHOT = { animations: 'disabled', caret: 'hide' };
     if (UPDATE) {   // --update：无条件刷新基线（内容/排版预期变化时用）
-      await page.screenshot({ path: path.join(BASELINE, name + '.png') });
+      await page.screenshot(Object.assign({ path: path.join(BASELINE, name + '.png') }, SHOT));
       ok(name + '（基线已更新）', true);
       if (keySel) { const f = await page.locator(keySel).count(); ok(name + ' 关键元素[' + keySel + ']在', f > 0); }
       return;
     }
-    await page.screenshot({ path: path.join(SHOTS, name + '.latest.png') });
+    await page.screenshot(Object.assign({ path: path.join(SHOTS, name + '.latest.png') }, SHOT));
     const base = path.join(BASELINE, name + '.png');
     if (!fs.existsSync(base)) {
       fs.copyFileSync(path.join(SHOTS, name + '.latest.png'), base);

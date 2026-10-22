@@ -13,7 +13,7 @@ let html = fs.readFileSync(path.join(__dirname, 'www/index.html'), 'utf8');
 html = html.replace(/<style>[\s\S]*?<\/style>/gi, ''); // jsdom 不解析 Tailwind v4 CSS，DOM 结构不受影响
 const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]).filter(s => s.trim());
 // ★2026-08-30 方案A：主 JS 拆外部文件，追加 4 个外部 JS（按加载顺序）
-['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')));
+['app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js'].forEach(f => scripts.push(fs.readFileSync(path.join(__dirname, 'www', f), 'utf8')));
 const allJs = scripts.join('\n;\n');
 // ★2026-09-23 条款版本从源码取（此前写死日期 → 每次政策 bump 都会连锁失败：
 //   同意弹窗带 data-persist 会残留，导致「连开两次仅 1 个」类断言 count 多 1）

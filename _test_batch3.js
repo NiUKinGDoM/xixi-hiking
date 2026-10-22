@@ -4,7 +4,7 @@ const html = fs.readFileSync('www/index.html', 'utf-8');
 const dom = new JSDOM(html, { url: 'https://localhost/', runScripts: 'outside-only', pretendToBeVisual: true });
 const w = dom.window, d = w.document;
 // 合并 4 个 JS 一次 eval（同一词法环境，模拟真实 script 顺序加载）
-const all = ['app-core.js','app-data.js','app-sync.js','app-init.js'].map(f => fs.readFileSync('www/' + f, 'utf-8')).join('\n;\n');
+const all = ['app-core.js','app-data.js','app-data-detail.js','app-data-lightbox.js','app-data-heatmap.js','app-data-plans.js','app-data-plan-detail.js','app-sync.js','app-init.js'].map(f => fs.readFileSync('www/' + f, 'utf-8')).join('\n;\n');
 try { w.eval(all); } catch (e) { console.log('加载异常:', e.message.slice(0, 150)); }
 const bar = d.getElementById('batchBar');
 const modeBtn = d.getElementById('batchModeBtn');

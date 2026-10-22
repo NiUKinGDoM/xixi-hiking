@@ -20,7 +20,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const WWW = path.join(ROOT, 'www');
-const JS_FILES = ['app-core.js', 'app-data.js', 'app-sync.js', 'app-init.js'];
+const JS_FILES = ['app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js'];
 const has = (n) => process.argv.indexOf('--' + n) >= 0;
 const onlyCss = has('css'), onlyRes = has('residue');
 const runCss = !onlyRes, runRes = !onlyCss;

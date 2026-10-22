@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.5.3': '【优化】\n- **弹窗没那么透了** —— 「选择年月」「数据管理说明」这类弹窗，背后的内容不会再把文字糊在一起，读起来清楚多了。\n- **帧率显示默认关掉** —— 右上角那个跳动的帧率小框原来是默认挂着的，现在默认不显示；想看的话在设置里打开就行。\n- **几处小字调深了** —— 引导说明、热力图汇总、「暂无记录」这类灰字，户外阳光下也能看清。\n- **几个关闭按钮更好按** —— 引导卡右上角的 ✕ 原来只有指甲盖那么大，现在点击范围放大了一倍多。\n\n【无障碍】\n- **读屏软件能念出提示了** —— 「已保存」「同步失败」这类浮层提示，现在会被系统读屏播报（原来完全不播）。\n\nMade by XiXi 💛',
     'v1.2.5.2': '【修复】\n- **弹窗按钮里的字真正居中了** —— 上一版「取消 / 确定」这类按钮，字在框里偏下一点点，现在调回正中。\n- **概览、热力图「选择年月」弹窗里的年份和月份格子也摆正了** —— 之前整排略微偏上，现在对正中间。\n\nMade by XiXi 💛',
     'v1.2.5.1': '【优化】\n- **弹窗按钮整体收小、文字更居中** —— 之前按钮里的字偏大、看着有点偏上，现在统一调小了尺寸，文字正对中间。\n- **导出、导入这类全宽按钮也一并调整** —— 字号和高度跟其他按钮一致了，「取消」不再偏上。\n\n【修复】\n- **极窄屏和横屏下弹窗按钮不再跑丢** —— 折叠屏外屏、横过来用时，「使用前请确认」的按钮不会再被内容挤出屏幕，始终固定在底部。\n\nMade by XiXi 💛',
     'v1.2.5.0': '【优化】\n- **「数据管理说明」「隐私政策」「免责声明」这类长弹窗不再顶满屏幕** —— 高度统一收到约七成屏，上下都留出空当，不再压着屏幕边界。\n- **按钮始终固定在底部看得到** —— 长文需要滚动时，「知道了」会停在弹窗底部，不会跟着内容一起滚走。\n\nMade by XiXi 💛',
@@ -685,7 +686,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.5.2';
+var APP_VERSION = '1.2.5.3';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -725,7 +726,9 @@ var UPDATE_MIRRORS = [
 ];
 const PLANNED_TRIPS_KEY = 'planned_trips';
 const SHOW_FPS_KEY = 'hiking_show_fps';
-let showFps = true;
+// ★2026-10-22 用户定：帧率显示默认关闭（原 true）。它的常驻 rAF + 每秒重绘带模糊的小框，
+//   属于白给的合成开销；需要时用户可在设置里自行打开（偏好存 hiking_show_fps，切换后即记住）
+let showFps = false;
 const HAPTIC_KEY = 'hiking_haptic'; // ★2026-08-21 v1.1.1.1 震动反馈开关
 let hapticEnabled = true; // 默认开（用户指定）
 // ★主题三态（v1.4.10.2）：'auto' 跟随系统 / 'light' 白天 / 'dark' 夜间
@@ -1319,126 +1322,56 @@ function dataURLToBlob(dataURL) {
     return new Blob([arr], { type: mime });
 }
 
-// 错误消息显示函数（★2026-08-25 支持 duration 参数：默认 1000ms，计划提醒用 3000ms）
-function showErrorMessage(message, duration) {
-    // 移除已存在的错误消息
-    const existingError = document.querySelector('.error-message');
-    if (existingError) {
-        existingError.remove();
-    }
-    
-    const errorDiv = document.createElement('div');
-    // 内联定位（left 50% + transform translateX(-50%)），避免 Tailwind translate 属性与动画 transform 叠加导致二次偏移
-    errorDiv.className = 'error-message toast-pop toast-glass error text-sm';
-    errorDiv.style.padding = '12px 20px';   // ★2026-09-10 内联硬锁：原 Tailwind px-5 从未编译（实测横向内边距=0，文字贴边）
-    errorDiv.style.position = 'fixed';   // ★2026-09-10 内联硬锁：position 不依赖 Tailwind 类（曾误删 fixed 类致 toast 跑到文档末尾看不见）
-    errorDiv.style.left = '50%';
-    errorDiv.style.bottom = '140px';
-    errorDiv.style.transform = 'translateX(-50%)';
-    errorDiv.style.zIndex = '300';   // ★2026-09-10 内联层级：原 Tailwind z-[300] 未编译（计算值为 auto），弹窗遮罩 260 会盖住 toast
-    errorDiv.innerHTML = `
-        <div class="flex items-center gap-2">
-            <span class="material-icons">error</span>
-            <span class="text-sm font-medium">${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(errorDiv);
-    
-    // 自动淡出移除错误消息
-    setTimeout(() => {
-        if (document.body.contains(errorDiv)) {
-            errorDiv.classList.add('toast-fade-out');
-            setTimeout(() => {
-                if (errorDiv.parentNode) errorDiv.remove();
-            }, 300);
-        }
-    }, duration || 1000);
-    
-    // 点击关闭
-    errorDiv.addEventListener('click', () => {
-        errorDiv.classList.add('toast-fade-out');
-        setTimeout(() => {
-            if (errorDiv.parentNode) errorDiv.remove();
-        }, 300);
-    });
+// ★2026-10-22 代码质量重构：error / info / success 三处 toast 原为三段近乎复制粘贴的实现
+//   （各约 45 行，仅 class 前缀、图标、默认时长不同），合并为单一实现 + 三个薄封装。
+//   ★message 仍原样插入 innerHTML（不整体转义）—— 现有调用依赖固定 <b> 标签；
+//     将来若要传用户输入，请在调用侧自行 escapeHtml。
+const TOAST_CFG = {
+    error:   { cls: 'error-message',   icon: 'error',        role: 'alert',  live: 'assertive', ms: 1000 },
+    info:    { cls: 'info-message',    icon: 'info',         role: 'status', live: 'polite',    ms: 1400 },
+    success: { cls: 'success-message', icon: 'check_circle', role: 'status', live: 'polite',    ms: 1000 }
+};
+
+function _createToast(kind, message, duration) {
+    const cfg = TOAST_CFG[kind];
+    if (!cfg) return;
+    // 同类 toast 只留一个（原三处各自 querySelector 移除同类）
+    const existing = document.querySelector('.' + cfg.cls);
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.className = cfg.cls + ' toast-pop toast-glass ' + kind + ' text-sm';
+    // a11y：错误立即打断（alert/assertive），普通与成功不打断（status/polite）
+    el.setAttribute('role', cfg.role);
+    el.setAttribute('aria-live', cfg.live);
+    el.setAttribute('aria-atomic', 'true');
+    // 内联定位/层级硬锁（★2026-09-10）：Tailwind 未编译会导致文字贴边、toast 跑到文末、被遮罩盖住
+    el.style.padding = '12px 20px';
+    el.style.position = 'fixed';
+    el.style.left = '50%';
+    el.style.bottom = '140px';
+    el.style.transform = 'translateX(-50%)';
+    el.style.zIndex = '300';
+    el.innerHTML =
+        '<div class="flex items-center gap-2">' +
+            '<span class="material-icons">' + cfg.icon + '</span>' +
+            '<span class="text-sm font-medium">' + message + '</span>' +
+        '</div>';
+
+    document.body.appendChild(el);
+
+    const dismiss = function () {
+        el.classList.add('toast-fade-out');
+        setTimeout(function () { if (el.parentNode) el.remove(); }, 300);
+    };
+    setTimeout(function () { if (document.body.contains(el)) dismiss(); }, duration || cfg.ms);
+    el.addEventListener('click', dismiss);
 }
 
-// ★2026-09-07 中性信息消息（俏皮提示/非成败的说明用；设计统一①：绿=成功 红=错误 灰蓝=中性信息）
-function showInfoMessage(message, duration) {
-    const existingInfo = document.querySelector('.info-message');
-    if (existingInfo) existingInfo.remove();
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'info-message toast-pop toast-glass info text-sm';
-    infoDiv.style.padding = '12px 20px';   // ★2026-09-10 内联硬锁：原 Tailwind px-5 从未编译（实测横向内边距=0，文字贴边）
-    infoDiv.style.position = 'fixed';   // ★2026-09-10 内联硬锁：position 不依赖 Tailwind 类（曾误删 fixed 类致 toast 跑到文档末尾看不见）
-    infoDiv.style.left = '50%';
-    infoDiv.style.bottom = '140px';
-    infoDiv.style.transform = 'translateX(-50%)';
-    infoDiv.style.zIndex = '300';   // ★2026-09-10 内联层级：原 Tailwind z-[300] 未编译（计算值为 auto），弹窗遮罩 260 会盖住 toast
-    infoDiv.innerHTML = `
-        <div class="flex items-center gap-2">
-            <span class="material-icons">info</span>
-            <span class="text-sm font-medium">${message}</span>
-        </div>
-    `;
-    document.body.appendChild(infoDiv);
-    setTimeout(() => {
-        if (document.body.contains(infoDiv)) {
-            infoDiv.classList.add('toast-fade-out');
-            setTimeout(() => { if (infoDiv.parentNode) infoDiv.remove(); }, 300);
-        }
-    }, duration || 1400);
-    infoDiv.addEventListener('click', () => {
-        infoDiv.classList.add('toast-fade-out');
-        setTimeout(() => { if (infoDiv.parentNode) infoDiv.remove(); }, 300);
-    });
-}
-
-// 成功消息显示函数（★2026-08-25 支持 duration 参数：默认 1000ms，计划提醒用 3000ms）
-function showSuccessMessage(message, duration) {
-    // 移除已存在的成功消息
-    const existingSuccess = document.querySelector('.success-message');
-    if (existingSuccess) {
-        existingSuccess.remove();
-    }
-    
-    const successDiv = document.createElement('div');
-    // 内联定位（left 50% + transform translateX(-50%)），避免 Tailwind translate 属性与动画 transform 叠加导致二次偏移
-    successDiv.className = 'success-message toast-pop toast-glass success text-sm';
-    successDiv.style.padding = '12px 20px';   // ★2026-09-10 内联硬锁：原 Tailwind px-5 从未编译（实测横向内边距=0，文字贴边）
-    successDiv.style.position = 'fixed';   // ★2026-09-10 内联硬锁：position 不依赖 Tailwind 类（曾误删 fixed 类致 toast 跑到文档末尾看不见）
-    successDiv.style.left = '50%';
-    successDiv.style.bottom = '140px';
-    successDiv.style.transform = 'translateX(-50%)';
-    successDiv.style.zIndex = '300';   // ★2026-09-10 内联层级：原 Tailwind z-[300] 未编译（计算值为 auto），弹窗遮罩 260 会盖住 toast
-    successDiv.innerHTML = `
-        <div class="flex items-center gap-2">
-            <span class="material-icons">check_circle</span>
-            <span class="text-sm font-medium">${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(successDiv);
-    
-    // 自动淡出移除成功消息
-    setTimeout(() => {
-        if (document.body.contains(successDiv)) {
-            successDiv.classList.add('toast-fade-out');
-            setTimeout(() => {
-                if (successDiv.parentNode) successDiv.remove();
-            }, 300);
-        }
-    }, duration || 1000);
-    
-    // 点击关闭
-    successDiv.addEventListener('click', () => {
-        successDiv.classList.add('toast-fade-out');
-        setTimeout(() => {
-            if (successDiv.parentNode) successDiv.remove();
-        }, 300);
-    });
-}
+// 对外签名保持不变（全站大量调用，勿改名）
+function showErrorMessage(message, duration) { _createToast('error', message, duration); }
+function showInfoMessage(message, duration) { _createToast('info', message, duration); }
+function showSuccessMessage(message, duration) { _createToast('success', message, duration); }
 
 // ★2026-08-30 系统通知（计划提醒等）：App 原生环境走通知栏（小米灵动岛由系统自动适配），网页版降级 toast
 // JS 桥：window.XixiFileBridge.showNotification(title, body, navigate) → boolean
