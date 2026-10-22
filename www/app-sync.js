@@ -969,29 +969,44 @@ async function webdavRequest(url, method, bodyBase64) {
         }
     }
     // 网页版降级：fetch + Basic Auth
+    // ★2026-10-22 离线/弱网体验：fetch 无内建超时，浏览器默认可能挂 30s+（App 走原生桥已有 90s 超时，
+    //   网页版此前完全没有）⇒ 读请求 15s、写请求 60s（大备份上传留足），超时给出明确中文提示而不是无限转圈
     const headers = { 'User-Agent': 'XiXiHiking/1.0' };
-    if (syncConfig.username) {
-        headers['Authorization'] = 'Basic ' + utf8ToBase64(syncConfig.username + ':' + syncConfig.password);
-    }
-    if (bodyBase64) {
-        headers['Content-Type'] = 'application/octet-stream';
-        const binary = atob(bodyBase64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const resp = await fetch(url, { method, headers, body: bytes });
-        const buf = await resp.arrayBuffer();
-        const out = new Uint8Array(buf);
-        let bin = '';
-        out.forEach(b => bin += String.fromCharCode(b));
-        return { status: resp.status, body: out.length ? btoa(bin) : '', error: null };
-    } else {
-        // ★2026-08-25 改 arrayBuffer：resp.text() 会把 zip 二进制按 UTF-8 解码损坏；原始字节 base64 与原生桥一致
-        const resp = await fetch(url, { method, headers });
-        const buf = await resp.arrayBuffer();
-        const out = new Uint8Array(buf);
-        let bin = '';
-        out.forEach(b => bin += String.fromCharCode(b));
-        return { status: resp.status, body: out.length ? btoa(bin) : '', error: null };
+    const wdCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const wdMs = (method === 'PUT') ? 60000 : 15000;
+    const wdTimer = wdCtrl ? setTimeout(function () { try { wdCtrl.abort(); } catch (e) { /* 忽略 */ } }, wdMs) : null;
+    const wdSignal = wdCtrl ? wdCtrl.signal : undefined;
+    try {
+        if (syncConfig.username) {
+            headers['Authorization'] = 'Basic ' + utf8ToBase64(syncConfig.username + ':' + syncConfig.password);
+        }
+        if (bodyBase64) {
+            headers['Content-Type'] = 'application/octet-stream';
+            const binary = atob(bodyBase64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const resp = await fetch(url, { method, headers, body: bytes, signal: wdSignal });
+            const buf = await resp.arrayBuffer();
+            const out = new Uint8Array(buf);
+            let bin = '';
+            out.forEach(b => bin += String.fromCharCode(b));
+            return { status: resp.status, body: out.length ? btoa(bin) : '', error: null };
+        } else {
+            // ★2026-08-25 改 arrayBuffer：resp.text() 会把 zip 二进制按 UTF-8 解码损坏；原始字节 base64 与原生桥一致
+            const resp = await fetch(url, { method, headers, signal: wdSignal });
+            const buf = await resp.arrayBuffer();
+            const out = new Uint8Array(buf);
+            let bin = '';
+            out.forEach(b => bin += String.fromCharCode(b));
+            return { status: resp.status, body: out.length ? btoa(bin) : '', error: null };
+        }
+    } catch (e) {
+        if (e && e.name === 'AbortError') {
+            throw new Error('网络超时（' + Math.round(wdMs / 1000) + ' 秒无响应），请检查网络后重试');
+        }
+        throw e;
+    } finally {
+        if (wdTimer) clearTimeout(wdTimer);
     }
 }
 

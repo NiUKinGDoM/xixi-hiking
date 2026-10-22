@@ -207,10 +207,24 @@ async function init() {
         }
         
         // 帧率显示开关
-        if (fpsData.status === 'fulfilled' && fpsData.value && typeof fpsData.value.showFps === 'boolean') {
+        // ★2026-10-22 三层优先级：用户手动设置 > 远程 config（fpsDefault）> 代码内默认 false
+        var _fpsUserSet = (fpsData.status === 'fulfilled' && fpsData.value && typeof fpsData.value.showFps === 'boolean');
+        if (_fpsUserSet) {
             showFps = fpsData.value.showFps;
+        } else {
+            showFps = RemoteConfig.get('fpsDefault', false);
         }
         applyFpsPreference();
+        // 远程配置：后台拉取（不阻塞启动；3s 超时 / 离线跳过 / 失败静默）
+        if (typeof RemoteConfig !== 'undefined' && RemoteConfig.init) {
+            try {
+                RemoteConfig.init().then(function (ok) {
+                    if (!ok || _fpsUserSet) return;   // 用户手动设过就不覆盖他的选择
+                    var want = RemoteConfig.get('fpsDefault', showFps);
+                    if (want !== showFps) { showFps = want; try { applyFpsPreference(); } catch (e) { /* 忽略 */ } }
+                }).catch(function () { /* 静默 */ });
+            } catch (e) { /* 环境不支持时不中断启动 */ }
+        }
         
         // 震动反馈开关（v1.1.1.1，默认开）
         if (hapticData.status === 'fulfilled' && hapticData.value && typeof hapticData.value.enabled === 'boolean') {

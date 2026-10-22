@@ -725,10 +725,66 @@ var UPDATE_MIRRORS = [
     'https://gh.xmly.dev/'
 ];
 const PLANNED_TRIPS_KEY = 'planned_trips';
+// ===== 远程配置（★2026-10-22 方案①：不升号打包也能调「开关 / 文案 / 数值」）=====
+// 能力边界：只能覆盖**代码里已经读的 key**，不能新增功能或改逻辑。
+// 三层优先级：用户手动设置 > 远程 config > 代码内默认。
+// 离线保障：① 不阻塞启动（异步拉）② 3s 超时 ③ 断网直接跳过 ④ 上次结果缓存在 localStorage。
+// ★端点走 Pages Function（仓库根 functions/config.js → 路由 /config，自带 CORS 头）
+const RC_URL = 'https://xixi-hiking.pages.dev/config';
+const RC_CACHE_KEY = 'hiking_remote_config';
+const RemoteConfig = {
+    _data: {},
+    // 同步读（启动早期可用）：命中远程/缓存值就用它，否则回退代码内默认
+    get: function (key, fallback) {
+        try {
+            if (this._data && Object.prototype.hasOwnProperty.call(this._data, key)) return this._data[key];
+        } catch (e) { /* 忽略 */ }
+        return fallback;
+    },
+    // 先吃本地缓存（同步，保证离线启动也有一致的体验）
+    loadCache: function () {
+        try {
+            var raw = localStorage.getItem(RC_CACHE_KEY);
+            if (!raw) return;
+            var obj = JSON.parse(raw);
+            var d = (obj && obj.data) ? obj.data : obj;
+            if (d && typeof d === 'object') this._data = d;
+        } catch (e) { /* 坏数据忽略 */ }
+    },
+    // 异步拉取：3s 超时 / 断网跳过 / 任何失败静默（永远不抛、不阻塞）
+    init: function () {
+        var self = this;
+        try { self.loadCache(); } catch (e) { /* 忽略 */ }
+        // ★环境防护：jsdom / 老 WebView 可能没有 fetch —— 必须在这里挡住，
+        //   否则同步抛错会中断调用方（app-init）后续整个启动流程（曾致引导卡/IME 钩子全丢）
+        if (typeof fetch !== 'function') return Promise.resolve(false);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve(false);
+        var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) { /* 忽略 */ } }, 3000) : null;
+        return fetch(RC_URL + '?t=' + Date.now(), {
+            cache: 'no-store',
+            signal: ctrl ? ctrl.signal : undefined
+        }).then(function (r) {
+            return r && r.ok ? r.json() : null;
+        }).then(function (json) {
+            if (!json || typeof json !== 'object') return false;
+            var d = (json.data && typeof json.data === 'object') ? json.data : json;
+            self._data = d;
+            try { localStorage.setItem(RC_CACHE_KEY, JSON.stringify({ at: Date.now(), data: d })); } catch (e) { /* 配额满忽略 */ }
+            return true;
+        }).catch(function () {
+            return false;   // 离线 / 超时 / 格式错 —— 静默用缓存或默认
+        }).then(function (ok) {
+            if (timer) clearTimeout(timer);
+            return ok;
+        });
+    }
+};
 const SHOW_FPS_KEY = 'hiking_show_fps';
 // ★2026-10-22 用户定：帧率显示默认关闭（原 true）。它的常驻 rAF + 每秒重绘带模糊的小框，
 //   属于白给的合成开销；需要时用户可在设置里自行打开（偏好存 hiking_show_fps，切换后即记住）
-let showFps = false;
+//   ★初始值走远程配置（fpsDefault），远程可统一调，不必发版
+let showFps = RemoteConfig.get('fpsDefault', false);
 const HAPTIC_KEY = 'hiking_haptic'; // ★2026-08-21 v1.1.1.1 震动反馈开关
 let hapticEnabled = true; // 默认开（用户指定）
 // ★主题三态（v1.4.10.2）：'auto' 跟随系统 / 'light' 白天 / 'dark' 夜间

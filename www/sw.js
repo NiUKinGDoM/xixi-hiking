@@ -23,13 +23,22 @@
  * ★2026-10-10 v61→v62：CSS 外置到 www/app.css（index.html 6721→726 行）—— 必须 bump 强制作废旧缓存
  * ★2026-10-10 v62→v63：同号重发(第4次) —— .glass-btn 去光泽带渐变 + 修 box-shadow 声明失效（www 内容变了，必须 bump 强制旧壳失效）
  */
-const CACHE_NAME = 'xixi-hiking-v82';   // ★2026-10-22 v1.2.5.3 升号：app-data.js 拆 6 文件 + toast 合并 + 对比度/触控/aria + 弹窗底色 15% + FPS 默认关
+const CACHE_NAME = 'xixi-hiking-v83';   // ★2026-10-22 iOS 网页版离线加固：install 逐个缓存（addAll 原子性会导致一个 404 全盘失败=白屏）+ 静态资源 cache-first + 导航 3s 超时回退
+// 静态资源（cache-first：离线最稳、二次加载最快）
+const STATIC_RE = /\.(js|css|woff2?|png|jpe?g|svg|webp|ico)$/i;
 const CORE_ASSETS = ['./', './index.html', './app.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-data-detail.js', './app-data-lightbox.js', './app-data-heatmap.js', './app-data-plans.js', './app-data-plan-detail.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
     e.waitUntil(
         caches.open(CACHE_NAME).then(function (c) {
-            return c.addAll(CORE_ASSETS);
+            // ★★2026-10-22 关键修复：c.addAll() 是**原子**的 —— CORE_ASSETS 里只要有一个资源 404/超时，
+            //   整批 addAll 直接 reject ⇒ install 失败 ⇒ SW 永不激活 ⇒ **离线打开就是白屏**（iOS 上尤其明显）。
+            //   改为逐个 add 并各自捕获，单个失败只跳过它，其余照样进缓存。
+            return Promise.all(CORE_ASSETS.map(function (u) {
+                return c.add(u).catch(function (err) {
+                    console.warn('[SW] precache 跳过（不影响其它）', u, err && err.message);
+                });
+            }));
         }).then(function () { return self.skipWaiting(); })
     );
 });
@@ -48,6 +57,57 @@ self.addEventListener('fetch', function (e) {
     // 只处理同源页面/资源，API/跨域不动
     var url = new URL(req.url);
     if (url.origin !== location.origin) return;
+
+    // ① 页面导航：network-first + 3s 超时 → 回退缓存页
+    //    （网络差时 iOS 的 fetch 可能挂很久，超时后直接吃缓存，避免长时间白屏）
+    if (req.mode === 'navigate') {
+        e.respondWith(
+            Promise.race([
+                fetch(req),
+                new Promise(function (_, reject) { setTimeout(function () { reject(new Error('sw-timeout')); }, 3000); })
+            ]).then(function (res) {
+                if (res && res.ok) {
+                    var copy = res.clone();
+                    caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
+                }
+                return res;
+            }).catch(function () {
+                return caches.match(req, { ignoreSearch: true }).then(function (hit) {
+                    return hit || caches.match('./index.html') || caches.match('./');
+                });
+            })
+        );
+        return;
+    }
+
+    // ② 静态资源（js/css/字体/图片）：cache-first + 后台静默更新（stale-while-revalidate）
+    if (STATIC_RE.test(url.pathname)) {
+        e.respondWith(
+            caches.match(req, { ignoreSearch: true }).then(function (hit) {
+                if (hit) {
+                    fetch(req).then(function (res) {
+                        if (res && res.ok) {
+                            var copy = res.clone();
+                            caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
+                        }
+                    }).catch(function () { /* 离线忽略 */ });
+                    return hit;
+                }
+                return fetch(req).then(function (res) {
+                    if (res && res.ok) {
+                        var copy = res.clone();
+                        caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
+                    }
+                    return res;
+                }).catch(function () {
+                    return caches.match('./index.html');
+                });
+            })
+        );
+        return;
+    }
+
+    // ③ 其它同源请求：network-first → 回退缓存
     e.respondWith(
         fetch(req).then(function (res) {
             var copy = res.clone();
