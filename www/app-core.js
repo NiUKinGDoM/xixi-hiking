@@ -729,8 +729,10 @@ const PLANNED_TRIPS_KEY = 'planned_trips';
 // 能力边界：只能覆盖**代码里已经读的 key**，不能新增功能或改逻辑。
 // 三层优先级：用户手动设置 > 远程 config > 代码内默认。
 // 离线保障：① 不阻塞启动（异步拉）② 3s 超时 ③ 断网直接跳过 ④ 上次结果缓存在 localStorage。
-// ★端点走 Pages Function（仓库根 functions/config.js → 路由 /config，自带 CORS 头）
-const RC_URL = 'https://xixi-hiking.pages.dev/config';
+// ★2026-10-22 实测结论：仓库根 functions/ 只挂在**官网项目**（xixi-hiking-site），
+//   App 网页版域名（xixi-hiking.pages.dev，Root=www）**没有 Functions**（/config 会落到静态首页）。
+//   故远程配置必须走官网域名；函数已带 Access-Control-Allow-Origin: *，跨域可用。
+const RC_URL = 'https://xixi-hiking-site.pages.dev/config';
 const RC_CACHE_KEY = 'hiking_remote_config';
 const RemoteConfig = {
     _data: {},
