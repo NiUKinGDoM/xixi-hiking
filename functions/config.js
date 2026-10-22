@@ -25,22 +25,27 @@ const CONFIG = {
     }
 };
 
-export async function onRequestGet() {
-    return new Response(JSON.stringify(CONFIG), {
-        headers: {
-            'content-type': 'application/json; charset=utf-8',
-            'access-control-allow-origin': '*',
-            'cache-control': 'public, max-age=60'
-        }
-    });
-}
+// ★2026-10-22 用通用 onRequest（与 download.js 同款）—— 分方法导出 onRequestGet/onRequestOptions
+//   在本项目实测未命中路由（/config 落到静态资源，返回首页 HTML 软 404、OPTIONS 405）。
+const CORS = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+    'access-control-max-age': '86400'
+};
 
-export async function onRequestOptions() {
-    return new Response(null, {
-        headers: {
-            'access-control-allow-origin': '*',
-            'access-control-allow-methods': 'GET, OPTIONS',
-            'access-control-max-age': '86400'
-        }
+export async function onRequest(context) {
+    const method = (context.request && context.request.method) || 'GET';
+    if (method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: CORS });
+    }
+    if (method !== 'GET' && method !== 'HEAD') {
+        return new Response('Method Not Allowed', { status: 405, headers: CORS });
+    }
+    return new Response(JSON.stringify(CONFIG), {
+        headers: Object.assign({
+            'content-type': 'application/json; charset=utf-8',
+            'cache-control': 'public, max-age=60'
+        }, CORS)
     });
 }
