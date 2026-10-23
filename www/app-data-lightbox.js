@@ -11,7 +11,11 @@ function ensureLightbox() {
     var div = document.createElement('div');
     div.id = 'photoLightbox';
     div.innerHTML =
-        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 16px;box-sizing:border-box;">' +
+        // ★2026-10-23 用户「山名和叉号太高了 / 下面保存和左右键也调一下」：
+        //   原来上下内边距都是 28px ⇒ 标题距顶 34、按钮距底 28，在真机上正好落进
+        //   状态栏（~40-50px）与手势条（~24-34px）区域，会被压住。
+        //   现改为「48px 基础 + safe-area 兜底」：headless 实测顶 54 / 底 44，真机再自动叠加安全区。
+        '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(48px + env(safe-area-inset-top, 0px)) 16px calc(44px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">' +
         // 标题栏（图片上方，跟随图片不贴屏幕顶；含页码）
         '<div style="position:relative;z-index:6;width:100%;max-width:560px;display:flex;justify-content:space-between;align-items:center;color:#fff;flex-shrink:0;">' +
         '<span id="lb-title" style="font-size:15px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.5);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>' +
@@ -23,7 +27,13 @@ function ensureLightbox() {
         //   高度），390×844 屏上只有 ~441px；而扣掉标题栏/操作栏与两处 gap 后实际可用 ~680px
         //   ⇒ 白白浪费 239px。现改为 flex:1 1 auto + min-height:0 让它撑满剩余空间，
         //   max-height:100% 兜底、object-fit:contain 保证不变形、max-width:94% 保留左右呼吸。
-        '<img id="lb-img" style="position:relative;z-index:1;max-width:94%;max-height:100%;flex:1 1 auto;min-height:0;object-fit:contain;transform-origin:center;will-change:transform;touch-action:pan-y;">' +
+        // ★2026-10-23 用户「照片切换时有时候会抽搐」——根因是 img 用 `flex:1 1 auto`：
+        //   flex-basis:auto ⇒ 基准 = 图片固有尺寸，竖图/横图比例不同 ⇒ img 盒子高度变化
+        //   ⇒ 容器 justify-content:center 重新分布 ⇒ **标题与底部按钮上下跳**（切一张跳一次）。
+        //   改为 `flex:1 1 0`（基准 0，高度完全由 flex 分配）+ width:94% + object-fit:contain
+        //   ⇒ 图片盒子恒定、只有图中内容按比例缩放，布局不再动。
+        //   同时给 opacity 加 0.18s 过渡（缓存未命中时 0.3→1 的硬切也是"抽一下"的来源之一）。
+        '<img id="lb-img" style="position:relative;z-index:1;width:94%;flex:1 1 0;min-height:0;object-fit:contain;transform-origin:center;will-change:transform;touch-action:pan-y;transition:opacity 0.18s ease;">' +
         // ★2026-09-01 缩放指示（放大时显示 ×N，还原隐藏）
         '<div id="lb-zoom-ind" style="position:absolute;top:64px;right:16px;background:rgba(0,0,0,0.55);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;display:none;z-index:5;"></div>' +
         // 底部操作栏（图片下方）
@@ -35,7 +45,8 @@ function ensureLightbox() {
         '<button id="lb-next" style="display:flex;align-items:center;justify-content:center;padding:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.22);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;line-height:1;"><span class="material-icons" style="font-size:26px;">chevron_right</span></button>' +
         '</div>' +
         '</div>';
-    div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.93);display:none;';
+    // ★2026-10-23 底色 0.93 → 0.96：实测 0.93 时底下的引导卡文字仍隐约可见，干扰看图
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.96);display:none;';
     document.body.appendChild(div);
     div.querySelector('#lb-close').addEventListener('click', closePhotoLightbox);
     div.querySelector('#lb-prev').addEventListener('click', function () { lbStep(-1); });
@@ -204,7 +215,7 @@ function lbLoadImg() {
         img.src = lightboxImgCache[pid];
         img.style.opacity = '1';
     } else {
-        img.style.opacity = '0.3';
+        img.style.opacity = '0.55';   // ★2026-10-23 0.3 太暗，配上过渡仍是"闪一下"；0.55 更接近无缝
         photoGet(pid).then(function (p) {
             if (lb._currentPid !== pid) return;
             if (p && p.blob) {

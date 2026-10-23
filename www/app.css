@@ -6285,3 +6285,15 @@
         .confirm-modal-content.ms-list-modal {
             max-height: 72vh;
         }
+
+        /* ===== ★2026-10-23 灯箱底部按钮窄屏适配 =====
+           编辑态是四键（‹ 保存 删除 ›）：44+89+89+44 + 3×16 gap = 314px，
+           而 320 屏可用宽只有 288px ⇒ flex 会把按钮压扁（实测 rowW 被压到 189），文字挤在一起。
+           窄屏下收窄「保存/删除」左右内边距：44+65+65+44+48 = 266px < 288 ✓ 一行放下。 */
+        @media (max-width: 380px) {
+            #lb-save,
+            #lb-del {
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+            }
+        }
