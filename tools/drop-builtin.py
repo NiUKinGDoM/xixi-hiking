@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """删指定版本 BUILTIN 条目（builtin.js 遇「已存在」会静默跳过）
-用法：python tools/drop-builtin.py 1.2.5.5
+用法：python tools/drop-builtin.py 1.2.5.4
 """
 import io
 import os

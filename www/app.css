@@ -3753,38 +3753,59 @@
             animation: none !important;
             transition: none !important;
         }
-        /* ② 毛玻璃全关：通配 + 伪元素，一处覆盖全站（含新加的弹窗/卡片，避免以后漏） */
+        /* ② 毛玻璃全关：通配 + 伪元素，一处覆盖全站（含新加的弹窗/卡片，避免以后漏）
+           ★必须同时写 `body.dark-mode.power-save` 变体：深色的玻璃规则是
+             `body.dark-mode .xxx { backdrop-filter: … !important }`（specificity 0,2,1），
+             只用 `body.power-save *`（0,1,0）会被压过 ⇒ 实测深色下仍有 7 个元素保留模糊。 */
         body.power-save *,
         body.power-save *::before,
-        body.power-save *::after {
+        body.power-save *::after,
+        body.dark-mode.power-save *,
+        body.dark-mode.power-save *::before,
+        body.dark-mode.power-save *::after {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
         }
-        /* 补偿：玻璃原本靠模糊把背景文字糊掉，没有模糊就必须靠不透明度。
-           --glass-alpha 默认 0.10，各元素再乘 0.4~1.1 系数 ⇒ 提到 0.85 后实算约 0.34~0.94。 */
-        body.power-save {
-            --glass-alpha: 0.85;
-            --glass-alpha-tabbar: 0.85;
-        }
-        /* 弹窗用的是固定 0.15 白（不是变量），关模糊后必须单独提实，否则背景字会透上来 */
+        /* ★★补偿方案（第三版 —— 前两版都被真机打回，这版是最终解）：
+           【0.92 白为什么不对】弹窗底 0.15 是「精确调到合成色 ≈ #B8B8B8」的结果，所有文字色阶
+             （#0f172a / #1e293b / #334155）都按它算好（REFERENCE「浅色弹窗文字对比度」）。
+             直接提到 0.92 ⇒ 变「纯白塑料卡」，玻璃质感全失 —— 用户：「不是标准的弹窗颜色」。
+           【为什么不能动 --glass-alpha】它浅/深**共用白色系**（各元素再乘 0.4~1.1）。首版提到 0.85 ⇒
+             深色 .settings-item 变 34% 白、时光机 .glass-panel 变灰白块 → 内容看不清。**变量保持原值。**
+           【0.46 + 加强遮罩为什么也不对】**没有模糊，半透就必然穿透** —— 遮罩压暗后深色文字透过
+             46% 白仍然清晰可辨（截图实证：设置页的「数据管理」「自动同步」全浮在弹窗上）。
+           【最终解】关掉 blur 后弹窗**必须接近不透明**。底色取「页面色略提亮」而非纯白，
+             观感接近系统标准弹窗、与页面同色系不刺眼：浅 #F7F9FC / 深 #162032。
+             ★遮罩保持原值 0.3 —— 弹窗已不透明，不必加深遮罩，避免连累其它弹窗。 */
         body.power-save .confirm-modal-content {
-            background: rgba(255, 255, 255, 0.92) !important;
+            background: rgba(247, 249, 252, 0.99) !important;
         }
         body.dark-mode.power-save .confirm-modal-content {
-            background: rgba(30, 41, 59, 0.94) !important;
+            background: rgba(22, 32, 50, 0.99) !important;
         }
-        /* toast 也是玻璃底，关模糊后加深，保证在白底/深底上都读得清 */
+        /* 弹窗内部的分组卡片（数据管理说明的灰底块等）同样是玻璃底 ⇒ 一并改实，
+           否则分组块与弹窗外壳之间会出现深浅不一的「透」感。 */
+        body.power-save .confirm-modal-content .dmi-group,
+        body.power-save .confirm-modal-content .dmi-plain {
+            background: rgba(237, 242, 249, 1) !important;
+        }
+        body.dark-mode.power-save .confirm-modal-content .dmi-group,
+        body.dark-mode.power-save .confirm-modal-content .dmi-plain {
+            background: rgba(32, 44, 66, 1) !important;
+        }
+        /* toast 是深底白字，关模糊后稍加深即可（原本就有 0.8+ 不透明度） */
         body.power-save .toast-glass {
             background: rgba(30, 41, 59, 0.92) !important;
         }
-        /* 底栏是硬编码 0.2 白（不走 --glass-alpha），关模糊后会变成近乎透明、内容直接穿透 ⇒ 单独补实。
-           ★只补「浮层」，页面内卡片(.glass-panel 0.05)保持低透 —— 它有 1px 边框分界，拉实反而失层次。 */
+        /* 底栏是浮在页面内容上的独立胶囊（不在遮罩下），关模糊后只能靠不透明度撑住，否则内容直接穿透 */
         body.power-save .bottom-tabbar {
             background: rgba(255, 255, 255, 0.86) !important;
         }
         body.dark-mode.power-save .bottom-tabbar {
             background: rgba(18, 28, 50, 0.90) !important;
         }
+        /* ★页面内卡片（.glass-panel 0.05 / .settings-item 0.06）**一律不动** ——
+           它们本就有 1px 边框分界，靠模糊只是多一层柔光；关掉后仍是描边卡片，拉实反而失层次（首版教训）。 */
         /* ★2026-09-02 v3 三点折返轨迹（0/50/100% 不同方位+缩放起伏）+ 速度加快，走起来是蜿蜒流动 */
         @keyframes auroraA {
             0% { transform: translate3d(0, 0, 0) scale(1); }
