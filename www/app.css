@@ -3735,6 +3735,20 @@
         body.dark-mode .aurora-bg i:nth-child(3) {
             background: radial-gradient(circle, rgba(15, 118, 110, 0.22) 0%, rgba(15, 118, 110, 0) 68%);
         }
+        /* ===== ★2026-10-23 B1 省电模式（body.power-save）=====
+           只暂停「每一帧都在动」的装饰：3 个背景渐变圆的无限动画、常驻 will-change、
+           以及页面切换的整页转场。低端机 / 折叠屏外屏上这三项正是合成层的主要负担。
+           ★刻意不动 backdrop-filter / 圆角 / 字号 / 布局 —— 玻璃质感是既定设计语言，
+             而且静态模糊几乎不耗电，贵的从来是「一直在动」；关掉后视觉只少了流动感。 */
+        body.power-save .aurora-bg i {
+            animation: none !important;
+            will-change: auto !important;
+        }
+        body.power-save .tab-page,
+        body.power-save .page-transition {
+            animation: none !important;
+            transition: none !important;
+        }
         /* ★2026-09-02 v3 三点折返轨迹（0/50/100% 不同方位+缩放起伏）+ 速度加快，走起来是蜿蜒流动 */
         @keyframes auroraA {
             0% { transform: translate3d(0, 0, 0) scale(1); }

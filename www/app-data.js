@@ -326,7 +326,7 @@ function renderTable() {
                 const t = emptyState.querySelector('p');
                 if (t) t.textContent = (searchQuery && searchQuery.trim())
                     ? (window.__isComposing ? '正在输入…' : '没有找到匹配的记录，换个词试试')
-                    : '暂无徒步记录，点击上方按钮添加';
+                    : RemoteConfig.text('empty.records', '暂无徒步记录，点击上方按钮添加');
             }
             const emptyPager = safeGetElementById('recordsPager');
             if (emptyPager) safeSetElementStyle('recordsPager', 'display', 'none');
@@ -337,19 +337,19 @@ function renderTable() {
         if (emptyState) safeSetElementStyle('emptyState', 'display', 'none');
         
         // ★2026-08-26 分页：每页 10 条，记录超出 1 页才显示翻页控件；删除后当前页越界自动回退
-        const totalPages = Math.max(1, Math.ceil(sortedRecords.length / RECORD_PAGE_SIZE));
+        const totalPages = Math.max(1, Math.ceil(sortedRecords.length / getPageSize()));
         if (recordPage > totalPages) recordPage = totalPages;
         if (recordPage < 1) recordPage = 1;
-        const pageStart = (recordPage - 1) * RECORD_PAGE_SIZE;
-        const pageRecords = sortedRecords.slice(pageStart, pageStart + RECORD_PAGE_SIZE);
+        const pageStart = (recordPage - 1) * getPageSize();
+        const pageRecords = sortedRecords.slice(pageStart, pageStart + getPageSize());
         currentPageRecords = pageRecords;
         
         const pager = safeGetElementById('recordsPager');
         if (pager) {
-            if (sortedRecords.length > RECORD_PAGE_SIZE) {
+            if (sortedRecords.length > getPageSize()) {
                 pager.style.display = 'flex';
                 const pageInfoEl = safeGetElementById('pageInfo');
-                if (pageInfoEl) pageInfoEl.textContent = (pageStart + 1) + '-' + Math.min(pageStart + RECORD_PAGE_SIZE, sortedRecords.length) + ' / 共' + sortedRecords.length + '条';
+                if (pageInfoEl) pageInfoEl.textContent = (pageStart + 1) + '-' + Math.min(pageStart + getPageSize(), sortedRecords.length) + ' / 共' + sortedRecords.length + '条';
                 const prevBtn = safeGetElementById('pagePrevBtn');
                 const nextBtn = safeGetElementById('pageNextBtn');
                 if (prevBtn) prevBtn.style.display = recordPage <= 1 ? 'none' : 'inline-flex';

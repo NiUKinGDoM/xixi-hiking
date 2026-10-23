@@ -215,13 +215,44 @@ async function init() {
             showFps = RemoteConfig.get('fpsDefault', false);
         }
         applyFpsPreference();
+
+        // ★2026-10-23 B1 省电模式：启动即同步应用（不依赖网络）；
+        //   优先级 手动偏好 > 远程 powerSaveDefault > 默认关
+        try {
+            applyPowerSave(loadPowerSavePref());
+            const _psTog = document.getElementById('powerSaveToggle');
+            if (_psTog) _psTog.checked = AppState.powerSave;
+        } catch (e) { /* 忽略 */ }
+
+        // ★2026-10-23 B2/B3：公告与诊断卡 —— 先用本地缓存的配置渲染一次（离线表现一致），
+        //   拉到新配置后 renderRemoteNotice / renderDebugCard 内部有幂等判断，不会重复插入
+        try { RemoteConfig.loadCache(); applyRemoteTexts(); renderRemoteNotice(); renderDebugCard(); } catch (e) { /* 忽略 */ }
+
         // 远程配置：后台拉取（不阻塞启动；3s 超时 / 离线跳过 / 失败静默）
         if (typeof RemoteConfig !== 'undefined' && RemoteConfig.init) {
             try {
                 RemoteConfig.init().then(function (ok) {
-                    if (!ok || _fpsUserSet) return;   // 用户手动设过就不覆盖他的选择
-                    var want = RemoteConfig.get('fpsDefault', showFps);
-                    if (want !== showFps) { showFps = want; try { applyFpsPreference(); } catch (e) { /* 忽略 */ } }
+                    if (!ok) return;   // 离线 / 超时 / 格式错 —— 继续用缓存或默认值
+                    // ① 帧率：用户手动设过就不覆盖他的选择
+                    if (!_fpsUserSet) {
+                        var want = RemoteConfig.get('fpsDefault', showFps);
+                        if (want !== showFps) { showFps = want; try { applyFpsPreference(); } catch (e) { /* 忽略 */ } }
+                    }
+                    // ② 省电模式：同样只在「用户没手动切过」时跟随远程
+                    try {
+                        var _psLocal = null;
+                        try { _psLocal = localStorage.getItem(POWER_SAVE_KEY); } catch (eR) { _psLocal = null; }
+                        if (_psLocal === null) {
+                            var psWant = RemoteConfig.bool('powerSaveDefault', false);
+                            if (psWant !== AppState.powerSave) {
+                                applyPowerSave(psWant);
+                                var _t2 = document.getElementById('powerSaveToggle');
+                                if (_t2) _t2.checked = AppState.powerSave;
+                            }
+                        }
+                    } catch (eP) { /* 忽略 */ }
+                    // ③ 公告 / 诊断卡：远程可能刚改了内容或开关
+                    try { applyRemoteTexts(); renderRemoteNotice(); renderDebugCard(); } catch (eN) { /* 忽略 */ }
                 }).catch(function () { /* 静默 */ });
             } catch (e) { /* 环境不支持时不中断启动 */ }
         }
@@ -232,6 +263,9 @@ async function init() {
         }
         const hapticToggleEl = document.getElementById('hapticToggle');
         if (hapticToggleEl) hapticToggleEl.checked = hapticEnabled;
+
+        // ★2026-10-23 隐藏当前环境用不了的设置项（iOS 网页：震动 / 检查更新）
+        try { hideUnsupportedSettings(); } catch (eH) { /* 忽略 */ }
         
         // ★2026-08-21 v1.1.1.5 启动优化：启动只渲染当前概览页，记录/计划表格延迟到切 tab 时渲染
         updateStatistics();
@@ -402,6 +436,8 @@ async function init() {
 // v1.1.1.2 修复：桥名是 XixiFileBridge（vibrate 挂在该桥下），原 XixiVibration 不存在导致 App 不震
 function triggerHaptic(ms) {
     if (!hapticEnabled) return;
+    // ★2026-10-23 环境没有震动能力（iOS 网页是典型）→ 直接返回，不做任何尝试
+    if (typeof Caps !== 'undefined' && !Caps.canVibrate) return;
     var dur = ms || 15;
     try {
         if (window.XixiFileBridge && typeof window.XixiFileBridge.vibrate === 'function') {
@@ -421,6 +457,7 @@ function setupEventListeners() {
     // ★2026-08-21 v1.1.1.1 震动反馈：全局点击委托——只对按钮/可点击控件短震，空白处不震
     const hapticClickHandler = function (e) {
         if (!hapticEnabled) return;
+        if (typeof Caps !== 'undefined' && !Caps.canVibrate) return;   // iOS 网页：没有震动接口
         var t = e.target;
         if (!t || !t.closest) return;
         // 命中按钮类才震：原生 <button> + 全 App 模拟按钮/可点击行
@@ -617,6 +654,14 @@ function setupEventListeners() {
         };
         hapticToggle.addEventListener('change', handler);
         cleanupFunctions.push(() => hapticToggle.removeEventListener('change', handler));
+    }
+
+    // ★2026-10-23 B1 省电模式开关（偏好写 localStorage：'1' 开 / '0' 关；未写 = 跟随远程）
+    const powerSaveToggle = document.getElementById('powerSaveToggle');
+    if (powerSaveToggle) {
+        const psHandler = () => togglePowerSave(powerSaveToggle.checked);
+        powerSaveToggle.addEventListener('change', psHandler);
+        cleanupFunctions.push(() => powerSaveToggle.removeEventListener('change', psHandler));
     }
     
     // ★2026-09-01 记录/计划表头排序统一绑定（.sort-header 共用，按 data-sort 前缀区分）

@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-10-22（v1.2.5.3 / vc300）  
+> 最后更新：2026-10-23（v1.2.5.4 / vc301）  
 > ★**本版 v1.2.3.10**：折叠屏外屏（≤350px）设置页文字不再被挤成竖排（改「可换行」布局，控件自动落到下一行）；概览统计卡标签不再折行（「最高海拔」）；设置页「数据管理」不再重复显示账号邮箱。sw 缓存 v66。  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
@@ -599,6 +599,18 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - 【清理】删掉 9 个按钮身上被 `!important` 全覆盖的冗余内联（-1149 字节，渲染零变化）；补齐 `prev-snapshot` 提示文字为动态计数。
 - 【测试】**E2E 视觉回归加固**：截图前 `document.fonts.ready`（图标字体晚到会让图标退化成文字）+ `animations:'disabled'`（冻结动画，不再赌 650ms）；连续 8 次运行全绿。
 - 【验证】全量门禁 **926/0**；切页帧率 60fps（设置页首次 77ms，一次性成本）；12 个弹窗字号统一（标题 20 / 正文 16 / 按钮 15）。
+### v1.2.5.4 —— 远程配置全面接入（A/B/C 三类）+ 省电模式
+
+- 【新增】**省电模式**（`body.power-save`）：停 aurora 三个 70vw 渐变圆的无限动画 + 停 `will-change` + 停 `.tab-page`/`.page-transition` 转场。**刻意保留 `backdrop-filter`**（静态模糊不耗电，玻璃质感不能砸）。实测动画 27→19、will-change 10→7。开关在设置页，偏好写 `hiking_power_save`（`'1'`/`'0'`，未写 = 跟随远程 `powerSaveDefault`）。
+- 【新增】**远程公告** `renderRemoteNotice()`：`{ id, text, url, urlText }` 渲染到 `#tab-overview` 顶部，关闭后把 id 写 `hiking_notice_closed`（同 id 不再出现，空 id 完全不显示）。**文本走 `textContent`、url 只收 http(s)、同窗口跳转**（WebView 对 `target=_blank` 不稳）。
+- 【新增】**诊断卡** `renderDebugCard()`：`debugInfo: true` 时在 `#tab-settings` 顶部插只读卡（版本/记录/计划/存储/错误数），每项独立 `try`，取不到就少一行，绝不拖垮设置页。
+- 【重构】**RemoteConfig 补类型安全读法**：`num(key, fallback, min, max)` / `bool()` / `text()`。配置是公开文件 ⇒ 按不可信输入处理，越界夹紧、类型错回退（实测 `999→50`、`5→0.95`、`"abc"→20`）。
+- 【改造】A 类调用点：`compressImage` 读 `photoMaxSide`/`photoQuality`；`RECORD_PAGE_SIZE`/`SYNC_MAX_FILES` 的 10 处用法改为 `getPageSize()`/`getSyncMaxFiles()`（**保留原 const 作为默认值**，不改结构）；WebDAV 超时改 `davTimeoutRead`/`davTimeoutWrite`。
+- 【改造】C 类文案：`applyRemoteTexts()` 覆盖 `welcome.title/sub/where` + `empty.records/plans`。**没配就一个字节都不动**（首次把原文存 `data-rc-orig`，撤掉配置能还原）；只在文本真的不同时才写 DOM ⇒ E2E 视觉基线无差异。
+- 【新增】**`AppState` 命名空间**（`powerSave`/`noticeId`/`debugInfo`）—— 落实「新功能一律 AppState.xxx、老代码原样不动」的约定。
+- 【控制面板】**`functions/config.js` 升 v2**，把 A/B/C 全部 key 连注释写进去，以后只改这一个文件 + push。
+- 【坑】**图标字体是子集化的（128KB / 26 字形）**：新增 `battery_saver`/`campaign` 会显示成方框 ⇒ 省电模式复用 `brightness_auto`、公告复用 `info`。
+- 【验证】全量门禁 **926/0**；A/B/C 九项行为实测（默认值/注入/越界/省电开关/公告渲染与 XSS/空 id/诊断卡/文案覆盖与还原）全对；设置页 10 项高度 75px 统一、title 15 / desc 12。
 - **正式版 v1.2.3.7（vc282）** —— 折叠屏【外屏】窄屏适配（≤350px：底栏收窄 302→198px / 概览矮卡 3 列→1 列 / 标题与同步文案允许折行 / 整页横向溢出归零）（2026-10-09）
   - **用户指令**：「能否适配一下折叠屏外屏？外屏一般比较窄，app 里的字会显示不全，显示...」→ 随后「发」（并明确选择**升号**发布）。
   - **★升号判定**：外屏适配改了用户可见的排版行为（窄屏下底栏/矮卡/标题布局变化）→ 不适用「同号修正重发」，按常规**升号** v1.2.3.6 → **v1.2.3.7**（vc281 → vc282）。

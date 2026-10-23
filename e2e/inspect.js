@@ -81,7 +81,12 @@ async function ensureServer() {
   // ★2026-10-12 --vw/--vh：多档位视口实测（窄屏适配/截断类问题必须多档验证，默认 390×844 不变）
   const VW = Number(argv('vw', 390)) || 390;
   const VH = Number(argv('vh', 844)) || 844;
-  const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, acceptDownloads: true });
+  // ★2026-10-23 --ua：验证「按平台隐藏用不了的功能」（iOS Safari 没有 navigator.vibrate）。
+  //   ★Playwright 没有 page.setUserAgent（那是 Puppeteer），UA 只能在 newContext 时传 ——
+  //     跑到一半改不了，必须在建上下文时就定下来。
+  const _ctxOpts = { viewport: { width: VW, height: VH }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, acceptDownloads: true };
+  if (argv('ua', null)) _ctxOpts.userAgent = String(argv('ua'));
+  const ctx = await browser.newContext(_ctxOpts);
   const page = await ctx.newPage();
 
   // ★2026-09-10 --offline：阻断一切外部域名请求（只放行本地 127.0.0.1/localhost）

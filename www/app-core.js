@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.5.4': '【新增】\n- **设置里多了「省电模式」** —— 打开后背景的三团光斑不再流动、切换页面也不再做转场动画。适合折叠屏外屏、或者觉得画面一直在动有点费电的时候。**玻璃质感和字号一个字没改**，只是少了流动感，随时能关回去。\n- **能收到「公告」小卡片了** —— 概览页顶部偶尔会出现一条提示（比如有新版本）。点右上角 ✕ 关掉后，同一条不会再出现。\n\n【优化】\n- **iOS 网页版会藏起用不了的开关** —— 在 iPhone 上通过网页打开时，「震动反馈」和「检查更新」会自动隐藏（iOS 浏览器没有震动接口，也装不了安卓安装包），剩下的开关自动接上、不留空档。\n- **一批参数改成可远程调整** —— 照片压缩的长边与画质、每页显示几条、同步保留几条、网盘超时时间，以后不用等新版就能调。\n- **弱网下网盘不再无限转圈** —— 读 15 秒、写 60 秒还没响应就给出提示，而不是一直等着。\n\nMade by XiXi 💛',
     'v1.2.5.3': '【优化】\n- **弹窗没那么透了** —— 「选择年月」「数据管理说明」这类弹窗，背后的内容不会再把文字糊在一起，读起来清楚多了。\n- **帧率显示默认关掉** —— 右上角那个跳动的帧率小框原来是默认挂着的，现在默认不显示；想看的话在设置里打开就行。\n- **几处小字调深了** —— 引导说明、热力图汇总、「暂无记录」这类灰字，户外阳光下也能看清。\n- **几个关闭按钮更好按** —— 引导卡右上角的 ✕ 原来只有指甲盖那么大，现在点击范围放大了一倍多。\n\n【无障碍】\n- **读屏软件能念出提示了** —— 「已保存」「同步失败」这类浮层提示，现在会被系统读屏播报（原来完全不播）。\n\nMade by XiXi 💛',
     'v1.2.5.2': '【修复】\n- **弹窗按钮里的字真正居中了** —— 上一版「取消 / 确定」这类按钮，字在框里偏下一点点，现在调回正中。\n- **概览、热力图「选择年月」弹窗里的年份和月份格子也摆正了** —— 之前整排略微偏上，现在对正中间。\n\nMade by XiXi 💛',
     'v1.2.5.1': '【优化】\n- **弹窗按钮整体收小、文字更居中** —— 之前按钮里的字偏大、看着有点偏上，现在统一调小了尺寸，文字正对中间。\n- **导出、导入这类全宽按钮也一并调整** —— 字号和高度跟其他按钮一致了，「取消」不再偏上。\n\n【修复】\n- **极窄屏和横屏下弹窗按钮不再跑丢** —— 折叠屏外屏、横过来用时，「使用前请确认」的按钮不会再被内容挤出屏幕，始终固定在底部。\n\nMade by XiXi 💛',
@@ -686,7 +687,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.5.3';
+var APP_VERSION = '1.2.5.4';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -743,6 +744,38 @@ const RemoteConfig = {
         } catch (e) { /* 忽略 */ }
         return fallback;
     },
+    // ★2026-10-23 A/B/C 类远程可调度：类型安全的读法 —— 远程配置写错类型/越界时安静回退默认，
+    //   绝不让一个手抖的 config 把 App 弄崩（配置是公开文件，必须按「不可信输入」对待）
+    // 数值读（min/max 可选，自动夹紧）
+    num: function (key, fallback, min, max) {
+        var v = this.get(key, fallback);
+        var n = (typeof v === 'number') ? v : parseFloat(v);
+        if (!isFinite(n)) return fallback;
+        if (typeof min === 'number' && n < min) n = min;
+        if (typeof max === 'number' && n > max) n = max;
+        return n;
+    },
+    // 布尔读（兼容 true / 1 / "true" / "on" 等写法）
+    bool: function (key, fallback) {
+        var v = this.get(key, fallback);
+        if (typeof v === 'boolean') return v;
+        if (typeof v === 'number') return v !== 0;
+        if (typeof v === 'string') {
+            var s = v.trim().toLowerCase();
+            if (s === 'true' || s === '1' || s === 'yes' || s === 'on') return true;
+            if (s === 'false' || s === '0' || s === 'no' || s === 'off') return false;
+        }
+        return !!fallback;
+    },
+    // 文案覆盖（C 类）：远程 data.text.<key> 为非空字符串则用它，否则回退代码内默认
+    //   ★只收字符串且限 500 字（防误配置塞一大段 HTML）；本函数不转义，
+    //     调用侧若插入 innerHTML 请自行 esc()（职责分离，与 toast 的约定一致）
+    text: function (key, fallback) {
+        var bag = this.get('text', null);
+        var v = (bag && typeof bag === 'object') ? bag[key] : null;
+        if (typeof v === 'string' && v.trim() && v.length <= 500) return v;
+        return fallback;
+    },
     // 先吃本地缓存（同步，保证离线启动也有一致的体验）
     loadCache: function () {
         try {
@@ -782,13 +815,226 @@ const RemoteConfig = {
         });
     }
 };
+// ===== AppState（★2026-10-22 用户拍板：新功能一律走 AppState.xxx 命名空间，老代码原样不动）=====
+// 只放「本次及以后新增」的可变状态；老变量（records / plannedTrips / showFps 等）保持原样，
+// 由后续改动自然收敛进来，禁止一次性大改（当年 126 个顶层变量的教训）。
+const AppState = {
+    powerSave: false,        // B1 省电模式：关装饰动画/重模糊，运行时由 applyPowerSave 应用
+    noticeId: '',            // B2 远程公告：当前已展示的公告 id（用户关掉后不再弹同一条）
+    debugInfo: false         // B3 诊断信息：设置页是否显示运行时诊断卡
+};
+const POWER_SAVE_KEY = 'hiking_power_save';
+const NOTICE_CLOSED_KEY = 'hiking_notice_closed';
+// ★2026-10-23 A 类：列表每页条数 / 同步索引保留数 改为「在线可调」。
+//   用函数声明（提升）而非改 const —— 既能跨文件引用，又不必动原有常量与调用点的结构，
+//   远程没配或配错时自动回退到原值，行为与改造前完全一致。
+function getPageSize() { return Math.floor(RemoteConfig.num('pageSize', RECORD_PAGE_SIZE, 5, 50)); }
+function getSyncMaxFiles() { return Math.floor(RemoteConfig.num('syncMaxFiles', SYNC_MAX_FILES, 5, 100)); }
+// 照片压缩参数（A 类）：边长 px 与 JPEG 质量。质量夹在 0.5~0.95，
+// 防止误配成 0（全糊）或 1（几乎不压、备份暴涨）
+function getPhotoOpts() {
+    return {
+        maxSide: Math.floor(RemoteConfig.num('photoMaxSide', 1280, 480, 3000)),
+        quality: RemoteConfig.num('photoQuality', 0.7, 0.5, 0.95)
+    };
+}
+
+// ===== B1 省电模式（★2026-10-23，body.power-save）=====
+// 目的：低端机 / 折叠屏外屏上，持续合成压力主要来自「3 个 70vw 渐变圆的无限动画 +
+//   整页切换的 transform 动画 + 一堆 will-change」。本模式只暂停这些**装饰性动效**。
+// ★刻意保留 backdrop-filter 与全部布局/字号：玻璃质感是既定设计语言，不能为省电把它砸掉；
+//   而且静态模糊几乎不耗电，真正贵的是「一直在动」。
+function applyPowerSave(on) {
+    AppState.powerSave = !!on;
+    try {
+        if (document.body) document.body.classList.toggle('power-save', AppState.powerSave);
+    } catch (e) { /* 忽略 */ }
+}
+// 没手动设过 → 跟随远程（powerSaveDefault）；手动设过以本地为准
+function loadPowerSavePref() {
+    var v = null;
+    try { v = localStorage.getItem(POWER_SAVE_KEY); } catch (e) { v = null; }
+    if (v === '1') return true;
+    if (v === '0') return false;
+    return RemoteConfig.bool('powerSaveDefault', false);
+}
+function togglePowerSave(on) {
+    applyPowerSave(on);
+    try { localStorage.setItem(POWER_SAVE_KEY, AppState.powerSave ? '1' : '0'); } catch (e) { /* 忽略 */ }
+    if (typeof showInfoMessage === 'function') {
+        showInfoMessage(AppState.powerSave ? '省电模式已开启（背景光斑与转场动画暂停）' : '省电模式已关闭');
+    }
+}
+
+// ===== B2 远程公告（★2026-10-23）=====
+// config.data.notice = { id, text, url?, urlText? }
+//   ★必须带 id：用户关掉后把 id 记进 localStorage，同一条不再骚扰（换 id 才再次出现）
+//   ★text 走 textContent（不解析 HTML）⇒ 远程内容无法注入标签，天然免疫 XSS；
+//     url 只接受 http(s) 且用同窗口跳转（App 内 WebView 对 target=_blank 支持不稳定）
+function renderRemoteNotice() {
+    var n = RemoteConfig.get('notice', null);
+    if (!n || typeof n !== 'object') return;
+    var id = (typeof n.id === 'string' && n.id.trim()) ? n.id.trim() : '';
+    var txt = (typeof n.text === 'string') ? n.text.trim() : '';
+    if (!id || !txt || txt.length > 300) return;
+    var closed = '';
+    try { closed = localStorage.getItem(NOTICE_CLOSED_KEY) || ''; } catch (e) { closed = ''; }
+    if (closed === id) return;
+    var host = document.getElementById('tab-overview');
+    if (!host || document.getElementById('remoteNotice')) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'remoteNotice';
+    wrap.className = 'glass-panel';
+    wrap.style.cssText = 'margin-top:0.5rem;margin-bottom:0.75rem;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;';
+    var icon = document.createElement('span');
+    icon.className = 'material-icons';
+    icon.style.cssText = 'font-size:20px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;';
+    icon.textContent = 'info';   // ★图标字体是子集化的（128KB / 26 字形），只能用已收录的字形，禁新增
+    var body = document.createElement('div');
+    body.style.cssText = 'flex:1;min-width:0;font-size:13px;line-height:1.6;color:#334155;word-break:break-word;';
+    body.textContent = txt;
+    if (typeof n.url === 'string' && /^https?:\/\//i.test(n.url)) {
+        var a = document.createElement('a');
+        a.href = n.url;
+        a.rel = 'noopener noreferrer';
+        a.textContent = (typeof n.urlText === 'string' && n.urlText.trim()) ? n.urlText.trim() : '查看详情';
+        a.style.cssText = 'display:inline-block;margin-top:6px;color:#4f46e5;font-weight:600;text-decoration:underline;font-size:13px;';
+        body.appendChild(document.createElement('br'));
+        body.appendChild(a);
+    }
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'wb-guide-close';
+    close.setAttribute('aria-label', '关闭公告');
+    close.style.cssText = 'background:transparent;border:none;color:#64748b;cursor:pointer;padding:10px;margin:-8px;font-size:18px;line-height:1;flex-shrink:0;';
+    close.innerHTML = '<span class="material-icons" style="font-size:18px;">close</span>';
+    close.addEventListener('click', function () {
+        try { localStorage.setItem(NOTICE_CLOSED_KEY, id); } catch (e) { /* 忽略 */ }
+        wrap.remove();
+    });
+    wrap.appendChild(icon);
+    wrap.appendChild(body);
+    wrap.appendChild(close);
+    host.insertBefore(wrap, host.firstChild);
+    AppState.noticeId = id;
+}
+
+// ===== B3 诊断信息（★2026-10-23）=====
+// config.data.debugInfo = true ⇒ 设置页顶部插一张只读诊断卡。
+// 用途：出问题时远程打开，用户截图就能给出完整现场，不必专门装 Debug 包。
+// ★每一项都单独 try —— 诊断卡绝不能因为某个值取不到而把设置页拖垮。
+function renderDebugCard() {
+    if (!RemoteConfig.bool('debugInfo', false)) return;
+    var host = document.getElementById('tab-settings');
+    if (!host || document.getElementById('debugCard')) return;
+    var lines = [];
+    lines.push('版本 ' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '?'));
+    try {
+        var rc = (Array.isArray(records) ? records.length : 0);
+        var pc = (Array.isArray(plannedTrips) ? plannedTrips.length : 0);
+        lines.push('记录 ' + rc + ' · 计划 ' + pc);
+    } catch (e) { /* 忽略 */ }
+    try {
+        var kb = 0;
+        for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i) || '';
+            kb += k.length + (localStorage.getItem(k) || '').length;
+        }
+        lines.push('本地存储 ≈ ' + Math.round(kb / 1024) + ' KB');
+    } catch (e) { /* 忽略 */ }
+    try { lines.push('错误日志 ' + ((window.__diagLogs || []).length) + ' 条'); } catch (e) { /* 忽略 */ }
+    var wrap = document.createElement('div');
+    wrap.id = 'debugCard';
+    wrap.className = 'glass-panel';
+    wrap.style.cssText = 'margin-top:0.5rem;margin-bottom:0.75rem;padding:12px 14px;font-size:12px;line-height:1.9;color:#52606f;word-break:break-all;';
+    var t = document.createElement('div');
+    t.style.cssText = 'font-weight:600;color:#334155;margin-bottom:4px;';
+    t.textContent = '诊断信息（远程开启）';
+    wrap.appendChild(t);
+    for (var j = 0; j < lines.length; j++) {
+        var d = document.createElement('div');
+        d.textContent = lines[j];
+        wrap.appendChild(d);
+    }
+    host.insertBefore(wrap, host.firstChild);
+    AppState.debugInfo = true;
+}
+
+// ===== C 类 文案覆盖（★2026-10-23）=====
+// 只覆盖「纯展示、无逻辑依赖」的静态文案。凡是带变量插值、或被 JS 动态改写的文案
+// （例如「备份已导出：xxx」「本月徒步 N 次」）一律不接 —— 覆盖值会和业务逻辑打架。
+// ★默认零风险：远程没配 text.<key> 时**完全不碰 DOM**，保持 HTML 原样；
+//   配了才用 textContent 覆盖（因此覆盖文本只是纯文字，不支持标签）。
+const REMOTE_TEXT_MAP = [
+    ['wbTitle', 'welcome.title'],
+    ['wbSub', 'welcome.sub'],
+    ['wbWhereHint', 'welcome.where']
+];
+function applyRemoteTexts() {
+    for (var i = 0; i < REMOTE_TEXT_MAP.length; i++) {
+        try {
+            var el = document.getElementById(REMOTE_TEXT_MAP[i][0]);
+            if (!el) continue;
+            // 首次调用时把 HTML 原文存进 data 属性（之后一直用它做兜底）
+            if (el.getAttribute('data-rc-orig') === null) {
+                el.setAttribute('data-rc-orig', el.textContent);
+            }
+            var orig = el.getAttribute('data-rc-orig');
+            var v = RemoteConfig.text(REMOTE_TEXT_MAP[i][1], null);
+            var next = (v === null) ? orig : v;
+            // 只在真的不同时才写 —— 没配置时一个字节都不动，E2E 视觉基线不受影响
+            if (el.textContent !== next) el.textContent = next;
+        } catch (e) { /* 单条失败不影响其它 */ }
+    }
+}
+// ===== 环境能力检测（★2026-10-23 用户「识别为 iOS 网页后，把用不了的功能直接隐藏，比如震动」）=====
+// 原则：**只隐藏「物理上做不到」的入口**，不隐藏「体验稍差但能用」的功能。
+// 判定优先用能力（typeof 检测），UA 只用于区分平台差异 —— 别把 UA 当唯一真理。
+// 已逐个核对 15 个原生桥方法，确认 iOS 网页真正不可用的只有 2 项设置：
+//   ① 震动（iOS Safari 从不实现 navigator.vibrate）
+//   ② 检查更新（iOS 无法安装 APK；原生 iOS App 也不存在）
+// 其余均有降级：WebDAV → fetch+BasicAuth、存相册 → 浏览器下载、计划闹钟 → 静默跳过。
+const Caps = (function () {
+    var nav = (typeof navigator !== 'undefined') ? navigator : {};
+    var ua = nav.userAgent || '';
+    var isApp = !!window.XixiFileBridge;
+    // iPadOS 13+ 的 Safari 把 UA 伪装成 Mac，只能用「Mac 平台 + 多点触控」补判
+    var isIOS = /iPad|iPhone|iPod/i.test(ua) ||
+        (nav.platform === 'MacIntel' && (nav.maxTouchPoints || 0) > 1);
+    return {
+        isApp: isApp,
+        isIOS: isIOS,
+        isIOSWeb: isIOS && !isApp,
+        // App 走原生桥震动；网页版只有安卓 Chrome 实现了 navigator.vibrate。
+        // ★iOS 上所有浏览器（含 Chrome/Edge）都是 WebKit 内核，从来没有 navigator.vibrate，
+        //   所以必须叠加 !isIOS —— 否则「Chromium 内核有接口」会误判（实测桌面 Chrome 有该函数）。
+        canVibrate: isApp || (!isIOS && typeof nav.vibrate === 'function'),
+        // iOS 装不了 APK ⇒ 更新入口无意义；安卓原生有桥可下可装；安卓/桌面网页可下 APK 手动装
+        canSelfUpdate: !isIOS
+    };
+})();
+// 隐藏当前环境用不了的设置项 —— ★只改 display，元素仍在 DOM 里
+//   （测试断言、回退、以及「以后 iOS 支持了」都不必改结构）
+function hideUnsupportedSettings() {
+    function hideById(id) {
+        try {
+            var el = document.getElementById(id);
+            if (!el) return;
+            var row = el.closest ? el.closest('.settings-item') : null;
+            if (row) row.style.display = 'none';
+        } catch (e) { /* 忽略 */ }
+    }
+    if (!Caps.canVibrate) hideById('hapticToggle');
+    if (!Caps.canSelfUpdate) hideById('checkUpdateItem');
+}
 const SHOW_FPS_KEY = 'hiking_show_fps';
 // ★2026-10-22 用户定：帧率显示默认关闭（原 true）。它的常驻 rAF + 每秒重绘带模糊的小框，
 //   属于白给的合成开销；需要时用户可在设置里自行打开（偏好存 hiking_show_fps，切换后即记住）
 //   ★初始值走远程配置（fpsDefault），远程可统一调，不必发版
 let showFps = RemoteConfig.get('fpsDefault', false);
 const HAPTIC_KEY = 'hiking_haptic'; // ★2026-08-21 v1.1.1.1 震动反馈开关
-let hapticEnabled = true; // 默认开（用户指定）
+// ★2026-10-23 A 类：初始值走远程配置（hapticDefault），用户手动切换后以本地偏好为准
+let hapticEnabled = RemoteConfig.bool('hapticDefault', true);
 // ★主题三态（v1.4.10.2）：'auto' 跟随系统 / 'light' 白天 / 'dark' 夜间
 // 旧版只有 isDarkMode 布尔（兼容读取）；新版统一存 themeMode
 const DARK_MODE_KEY = 'hiking_dark_mode';   // 兼容旧数据（布尔）
@@ -1337,7 +1583,10 @@ function pickPhotos(capture) {
     });
 }
 function compressImage(file, maxSide) {
-    maxSide = maxSide || 1280;
+    // ★2026-10-23 A 类：边长与 JPEG 质量改为在线可调（photoMaxSide / photoQuality）。
+    //   未配置时回退 1280 / 0.7 —— 与改造前逐字节一致，不影响已有照片。
+    var _po = getPhotoOpts();
+    maxSide = maxSide || _po.maxSide;
     return new Promise(function (resolve, reject) {
         var reader = new FileReader();
         reader.onload = function (e) {
@@ -1354,7 +1603,7 @@ function compressImage(file, maxSide) {
                 canvas.toBlob(function (blob) {
                     if (!blob) { reject(new Error('compress-fail')); return; }
                     resolve({ blob: blob, w: w, h: h, name: file.name || ('photo-' + Date.now() + '.jpg') });
-                }, 'image/jpeg', 0.7);
+                }, 'image/jpeg', _po.quality);
             };
             img.onerror = function () { reject(new Error('image-load-fail')); };
             img.src = e.target.result;

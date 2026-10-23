@@ -54,7 +54,7 @@ async function loadSyncFilesIndex() {
 }
 
 async function saveSyncFilesIndex(files) {
-    await AppStore.setItem(SYNC_FILES_KEY, { files: files.slice(0, SYNC_MAX_FILES) });
+    await AppStore.setItem(SYNC_FILES_KEY, { files: files.slice(0, getSyncMaxFiles()) });
 }
 
 async function getLatestSyncFileName() {
@@ -973,7 +973,10 @@ async function webdavRequest(url, method, bodyBase64) {
     //   网页版此前完全没有）⇒ 读请求 15s、写请求 60s（大备份上传留足），超时给出明确中文提示而不是无限转圈
     const headers = { 'User-Agent': 'XiXiHiking/1.0' };
     const wdCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-    const wdMs = (method === 'PUT') ? 60000 : 15000;
+    // ★2026-10-23 A 类：超时改为在线可调（davTimeoutWrite / davTimeoutRead），夹在 3s~180s
+    const wdMs = (method === 'PUT')
+        ? Math.floor(RemoteConfig.num('davTimeoutWrite', 60000, 3000, 180000))
+        : Math.floor(RemoteConfig.num('davTimeoutRead', 15000, 3000, 180000));
     const wdTimer = wdCtrl ? setTimeout(function () { try { wdCtrl.abort(); } catch (e) { /* 忽略 */ } }, wdMs) : null;
     const wdSignal = wdCtrl ? wdCtrl.signal : undefined;
     try {

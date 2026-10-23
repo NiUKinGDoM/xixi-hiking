@@ -17,11 +17,47 @@
  */
 
 const CONFIG = {
-    v: 1,
-    updatedAt: '2026-10-22',
+    v: 2,
+    updatedAt: '2026-10-23',
     data: {
-        // 帧率显示默认值（用户手动开/关过，则以用户选择为准；详见 app-init.js 三层优先级）
-        fpsDefault: false
+        /* ===== A 类：数值 / 开关 =====
+           改这里 → push → 约 1 分钟 CDN 生效 → 客户端**下次启动**拉到。
+           越界或类型写错会被客户端夹紧/回退默认值，不会把 App 弄崩。 */
+        fpsDefault: false,          // 帧率显示默认值（用户手动切过则以他的为准）
+        powerSaveDefault: false,    // 省电模式默认值（暂停背景光斑流动 + 页面转场）
+        hapticDefault: true,        // 震动反馈默认值
+        photoMaxSide: 1280,         // 照片压缩长边 px（480 ~ 3000）
+        photoQuality: 0.7,          // JPEG 质量（0.5 ~ 0.95）—— 调小可显著缩小备份
+        pageSize: 10,               // 列表每页条数（5 ~ 50）
+        syncMaxFiles: 20,           // 同步索引保留条数（5 ~ 100）
+        davTimeoutRead: 15000,      // WebDAV 读超时 ms（3000 ~ 180000，网页版降级路径）
+        davTimeoutWrite: 60000,     // WebDAV 写超时 ms
+
+        /* ===== B2 远程公告 =====
+           ★换 id 才会再次出现；id 留空 = 完全不显示（默认不打扰）
+           显示位置：概览页顶部一张玻璃卡，用户点 ✕ 后同 id 永久不再出现 */
+        notice: {
+            id: '',
+            text: '',
+            url: '',
+            urlText: '查看详情'
+        },
+
+        /* ===== B3 诊断卡 =====
+           true ⇒ 设置页顶部出现只读诊断卡（版本/记录数/存储/错误条数），
+           排障时远程打开、让用户截图，比问「你手机上啥情况」靠谱得多 */
+        debugInfo: false,
+
+        /* ===== C 类 文案覆盖 =====
+           只在「远程有值」时才覆盖，留空 = 用 App 内置文案（零风险）。
+           可覆盖的 key：
+             welcome.title   概览首次引导卡标题
+             welcome.sub     引导卡副标题
+             welcome.where   「在哪里添加」说明
+             empty.records   记录列表空状态
+             empty.plans     计划列表空状态
+           示例：{ 'empty.records': '还没开始？点右上角「记录」写下第一座山' } */
+        text: {}
     }
 };
 

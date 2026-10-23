@@ -1462,7 +1462,7 @@ function renderPlannedTripsTable() {
                 const t = emptyState.querySelector('p');
                 if (t) t.textContent = (searchQuery && searchQuery.trim())
                     ? (window.__isComposing ? '正在输入…' : '没有找到匹配的计划，换个词试试')
-                    : '暂无计划徒步行，点击上方按钮添加';
+                    : RemoteConfig.text('empty.plans', '暂无计划徒步行，点击上方按钮添加');
             }
             const emptyPager = safeGetElementById('plannedPager');
             if (emptyPager) safeSetElementStyle('plannedPager', 'display', 'none');
@@ -1473,19 +1473,19 @@ function renderPlannedTripsTable() {
         if (emptyState) safeSetElementStyle('plannedEmptyState', 'display', 'none');
         
         // ★2026-08-26 计划分页：每页 10 条（与记录页一致）；删除越界自动回退
-        const totalPages = Math.max(1, Math.ceil(sortedTrips.length / RECORD_PAGE_SIZE));
+        const totalPages = Math.max(1, Math.ceil(sortedTrips.length / getPageSize()));
         if (plannedPage > totalPages) plannedPage = totalPages;
         if (plannedPage < 1) plannedPage = 1;
-        const pageStart = (plannedPage - 1) * RECORD_PAGE_SIZE;
-        const pageTrips = sortedTrips.slice(pageStart, pageStart + RECORD_PAGE_SIZE);
+        const pageStart = (plannedPage - 1) * getPageSize();
+        const pageTrips = sortedTrips.slice(pageStart, pageStart + getPageSize());
         currentPagePlannedTrips = pageTrips;
         
         const pager = safeGetElementById('plannedPager');
         if (pager) {
-            if (sortedTrips.length > RECORD_PAGE_SIZE) {
+            if (sortedTrips.length > getPageSize()) {
                 pager.style.display = 'flex';
                 const pageInfoEl = safeGetElementById('plannedPageInfo');
-                if (pageInfoEl) pageInfoEl.textContent = (pageStart + 1) + '-' + Math.min(pageStart + RECORD_PAGE_SIZE, sortedTrips.length) + ' / 共' + sortedTrips.length + '条';
+                if (pageInfoEl) pageInfoEl.textContent = (pageStart + 1) + '-' + Math.min(pageStart + getPageSize(), sortedTrips.length) + ' / 共' + sortedTrips.length + '条';
                 const prevBtn = safeGetElementById('plannedPagePrevBtn');
                 const nextBtn = safeGetElementById('plannedPageNextBtn');
                 if (prevBtn) prevBtn.style.display = plannedPage <= 1 ? 'none' : 'inline-flex';
