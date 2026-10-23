@@ -481,6 +481,15 @@ footer{background:#090B09;padding:clamp(64px,9vw,110px) 0 30px;--hair:rgba(218,2
 }
 .rel-item li::before{content:"";position:absolute;left:0;top:1.05em;width:7px;height:1px;background:var(--accent)}
 .rel-item li b{color:inherit;font-weight:500}
+/* ★2026-10-23 分类小标题（【新增】/【优化】）—— 此前 sitechangelog 把它们过滤掉了，
+   官网每一版都是平铺列表，看不出哪条是新增。这里补上样式：去掉横线圆点、换成字距标签，
+   与 .rel-ver span 用同一套字距语汇，不引入新色。 */
+.rel-item li.rel-sec{
+  padding-left:0;margin-top:6px;
+  font-size:10px;letter-spacing:.22em;color:var(--accent);font-weight:400;
+}
+.rel-item li.rel-sec:first-child{margin-top:0}
+.rel-item li.rel-sec::before{display:none}
 .rel-more{margin-top:32px;font-size:12px;letter-spacing:.08em}
 .rel-more a{border-bottom:1px solid var(--hair);padding-bottom:3px;transition:border-color .4s var(--ease)}
 .rel-more a:hover{border-bottom-color:var(--accent)}

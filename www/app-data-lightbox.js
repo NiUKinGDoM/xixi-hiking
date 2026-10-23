@@ -378,8 +378,8 @@ function saveCurrentPhoto() {
                 try {
                     var ok = window.XixiFileBridge.saveImageToGallery(base64, 'xixi-' + pid + '.jpg');
                     if (ok === true || ok === 'true' || ok === null) showSuccessMessage('已保存<b>缩略图</b>到相册');
-                    else showErrorMessage('保存失败');
-                } catch (e) { showErrorMessage('保存失败'); }
+                    else showErrorMessage(RemoteConfig.text('toast.saveFail', '保存失败'));
+                } catch (e) { showErrorMessage(RemoteConfig.text('toast.saveFail', '保存失败')); }
             });
             return;
         }
@@ -391,7 +391,7 @@ function saveCurrentPhoto() {
         a.click();
         setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
         showSuccessMessage('已开始下载<b>缩略图</b>（非原图）');
-    }).catch(function () { showErrorMessage('保存失败'); });
+    }).catch(function () { showErrorMessage(RemoteConfig.text('toast.saveFail', '保存失败')); });
 }
 
 // ★2026-09-01 自定义日期时间选择弹窗（替换系统原生 picker，统一玻璃设计语言）

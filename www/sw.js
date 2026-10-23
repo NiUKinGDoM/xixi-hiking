@@ -23,7 +23,7 @@
  * ★2026-10-10 v61→v62：CSS 外置到 www/app.css（index.html 6721→726 行）—— 必须 bump 强制作废旧缓存
  * ★2026-10-10 v62→v63：同号重发(第4次) —— .glass-btn 去光泽带渐变 + 修 box-shadow 声明失效（www 内容变了，必须 bump 强制旧壳失效）
  */
-const CACHE_NAME = 'xixi-hiking-v84';   // ★2026-10-23 v1.2.5.4 升号：远程配置全量接入（A 类数值/B 类开关·公告·诊断/C 类文案）+ 省电模式
+const CACHE_NAME = 'xixi-hiking-v85';   // ★2026-10-23 v1.2.5.5 升号：省电模式补上关毛玻璃模糊（+底色补偿）+ toast 文案可远程覆盖 + 用户文案改说人话
 // 静态资源（cache-first：离线最稳、二次加载最快）
 const STATIC_RE = /\.(js|css|woff2?|png|jpe?g|svg|webp|ico)$/i;
 const CORE_ASSETS = ['./', './index.html', './app.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-data-detail.js', './app-data-lightbox.js', './app-data-heatmap.js', './app-data-plans.js', './app-data-plan-detail.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];

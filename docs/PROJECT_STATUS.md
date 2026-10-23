@@ -611,6 +611,46 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - 【控制面板】**`functions/config.js` 升 v2**，把 A/B/C 全部 key 连注释写进去，以后只改这一个文件 + push。
 - 【坑】**图标字体是子集化的（128KB / 26 字形）**：新增 `battery_saver`/`campaign` 会显示成方框 ⇒ 省电模式复用 `brightness_auto`、公告复用 `info`。
 - 【验证】全量门禁 **926/0**；A/B/C 九项行为实测（默认值/注入/越界/省电开关/公告渲染与 XSS/空 id/诊断卡/文案覆盖与还原）全对；设置页 10 项高度 75px 统一、title 15 / desc 12。
+### v1.2.5.5 —— 省电模式补上关毛玻璃 + 用户文案改说人话
+
+> 内部技术记录。用户可见文案在 `app-core.js` 的 `BUILTIN_CHANGELOG`（说人话、只写可感知内容）。
+
+- 【纠正】**省电模式首版擅自缩水**：用户对 B1 的要求原文是「一键关掉 aurora 光斑动画 + backdrop-filter」，首版只停了动画，还在注释与更新日志里把「玻璃质感没改」写成优点。
+  - 现在补上：`body.power-save *, *::before, *::after { backdrop-filter: none !important; }` —— 实测模糊元素 **24 → 0**。
+- 【补偿】关掉模糊后不能靠模糊糊背景，改用不透明度：
+  - `body.power-save { --glass-alpha: 0.85; --glass-alpha-tabbar: 0.85 }`（默认 0.10，各元素再乘 0.4~1.1 系数）
+  - `.confirm-modal-content` 0.15 → **0.92**（深色 0.94）—— 它是固定值不走变量
+  - `.bottom-tabbar` 0.2 → **0.86**（深色 0.90）—— 同样是硬编码，**只补浮层，页面内 `.glass-panel` 0.05 保持低透**（有 1px 边框分界，拉实反而失层次）
+  - `.toast-glass` → 0.92 深底
+- 【补漏】**C 类 toast 文案**（首版只做了引导卡与空状态，漏了关键 toast）：`toast.needBind` / `toast.badCloudFile` / `toast.backupOk` / `toast.saveFail`，共替换 **10 处**（app-sync 4+2+1、app-data-lightbox 3）。只接纯静态文案，带变量拼接的（如 `'备份已导出：' + fileName`）不动。
+- 【修 bug】`sitechangelog.js` 的 `items.filter(x => x.t === 'li')` 把【新增】/【优化】分类全过滤掉（文件头注释承诺「作为该版块小标题」但从未渲染）⇒ 官网每版都是平铺。改为按序渲染 `<li class="rel-sec">`，并在 `site/assets/site.css` 补样式（10px / letter-spacing .22em / accent 色 / 去掉圆点）。
+- 【文案】**BUILTIN 重写为日常口语**：剔除「接口 / 安装包 / 每页几条 / 同步保留几条 / 超时秒数」等技术表述，只留用户能感知的结果；v1.2.5.4 的历史条目一并改写（弹窗会显示最近 3 版，旧文案同样会被看到）。
+- 【验证】模糊 24→0、弹窗底色 0.92、底栏 0.86；全量门禁待跑。
+### v1.2.5.4（同号修正重发）—— 远程配置 A/B/C 全面接入 + 省电模式（含关模糊）+ 用户文案改说人话
+
+> 内部技术记录。用户可见文案在 `app-core.js` 的 `BUILTIN_CHANGELOG`（日常口语，只写可感知内容）。
+
+- 【新增】**远程配置 A/B/C 全面接入**（改造前已在 v1.2.5.3 之后成型，本版才进 APK）
+  - A 类数值：`photoMaxSide` / `photoQuality` / `pageSize` / `syncMaxFiles` / `davTimeoutRead`·`Write` / `hapticDefault` / `fpsDefault`。
+    实现方式一律「保留原 const 做默认值 + 函数式读取」：`getPageSize()`（替换 app-data.js 5 处 + app-data-plans.js 5 处）、`getSyncMaxFiles()`（app-sync 1 处）、`getPhotoOpts()`（compressImage）。
+  - B 类：`powerSaveDefault`（省电模式）、`notice{id,text,url,urlText}`（公告卡）、`debugInfo`（诊断卡）。
+  - C 类：`text{welcome.title/sub/where, empty.records/plans, toast.needBind/badCloudFile/backupOk/saveFail}`。
+  - `RemoteConfig` 补 `num/bool/text`（带默认值与夹紧，配置按不可信输入处理）；实测 `pageSize:999→50`、`quality:5→0.95`、`syncMaxFiles:"abc"→20`。
+- 【新增】**省电模式**（`body.power-save`）：停 aurora 无限动画 + 停 `will-change` + 停 `.tab-page/.page-transition` 转场 + **关全站 `backdrop-filter`**（通配 + 伪元素）。
+  - **★关模糊的代价与补偿**（首版漏了这条，被用户指出「文案里把没做说成优点」）：模糊没了，半透明背景必须改由不透明度承担可读性 ——
+    - `body.power-save { --glass-alpha: 0.85; --glass-alpha-tabbar: 0.85 }`（默认 0.10，元素再乘 0.4~1.1）
+    - `.confirm-modal-content` 0.15 → **0.92**（深色 0.94）、`.bottom-tabbar` 0.2 → **0.86**（深色 0.90）、`.toast-glass` → 0.92 深底
+    - 页面内 `.glass-panel`（0.05）**保持低透**：有 1px 边框分界，拉实反而失层次
+  - 实测：模糊元素 **24 → 0**；动画 27→19；`will-change` 10→7。
+- 【新增】**远程公告** `renderRemoteNotice()`：插到 `#tab-overview` 顶部；空 `id` 完全不显示；关闭写 `hiking_notice_closed`；文本走 `textContent`（实测 `<b>` 不被解析）、url 只收 http(s)、同窗口跳转。
+- 【新增】**诊断卡** `renderDebugCard()`：`debugInfo:true` 时在 `#tab-settings` 顶部插只读卡（版本/记录/计划/存储/错误数），每项独立 try。
+- 【新增】**平台能力检测 `Caps` + `hideUnsupportedSettings()`**：iOS 网页隐藏「震动反馈」（iOS 全系 WebKit，无 `navigator.vibrate`）与「检查更新」（装不了 APK）。**判定必须叠加 `!isIOS`** —— 桌面 Chromium 有 `navigator.vibrate`，只靠能力检测会误判。`iPadOS 13+` 用「MacIntel + maxTouchPoints>1」识别。只改 `display:none`，元素留 DOM。
+- 【新增】**`AppState` 命名空间**（`powerSave`/`noticeId`/`debugInfo`）—— 落实「新功能一律 AppState.xxx」。
+- 【修 bug】`sitechangelog.js` 的 `items.filter(x => x.t === 'li')` 把【新增】/【优化】分类全过滤（文件头注释承诺「作为小标题」但从未渲染）⇒ 官网每版平铺。改为按序渲染 `<li class="rel-sec">` + `site/assets/site.css` 补样式。
+- 【工具】`e2e/inspect.js` 支持 `--ua`。★Playwright **没有 `page.setUserAgent`**（那是 Puppeteer），UA 只能在 `newContext` 传。
+- 【控制面板】`functions/config.js` 升 **v2**，A/B/C 全部 key 连注释写入，以后只改这一个文件 + push。
+- 【坑】**图标字体是子集化的（128KB / 26 字形）**：新增 `battery_saver`/`campaign` 会显示成方框 ⇒ 省电复用 `brightness_auto`、公告复用 `info`。
+- 【验证】全量门禁 **926/0**；设置页 8 项高度统一 75px、title 15 / desc 12；iOS 隐藏后 7 项间距与桌面完全一致（10px 无空洞）。
 - **正式版 v1.2.3.7（vc282）** —— 折叠屏【外屏】窄屏适配（≤350px：底栏收窄 302→198px / 概览矮卡 3 列→1 列 / 标题与同步文案允许折行 / 整页横向溢出归零）（2026-10-09）
   - **用户指令**：「能否适配一下折叠屏外屏？外屏一般比较窄，app 里的字会显示不全，显示...」→ 随后「发」（并明确选择**升号**发布）。
   - **★升号判定**：外屏适配改了用户可见的排版行为（窄屏下底栏/矮卡/标题布局变化）→ 不适用「同号修正重发」，按常规**升号** v1.2.3.6 → **v1.2.3.7**（vc281 → vc282）。

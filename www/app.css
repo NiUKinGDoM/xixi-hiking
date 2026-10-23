@@ -3736,10 +3736,14 @@
             background: radial-gradient(circle, rgba(15, 118, 110, 0.22) 0%, rgba(15, 118, 110, 0) 68%);
         }
         /* ===== ★2026-10-23 B1 省电模式（body.power-save）=====
-           只暂停「每一帧都在动」的装饰：3 个背景渐变圆的无限动画、常驻 will-change、
-           以及页面切换的整页转场。低端机 / 折叠屏外屏上这三项正是合成层的主要负担。
-           ★刻意不动 backdrop-filter / 圆角 / 字号 / 布局 —— 玻璃质感是既定设计语言，
-             而且静态模糊几乎不耗电，贵的从来是「一直在动」；关掉后视觉只少了流动感。 */
+           用户对这项的要求原文是「一键关掉 aurora 光斑动画 + backdrop-filter」——两个都要关。
+           （首版只关了动画、还注释「刻意保留 backdrop-filter」，属擅自缩水，已纠正。）
+           关掉的四类「一直在动 / 每帧重算」的负担：
+             ① 3 个 70vw 径向渐变圆的无限动画 + 常驻 will-change
+             ② 全站 backdrop-filter 毛玻璃（每次滚动/重绘都要重新采样背景）
+             ③ 页面切换的整页 transform 转场
+             ④ 图标/卡片入场动画
+           ★关掉模糊后不能靠模糊糊背景，改用「更实的底色」保证可读性（见下面 --glass-alpha 与弹窗）。 */
         body.power-save .aurora-bg i {
             animation: none !important;
             will-change: auto !important;
@@ -3748,6 +3752,38 @@
         body.power-save .page-transition {
             animation: none !important;
             transition: none !important;
+        }
+        /* ② 毛玻璃全关：通配 + 伪元素，一处覆盖全站（含新加的弹窗/卡片，避免以后漏） */
+        body.power-save *,
+        body.power-save *::before,
+        body.power-save *::after {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        /* 补偿：玻璃原本靠模糊把背景文字糊掉，没有模糊就必须靠不透明度。
+           --glass-alpha 默认 0.10，各元素再乘 0.4~1.1 系数 ⇒ 提到 0.85 后实算约 0.34~0.94。 */
+        body.power-save {
+            --glass-alpha: 0.85;
+            --glass-alpha-tabbar: 0.85;
+        }
+        /* 弹窗用的是固定 0.15 白（不是变量），关模糊后必须单独提实，否则背景字会透上来 */
+        body.power-save .confirm-modal-content {
+            background: rgba(255, 255, 255, 0.92) !important;
+        }
+        body.dark-mode.power-save .confirm-modal-content {
+            background: rgba(30, 41, 59, 0.94) !important;
+        }
+        /* toast 也是玻璃底，关模糊后加深，保证在白底/深底上都读得清 */
+        body.power-save .toast-glass {
+            background: rgba(30, 41, 59, 0.92) !important;
+        }
+        /* 底栏是硬编码 0.2 白（不走 --glass-alpha），关模糊后会变成近乎透明、内容直接穿透 ⇒ 单独补实。
+           ★只补「浮层」，页面内卡片(.glass-panel 0.05)保持低透 —— 它有 1px 边框分界，拉实反而失层次。 */
+        body.power-save .bottom-tabbar {
+            background: rgba(255, 255, 255, 0.86) !important;
+        }
+        body.dark-mode.power-save .bottom-tabbar {
+            background: rgba(18, 28, 50, 0.90) !important;
         }
         /* ★2026-09-02 v3 三点折返轨迹（0/50/100% 不同方位+缩放起伏）+ 速度加快，走起来是蜿蜒流动 */
         @keyframes auroraA {

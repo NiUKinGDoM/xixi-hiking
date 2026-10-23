@@ -1019,7 +1019,7 @@ async function uploadSyncBackup(silent) {
     const fileName = buildSyncFileName(); // 每次备份独立文件名（带时间戳）
     const url = buildSyncFileUrl(fileName);
     if (!url) {
-        showErrorMessage('请先绑定账号');
+        showErrorMessage(RemoteConfig.text('toast.needBind', '请先绑定账号'));
         return;
     }
     if (syncInProgress) return;
@@ -1047,7 +1047,7 @@ async function uploadSyncBackup(silent) {
             await AppStore.setItem(SYNC_STATUS_KEY, { lastSyncAt: now, type: 'upload' });
             // ★2026-08-25 上传成功 → 对号 + 弹窗「上传成功」（10 秒后 finally 恢复连接检测）
             setSyncStatus('上传成功', 'check_circle', 'success');
-            if (!silent) showSuccessMessage('备份上传成功');
+            if (!silent) showSuccessMessage(RemoteConfig.text('toast.backupOk', '备份上传成功'));
             // ★2026-09-01 通知分级：自动上传（silent）成功 → 通知栏
             else showSystemNotification('自动同步完成', '备份已上传云端');
             // ★2026-08-21 v1.1.1.6 云端自动清理：保留最近 2 份，更旧的自动删除（防备份堆积）
@@ -1105,7 +1105,7 @@ async function downloadSyncBackup() {
         await saveSyncConfigFromForm();
         const url = buildSyncFileUrl();
         if (!url) {
-            showErrorMessage('请先绑定账号');
+            showErrorMessage(RemoteConfig.text('toast.needBind', '请先绑定账号'));
             return;
         }
         setSyncStatus('正在读取云端备份…', 'info', '');
@@ -1262,7 +1262,7 @@ async function doRestoreFromCloud(fileName) {
                 setSyncStatus('下载成功', 'cloud_download', 'success');
             } else {
                 setSyncStatus('云端文件格式不正确', 'error', 'error');
-                showErrorMessage('云端文件格式不正确');
+                showErrorMessage(RemoteConfig.text('toast.badCloudFile', '云端文件格式不正确'));
             }
         } else if (result.status === 404) {
             await removeSyncFileFromIndex(fileName); // 文件已不存在，清理索引
@@ -1292,7 +1292,7 @@ async function mergeSyncBackup(silent) {
     await saveSyncConfigFromForm();
     const url = buildSyncFileUrl();
     if (!url) {
-        if (!silent) showErrorMessage('请先绑定账号');
+        if (!silent) showErrorMessage(RemoteConfig.text('toast.needBind', '请先绑定账号'));
         return;
     }
     if (syncInProgress) return;
@@ -1342,7 +1342,7 @@ async function mergeSyncBackup(silent) {
             } else {
                 if (!silent) {
                     setSyncStatus('云端文件格式不正确', 'error', 'error');
-                    showErrorMessage('云端文件格式不正确');
+                    showErrorMessage(RemoteConfig.text('toast.badCloudFile', '云端文件格式不正确'));
                 }
             }
         } else if (result.status === 401 || result.status === 403) {
@@ -2055,7 +2055,7 @@ async function manageCloudBackups() {
         await saveSyncConfigFromForm();
         const url = buildSyncFileUrl();
         if (!url) {
-            showErrorMessage('请先绑定账号');
+            showErrorMessage(RemoteConfig.text('toast.needBind', '请先绑定账号'));
             return;
         }
         setSyncStatus('正在读取云端备份…', 'info', '');

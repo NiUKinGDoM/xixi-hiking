@@ -124,9 +124,14 @@ function renderVersion(tag, dcls) {
     }
     items.push({ t: 'li', v: line });
   }
-  const lis = items.filter((x) => x.t === 'li');
-  const inner = lis.length
-    ? lis.map((x) => '          <li>' + inline(x.v) + '</li>').join('\n')
+  // ★2026-10-23 修复：原实现是 `items.filter(x => x.t === 'li')` —— 把【新增】/【优化】
+  //   这些 sec 项**全部过滤掉了**（文件头注释承诺「作为该版块的小标题」但从未渲染），
+  //   结果官网每一版都是一条条平铺，看不出哪条属于新增、哪条属于优化。
+  //   改为按原顺序渲染：sec → <li class="rel-sec">（样式见 site/assets/site.css）。
+  const inner = items.length
+    ? items.map((x) => x.t === 'sec'
+        ? '          <li class="rel-sec">' + inline(x.v) + '</li>'
+        : '          <li>' + inline(x.v) + '</li>').join('\n')
     : '          <li>' + inline(raw.split('\n').filter(Boolean)[0] || '') + '</li>';
   return [
     '      <div class="rel-item reveal ' + dcls + '">',
