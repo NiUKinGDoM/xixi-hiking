@@ -105,9 +105,10 @@ try {
     const vn = (g.match(/versionName\s+"([^"]+)"/) || [])[1];
     const h1 = allJs.includes(`var APP_VERSION = '${vn}';`);
     const h2 = html.includes(`>版本 ${vn}<`);
-    // 校验版本名四段 0~10 合法（公式对齐因历史错位不校验，见 bump.js 注释）
+    // 校验版本名 4 段或 5 段（★2026-10-23 新增第五段「重发号」：1.2.5.4.1），每段 0~10
+    // （公式对齐因历史错位不校验，见 bump.js 注释）
     const parts = vn.split('.').map(Number);
-    const legal = parts.length === 4 && parts.every(p => !isNaN(p) && p >= 0 && p <= 10);
+    const legal = (parts.length === 4 || parts.length === 5) && parts.every(p => !isNaN(p) && p >= 0 && p <= 10);
     legal ? ok(`版本名格式合法 (${vn}, vc${vc})`) : bad(`版本名非法: ${vn}`);
     h1 && h2 ? ok(`index.html 版本显示同步 (${vn})`) : bad('index.html 版本未同步!');
 } catch (e) { bad('版本检查失败: ' + e.message); }

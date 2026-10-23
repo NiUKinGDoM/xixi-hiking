@@ -92,7 +92,8 @@ DOCS.concat(LOGS).forEach((d) => {
 
     // H. 版本号一致性（跳过日志）
     if (!d.log) {
-        const vers = [...new Set((raw.match(/v\d+\.\d+\.\d+\.\d+/g) || []))];
+        // ★2026-10-23 支持第五段重发号（1.2.5.4.1），否则 5 段会被截断成 4 段 → 误报版本不一致
+        const vers = [...new Set((raw.match(/v\d+\.\d+\.\d+\.\d+(?:\.\d+)?/g) || []))];
         const others = vers.filter((v) => v.slice(1) !== APP_VER);
         if (others.length) add(d.name, 'H 出现非当前版本号（信号）', ['当前 APP_VERSION=' + APP_VER + '；文中另有: ' + others.join(', ')]);
     }

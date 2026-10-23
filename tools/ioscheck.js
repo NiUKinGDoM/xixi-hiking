@@ -86,7 +86,8 @@ function tagsAbove(ver) {
         if (r.error && r.error.code === 'ENOENT') continue;
         return String(r.stdout || '').split('\n')
             .map(function (s) { return s.trim().replace(/^v/, ''); })
-            .filter(function (t) { return /^\d+\.\d+\.\d+\.\d+$/.test(t) && cmpVer(t, ver) > 0; })
+            // ★2026-10-23 兼容第五段重发号（1.2.5.4.1）
+            .filter(function (t) { return /^\d+\.\d+\.\d+\.\d+(?:\.\d+)?$/.test(t) && cmpVer(t, ver) > 0; })
             .sort(cmpVer);
     }
     return [];

@@ -19,19 +19,35 @@ if (!vcMatch || !nameMatch) { console.error('❌ build.gradle 找不到 versionC
 const oldVc = parseInt(vcMatch[1], 10);
 const oldName = nameMatch[1];
 
-// 解析四段（1.X.X.X）
+// ★2026-10-23 支持第五段「重发号」（用户定：同号重发要在版本号上再补一位，1.2.5.4 → 1.2.5.4.1 → .2…）
+//   默认（正常升号）：第四段 +1，**丢弃第五段**（1.2.5.4.1 → 1.2.5.5）
+//   --resend（同号重发）：第五段 +1；四段版本则追加 .1
+//   ★第五段只用 1~10，满了必须改用正常升号（否则版本号体系会乱）
+const RESEND = process.argv.indexOf('--resend') >= 0;
 const parts = oldName.split('.').map(Number);
-if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 10)) {
-    console.error(`❌ 当前版本名非法: ${oldName}`); process.exit(1);
+const is5 = parts.length === 5;
+if (!(parts.length === 4 || is5) || parts.some(p => isNaN(p) || p < 0 || p > 10)) {
+    console.error(`❌ 当前版本名非法: ${oldName}（须为 4 段或 5 段、每段 0~10）`); process.exit(1);
 }
-let [a, b, c, d] = parts;
 
-// 第四段 +1（满 10 进位：每段 0~10 共 11 个值）
-d++;
-if (d > 10) { d = 0; c++; }
-if (c > 10) { c = 0; b++; }
-if (b > 10) { console.error('❌ 第二段满 10，版本号体系溢出'); process.exit(1); }
-const newName = `${a}.${b}.${c}.${d}`;
+let newName;
+if (RESEND) {
+    if (is5) {
+        parts[4] += 1;
+        if (parts[4] > 10) { console.error('❌ 第五段已满 10，请改用正常升号（不带 --resend）'); process.exit(1); }
+        newName = parts.join('.');
+    } else {
+        newName = oldName + '.1';        // 1.2.5.4 → 1.2.5.4.1
+    }
+} else {
+    let [a, b, c, d] = parts;
+    // 第四段 +1（满 10 进位：每段 0~10 共 11 个值）；第五段（重发号）自然归零
+    d++;
+    if (d > 10) { d = 0; c++; }
+    if (c > 10) { c = 0; b++; }
+    if (b > 10) { console.error('❌ 第二段满 10，版本号体系溢出'); process.exit(1); }
+    newName = `${a}.${b}.${c}.${d}`;
+}
 const newVc = oldVc + 1;
 
 // 同步 build.gradle
