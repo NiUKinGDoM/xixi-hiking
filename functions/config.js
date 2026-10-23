@@ -24,7 +24,6 @@ const CONFIG = {
            改这里 → push → 约 1 分钟 CDN 生效 → 客户端**下次启动**拉到。
            越界或类型写错会被客户端夹紧/回退默认值，不会把 App 弄崩。 */
         fpsDefault: false,          // 帧率显示默认值（用户手动切过则以他的为准）
-        powerSaveDefault: false,    // 省电模式默认值（暂停背景光斑流动 + 页面转场）
         hapticDefault: true,        // 震动反馈默认值
         photoMaxSide: 1280,         // 照片压缩长边 px（480 ~ 3000）
         photoQuality: 0.7,          // JPEG 质量（0.5 ~ 0.95）—— 调小可显著缩小备份

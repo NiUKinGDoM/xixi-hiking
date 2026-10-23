@@ -1,11 +1,11 @@
-// XiXiの徒步小记 · 主题×省电 矩阵检查（★2026-10-23 新增，补 E2E 的盲区）
-// 背景：E2E 只在「默认状态」截图，省电模式 0 覆盖 ⇒ 深色卡片发白 / 弹窗穿透 这类问题全都漏掉。
-// 本工具把「主题(浅/深) × 省电(关/开)」四个组合都跑一遍，用**可量化的业务指标**做断言：
-//   ① 省电开时 backdrop-filter 必须全为 none（功能真的生效）
-//   ② 省电开关不应改变页面卡片底色（防 --glass-alpha 被误改 → 深色发白）
-//   ③ 省电开时弹窗必须接近不透明（防「半透穿透」）
-//   ④ 省电关时弹窗必须保持原值（防误改默认观感）
-// 用法：node tools/themecheck.js   （输出「N 通过 / M 失败」，可被 checkall.sh 直接采集）
+// XiXiの徒步小记 · 主题（浅/深）视觉检查（★2026-10-23 从「省电矩阵」改造而来 —— 省电模式已按用户要求删除）
+// 背景：E2E 只在「浅色默认态」截图，深色下「时光机山名看不见」这类问题漏掉过。
+// 本工具对浅/深两主题各测一遍，断言：
+//   ① 弹窗底色保持原值（浅 0.15 / 深 0.32，防误改默认观感）
+//   ② 玻璃配方生效（模糊元素 > 0）
+//   ③ 弹窗内文字对比度达标（浅 ≥4.0 / 深 ≥3.0）
+//   ④ 页面卡片/设置项底色不透明或半透明（不是被误清成 transparent）
+// 用法：node tools/themecheck.js   （输出「N 通过 / M 失败」，可被 checkall.sh 采集）
 const { chromium } = require('playwright-core');
 const http = require('http');
 const path = require('path');
@@ -26,7 +26,6 @@ function serverUp() {
     });
 }
 
-// 页面内探针：四个组合各测一遍，返回结构化数据（不在这里做断言）
 const PROBE = `
 (function () {
     function pc(c) {
@@ -107,7 +106,6 @@ const PROBE = `
         return {
             blurs: blurCount(),
             dialogA: d ? d.a : null,
-            dialogRgb: d ? [Math.round(d.r), Math.round(d.g), Math.round(d.b)].join(',') : null,
             panelBg: panel ? getComputedStyle(panel).backgroundColor : null,
             itemBg: item ? getComputedStyle(item).backgroundColor : null,
             minText: dlg ? minTextContrast('.confirm-modal-content') : null
@@ -120,19 +118,13 @@ const PROBE = `
     switchTab('settings');
     try { if (typeof showDataInfoModal === 'function') showDataInfoModal(); } catch (e) { }
 
-    var res = {};
-    var combos = [
-        ['lightOff', false, false], ['lightOn', false, true],
-        ['darkOff', true, false], ['darkOn', true, true]
-    ];
-    for (var i = 0; i < combos.length; i++) {
-        document.body.classList.toggle('dark-mode', combos[i][1]);
-        document.body.classList.toggle('power-save', combos[i][2]);
-        res[combos[i][0]] = snap();
-    }
-    document.body.classList.remove('power-save');
+    var light = null, dark = null;
     document.body.classList.remove('dark-mode');
-    return res;
+    light = snap();
+    document.body.classList.add('dark-mode');
+    dark = snap();
+    document.body.classList.remove('dark-mode');
+    return { light: light, dark: dark };
 })()
 `;
 
@@ -149,15 +141,14 @@ const PROBE = `
     await page.goto(BASE, { waitUntil: 'load', timeout: 45000 });
     await page.waitForTimeout(1800);
 
-    console.log('== themecheck ==  主题 × 省电 矩阵');
+    console.log('== themecheck ==  主题（浅/深）视觉检查');
     console.log('');
-    // ★playwright 的 evaluate 可直接吃「表达式字符串」——不要用 new Function 包（会依赖 toString，且容易序列化失败）
     const r = await page.evaluate(PROBE);
 
     console.log('  ── 实测值 ──');
-    ['lightOff', 'lightOn', 'darkOff', 'darkOn'].forEach(k => {
+    ['light', 'dark'].forEach(k => {
         const v = r[k];
-        console.log('   ' + k.padEnd(9) + ' 模糊=' + String(v.blurs).padStart(2) +
+        console.log('   ' + k.padEnd(6) + ' 模糊=' + String(v.blurs).padStart(2) +
             ' 弹窗alpha=' + (v.dialogA === null ? 'N/A' : v.dialogA) +
             ' 卡片=' + v.panelBg + ' 设置项=' + v.itemBg +
             (v.minText === null ? '' : ' 最低文字对比=' + v.minText));
@@ -165,28 +156,21 @@ const PROBE = `
     console.log('');
     console.log('  ── 断言 ──');
 
-    // ① 省电模式必须真的关掉模糊
-    ok('省电关：模糊元素 > 0（玻璃配方生效）', r.lightOff.blurs > 0, '实际 ' + r.lightOff.blurs);
-    ok('省电开：模糊元素 = 0（真的关掉了）', r.lightOn.blurs === 0, '实际 ' + r.lightOn.blurs);
-    ok('省电开：深色下模糊也为 0', r.darkOn.blurs === 0, '实际 ' + r.darkOn.blurs);
+    // ① 弹窗底色保持原值（防误改默认观感）
+    ok('浅色弹窗底 = 原值 0.15', r.light.dialogA !== null && Math.abs(r.light.dialogA - 0.15) < 0.02, '实际 ' + r.light.dialogA);
+    ok('深色弹窗底 = 原值 0.32', r.dark.dialogA !== null && Math.abs(r.dark.dialogA - 0.32) < 0.02, '实际 ' + r.dark.dialogA);
 
-    // ② 省电开关不得改变页面卡片底色（防 --glass-alpha 被误改 → 深色发白）
-    ok('浅色：省电开关不改变卡片底色', r.lightOff.panelBg === r.lightOn.panelBg, r.lightOff.panelBg + ' → ' + r.lightOn.panelBg);
-    ok('深色：省电开关不改变卡片底色', r.darkOff.panelBg === r.darkOn.panelBg, r.darkOff.panelBg + ' → ' + r.darkOn.panelBg);
-    ok('浅色：省电开关不改变设置项底色', r.lightOff.itemBg === r.lightOn.itemBg, r.lightOff.itemBg + ' → ' + r.lightOn.itemBg);
-    ok('深色：省电开关不改变设置项底色', r.darkOff.itemBg === r.darkOn.itemBg, r.darkOff.itemBg + ' → ' + r.darkOn.itemBg);
+    // ② 玻璃配方生效（模糊元素 > 0，两主题都有玻璃）
+    ok('浅色：玻璃模糊生效', r.light.blurs > 0, '实际 ' + r.light.blurs);
+    ok('深色：玻璃模糊生效', r.dark.blurs > 0, '实际 ' + r.dark.blurs);
 
-    // ③ 省电开时弹窗必须接近不透明（否则背后文字穿透）
-    ok('浅色·省电开：弹窗 alpha ≥ 0.95（不穿透）', r.lightOn.dialogA !== null && r.lightOn.dialogA >= 0.95, '实际 ' + r.lightOn.dialogA);
-    ok('深色·省电开：弹窗 alpha ≥ 0.95（不穿透）', r.darkOn.dialogA !== null && r.darkOn.dialogA >= 0.95, '实际 ' + r.darkOn.dialogA);
+    // ③ 弹窗内文字对比度
+    ok('浅色弹窗文字对比 ≥ 4.0', r.light.minText === null || r.light.minText >= 4.0, '实际 ' + r.light.minText);
+    ok('深色弹窗文字对比 ≥ 3.0', r.dark.minText === null || r.dark.minText >= 3.0, '实际 ' + r.dark.minText);
 
-    // ④ 省电关时必须保持原设计值（0.15 白 / 0.32 深蓝）
-    ok('浅色·省电关：弹窗仍为原值 0.15', r.lightOff.dialogA !== null && Math.abs(r.lightOff.dialogA - 0.15) < 0.02, '实际 ' + r.lightOff.dialogA);
-    ok('深色·省电关：弹窗仍为原值 0.32', r.darkOff.dialogA !== null && Math.abs(r.darkOff.dialogA - 0.32) < 0.02, '实际 ' + r.darkOff.dialogA);
-
-    // ⑤ 省电开时弹窗内文字对比度（信号，允许图标略低）
-    ok('浅色·省电开：弹窗内文字对比 ≥ 4.0', r.lightOn.minText === null || r.lightOn.minText >= 4.0, '实际 ' + r.lightOn.minText);
-    ok('深色·省电开：弹窗内文字对比 ≥ 3.0', r.darkOn.minText === null || r.darkOn.minText >= 3.0, '实际 ' + r.darkOn.minText);
+    // ④ 卡片/设置项底色未被误清
+    ok('浅色卡片有底色', r.light.panelBg && r.light.panelBg !== 'transparent', r.light.panelBg);
+    ok('深色设置项有底色', r.dark.itemBg && r.dark.itemBg !== 'transparent', r.dark.itemBg);
 
     await browser.close();
     if (srv) { try { srv.kill(); } catch (e) { } }

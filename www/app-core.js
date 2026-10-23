@@ -24,8 +24,8 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
-    'v1.2.5.4.1': '【修复】\n- **深色模式下有几块卡片发白** —— 设置页里几张卡片在深色模式下会变成灰白色，看着别扭，现在恢复正常了。\n- **深色模式下时光机看不清** —— 内容被背景盖得模模糊糊，现在能看清了。\n- **省电模式下弹窗像块白板** —— 打开省电模式后，弹窗会变成不透明白色卡片，跟平时不是一回事；现在换成和页面同色系的底色，看着自然多了。\n\nMade by XiXi 💛',
-    'v1.2.5.4': '【新增】\n- **省电模式** —— 设置里能开了。打开后背景不再缓缓流动、切页面也不再滑动，毛玻璃的模糊也会一起关掉，画面安静很多，也省电些。玻璃会显得比平时实一点，这是关掉模糊换来的，看着不顺眼随时关掉就好。\n- **应用内通知** —— 以后有新版本或者要紧的事，概览页顶部会冒出一张卡片告诉你。看完点右上角的 ✕，同一条就不会再来。\n\n【优化】\n- **iPhone 上更清爽了** —— 用 iPhone 的浏览器打开时，苹果手机根本做不到的选项（比如震动）会自动收起来，不占地方，剩下的照样能用。\n- **网速差时不再干等** —— 以前网络不好会一直转圈，现在等一小会儿就会告诉你没连上，不用傻等着。\n\nMade by XiXi 💛',
+    'v1.2.5.5': '【修复】\n- **深色模式下时光机的山名看不见** —— 字的颜色没跟着深色模式变，现在能正常显示了。\n\nMade by XiXi 💛',
+    'v1.2.5.4': '【新增】\n- **应用内通知** —— 以后有新版本或者要紧的事，概览页顶部会冒出一张卡片告诉你。看完点右上角的 ✕，同一条就不会再来。\n\n【优化】\n- **iPhone 上更清爽了** —— 用 iPhone 的浏览器打开时，苹果手机根本做不到的选项（比如震动）会自动收起来，不占地方，剩下的照样能用。\n- **网速差时不再干等** —— 以前网络不好会一直转圈，现在等一小会儿就会告诉你没连上，不用傻等着。\n\nMade by XiXi 💛',
     'v1.2.5.3': '【优化】\n- **弹窗没那么透了** —— 「选择年月」「数据管理说明」这类弹窗，背后的内容不会再把文字糊在一起，读起来清楚多了。\n- **帧率显示默认关掉** —— 右上角那个跳动的帧率小框原来是默认挂着的，现在默认不显示；想看的话在设置里打开就行。\n- **几处小字调深了** —— 引导说明、热力图汇总、「暂无记录」这类灰字，户外阳光下也能看清。\n- **几个关闭按钮更好按** —— 引导卡右上角的 ✕ 原来只有指甲盖那么大，现在点击范围放大了一倍多。\n\n【无障碍】\n- **读屏软件能念出提示了** —— 「已保存」「同步失败」这类浮层提示，现在会被系统读屏播报（原来完全不播）。\n\nMade by XiXi 💛',
     'v1.2.5.2': '【修复】\n- **弹窗按钮里的字真正居中了** —— 上一版「取消 / 确定」这类按钮，字在框里偏下一点点，现在调回正中。\n- **概览、热力图「选择年月」弹窗里的年份和月份格子也摆正了** —— 之前整排略微偏上，现在对正中间。\n\nMade by XiXi 💛',
     'v1.2.5.1': '【优化】\n- **弹窗按钮整体收小、文字更居中** —— 之前按钮里的字偏大、看着有点偏上，现在统一调小了尺寸，文字正对中间。\n- **导出、导入这类全宽按钮也一并调整** —— 字号和高度跟其他按钮一致了，「取消」不再偏上。\n\n【修复】\n- **极窄屏和横屏下弹窗按钮不再跑丢** —— 折叠屏外屏、横过来用时，「使用前请确认」的按钮不会再被内容挤出屏幕，始终固定在底部。\n\nMade by XiXi 💛',
@@ -688,7 +688,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.5.4.1';
+var APP_VERSION = '1.2.5.5';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -820,11 +820,9 @@ const RemoteConfig = {
 // 只放「本次及以后新增」的可变状态；老变量（records / plannedTrips / showFps 等）保持原样，
 // 由后续改动自然收敛进来，禁止一次性大改（当年 126 个顶层变量的教训）。
 const AppState = {
-    powerSave: false,        // B1 省电模式：关装饰动画/重模糊，运行时由 applyPowerSave 应用
     noticeId: '',            // B2 远程公告：当前已展示的公告 id（用户关掉后不再弹同一条）
     debugInfo: false         // B3 诊断信息：设置页是否显示运行时诊断卡
 };
-const POWER_SAVE_KEY = 'hiking_power_save';
 const NOTICE_CLOSED_KEY = 'hiking_notice_closed';
 // ★2026-10-23 A 类：列表每页条数 / 同步索引保留数 改为「在线可调」。
 //   用函数声明（提升）而非改 const —— 既能跨文件引用，又不必动原有常量与调用点的结构，
@@ -838,33 +836,6 @@ function getPhotoOpts() {
         maxSide: Math.floor(RemoteConfig.num('photoMaxSide', 1280, 480, 3000)),
         quality: RemoteConfig.num('photoQuality', 0.7, 0.5, 0.95)
     };
-}
-
-// ===== B1 省电模式（★2026-10-23，body.power-save）=====
-// 目的：低端机 / 折叠屏外屏上，持续合成压力主要来自「3 个 70vw 渐变圆的无限动画 +
-//   整页切换的 transform 动画 + 一堆 will-change」。本模式只暂停这些**装饰性动效**。
-// ★刻意保留 backdrop-filter 与全部布局/字号：玻璃质感是既定设计语言，不能为省电把它砸掉；
-//   而且静态模糊几乎不耗电，真正贵的是「一直在动」。
-function applyPowerSave(on) {
-    AppState.powerSave = !!on;
-    try {
-        if (document.body) document.body.classList.toggle('power-save', AppState.powerSave);
-    } catch (e) { /* 忽略 */ }
-}
-// 没手动设过 → 跟随远程（powerSaveDefault）；手动设过以本地为准
-function loadPowerSavePref() {
-    var v = null;
-    try { v = localStorage.getItem(POWER_SAVE_KEY); } catch (e) { v = null; }
-    if (v === '1') return true;
-    if (v === '0') return false;
-    return RemoteConfig.bool('powerSaveDefault', false);
-}
-function togglePowerSave(on) {
-    applyPowerSave(on);
-    try { localStorage.setItem(POWER_SAVE_KEY, AppState.powerSave ? '1' : '0'); } catch (e) { /* 忽略 */ }
-    if (typeof showInfoMessage === 'function') {
-        showInfoMessage(AppState.powerSave ? '省电模式已开启（背景光斑与转场动画暂停）' : '省电模式已关闭');
-    }
 }
 
 // ===== B2 远程公告（★2026-10-23）=====

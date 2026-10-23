@@ -1428,8 +1428,12 @@ function renderOnThisDay() {
         var now = new Date();
         var mm = now.getMonth() + 1, dd = now.getDate(), yy = now.getFullYear();
         var list = records || [];
-        // 指纹：今天日期 + 记录数 + 最新修改时间（避免频繁重算与重渲染）
-        var fp = yy + '-' + mm + '-' + dd + '_' + list.length + '_' + list.reduce(function (m, r) { var t = (r && (r.updatedAt || r.createdAt)) || ''; return t > m ? t : m; }, '');
+        // 指纹：今天日期 + 记录数 + 最新修改时间 + **主题**（避免频繁重算与重渲染）
+        // ★2026-10-23 必须含主题：卡片内文字颜色是按主题内联的（山名 浅#0f172a / 深#fff），
+        //   指纹不含主题 ⇒ 切到深色后 fp 不变、直接 return 不重渲染 ⇒ 山名保留浅色下的深色字，
+        //   在深色背景上完全看不见（用户报「深色模式下时光机内的山名显示不出来」）。
+        var isDarkNow = document.body.classList.contains('dark-mode');
+        var fp = yy + '-' + mm + '-' + dd + '_' + list.length + '_' + list.reduce(function (m, r) { var t = (r && (r.updatedAt || r.createdAt)) || ''; return t > m ? t : m; }, '') + '_' + (isDarkNow ? 'dark' : 'light');
         if (fp === onThisDayFp) return;
         onThisDayFp = fp;
         // ★2026-10-10 P0-1「时光机」：三层回退 —— ① 同月同日 ② 同月（往年）③ 整百/整年天（±1 天）
@@ -1472,7 +1476,7 @@ function renderOnThisDay() {
             }
         }
         if (!r) { card.style.display = 'none'; body.innerHTML = ''; return; }
-        var dark = document.body.classList.contains('dark-mode');
+        var dark = isDarkNow;
         var sub = dark ? 'rgba(255,255,255,0.72)' : '#52606f';
         var strong = dark ? '#ffffff' : '#0f172a';
         var pid = (r.photos && r.photos.length) ? r.photos[0] : '';

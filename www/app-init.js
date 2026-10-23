@@ -216,14 +216,6 @@ async function init() {
         }
         applyFpsPreference();
 
-        // ★2026-10-23 B1 省电模式：启动即同步应用（不依赖网络）；
-        //   优先级 手动偏好 > 远程 powerSaveDefault > 默认关
-        try {
-            applyPowerSave(loadPowerSavePref());
-            const _psTog = document.getElementById('powerSaveToggle');
-            if (_psTog) _psTog.checked = AppState.powerSave;
-        } catch (e) { /* 忽略 */ }
-
         // ★2026-10-23 B2/B3：公告与诊断卡 —— 先用本地缓存的配置渲染一次（离线表现一致），
         //   拉到新配置后 renderRemoteNotice / renderDebugCard 内部有幂等判断，不会重复插入
         try { RemoteConfig.loadCache(); applyRemoteTexts(); renderRemoteNotice(); renderDebugCard(); } catch (e) { /* 忽略 */ }
@@ -238,19 +230,6 @@ async function init() {
                         var want = RemoteConfig.get('fpsDefault', showFps);
                         if (want !== showFps) { showFps = want; try { applyFpsPreference(); } catch (e) { /* 忽略 */ } }
                     }
-                    // ② 省电模式：同样只在「用户没手动切过」时跟随远程
-                    try {
-                        var _psLocal = null;
-                        try { _psLocal = localStorage.getItem(POWER_SAVE_KEY); } catch (eR) { _psLocal = null; }
-                        if (_psLocal === null) {
-                            var psWant = RemoteConfig.bool('powerSaveDefault', false);
-                            if (psWant !== AppState.powerSave) {
-                                applyPowerSave(psWant);
-                                var _t2 = document.getElementById('powerSaveToggle');
-                                if (_t2) _t2.checked = AppState.powerSave;
-                            }
-                        }
-                    } catch (eP) { /* 忽略 */ }
                     // ③ 公告 / 诊断卡：远程可能刚改了内容或开关
                     try { applyRemoteTexts(); renderRemoteNotice(); renderDebugCard(); } catch (eN) { /* 忽略 */ }
                 }).catch(function () { /* 静默 */ });
@@ -656,14 +635,6 @@ function setupEventListeners() {
         cleanupFunctions.push(() => hapticToggle.removeEventListener('change', handler));
     }
 
-    // ★2026-10-23 B1 省电模式开关（偏好写 localStorage：'1' 开 / '0' 关；未写 = 跟随远程）
-    const powerSaveToggle = document.getElementById('powerSaveToggle');
-    if (powerSaveToggle) {
-        const psHandler = () => togglePowerSave(powerSaveToggle.checked);
-        powerSaveToggle.addEventListener('change', psHandler);
-        cleanupFunctions.push(() => powerSaveToggle.removeEventListener('change', psHandler));
-    }
-    
     // ★2026-09-01 记录/计划表头排序统一绑定（.sort-header 共用，按 data-sort 前缀区分）
     document.querySelectorAll('.sort-header').forEach(header => {
         const handler = () => {
