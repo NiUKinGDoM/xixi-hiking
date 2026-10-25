@@ -661,6 +661,10 @@ function setupEventListeners() {
         var pages = { overview: 'tab-overview', plans: 'tab-plans', records: 'tab-records', settings: 'tab-settings' };
         var pageId = pages[tabId];
         if (!pageId) return;
+        // ★2026-10-26 切到设置页时刷新通知入口（权限可能刚在系统设置里被打开）
+        if (tabId === 'settings' && typeof refreshNotifyPermRow === 'function') {
+            try { refreshNotifyPermRow(); } catch (e) { }
+        }
         // ★2026-08-11 点击当前已激活的 tab：强制刷新该页数据（记录/计划重新渲染表格），不重播切换动画
         if (tabId === currentTabId) {
             // ★2026-08-14 四页统一：点击当前 tab 平滑滚动回屏幕顶部（内容不足一屏时无效果，无副作用）

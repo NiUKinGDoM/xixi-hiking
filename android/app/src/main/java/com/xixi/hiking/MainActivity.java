@@ -264,6 +264,34 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent); // 与 onCreate 冷启动统一，后续 getIntent() 也能拿到最新 extra
         handleNotifyIntent(intent);
+        // ★2026-10-26 修「桌面快捷方式『记一笔』点了没反应」：
+        //   热启动（App 在后台/最近任务）时 onNewIntent 只把动作存进 pendingNotifyAction，
+        //   却**没有通知 WebView 去消费** —— 原来只能等 visibilitychange 触发，
+        //   而部分机型从桌面 shortcut 唤起时不触发 visibilitychange ⇒ 动作一直躺着、弹窗永不出现。
+        //   这里与 onResume 同样主动 evaluateJavascript 一次（JS 侧幂等，重复调用无副作用）。
+        evalConsumeNotifyAction();
+    }
+
+    // ★2026-10-26 主动让 WebView 消费一次「待处理动作」（通知点击 / 桌面快捷方式）
+    private void evalConsumeNotifyAction() {
+        try {
+            final WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+            if (wv == null) return;
+            wv.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        wv.evaluateJavascript(
+                                "try{if(typeof window.__consumeNotifyAction==='function')window.__consumeNotifyAction();}catch(e){}",
+                                null);
+                    } catch (Exception e) {
+                        Log.w(TAG, "eval consume notify action failed", e);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            Log.w(TAG, "evalConsumeNotifyAction skipped", e);
+        }
     }
 
     // ★2026-10-19 回前台刷新通知权限状态：

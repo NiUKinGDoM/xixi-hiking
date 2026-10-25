@@ -200,10 +200,20 @@ function refreshNotifyPermRow() {
         const el = document.getElementById('notifyPermItem');
         if (!el) return;
         const isApp = window.XixiFileBridge && typeof window.XixiFileBridge.checkNotificationPermission === 'function';
-        if (!isApp) { el.style.display = 'none'; return; }
+        if (!isApp) { el.style.display = 'none'; return; }   // 网页版：没有原生桥，隐藏
         let granted = true;
         try { granted = !!window.XixiFileBridge.checkNotificationPermission(); } catch (e) { /* 桥异常按已开启 */ }
-        el.style.display = granted ? 'none' : 'flex';
+        // ★2026-10-26 改为**常显**（用户：「把开关加到我的页面，让我们有地方点」）
+        //   原实现只在「未开启」时 display:flex，权限一开整行就消失 ⇒ 用户根本找不到入口，
+        //   想主动检查/修改通知设置无处可点。现在常显，只按状态换图标与文案，点击一律跳系统通知设置。
+        el.style.display = 'flex';
+        const _ic = el.querySelector('.settings-item-icon .material-icons');
+        const _tt = el.querySelector('.settings-item-title');
+        const _ds = el.querySelector('.settings-item-desc');
+        // ★图标字体是子集化的，只能用已收录字形（notifications / notifications_off 均在用）
+        if (_ic) { _ic.textContent = granted ? 'notifications' : 'notifications_off'; _ic.style.color = granted ? '#10b981' : '#f59e0b'; }
+        if (_tt) _tt.textContent = granted ? '通知已开启' : '通知权限未开启';
+        if (_ds) _ds.textContent = granted ? '计划提醒、备份提醒会正常弹到通知栏' : '点这里去系统设置开启，计划提醒才能弹通知';
         if (!notifyPermRowBound) {
             notifyPermRowBound = true;
             el.addEventListener('click', function () {
