@@ -70,6 +70,8 @@ if (!target) {
 const MAP = [
     ['index.html', 'www/index.html'],
     ['app.css', 'www/app.css'],
+    ['app-modal.css', 'www/app-modal.css'],
+    ['app-form.css', 'www/app-form.css'],
     ['app-core.js', 'www/app-core.js'],
     ['app-data.js', 'www/app-data.js'],
     ['app-data-detail.js', 'www/app-data-detail.js'],

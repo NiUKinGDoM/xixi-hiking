@@ -23,10 +23,10 @@
  * ★2026-10-10 v61→v62：CSS 外置到 www/app.css（index.html 6721→726 行）—— 必须 bump 强制作废旧缓存
  * ★2026-10-10 v62→v63：同号重发(第4次) —— .glass-btn 去光泽带渐变 + 修 box-shadow 声明失效（www 内容变了，必须 bump 强制旧壳失效）
  */
-const CACHE_NAME = 'xixi-hiking-v90';   // ★2026-10-23 v1.2.5.5.1：灯箱位置下移 + 切换不抖 + 全尺寸适配
+const CACHE_NAME = 'xixi-hiking-v92';   // ★2026-10-25 v1.2.5.5.2：样式表拆 3 层（保序）+ 视觉矩阵 57 项
 // 静态资源（cache-first：离线最稳、二次加载最快）
 const STATIC_RE = /\.(js|css|woff2?|png|jpe?g|svg|webp|ico)$/i;
-const CORE_ASSETS = ['./', './index.html', './app.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-data-detail.js', './app-data-lightbox.js', './app-data-heatmap.js', './app-data-plans.js', './app-data-plan-detail.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
+const CORE_ASSETS = ['./', './index.html', './app.css', './app-modal.css', './app-form.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-data-detail.js', './app-data-lightbox.js', './app-data-heatmap.js', './app-data-plans.js', './app-data-plan-detail.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
     e.waitUntil(

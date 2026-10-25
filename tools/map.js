@@ -26,7 +26,7 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'tools', 'notes', 'code-map.md');
-const JS_FILES = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'sw.js'];
+const JS_FILES = ['index.html', 'app.css', 'app-modal.css', 'app-form.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'sw.js'];
 
 function read(rel) {
   const p = path.join(ROOT, 'www', rel);
@@ -118,7 +118,7 @@ function build() {
       }
     }
 
-    if (f === 'app.css') {
+    if (f === 'app.css' || f === 'app-modal.css' || f === 'app-form.css') {
       const c = cssIndex(f);
       if (c.length) {
         L.push('### 样式分区（改样式先跳到这里）');

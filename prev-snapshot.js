@@ -16,7 +16,7 @@ function main() {
     // 备份根 = 项目根 backups/（与既有 backups/prev-1.1.8.0-灵动前 同层；hiking-app3 只是主工程目录）
     const dest = path.join(ROOT, '..', 'backups', 'prev-' + vm);
     fs.mkdirSync(dest, { recursive: true });
-    const www = ['index.html', 'app.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
+    const www = ['index.html', 'app.css', 'app-modal.css', 'app-form.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
     www.forEach(function (f) { fs.copyFileSync(path.join(ROOT, 'www', f), path.join(dest, f)); });
     // ★2026-09-10 收款码外置：快照须含 assets/（漏了回退点就缺码）
     const wwwAssets = ['support-qr-wechat.jpg', 'support-qr-alipay.jpg'];

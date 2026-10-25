@@ -25,7 +25,11 @@ const files = {};
 JS_FILES.forEach((f) => { files[f] = fs.readFileSync(path.join(WWW, f), 'utf8'); });
 const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
 // ★2026-10-10 CSS 外置：app.css 也纳入信号扫描（① 名字计数 / ⑥ TODO / ⑦ 超大行）
-const pageCss = (() => { try { return fs.readFileSync(path.join(WWW, 'app.css'), 'utf8'); } catch (e) { return ''; } })();
+// ★2026-10-25 app.css 拆为 3 个文件，此处拼接全部（否则 ①⑥⑦ 信号只扫到第 1 段）
+const pageCss = (() => { try {
+  return ['app.css', 'app-modal.css', 'app-form.css']
+    .map((f) => fs.readFileSync(path.join(WWW, f), 'utf8')).join('\n');
+} catch (e) { return ''; } })();
 // ★死代码判定必须把「测试与工具脚本」也算进来 —— 曾因只扫 www/ 把测试钩子 resetGuideSeen 误判成死代码删掉，
 //   导致 test.js 1 条 + P0P3 2 条用例失败（是断言救回来的）。凡"删除"类结论一律先跑 checkall 验证。
 let auxSrc = '';

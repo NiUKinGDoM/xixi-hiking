@@ -12,10 +12,14 @@ const ROOT = __dirname;
 const HTML = path.join(ROOT, 'www/index.html');
 // ★2026-10-10 CSS 外置（www/app.css）：读「页面」= index.html + app.css（包成 <style> 追加）
 //   目的：既有 CSS 断言 + matchAll(/<style>/) 全部零改动生效；反向断言（!includes）语义不变
-const _APP_CSS = path.join(ROOT, 'www/app.css');
+// ★2026-10-25 app.css 已拆为 3 个文件（保序切分）：必须**全部拼接**，
+//   否则断言只扫到第 1 段，拆出去的部分全部漏检 = 假绿。
+const CSS_FILES = ['app.css', 'app-modal.css', 'app-form.css'];
 function readPage() {
     let _css = '';
-    try { _css = fs.readFileSync(_APP_CSS, 'utf8'); } catch (e) {}
+    for (const _f of CSS_FILES) {
+        try { _css += fs.readFileSync(path.join(ROOT, 'www', _f), 'utf8') + '\n'; } catch (e) {}
+    }
     return fs.readFileSync(HTML, 'utf8') + '\n<style>' + _css + '</style>\n';
 }
 // ★2026-10-22 app-data.js 已按功能拆为 6 个文件（5464 -> 6）；统一从这里读「全部 data 内容」

@@ -31,7 +31,9 @@ for (const f of JS_FILES) jsMap[f] = fs.readFileSync(path.join(WWW, f), 'utf8');
 const allJs = Object.values(jsMap).join('\n');
 
 // ---- 切 CSS 分区（★2026-10-10 起 CSS 已外置 www/app.css，index.html 不再含样式）----
-const cssAll = fs.readFileSync(path.join(WWW, 'app.css'), 'utf8');
+const cssAll = ['app.css', 'app-modal.css', 'app-form.css']
+    .map((f) => { try { return fs.readFileSync(path.join(WWW, f), 'utf8'); } catch (e) { return ''; } })
+    .join('\n');
 const _twAt = cssAll.search(/\/\*!\s*tailwindcss/);
 const tailwind = _twAt >= 0 ? cssAll.slice(_twAt) : '';
 const custom = _twAt >= 0 ? cssAll.slice(0, _twAt) : cssAll;

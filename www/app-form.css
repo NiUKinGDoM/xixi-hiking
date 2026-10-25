@@ -1,0 +1,1323 @@
+/* ============================================================================
+ * app-form.css —— 表单细节 / 末尾覆盖层（含「弹窗尺寸档位」等后置覆盖）
+ * ★第 3/3 段（原 4981~6300 行）。**必须最后引入** —— 本段含刻意后置的覆盖规则。
+ * ============================================================================ */
+@layer utilities {
+  .absolute {
+    position: absolute;
+  }
+  .fixed {
+    position: fixed;
+  }
+  .relative {
+    position: relative;
+  }
+  .inset-0 {
+    inset: calc(var(--spacing) * 0);
+  }
+  .-top-6 {
+    top: calc(var(--spacing) * -6);
+  }
+  .top-2 {
+    top: calc(var(--spacing) * 2);
+  }
+  .top-4 {
+    top: calc(var(--spacing) * 4);
+  }
+  .right-0 {
+    right: calc(var(--spacing) * 0);
+  }
+  .right-2 {
+    right: calc(var(--spacing) * 2);
+  }
+  .bottom-0 {
+    bottom: calc(var(--spacing) * 0);
+  }
+  .left-0 {
+    left: calc(var(--spacing) * 0);
+  }
+  .left-1\/2 {
+    left: calc(1/2 * 100%);
+  }
+  .z-50 {
+    z-index: 50;
+  }
+  .z-\[100\] {
+    z-index: 100;
+  }
+  .container {
+    width: 100%;
+    @media (width >= 40rem) {
+      max-width: 40rem;
+    }
+    @media (width >= 48rem) {
+      max-width: 48rem;
+    }
+    @media (width >= 64rem) {
+      max-width: 64rem;
+    }
+    @media (width >= 80rem) {
+      max-width: 80rem;
+    }
+    @media (width >= 96rem) {
+      max-width: 96rem;
+    }
+  }
+  .mx-auto {
+    margin-inline: auto;
+  }
+  .mt-2 {
+    margin-top: calc(var(--spacing) * 2);
+  }
+  .mt-4 {
+    margin-top: calc(var(--spacing) * 4);
+  }
+  .mt-6 {
+    margin-top: calc(var(--spacing) * 6);
+  }
+  .mr-1 {
+    margin-right: calc(var(--spacing) * 1);
+  }
+  .mb-0 {
+    margin-bottom: calc(var(--spacing) * 0);
+  }
+  .mb-3 {
+    margin-bottom: calc(var(--spacing) * 3);
+  }
+  .mb-4 {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+  .mb-6 {
+    margin-bottom: calc(var(--spacing) * 6);
+  }
+  .flex {
+    display: flex;
+  }
+  .grid {
+    display: grid;
+  }
+  .h-5 {
+    height: calc(var(--spacing) * 5);
+  }
+  .h-6 {
+    height: calc(var(--spacing) * 6);
+  }
+  .h-32 {
+    height: calc(var(--spacing) * 32);
+  }
+  .h-48 {
+    height: calc(var(--spacing) * 48);
+  }
+  .w-5 {
+    width: calc(var(--spacing) * 5);
+  }
+  .w-80 {
+    width: calc(var(--spacing) * 80);
+  }
+  .w-full {
+    width: 100%;
+  }
+  .max-w-4xl {
+    max-width: var(--container-4xl);
+  }
+  .max-w-12 {
+    max-width: calc(var(--spacing) * 12);
+  }
+  .max-w-\[90vw\] {
+    max-width: 90vw;
+  }
+  .flex-1 {
+    flex: 1;
+  }
+  .flex-shrink-0 {
+    flex-shrink: 0;
+  }
+  .border-collapse {
+    border-collapse: collapse;
+  }
+  .-translate-x-1\/2 {
+    --tw-translate-x: calc(calc(1/2 * 100%) * -1);
+    translate: var(--tw-translate-x) var(--tw-translate-y);
+  }
+  .transform {
+    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
+  }
+  .animate-spin {
+    animation: var(--animate-spin);
+  }
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  .flex-col {
+    flex-direction: column;
+  }
+  .items-center {
+    align-items: center;
+  }
+  .items-end {
+    align-items: flex-end;
+  }
+  .justify-around {
+    justify-content: space-around;
+  }
+  .justify-between {
+    justify-content: space-between;
+  }
+  .justify-center {
+    justify-content: center;
+  }
+  .gap-1 {
+    gap: calc(var(--spacing) * 1);
+  }
+  .gap-2 {
+    gap: calc(var(--spacing) * 2);
+  }
+  .gap-3 {
+    gap: calc(var(--spacing) * 3);
+  }
+  .gap-4 {
+    gap: calc(var(--spacing) * 4);
+  }
+  .space-y-3 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .overflow-x-auto {
+    overflow-x: auto;
+    contain: layout style;
+  }
+  .rounded {
+    border-radius: 0.25rem;
+  }
+  .rounded-full {
+    border-radius: calc(infinity * 1px);
+  }
+  .rounded-lg {
+    border-radius: var(--radius-lg);
+  }
+  .rounded-xl {
+    border-radius: var(--radius-xl);
+  }
+  .rounded-t-lg {
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+  }
+  .border {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+  }
+  .border-2 {
+    border-style: var(--tw-border-style);
+    border-width: 2px;
+  }
+  .border-b {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 1px;
+  }
+  .border-b-2 {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 2px;
+  }
+  .border-blue-200 {
+    border-color: var(--color-blue-200);
+  }
+  .border-gray-200 {
+    border-color: var(--color-gray-200);
+  }
+  .border-gray-300 {
+    border-color: var(--color-gray-300);
+  }
+  .border-green-200 {
+    border-color: var(--color-green-200);
+  }
+  .border-orange-200 {
+    border-color: var(--color-orange-200);
+  }
+  .border-purple-200 {
+    border-color: var(--color-purple-200);
+  }
+  .border-white {
+    border-color: var(--color-white);
+  }
+  .border-t-transparent {
+    border-top-color: transparent;
+  }
+  .bg-blue-500 {
+    background-color: var(--color-blue-500);
+  }
+  .bg-gray-200 {
+    background-color: var(--color-gray-200);
+  }
+  .bg-gray-600 {
+    background-color: var(--color-gray-600);
+  }
+  .bg-gray-800 {
+    background-color: var(--color-gray-800);
+  }
+  .bg-green-500 {
+    background-color: var(--color-green-500);
+  }
+  .bg-green-600 {
+    background-color: var(--color-green-600);
+  }
+  .bg-purple-500 {
+    background-color: var(--color-purple-500);
+  }
+  .bg-red-600 {
+    background-color: var(--color-red-600);
+  }
+  .bg-white {
+    background-color: var(--color-white);
+  }
+  .bg-gradient-to-br {
+    --tw-gradient-position: to bottom right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+  }
+  .bg-gradient-to-r {
+    --tw-gradient-position: to right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+  }
+  .bg-gradient-to-t {
+    --tw-gradient-position: to top in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+  }
+  .from-amber-400 {
+    --tw-gradient-from: var(--color-amber-400);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-blue-50 {
+    --tw-gradient-from: var(--color-blue-50);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-blue-500 {
+    --tw-gradient-from: var(--color-blue-500);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-emerald-500 {
+    --tw-gradient-from: var(--color-emerald-500);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-gray-50 {
+    --tw-gradient-from: var(--color-gray-50);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-green-50 {
+    --tw-gradient-from: var(--color-green-50);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-green-400 {
+    --tw-gradient-from: var(--color-green-400);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-green-500 {
+    --tw-gradient-from: var(--color-green-500);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-lime-400 {
+    --tw-gradient-from: var(--color-lime-400);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-orange-50 {
+    --tw-gradient-from: var(--color-orange-50);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-orange-400 {
+    --tw-gradient-from: var(--color-orange-400);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-purple-50 {
+    --tw-gradient-from: var(--color-purple-50);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .from-red-400 {
+    --tw-gradient-from: var(--color-red-400);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-amber-600 {
+    --tw-gradient-to: var(--color-amber-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-blue-100 {
+    --tw-gradient-to: var(--color-blue-100);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-gray-100 {
+    --tw-gradient-to: var(--color-gray-100);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-green-100 {
+    --tw-gradient-to: var(--color-green-100);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-green-600 {
+    --tw-gradient-to: var(--color-green-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-lime-600 {
+    --tw-gradient-to: var(--color-lime-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-orange-100 {
+    --tw-gradient-to: var(--color-orange-100);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-orange-600 {
+    --tw-gradient-to: var(--color-orange-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-purple-100 {
+    --tw-gradient-to: var(--color-purple-100);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-purple-600 {
+    --tw-gradient-to: var(--color-purple-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-red-600 {
+    --tw-gradient-to: var(--color-red-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-teal-600 {
+    --tw-gradient-to: var(--color-teal-600);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .p-1 {
+    padding: calc(var(--spacing) * 1);
+  }
+  .p-1\.5 {
+    padding: calc(var(--spacing) * 1.5);
+  }
+  .p-2 {
+    padding: calc(var(--spacing) * 2);
+  }
+  .p-4 {
+    padding: calc(var(--spacing) * 4);
+  }
+  .p-6 {
+    padding: calc(var(--spacing) * 6);
+  }
+  .px-1\.5 {
+    padding-inline: calc(var(--spacing) * 1.5);
+  }
+  .px-2 {
+    padding-inline: calc(var(--spacing) * 2);
+  }
+  .px-3 {
+    padding-inline: calc(var(--spacing) * 3);
+  }
+  .px-4 {
+    padding-inline: calc(var(--spacing) * 4);
+  }
+  .py-0\.5 {
+    padding-block: calc(var(--spacing) * 0.5);
+  }
+  .py-1 {
+    padding-block: calc(var(--spacing) * 1);
+  }
+  .py-1\.5 {
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+  .py-2 {
+    padding-block: calc(var(--spacing) * 2);
+  }
+  .py-2\.5 {
+    padding-block: calc(var(--spacing) * 2.5);
+  }
+  .py-3 {
+    padding-block: calc(var(--spacing) * 3);
+  }
+  .py-12 {
+    padding-block: calc(var(--spacing) * 12);
+  }
+  .pb-8 {
+    padding-bottom: calc(var(--spacing) * 8);
+  }
+  .text-center {
+    text-align: center;
+  }
+  .text-left {
+    text-align: left;
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .text-2xl {
+    font-size: var(--text-2xl);
+    line-height: var(--tw-leading, var(--text-2xl--line-height));
+  }
+  .text-3xl {
+    font-size: var(--text-3xl);
+    line-height: var(--tw-leading, var(--text-3xl--line-height));
+  }
+  .text-6xl {
+    font-size: var(--text-6xl);
+    line-height: var(--tw-leading, var(--text-6xl--line-height));
+  }
+  .text-base {
+    font-size: var(--text-base);
+    line-height: var(--tw-leading, var(--text-base--line-height));
+  }
+  .text-lg {
+    font-size: var(--text-lg);
+    line-height: var(--tw-leading, var(--text-lg--line-height));
+  }
+  .text-sm {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
+  }
+  .text-xs {
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+  }
+  .font-medium {
+    --tw-font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-medium);
+  }
+  .font-semibold {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+  .whitespace-nowrap {
+    white-space: nowrap;
+  }
+  .text-blue-500 {
+    color: var(--color-blue-500);
+  }
+  .text-blue-600 {
+    color: var(--color-blue-600);
+  }
+  .text-blue-800 {
+    color: var(--color-blue-800);
+  }
+  .text-white/30 {
+    color: var(--color-gray-400);
+  }
+  .text-white/50 {
+    color: var(--color-gray-500);
+  }
+  .text-white/60 {
+    color: var(--color-gray-600);
+  }
+  .text-gray-700 {
+    color: var(--color-gray-700);
+  }
+  .text-white/90 {
+    color: var(--color-gray-800);
+  }
+  .text-white {
+    color: var(--color-gray-900);
+  }
+  .text-green-500 {
+    color: var(--color-green-500);
+  }
+  .text-green-600 {
+    color: var(--color-green-600);
+  }
+  .text-green-800 {
+    color: var(--color-green-800);
+  }
+  .text-orange-500 {
+    color: var(--color-orange-500);
+  }
+  .text-orange-600 {
+    color: var(--color-orange-600);
+  }
+  .text-orange-800 {
+    color: var(--color-orange-800);
+  }
+  .text-purple-500 {
+    color: var(--color-purple-500);
+  }
+  .text-purple-600 {
+    color: var(--color-purple-600);
+  }
+  .text-purple-800 {
+    color: var(--color-purple-800);
+  }
+  .text-white {
+    color: var(--color-white);
+  }
+  .shadow-lg {
+    --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 4px 6px -4px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .shadow-xl {
+    --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 8px 10px -6px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .drop-shadow-lg {
+    --tw-drop-shadow-size: drop-shadow(0 4px 4px var(--tw-drop-shadow-color, rgb(0 0 0 / 0.15)));
+    --tw-drop-shadow: drop-shadow(var(--drop-shadow-lg));
+    filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+  }
+  .backdrop-blur-lg {
+    --tw-backdrop-blur: blur(var(--blur-lg));
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+  }
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+  .transition-colors {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+  .duration-700 {
+    --tw-duration: 700ms;
+    transition-duration: 700ms;
+  }
+  .hover\:scale-105 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-scale-x: 105%;
+        --tw-scale-y: 105%;
+        --tw-scale-z: 105%;
+        scale: var(--tw-scale-x) var(--tw-scale-y);
+      }
+    }
+  }
+  .hover\:bg-blue-50 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-blue-50);
+      }
+    }
+  }
+  .hover\:bg-blue-600 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-blue-600);
+      }
+    }
+  }
+  .hover\:bg-gray-300 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-gray-300);
+      }
+    }
+  }
+  .hover\:bg-gray-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-gray-700);
+      }
+    }
+  }
+  .hover\:bg-green-50 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-green-50);
+      }
+    }
+  }
+  .hover\:bg-green-600 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-green-600);
+      }
+    }
+  }
+  .hover\:bg-green-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-green-700);
+      }
+    }
+  }
+  .hover\:bg-purple-600 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-purple-600);
+      }
+    }
+  }
+  .hover\:bg-red-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-red-700);
+      }
+    }
+  }
+  .hover\:bg-white {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-white);
+      }
+    }
+  }
+  .hover\:from-blue-600 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-gradient-from: var(--color-blue-600);
+        --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+      }
+    }
+  }
+  .hover\:from-emerald-600 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-gradient-from: var(--color-emerald-600);
+        --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+      }
+    }
+  }
+  .hover\:from-green-600 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-gradient-from: var(--color-green-600);
+        --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+      }
+    }
+  }
+  .hover\:to-purple-700 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-gradient-to: var(--color-purple-700);
+        --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+      }
+    }
+  }
+  .hover\:to-teal-700 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-gradient-to: var(--color-teal-700);
+        --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+      }
+    }
+  }
+  .md\:grid-cols-2 {
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .lg\:grid-cols-4 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+}
+@property --tw-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-space-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
+@property --tw-gradient-position {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-gradient-from {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+@property --tw-gradient-via {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+@property --tw-gradient-to {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+@property --tw-gradient-stops {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-gradient-via-stops {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-gradient-from-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+@property --tw-gradient-via-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+@property --tw-gradient-to-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+}
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-blur {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-invert {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-blur {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-brightness {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-contrast {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-grayscale {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-hue-rotate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-invert {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-opacity {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-saturate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-sepia {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-duration {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-scale-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-scale-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-scale-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@layer properties {
+  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
+    *, ::before, ::after, ::backdrop {
+      --tw-translate-x: 0;
+      --tw-translate-y: 0;
+      --tw-translate-z: 0;
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
+      --tw-space-y-reverse: 0;
+      --tw-border-style: solid;
+      --tw-gradient-position: initial;
+      --tw-gradient-from: #0000;
+      --tw-gradient-via: #0000;
+      --tw-gradient-to: #0000;
+      --tw-gradient-stops: initial;
+      --tw-gradient-via-stops: initial;
+      --tw-gradient-from-position: 0%;
+      --tw-gradient-via-position: 50%;
+      --tw-gradient-to-position: 100%;
+      --tw-font-weight: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
+      --tw-backdrop-blur: initial;
+      --tw-backdrop-brightness: initial;
+      --tw-backdrop-contrast: initial;
+      --tw-backdrop-grayscale: initial;
+      --tw-backdrop-hue-rotate: initial;
+      --tw-backdrop-invert: initial;
+      --tw-backdrop-opacity: initial;
+      --tw-backdrop-saturate: initial;
+      --tw-backdrop-sepia: initial;
+      --tw-duration: initial;
+      --tw-scale-x: 1;
+      --tw-scale-y: 1;
+      --tw-scale-z: 1;
+    }
+  }
+}
+
+        /* ★★本块必须放在样式表【末尾】——它要覆盖的
+           .bottom-tabbar / .bottom-tabbar .tab-btn / .ov-mini-row / .sync-health-text
+           定义全在文件后段（900~2000 行），同特异性下【后出现者胜】——
+           放前面会被反向覆盖（2026-10-09 真实踩到：改了一次发现完全没生效）。 */
+        /* ★★2026-10-16 窄屏适配重构（原「折叠屏外屏 ≤350px」块）
+           旧版按 350px 一刀切 ⇒ 320/350px 的**普通直板机**也整块走「外屏紧凑版」：
+           底栏从 302px 砍到 198px（实测 320px 屏上 302px 完全放得下、零溢出），
+           矮卡从 3 列变 1 列 → 用户反馈「窄一点的直板机也被识别成折叠屏外屏」。
+           ⇒ 现按「每条规则的真实需要」拆两段，只有矮卡这一条真的需要放宽到 374：
+             · 矮卡：横向布局下 `.ov-txt` 可用宽 = 列宽 − 53px，需 ≥52px（4 汉字 ×13px）
+               ⇒ 列宽 ≥105px ⇒ 行宽 ≥331px ⇒ 视口 ≥375px。**唯一需要 ≤374 的规则。**
+             · 底栏：自然宽 302px，居中需视口 ≥302px 才不越界（320px 实测右边界 311 ✓）⇒ 只需 ≤300。
+             · 主卡字号：13px 下「总记录数」仅 **≤260px** 折行（280/300/320/360 实测均单行）
+               ⇒ 旧阈值 350 属过度适配，一并收进 ≤300。
+             · 山册 3×2 网格 / 设置项换行：均为 260px 抽屉与外屏场景，同收进 ≤300。 */
+        /* ★★2026-10-17 山册抽屉统计（≤430px 全手机）
+           基础样式是 flex 一行均分 6 项（`.mb-stat > div { flex: 1 }`）—— 实测各档位格宽：
+             320px→45px / 350→50 / 375→54 / 390→57 / 412→60
+           而最长值「老王/小李/张三」在 15px 下需 ~104px ⇒ 折 3 行；「12.4km」「2860m」直接溢出。
+           ★根因是**均分**不可能给长值留空间 ⇒ 改 3 列 × 2 行网格（每格 ≈ 容器/3 ≈ 110px），
+             值字号 15→12 并允许任意断行。
+           ★阈值取 430（= 手机上限）：即便 412px 屏，6 项均分仍让「一起走过」折 2 行 ⇒ 全手机都应改。
+             原先这条只写在 ≤300 内，导致 301~430 的机型全部回退到均分（用户 2026-10-17 反馈「又挤在一起了」）。 */
+        @media (max-width: 430px) {
+            .mb-stat {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                row-gap: 8px;
+            }
+            .mb-stat > div {
+                min-width: 0;
+                padding: 0 2px;
+            }
+            .mb-stat .sv {
+                font-size: 12px;
+                line-height: 1.3;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+            .mb-stat .sl {
+                font-size: 9px;
+                line-height: 1.25;
+            }
+        }
+
+        /* ★★2026-10-17 用户反馈「矮卡弄成图标在上、文字在下的上下行不好看」→ 竖排整段取消，
+           全宽度一律横排。实测根因：竖排时 .ov-txt 只按内容宽（46px）收缩，而列宽已 89px
+           ⇒ 右侧白空 43px，卡片高度还从 59px 涨到 80px（又空又高）；且在 320px 下「2860m」
+           仍被截 1px —— 竖排其实没解决溢出，只是把问题换了个位置。
+           ★精确测量（canvas 量真实文字宽）后定阈值：横排所需文字区 = **45px**
+           （标签「平均海拔」45 / 值「2860m」45），另需 ≥3px 余量防亚像素截断 ⇒ 需 48px。
+             · ≥366px：列宽 104.7+ ⇒ 文字区 50+ 天然够（**350~365 够不上，必须压缩**）
+             · ≤365px：列宽 ≤103.7 ⇒ 靠「gap 9→5 + 左右内边距 11/12→7」挤出 9px
+               ⇒ 320px 时文字区 48.7px（余量 3.7px）
+           ★注意：图标**不用缩**也别想缩 —— `.material-icons` 在本文件 @media(≤640px) 里被
+           `font-size:18px !important` 锁死（原 `.ov-ic` 与超窄屏块里的图标字号声明一直是死代码），
+           实测 18px 图标下文字区已够，故本块不再写图标字号。 */
+        @media (max-width: 365px) {
+            .ov-mini {
+                gap: 5px;
+                padding-left: 7px;
+                padding-right: 7px;
+            }
+        }
+
+        /* ★★≤300px 真·超窄屏（折叠屏外屏实测 260~300px）—— 其余规则都只在这里生效 */
+        @media (max-width: 300px) {
+            /* 矮卡（本档位已改 1 列，卡片很宽）：间距放宽回常态
+               （图标字号不在这里写 —— 由 @media(≤640px) 的 .material-icons{18px!important} 决定，
+                 此处若再写普通声明是死代码） */
+            .ov-mini {
+                gap: 9px;
+            }
+            /* 矮卡 1 列（超窄屏下列宽不足以放 4 字标签） */
+            .ov-mini-row {
+                grid-template-columns: 1fr;
+            }
+            /* ★2026-10-17 用户定调：「底栏在任何分辨率都不用改窄」—— 底栏自然宽 301.9px，
+               实测在 ≥320px 屏上右边界 311 < 320 完全放得下，故原有「padding 18→8 + gap 0」
+               的硬收窄规则已整段删除（不再为窄屏改按钮尺寸）。 */
+            /* 同步状态文案允许折行，不再截断 */
+            .sync-health-text,
+            .sync-dim .sync-dim-tx {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+            }
+            /* 顶栏：标题原为 whitespace-nowrap（不可收缩），窄屏下把右侧 FPS 挤出屏幕右边界
+                  → 整个页面横向溢出 35px（260px 屏实测）。改为允许折行 + 容器可收缩。 */
+            .header-bar > .flex:first-child {
+                min-width: 0;
+            }
+            #appTitleWrap {
+                min-width: 0;
+            }
+            #appTitle {
+                white-space: normal;
+                line-height: 1.2;
+            }
+            /* 山册统计已上移到 @media (max-width: 430px) —— 见上方「山册统计」块。
+               ★2026-10-17：它原先只写在 ≤300，导致 301~430 的机型回到「flex 一行均分」，
+                 6 项每格仅 45~60px、「一起走过」折 3 行且「12.4km/2860m」直接溢出。 */
+            /* 设置项改「可换行」三件套：原布局（图标38 + 文字 flex:1 min-width:0 + 开关）在
+                  260px 外屏下把文字块挤到只剩 44px（「跟随系统外观模式」被压成 6 行）。
+                  现给文字块起码 130px 宽；放不下时右侧控件自动换到下一行并靠右。 */
+            .settings-item {
+                flex-wrap: wrap;
+                row-gap: 10px;
+            }
+            .settings-item-text {
+                flex: 1 1 130px;
+                min-width: 120px;
+            }
+            .settings-item > :last-child:not(.settings-item-text) {
+                margin-left: auto;
+            }
+            /* 「已绑定」卡内的横向行（文字 + 网盘信息/解绑）允许换行（260px 下按钮落到第二行） */
+            #syncAcctOn > div {
+                flex-wrap: wrap;
+                row-gap: 10px;
+            }
+            /* autoSyncCard / syncAccountCard 的内层横向 wrapper 也需允许换行 ——
+               它们不是 .settings-item，不受上面的规则管；不加会在 260px 下把开关挤出屏幕（+23px） */
+            #autoSyncCard > div,
+            #syncAccountCard > div {
+                flex-wrap: wrap;
+                row-gap: 10px;
+            }
+            /* 概览 4 主卡：标签 13→12px、图标 24→18px（实测仅 ≤260px 时「总记录数」折行） */
+            .ov-main-grid .stat-card p:first-of-type {
+                font-size: 12px;
+            }
+            .ov-main-grid .stat-card .material-icons {
+                font-size: 18px;
+            }
+        }
+
+        /* ===== 弹窗尺寸档位（★2026-10-16 统一）=====
+           改前：40 个弹窗各自内联 max-width —— 实测有 10 种取值（300/320/330/340/360/380/
+                 392/400/420/440），width 写法另有 4 套（calc(100vw - 44px) / 90vw / 92vw / 不写）
+                 ⇒ 同一块 390px 屏幕上实际宽度出现 8 种（246~350），同类功能宽度互不相同。
+                 其中 askConfirm 既没写 width 也没写 max-width，父容器又是 display:grid
+                 ⇒ 网格轨道按 max-content 自适应，宽度随文案漂移（短 246px ↔ 长 350px）。
+           现在：收敛成三档，全部改为显式 width，消灭碎片。
+                 mdl-sm 320px  极简确认 / 短提示 / 选择器
+                 mdl-md 360px  表单 / 说明 / 备份列表
+                 mdl-lg 400px  政策与日志正文 / 大卡片
+           ★手机（≤430px，覆盖所有竖屏）三档一律等宽 = calc(100vw - 44px)，彻底不再"乱"；
+             仅 >430px（平板 / 桌面）才按档分宽。想把手机上也改成"小框更小"，只需把下面
+             那个 @media 的 431px 调小即可，无需动 40 处调用点。
+           ★必须置于样式表末尾：与基类 .confirm-modal-content 同特异性，靠"后出现者胜"。 */
+        .confirm-modal-content.mdl-sm,
+        .confirm-modal-content.mdl-md,
+        .confirm-modal-content.mdl-lg {
+            /* ★必须显式 width：父容器 .modal-backdrop-animate 是 display:grid，
+               只给 max-width（或依赖基类 width:100%）会退化成 max-content 随内容跳。 */
+            width: calc(100vw - 44px);
+            box-sizing: border-box;
+            /* ★高度兜底：改前多数弹窗没有上限，长内容（政策/日志）在矮屏上会顶出可视区，
+               且 flex 居中时顶部滚不到。统一限高 + 内部滚动。 */
+            max-height: 86vh;
+            overflow-y: auto;
+        }
+        @media (min-width: 431px) {
+            .confirm-modal-content.mdl-sm { max-width: 320px; }
+            .confirm-modal-content.mdl-md { max-width: 360px; }
+            .confirm-modal-content.mdl-lg { max-width: 400px; }
+        }
+
+        /* ★★2026-10-20 用户反馈「数据管理说明的弹窗太大了，统一一下这种长弹窗的尺寸」——
+           实测折叠屏外屏（320×780 / 320×640）：mdl-lg 内容需 690px，落在 86vh 上限
+           ⇒ 占屏 **86%**、上下只剩 ≈55px，且内容溢出必须滚动（scrollH 690 > clientH 669）。
+           现代手机（390×844 / 412×915）内容自然高度仅 580/561px，占屏 69%/61%，不受影响。
+           ⇒ 长正文/说明类（mdl-lg：数据管理说明 / 隐私政策 / 免责声明 / 安全说明等）
+             统一收到 **72vh**，与里程碑一览、记录/详情弹窗口径一致（上下各留 ≈14%）。
+           ★只作用于 mdl-lg：mdl-sm/md 多为短确认与表单，内容自然高度本就低于 72vh，动它们无意义。
+           ★里程碑 `.ms-list-modal` 已是 72vh（双 class 特异性 0,2,0 更高），不受本规则影响。
+           ★与上方三档同特异性 → 靠"后出现者胜"覆盖，必须留在其后。 */
+        .confirm-modal-content.mdl-lg {
+            max-height: 72vh;
+        }
+
+        /* ★★2026-10-20 说明类长弹窗（数据管理说明 / 隐私政策 / 免责声明）收窄到 72vh 后，
+           实测「知道了」按钮会被滚出视野（数据管理说明全尺寸 BTN_HIDDEN；
+           隐私 / 免责在 320×640、375×667 等矮屏也 BTN_HIDDEN）—— 内容超长时按钮落在滚动区末尾。
+           ⇒ 改 flex 纵向布局：标题与按钮固定、内容区（message）吃满剩余空间并独立滚动，
+             按钮永远贴在弹窗底部可见。只挂 .doc-modal，不动记录/计划详情等 mdl-lg 表单
+             （它们的内容本身就是表单，结构不同，不能套 flex）。
+           ★隐私/免责 message 的内联 max-height:55vh 已在 JS 侧移除，改由 flex 自适应。 */
+        .confirm-modal-content.doc-modal {
+            display: flex;
+            flex-direction: column;
+        }
+        .confirm-modal-content.doc-modal > .confirm-modal-message {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+        }
+        .confirm-modal-content.doc-modal > .confirm-modal-title,
+        .confirm-modal-content.doc-modal > .confirm-modal-buttons {
+            flex: 0 0 auto;
+        }
+
+        /* ★★2026-10-17 用户反馈「记录的弹窗有点太大，缩小一点，快顶着屏幕上下」——
+           实测新建 / 编辑记录表单（内容高 607px）在各视口的占屏比：
+             390×844 → 71%（上下各留 122 / 120px，本就舒服，**未触限高**）
+             412×915 → 66%（158 / 156px，未触限高）
+             375×667 → **86%**（上下只剩 **48 / 47px**）← 用户说的"顶满"
+             360×640 → **86%**（上下只剩 **46 / 46px**）
+           根因即上面那条 `max-height: 86vh`：矮屏上表单被撑到上限 ⇒ 几乎满屏。
+           ⇒ 记录详情 / 计划详情（含各自编辑态表单）单独收到 **72vh**（与里程碑一览一致）：矮屏上下各留 ≈90px；
+             现代屏（≥844 高）内容本身低于此限，**观感与改前完全一致、不受影响**。
+           ★与上面 `.confirm-modal-content.mdl-lg` 同特异性 → 靠"后出现者胜"覆盖，必须留在样式表末尾。 */
+        .record-detail-modal .confirm-modal-content {
+            max-height: 72vh;
+        }
+
+        /* ★★2026-10-17 日期时间选择器「时 / 分」行 —— 极窄屏（≤360px）再收一档。
+           320px 屏上该弹窗内容区只有 236px，而基准档内容宽仍 272px ⇒ 会溢出。
+           这里缩数字宽 + 收紧间距，并用 `!important` 压掉按钮上的内联 `width/height:38px`
+           （内联样式优先级高于普通 class 声明，必须 !important 才压得住）。
+           收后内容宽 212px（320px 屏内容区 236）⇒ 左右各留 ≈32px，按钮不再贴边。
+           ★与上一条同理，靠"后出现者胜"，必须留在样式表末尾。 */
+        @media (max-width: 360px) {
+            .dtp-time-row { gap: 2px; }
+            .dtp-stepper { gap: 2px; }
+            .dtp-num { min-width: 30px; }
+            .dtp-time-row .icon-glass-btn {
+                width: 32px !important;
+                height: 32px !important;
+            }
+        }
+
+        /* ★★2026-10-19 「使用前请确认」弹窗中部空白过大（用户反馈）——
+           实测 390×844：「关于你的数据」正文末行 → 「请先阅读以下条款」标题共 **45px**（≈3.7 行），
+           拆解：正文行距余量 6 + 组 padding-bottom 9 + 组 margin-bottom 8 + 下组 padding-top 9 + 标题行高上半 10。
+           根因 = 两块都画成"灰底卡片"，上下各 9px 内边距 + 8px 外边距叠加，视觉上成了两个对峙的块。
+           修法：第二块「请先阅读以下条款」本质是链接列表、不是信息卡 ⇒ 去掉灰底与上下内边距，
+           只保留左右 10px 让它的文字与上面正文**左边对齐**。空白 45px → ≈27px。
+           ★不影响其余 27 处 .dmi-group（该 class 只用于法律类弹窗，见 app-data.js）。 */
+        .dmi-group.dmi-plain {
+            background: none;
+            padding: 0 10px;
+            margin-bottom: 0;
+        }
+        body.dark-mode .dmi-group.dmi-plain {
+            background: none;
+        }
+
+
+        /* ★★2026-10-19 里程碑一览弹窗「特别高」（用户反馈）：8 档里程碑 + 收集类子清单内容约 1045px，
+           落在 mdl-lg 的 86vh 上限上 ⇒ 三个屏实测都占屏 86%（844→726px / 667→574px / 932→802px），
+           上下只剩 ~47~65px，几乎顶满。这是纯阅读列表（内部 .ms-scroll 本就 overflow-y:auto），
+           没必要占这么高 ⇒ 单独限 72vh，上下留白翻倍，内容照旧可滚。
+           ★双 class 提特异性：.confirm-modal-content.mdl-lg 是 0,2,0，单 class 压不过它。 */
+        .confirm-modal-content.ms-list-modal {
+            max-height: 72vh;
+        }
+
+        /* ===== ★2026-10-23 灯箱底部按钮窄屏适配 =====
+           编辑态是四键（‹ 保存 删除 ›）：44+89+89+44 + 3×16 gap = 314px，
+           而 320 屏可用宽只有 288px ⇒ flex 会把按钮压扁（实测 rowW 被压到 189），文字挤在一起。
+           窄屏下收窄「保存/删除」左右内边距：44+65+65+44+48 = 266px < 288 ✓ 一行放下。 */
+        @media (max-width: 380px) {
+            #lb-save,
+            #lb-del {
+                padding-left: 16px !important;
+                padding-right: 16px !important;
+            }
+        }
