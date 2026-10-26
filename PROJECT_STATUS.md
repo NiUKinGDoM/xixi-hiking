@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-10-20（v1.2.4.8 / vc294）  
+> 最后更新：2026-10-26（v1.2.5.5.4 / vc307）  
 > ★**本版 v1.2.3.10**：折叠屏外屏（≤350px）设置页文字不再被挤成竖排（改「可换行」布局，控件自动落到下一行）；概览统计卡标签不再折行（「最高海拔」）；设置页「数据管理」不再重复显示账号邮箱。sw 缓存 v66。  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
@@ -533,6 +533,209 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - 【修复】**搜索框字号 14→16**（iOS Safari 聚焦放大页面）—— iOS 10+ 忽略 `user-scalable=no`，input <16px 聚焦会强制放大；记录表单早已全 16px，搜索框是唯一漏网。此改动随 app.css 整文件同步进入仓库（非独立 commit）。
 - 【验证】完整门禁 **926 / 0**（E2E 133/0、弹窗宽度守卫 41）；提交 `a66fa7c`（里程碑）+ `a724842`（表单）已推送。
 - 【方法论沉淀】「弹窗太高」先量「内容自然高度 vs max-height 是否触发」—— 触发→调限高；没触发→只能压内容（gap/行数/合并字段）。
+### v1.2.4.9 —— 记录/详情弹窗限高对齐里程碑 + 小日记恢复三行
+
+- 【优化】**记录详情 / 编辑弹窗限高 78vh→72vh**（用户「编辑记录弹窗和记录详情弹窗还是很大」）
+  - 上一版仅里程碑一览单独限 72vh，记录/详情弹窗仍 78vh 偏高 ⇒ 本轮统一到 72vh，与 `.ms-list-modal` 一致。
+  - 改 `.record-detail-modal .confirm-modal-content { max-height: 78vh → 72vh }`；内容（字段、gap 7px）保持不动。
+- 【优化】**小日记输入框恢复三行**（用户「恢复小日记的三行」）
+  - 上一版压缩弹窗时 textarea `rows 3→2`，两行太挤 ⇒ 恢复 `rows="3"`；`min-height:48px` 不动（rows=3 自然高 ~82px > 48px，显示三行无影响）。
+- 【验证】快速门禁 455 / 0（冒烟 32 / 弹窗宽度守卫 41 / 数据层 356 / 官网 Function 25 / 官网日志同步 1）。
+### v1.2.4.10 —— 支持作者三键对齐 + 山册连接图标对齐 + 抽屉山名标题
+
+- 【修复】**支持作者弹窗三键被挤成竖排**（用户「支付宝按钮里的字分成两行」）
+  - 根因：`.confirm-modal-buttons` 全局 `flex-wrap:wrap` + `.confirm-btn-cancel` 的 `min-width:96px!important` 挤占，「关闭」占 77px 不缩，微信/支付宝（`flex:1`）被压到 22~46px；中文 min-content=单字宽 ⇒「支付宝」竖排（按钮被撑到 95px 高）。
+  - 修法：按钮行加 `flex-wrap:nowrap`；微信/支付宝加 `white-space:nowrap`；关闭键内联 `min-width:0!important;padding:9px 12px!important`（77→49px）。
+- 【修复】**山册抽屉「连接」图标与文字错位**（用户「连接和它的小标志不在一行」）
+  - 实测 icon 674.5~692.5（18px）、文字 681.5~692.5（11px）底部对齐 ⇒ 图标顶部浮出 7px。根因 = inline + `vertical-align:-2px`。
+  - 修法：改 `display:inline-flex;align-items:center;gap:3px;line-height:1`，图标去 `vertical-align` ⇒ 中心差 0、按钮高 26→22px。
+- 【优化】**山册同时展开 ≥2 个抽屉时，下面的抽屉加山名标题**（用户「打开≥两个山册卡片时下面卡片都加标题」）
+  - 新增 `syncMtnDrawerTitles()`：按 DOM 顺序第 1 个打开的抽屉不加标题（紧贴卡头能对上），其余显示「序号 + 山名」。
+  - 新增 `.mb-drawer-title` + `.mb-drawer-seal`；连带补 `.mb-drawer > .mb-drawer-title + * { border-top:none }`（防新增标题后内容块顶部多一条分隔线）。
+- 【验证】全量门禁 926/0；图标中心差 0；双展开 太白 none / 朱雀 flex（「03 朱雀」）。
+### v1.2.5.0 —— 长说明弹窗统一收窄（72vh + 内容区独立滚动）
+
+- 【优化】**数据管理说明 / 隐私政策 / 免责声明等长弹窗统一 72vh**（用户「数据管理说明的弹窗太大了，统一一下这种长弹窗的尺寸」）
+  - 根因：mdl-lg 内容需 690px，落在 86vh 上限 ⇒ 折叠屏外屏（320×780）占屏 **86%**、上下仅剩 ≈55px 且内容溢出。
+  - 修法：`.confirm-modal-content.mdl-lg { max-height:72vh }`；mdl-sm/md 不动（内容自然高本就低于 72vh）。
+- 【修复】**收窄后按钮被滚出视野**（自测 12 档屏发现：数据管理说明全尺寸 BTN_HIDDEN，隐私/免责在 320×640、375×667 也 BTN_HIDDEN）
+  - 新增 `.doc-modal` flex 纵向布局：title/buttons `flex-shrink:0`，message `flex:1 1 auto;min-height:0;overflow-y:auto` ⇒ 内容区独立滚动、按钮固定弹窗底部。
+  - 隐私/免责 message 的内联 `max-height:55vh` 移除（改由 flex 自适应）；仅挂这三个说明弹窗，不涉记录/计划详情表单。
+- 【例外】**使用前请确认（showLegalConsentModal）保留 86vh** —— title + message(55vh) + 按钮(86px) 在 72vh 下会把按钮滚出，首次开箱必经流程按钮必须可见。
+- 【验证】12 档竖屏（320×640 → 884×1104）说明类全无 BTN_HIDDEN、均 ≤72%；深色模式一致；mdl-sm 短弹窗仍 86vh / 24% 未被波及；全量门禁 926/0。
+### v1.2.5.1 —— 弹窗按钮字号/居中统一 + 极窄屏与横屏按钮可见性修复
+
+- 【优化】**弹窗按钮字号 16→15px、行高 1.6→1.2、上下 11/9 微调**（用户「有些按钮的字不在正中间，而且太大」）
+  - 原 16px + 继承 line-height 25.6px ⇒ 按钮撑到 48px、宋体汉字墨迹重心偏上（几何 dy -0.5px 看着仍偏上）。
+  - 修后按钮 40px、dy +0.4px（视觉居中）。
+- 【优化】**独立全宽按钮一并统一**（导出 / 导入 / 管理备份 / 选择备份文件 —— 不在 `.confirm-modal-buttons` 容器里）
+  - 原继承 16px，取消键为 `inline-block`、文字偏上 0.6px；改后代选择器 15px + 直接子 `display:flex` 垂直居中。
+- 【优化】**支持作者微信/支付宝按钮** 16→15px、padding 9px→11/9，与弹窗按钮同高 40px。
+- 【修复】**极窄屏两键竖排**：`@media (max-width:360px)` 按钮左右 padding 24→15px ⇒ 320/344（Z Fold6 外屏）/360 两键由 107px 竖排回到 48px 一行（三键仍按设计 wrap）。
+- 【修复】**同意弹窗在矮屏/横屏按钮被滚出**（Pura X View 横持 638×377 实测 BTN_HIDDEN）：挂 `.doc-modal` flex + 移除 message 内联 55vh ⇒ 内容区独立滚动、按钮固定底部；附带正常竖屏正文可整段显示不再滚。
+- 【验证】12 个弹窗按钮全部 15px、标题 20px / 正文 16px 一致；流畅度 60fps / 0 长任务；全量门禁 **926/0**；E2E 基线定性后刷新并复跑 133/0。
+### v1.2.5.2 —— 按钮内文字墨迹精确居中（修正上一版补偿过头）
+
+- 【修复】**弹窗按钮内文字偏下 1px**
+  - 上一版为「宋体视觉重心偏上」擅自加 `padding: 11px 24px 9px`；canvas measureText 实测宋体「取消」墨迹 asc13/desc1，本就该居中 ⇒ 那 1px 反而压到偏下（墨迹中心 21.00 vs 按钮中心 20.00）。
+  - 改回对称 `padding: 10px 24px 10px` ⇒ 墨迹偏差 **0.00px**。
+  - 连带「支持作者」微信/支付宝 `padding:10px 0`、关闭键 `10px 12px`（三键仍同高 40px）。
+- 【修复】**概览 / 热力图「选择年月」弹窗的年份、月份格子文字偏上 0.7px**
+  - `.hmyp-yr` / `.hmyp-m` 原 `display:block` + `line-height:1.6`（20.8px）⇒ 改 `flex` 居中 + `line-height:1.2` ⇒ 偏差 **0.00px**。
+- 【说明】**遮罩与弹窗底色未改动**：`.confirm-modal` 0.3 / `.confirm-modal-content` rgba(255,255,255,0.08) / 原 shadow 全部保持原值（上一轮误改已还原）。
+- 【验证】全量门禁 **926/0**；按钮与年月格子墨迹偏差均 0.00px。
+### v1.2.5.3 —— 代码结构重构（app-data 拆 6 文件 / toast 合并）+ 可访问性与可读性修复
+
+- 【重构】**app-data.js 5464 行 → 6 个文件**（纯物理切分，全局作用域与加载顺序不变）
+  - `app-data.js` 423（数据层/记录/表单/里程碑/搜索）、`app-data-detail.js` 566（阅读态详情）、`app-data-lightbox.js` 1662（灯箱+分享卡+政策正文）、`app-data-heatmap.js` 283（热力图）、`app-data-plans.js` 1623（计划+日历）、`app-data-plan-detail.js` 905（计划详情）。
+  - **同步 19 处清单**：index.html / sw.js CORE_ASSETS / security.js（HASH_FILES + **BUSINESS_JS 混淆清单**）/ prev-snapshot / ghsync / release / versiondiff / rollback / test.js（4 类 14 处）/ test-ui / _test_p0p3 / _test_batch3 / audit / deepcheck / ioscheck / map / modalwidth / verify-apk / siteaudit / siteshots / legalgen / e2e/run。
+  - 读取源码做断言的工具（LEGAL_VERSION、政策正文）改为**拼接 6 个 data 文件**，后续再挪位置也不会断。
+- 【重构】**三处 toast 合并**为 `_createToast()` + 三个薄封装（error/info/success 行为、图标、时长、同类去重全不变），app-core.js 净减 83 行。
+- 【优化】**弹窗底色 0.08 → 0.15**（浅色；深色 32% 深蓝不变）——浅色概览页上弹窗不再近乎全透明。
+- 【优化】**FPS 显示默认关闭**（`showFps=false` + 去掉 HTML `checked`）；偏好键只在手动切换时写入，从没动过的用户自动跟随新默认。
+- 【无障碍】**toast 补 `role`/`aria-live`**：错误 alert+assertive、提示/成功 status+polite，均 aria-atomic（原先全站 0 处，读屏完全不播）。
+- 【可读性】**小字对比度 2.56 → 4.76**（`#94a3b8` → `#64748b`，6 处：引导底注/照片占用/山册连接/暂无记录与计划）。**注意 `body.dark-mode` 下的 22 处 `#94a3b8` 是浅色字，未动**。
+- 【触控】**5 个关闭键 22×22 → 38×38+**（`padding:10px;margin:-8px`，视觉位置不变）、搜索框 26→36px、山册连接键 2→6px padding。
+- 【清理】删掉 9 个按钮身上被 `!important` 全覆盖的冗余内联（-1149 字节，渲染零变化）；补齐 `prev-snapshot` 提示文字为动态计数。
+- 【测试】**E2E 视觉回归加固**：截图前 `document.fonts.ready`（图标字体晚到会让图标退化成文字）+ `animations:'disabled'`（冻结动画，不再赌 650ms）；连续 8 次运行全绿。
+- 【验证】全量门禁 **926/0**；切页帧率 60fps（设置页首次 77ms，一次性成本）；12 个弹窗字号统一（标题 20 / 正文 16 / 按钮 15）。
+### v1.2.5.4 —— 远程配置全面接入（A/B/C 三类）+ 省电模式
+
+- 【新增】**省电模式**（`body.power-save`）：停 aurora 三个 70vw 渐变圆的无限动画 + 停 `will-change` + 停 `.tab-page`/`.page-transition` 转场。**刻意保留 `backdrop-filter`**（静态模糊不耗电，玻璃质感不能砸）。实测动画 27→19、will-change 10→7。开关在设置页，偏好写 `hiking_power_save`（`'1'`/`'0'`，未写 = 跟随远程 `powerSaveDefault`）。
+- 【新增】**远程公告** `renderRemoteNotice()`：`{ id, text, url, urlText }` 渲染到 `#tab-overview` 顶部，关闭后把 id 写 `hiking_notice_closed`（同 id 不再出现，空 id 完全不显示）。**文本走 `textContent`、url 只收 http(s)、同窗口跳转**（WebView 对 `target=_blank` 不稳）。
+- 【新增】**诊断卡** `renderDebugCard()`：`debugInfo: true` 时在 `#tab-settings` 顶部插只读卡（版本/记录/计划/存储/错误数），每项独立 `try`，取不到就少一行，绝不拖垮设置页。
+- 【重构】**RemoteConfig 补类型安全读法**：`num(key, fallback, min, max)` / `bool()` / `text()`。配置是公开文件 ⇒ 按不可信输入处理，越界夹紧、类型错回退（实测 `999→50`、`5→0.95`、`"abc"→20`）。
+- 【改造】A 类调用点：`compressImage` 读 `photoMaxSide`/`photoQuality`；`RECORD_PAGE_SIZE`/`SYNC_MAX_FILES` 的 10 处用法改为 `getPageSize()`/`getSyncMaxFiles()`（**保留原 const 作为默认值**，不改结构）；WebDAV 超时改 `davTimeoutRead`/`davTimeoutWrite`。
+- 【改造】C 类文案：`applyRemoteTexts()` 覆盖 `welcome.title/sub/where` + `empty.records/plans`。**没配就一个字节都不动**（首次把原文存 `data-rc-orig`，撤掉配置能还原）；只在文本真的不同时才写 DOM ⇒ E2E 视觉基线无差异。
+- 【新增】**`AppState` 命名空间**（`powerSave`/`noticeId`/`debugInfo`）—— 落实「新功能一律 AppState.xxx、老代码原样不动」的约定。
+- 【控制面板】**`functions/config.js` 升 v2**，把 A/B/C 全部 key 连注释写进去，以后只改这一个文件 + push。
+- 【坑】**图标字体是子集化的（128KB / 26 字形）**：新增 `battery_saver`/`campaign` 会显示成方框 ⇒ 省电模式复用 `brightness_auto`、公告复用 `info`。
+- 【验证】全量门禁 **926/0**；A/B/C 九项行为实测（默认值/注入/越界/省电开关/公告渲染与 XSS/空 id/诊断卡/文案覆盖与还原）全对；设置页 10 项高度 75px 统一、title 15 / desc 12。
+### v1.2.5.5 —— 省电模式补上关毛玻璃 + 用户文案改说人话
+
+> 内部技术记录。用户可见文案在 `app-core.js` 的 `BUILTIN_CHANGELOG`（说人话、只写可感知内容）。
+
+- 【纠正】**省电模式首版擅自缩水**：用户对 B1 的要求原文是「一键关掉 aurora 光斑动画 + backdrop-filter」，首版只停了动画，还在注释与更新日志里把「玻璃质感没改」写成优点。
+  - 现在补上：`body.power-save *, *::before, *::after { backdrop-filter: none !important; }` —— 实测模糊元素 **24 → 0**。
+- 【补偿】关掉模糊后不能靠模糊糊背景，改用不透明度：
+  - `body.power-save { --glass-alpha: 0.85; --glass-alpha-tabbar: 0.85 }`（默认 0.10，各元素再乘 0.4~1.1 系数）
+  - `.confirm-modal-content` 0.15 → **0.92**（深色 0.94）—— 它是固定值不走变量
+  - `.bottom-tabbar` 0.2 → **0.86**（深色 0.90）—— 同样是硬编码，**只补浮层，页面内 `.glass-panel` 0.05 保持低透**（有 1px 边框分界，拉实反而失层次）
+  - `.toast-glass` → 0.92 深底
+- 【补漏】**C 类 toast 文案**（首版只做了引导卡与空状态，漏了关键 toast）：`toast.needBind` / `toast.badCloudFile` / `toast.backupOk` / `toast.saveFail`，共替换 **10 处**（app-sync 4+2+1、app-data-lightbox 3）。只接纯静态文案，带变量拼接的（如 `'备份已导出：' + fileName`）不动。
+- 【修 bug】`sitechangelog.js` 的 `items.filter(x => x.t === 'li')` 把【新增】/【优化】分类全过滤掉（文件头注释承诺「作为该版块小标题」但从未渲染）⇒ 官网每版都是平铺。改为按序渲染 `<li class="rel-sec">`，并在 `site/assets/site.css` 补样式（10px / letter-spacing .22em / accent 色 / 去掉圆点）。
+- 【文案】**BUILTIN 重写为日常口语**：剔除「接口 / 安装包 / 每页几条 / 同步保留几条 / 超时秒数」等技术表述，只留用户能感知的结果；v1.2.5.4 的历史条目一并改写（弹窗会显示最近 3 版，旧文案同样会被看到）。
+- 【验证】模糊 24→0、弹窗底色 0.92、底栏 0.86；全量门禁待跑。
+### v1.2.5.4（同号修正重发）—— 远程配置 A/B/C 全面接入 + 省电模式（含关模糊）+ 用户文案改说人话
+
+> 内部技术记录。用户可见文案在 `app-core.js` 的 `BUILTIN_CHANGELOG`（日常口语，只写可感知内容）。
+
+- 【新增】**远程配置 A/B/C 全面接入**（改造前已在 v1.2.5.3 之后成型，本版才进 APK）
+  - A 类数值：`photoMaxSide` / `photoQuality` / `pageSize` / `syncMaxFiles` / `davTimeoutRead`·`Write` / `hapticDefault` / `fpsDefault`。
+    实现方式一律「保留原 const 做默认值 + 函数式读取」：`getPageSize()`（替换 app-data.js 5 处 + app-data-plans.js 5 处）、`getSyncMaxFiles()`（app-sync 1 处）、`getPhotoOpts()`（compressImage）。
+  - B 类：`powerSaveDefault`（省电模式）、`notice{id,text,url,urlText}`（公告卡）、`debugInfo`（诊断卡）。
+  - C 类：`text{welcome.title/sub/where, empty.records/plans, toast.needBind/badCloudFile/backupOk/saveFail}`。
+  - `RemoteConfig` 补 `num/bool/text`（带默认值与夹紧，配置按不可信输入处理）；实测 `pageSize:999→50`、`quality:5→0.95`、`syncMaxFiles:"abc"→20`。
+- 【新增】**省电模式**（`body.power-save`）：停 aurora 无限动画 + 停 `will-change` + 停 `.tab-page/.page-transition` 转场 + **关全站 `backdrop-filter`**（通配 + 伪元素）。
+  - **★关模糊的代价与补偿**（首版漏了这条，被用户指出「文案里把没做说成优点」）：模糊没了，半透明背景必须改由不透明度承担可读性 ——
+    - `body.power-save { --glass-alpha: 0.85; --glass-alpha-tabbar: 0.85 }`（默认 0.10，元素再乘 0.4~1.1）
+    - `.confirm-modal-content` 0.15 → **0.92**（深色 0.94）、`.bottom-tabbar` 0.2 → **0.86**（深色 0.90）、`.toast-glass` → 0.92 深底
+    - 页面内 `.glass-panel`（0.05）**保持低透**：有 1px 边框分界，拉实反而失层次
+  - 实测：模糊元素 **24 → 0**；动画 27→19；`will-change` 10→7。
+- 【新增】**远程公告** `renderRemoteNotice()`：插到 `#tab-overview` 顶部；空 `id` 完全不显示；关闭写 `hiking_notice_closed`；文本走 `textContent`（实测 `<b>` 不被解析）、url 只收 http(s)、同窗口跳转。
+- 【新增】**诊断卡** `renderDebugCard()`：`debugInfo:true` 时在 `#tab-settings` 顶部插只读卡（版本/记录/计划/存储/错误数），每项独立 try。
+- 【新增】**平台能力检测 `Caps` + `hideUnsupportedSettings()`**：iOS 网页隐藏「震动反馈」（iOS 全系 WebKit，无 `navigator.vibrate`）与「检查更新」（装不了 APK）。**判定必须叠加 `!isIOS`** —— 桌面 Chromium 有 `navigator.vibrate`，只靠能力检测会误判。`iPadOS 13+` 用「MacIntel + maxTouchPoints>1」识别。只改 `display:none`，元素留 DOM。
+- 【新增】**`AppState` 命名空间**（`powerSave`/`noticeId`/`debugInfo`）—— 落实「新功能一律 AppState.xxx」。
+- 【修 bug】`sitechangelog.js` 的 `items.filter(x => x.t === 'li')` 把【新增】/【优化】分类全过滤（文件头注释承诺「作为小标题」但从未渲染）⇒ 官网每版平铺。改为按序渲染 `<li class="rel-sec">` + `site/assets/site.css` 补样式。
+- 【工具】`e2e/inspect.js` 支持 `--ua`。★Playwright **没有 `page.setUserAgent`**（那是 Puppeteer），UA 只能在 `newContext` 传。
+- 【控制面板】`functions/config.js` 升 **v2**，A/B/C 全部 key 连注释写入，以后只改这一个文件 + push。
+- 【坑】**图标字体是子集化的（128KB / 26 字形）**：新增 `battery_saver`/`campaign` 会显示成方框 ⇒ 省电复用 `brightness_auto`、公告复用 `info`。
+- 【验证】全量门禁 **926/0**；设置页 8 项高度统一 75px、title 15 / desc 12；iOS 隐藏后 7 项间距与桌面完全一致（10px 无空洞）。
+### v1.2.5.4.1 —— 重发号版本：省电模式视觉修正 + 新增主题×省电矩阵检查
+
+> **★新版本号规则（用户 2026-10-23 定）**：同号重发不再保持四段不变，而是在版本号上**再补一位**：
+> `1.2.5.4 → 1.2.5.4.1 → 1.2.5.4.2 …`（第五段 = 重发序号，1~10）。
+> 好处：App 内「检查更新」能正常提示（版本号不同了），不必再手动覆盖安装；官网/Release 也能一眼看出「这是重发过的新包」。
+> 正常升号仍是四段（`1.2.5.4.1 → 1.2.5.5`，第五段自然归零）。
+
+- 【修复】**省电模式的三处视觉错误**（此前连着三次被用户打回）：
+  1. **深色下卡片发白** —— 首版把 `--glass-alpha` 从 0.10 提到 0.85，而它是**浅/深共用白色系**（元素再乘 0.4~1.1）⇒ 深色 `.settings-item` 变 34% 白、`.glass-panel` 变 51% 深白 = 灰白块。**已恢复变量不动，改为逐元素补浮层。**
+  2. **深色下时光机看不清** —— 同源问题：时光机就是 `.glass-panel`，被上面的白色覆盖压成灰白。随变量恢复而解决。
+  3. **浅色省电下弹窗「不是标准弹窗颜色」** —— 首版把弹窗底 0.15 提到 0.92 白（弹窗底 0.15 是「精调到合成色 ≈ #B8B8B8」的结果，文字色阶全按它算过）。中间又试过「0.46 + 加强遮罩」，但**没有模糊时半透必然穿透**（截图实证：设置页文字整片浮在弹窗上）。**最终取接近不透明的页面同色系实底**：浅 `rgba(247,249,252,0.99)` / 深 `rgba(22,32,50,0.99)`，弹窗内 `.dmi-group`/`.dmi-plain` 一并改实。
+  4. **深色残留 7 处模糊** —— 深色玻璃规则 `body.dark-mode .x{…!important}` 的 specificity 是 **0,2,1**，`body.power-save *`（0,1,0）压不过 ⇒ 补 `body.dark-mode.power-save *` 变体。
+- 【新增】**`tools/themecheck.js`（13 项，已进 `checkall.sh` fast + full 两处）**：
+  四组合（浅/深 × 省电关/开）各测一遍，断言「省电开模糊数=0」「省电开关不改变卡片/设置项底色」「省电开弹窗 alpha≥0.95」「省电关弹窗仍是 0.15/0.32」「弹窗内文字对比度（浅≥4.0 / 深≥3.0）」。
+  **★根因**：原 E2E 只在「默认状态（浅色 + 省电关）」截图，`power-save` 在 `e2e/run.js` 里出现 **0 次** —— 新功能的视觉零覆盖，这才是「926 项全绿却什么问题都发现不了」的真正原因。
+- 【工具】**版本号体系支持第五段**：`bump.js` 加 `--resend`（4 段→`.1`，5 段→`.n+1`；不带参数则正常升第四段并丢弃第五段）；`docaudit.js` / `ioscheck.js` 的四段硬正则改为可选的第五段（否则 5 段会被截断误报）。
+- 【验证】门禁待跑；实测省电模式：动画 27→19、willChange 10→7、模糊 24→0、切页 5/6/0/0ms。
+### v1.2.5.5 —— 移除省电模式 + 修复深色时光机山名 + 主题检查改造
+
+> 内部技术记录。用户可见日志只写「修复深色时光机山名」，不体现省电（用户要求彻底抹掉）。
+
+- 【移除】**省电模式全量删除**（用户原话：「删掉省电模式所有内容，你指望打开它省多少电？」）
+  - `www/index.html` 开关块、`www/app.css` 整个 `body.power-save` 块、`www/app-core.js`（`AppState.powerSave` / `POWER_SAVE_KEY` / `applyPowerSave` / `loadPowerSavePref` / `togglePowerSave`）、`www/app-init.js` 三处（启动同步 / 远程跟随 / 开关绑定）、`functions/config.js` 的 `powerSaveDefault`。
+  - 全站 grep `powerSave` / `power-save` / `省电模式` = **0**（仅剩历史遗留的「切后台暂停动画」是另一功能，保留）。
+  - 删除后玻璃模糊、动画等恢复全站默认常开。
+- 【修复】**深色时光机山名看不见**：`renderOnThisDay()` 的渲染指纹只含「日期+记录数+最新修改时间」，**不含主题** ⇒ 切到深色后指纹不变、直接 return 不重渲染 ⇒ 山名保留浅色下的深色字（#0f172a）在深色背景上不可见。指纹追加 `isDarkNow`，并复用同一变量给 `dark`。
+- 【改造】**`tools/themecheck.js`**：从「主题×省电矩阵（13 项）」改为「浅/深双主题（8 项）」——省电维度删除，保留「弹窗底原值 0.15/0.32」「玻璃模糊生效」「弹窗文字对比度（浅≥4.0/深≥3.0）」「卡片/设置项底色未被误清」。
+- 【日志清理】**BUILTIN**：`v1.2.5.4` 条目删「省电模式」新增条；`v1.2.5.4.1` 条目**整条删除**（三条修复全是省电相关，功能删了就无意义）。
+- 【验证】门禁待跑。
+### v1.2.5.5.1 —— 照片灯箱：位置下移 + 切换不再抖动 + 全尺寸适配
+
+> 重发号版本（第五位）。用户反馈：「山名和叉号太高了」「保存和左右切换键也调一下」「照片切换时有时候会抽搐」「适配所有尺寸机型」。
+
+- 【调整】**灯箱上下留白 28px → 48/44px + safe-area 兜底**
+  - 原 `padding: 28px 16px` ⇒ 标题距顶 34、按钮距底 28，在真机上正落进状态栏（~40-50）与手势条（~24-34）区域。
+  - 改为 `calc(48px + env(safe-area-inset-top, 0px)) 16px calc(44px + env(safe-area-inset-bottom, 0px))`：headless 实测顶部 54 / 底部 44，真机再自动叠加安全区。
+- 【修复】**切换照片时「抽搐」** —— 三个根因：
+  1. **主因**：`img` 用 `flex:1 1 auto`，flex-basis:auto ⇒ 基准 = 图片固有尺寸，竖图/横图比例不同 ⇒ img 盒子高度变化 ⇒ 容器 `justify-content:center` 重排 ⇒ **标题与底部按钮上下跳**。改为 `flex:1 1 0`（基准 0，高度完全由 flex 分配）+ `width:94%` + `object-fit:contain` ⇒ 图片盒子恒定，只有内容按比例缩放。
+  2. 缓存未命中时 `opacity:0.3` 硬切回 1 ⇒ 闪一下。改 0.55 + `transition:opacity .18s`。
+  3. 缩放未重置会残留 transform —— 已有 `lbResetZoom()`，确认保留。
+  - **实测**：320/390 两档下竖图→横图→方图连续切换，标题 top 恒 54、按钮 top 恒定、图片区尺寸恒定。
+- 【修复】**四键窄屏被压扁**：编辑态 `‹ 保存 删除 ›` = 44+89+89+44 + 3×16 = **314px**，320 屏可用仅 288 ⇒ flex 压缩（实测 rowW 被压到 189）。加 `@media (max-width:380px)` 把「保存/删除」左右内边距 28→16 ⇒ **266px 一行放下**。
+- 【适配】10 档实测（320×480 / 320×568 / 320×780 / 360×640 / 360×780 / 375×667 / 390×844 / 412×915 / 430×932 / 638×377 横屏）：标题 top 恒 54、按钮距底恒 44、无横向溢出、图片按屏高自适应。
+- 【微调】灯箱底色 0.93 → 0.96（0.93 时底层引导卡文字隐约可见；像素实测亮度已降至 7）。
+### v1.2.5.5.2 —— 重构发布（用户可感知变化 = 0）
+
+> 用户指令「发」。本次为纯内部重构，**没有任何用户可感知的变化**，BUILTIN 只写一句「界面和操作完全没变」。
+
+- 【拆分】**app.css 6300 行 → 3 个文件**（保序切分，非按功能抽取）：
+  - `app.css` 2407 行（基础：变量/重置/布局/导航/卡片/列表）
+  - `app-modal.css` 2585 行（弹窗与浮层）
+  - `app-form.css` 1323 行（表单细节 + **末尾覆盖层，必须最后引入**）
+  - **为什么保序**：弹窗/表单规则在原文里交错，按功能抽取会改变跨文件顺序、破坏级联（末尾「弹窗尺寸档位」是刻意后置覆盖）。切分点 2400/4980 均校验括号深度=0。
+- 【同步】**13 个文件 / 29 处引用**：`index.html`（引入顺序不可调换）、`sw.js`（CORE_ASSETS + CACHE_NAME v91）、**4 个读源码工具改为拼接全部 CSS**（`test.js` readPage / `audit` / `deepcheck` / `map`，否则拆出去的部分全部漏检=假绿）、6 个同步/安全清单（`ghsync` / `release` / `versiondiff` / `prev-snapshot` / `security` HASH_FILES / `rollback`）。
+- 【扩展】**`tools/themecheck.js` 8 → 57 项**：A 段主题弹窗基准 9 项；B 段 **4 页面 × 4 尺寸**（320×568 / 360×780 / 390×844 / 412×915）× 3 项（无横向溢出 / 底栏在视口内 / 卡片已渲染）。
+  - **两个假红陷阱已处理**：① `.material-icons` 是 ligature 文本会被当文字算对比度 ⇒ 必须排除（WCAG 图标只需 3:1）；② 页面级对比度只输出信号不做断言（整页必含图标与 `text-white/50`）。
+- 【验证】门禁 **983/0**；E2E 133 项 + 10 张视觉基线**零差异**；验包 **14/14**（**ResGuard 15 → 17 项**，自动覆盖新增 2 个 CSS）；APK 内 3 个 CSS 字节与源文件一致（102154 / 99295 / 46401）。
+- 【文档】详见 `.workbuddy/memory/2026-10-25.md` 与 `MEMORY.md`（含构建目录 junction 陷阱）。
+### v1.2.5.5.3 —— 修「记一笔」快捷方式 + 通知入口常显
+
+> 用户：「桌面长按软件出来的记一笔，还是跳不到编辑新增弹窗那一步」+「你说的要开通知权限，也把开关加到我的页面，让我们有地方点」。
+
+- 【修复】**桌面快捷方式「记一笔」热启动无反应**
+  - **根因**：`MainActivity.onNewIntent()`（App 已在后台时点快捷方式走这条路）只把动作存进 `pendingNotifyAction`，**没有通知 WebView 去消费**；原来只能等 `visibilitychange` 触发，而部分机型从桌面 shortcut 唤起时**不触发 visibilitychange** ⇒ 动作一直躺着、弹窗永不出现。
+  - **修法**：新增 `evalConsumeNotifyAction()`，在 `onNewIntent` 里主动 `evaluateJavascript` 调 `window.__consumeNotifyAction()`（与 `onResume` 同款手法；JS 侧幂等，重复调用无副作用）。
+- 【修复】**通知入口改为常显**
+  - 排查中发现：`#notifyPermItem` 的 JS 实现（`app-sync.js` 的 `refreshNotifyPermRow()`）**其实早就完整**（查权限 / 点击跳系统设置 / visibilitychange+pageshow+resume 三重监听）。我一度重复实现了一份 `refreshNotifyPermItem`，已**回滚**。
+  - **真问题是设计**：原实现 `el.style.display = granted ? 'none' : 'flex'` —— **权限一开整行就消失**，用户想主动查看/修改无处可点。
+  - **改为常显 + 状态化**：未开 → 橙色 `notifications_off` +「通知权限未开启」+「点这里去系统设置开启…」；已开 → 绿色 `notifications` +「通知已开启」+「计划提醒、备份提醒会正常弹到通知栏」。点击一律跳系统通知设置。网页版无桥 → 仍然隐藏。
+  - 图标只用子集内已有字形（`notifications` / `notifications_off` 均在用），不引入新字形。
+- 【顺带】`app-init.js` 的 `switchTab` 里补一次刷新（切到设置页时重查，权限可能刚在系统设置里被打开）。
+- 【验证】浏览器模拟原生桥三态实测：无桥隐藏 ✅ / 未授权常显橙色 ✅ / 点击触发 `openNotificationSettings` ✅ / 已授权常显绿色 ✅。原生路径（intent）无法在浏览器验证，需真机确认。
+- 【注意】本次改了 `MainActivity.java` → **必须重新构建 APK**。
+### v1.2.5.5.4 —— 清理更新日志里的无信息条目 + 确立文案纪律
+
+> 用户：「你还是老毛病，在打开应用后自动弹窗的更新内容里，还是写了一堆没用的工程类说明，都不要了。」
+
+- 【清理】**删除 v1.2.5.5.2 条目** —— 原文是「界面和操作完全没变 —— 这次只是把底子理顺了一遍」，属纯工程说明、零信息量，正是用户指的废话。
+  - 删除后弹窗（固定显示 3 条）依次为 **v1.2.5.5.3（记一笔/通知入口）/ v1.2.5.5.1（灯箱位置与抖动）/ v1.2.5.5（时光机山名）** —— 全是真实可感知变化。
+- 【规则】**BUILTIN 文案纪律（写入 MEMORY）**：
+  1. 只写**用户能看见/感受到**的变化；重构、工具、门禁、文档、断言…一律不写。
+  2. **纯内部改动如果没有可感知变化，就不要写条目**（弹窗自然显示上一版历史，`start<0` 逻辑已验证可接受，门禁不报错）。
+  3. 本版条目写的是**规则承诺**（以后的更新说明不再夹带技术细节），不是"我做了什么"。
+- 【连带发现】**官网首页版本号取的是 BUILTIN 第一条**（`sitechangelog.js` 的 `versions[0]`）⇒ 如果当前版本没有条目，官网会显示成上一版号、与实际 APK 不一致。所以「不写条目」只适用于**紧随其后的下一版**，正式发版仍须有条目。
+- 【验证】门禁待跑。
 - **正式版 v1.2.3.7（vc282）** —— 折叠屏【外屏】窄屏适配（≤350px：底栏收窄 302→198px / 概览矮卡 3 列→1 列 / 标题与同步文案允许折行 / 整页横向溢出归零）（2026-10-09）
   - **用户指令**：「能否适配一下折叠屏外屏？外屏一般比较窄，app 里的字会显示不全，显示...」→ 随后「发」（并明确选择**升号**发布）。
   - **★升号判定**：外屏适配改了用户可见的排版行为（窄屏下底栏/矮卡/标题布局变化）→ 不适用「同号修正重发」，按常规**升号** v1.2.3.6 → **v1.2.3.7**（vc281 → vc282）。
