@@ -1,3 +1,18 @@
+/* ===== ★2026-10-26 全局收敛：本文件函数已包进 IIFE =====
+   本文件顶层函数 8 个，其中 5 个仅本文件使用 → 已成为文件私有；3 个跨文件/测试需要 → 导出到 window。
+   顶层变量 3 个**保持全局**（不放进 IIFE）——变量会被跨文件或本文件重新赋值，
+   放进 IIFE 会导致 window 副本与局部变量脱钩（v1 实测：msCelebrateQueue 队列长度恒为 0）。
+   ★正文缩进保持不变：tools 下多个脚本按源码正则匹配。
+   ★不包 IIFE 的文件：app-core.js、app-data-plans.js（变量被跨文件赋值）。 */
+var hmYear;
+var hmBound;
+var heatmapCache;
+
+(function () {
+/* ---- 函数导出（hoist 生效，勿删）---- */
+window.openHmYmPicker = openHmYmPicker;
+window.initHeatmap = initHeatmap;
+window.renderHeatmap = renderHeatmap;
 // ============================================================================
 // 徒步足迹热力图（年月选择 / 日历式月视图 / 渲染缓存）
 // ★2026-10-22 从 app-data.js 按功能边界拆出（原 5464 行单文件 → 6 个文件）。
@@ -6,9 +21,9 @@
 
 // ===== 徒步足迹热力图（v1.0.7.7：红色渐变 + 年月可选 + 日历式月视图） =====
 // ★2026-09-03 难度分布卡已删除 → ensureOverviewLayout 整段移除（原负责把热力图卡插到难度分布卡前）
-let hmYear = 0, hmMonth = 0;
+hmYear = 0, hmMonth = 0;
 // ★2026-08-11 热力图事件只绑定一次（initHeatmap 会被多次调用：初始化 + 底栏刷新重置）
-let hmBound = false;
+hmBound = false;
 function updateHmYmBtn() {
     const t = document.getElementById('hmYmText');
     if (t) t.textContent = (hmYear ? hmYear : '—') + '年' + (hmMonth ? hmMonth : '—') + '月';
@@ -138,7 +153,7 @@ function getRecordMonths(year) {
 }
 
 // ★2026-08-27 热力图渲染缓存：key = 年月+数据指纹（记录变才重建，重复进入秒开）
-let heatmapCache = {};
+heatmapCache = {};
 // ★2026-09-05 P0-4 月度聚合桶：单次全量遍历把「每天次数 + 当月爬升」按年月分桶，任意月 O(1) 读取（切月/汇总不再全量扫 records）
 let hmMonthAgg = null;   // { fp, buckets: { 'y_m': { days:{}, n, climb } } }
 function renderHeatmap() {
@@ -286,3 +301,4 @@ modal.innerHTML = '<div class="confirm-modal-content modal-fade-scale mdl-md">' 
     document.getElementById('hm-close').addEventListener('click', function () { document.body.removeChild(modal); });
     modal.addEventListener('click', function (e) { if (e.target === modal) document.body.removeChild(modal); });
 }
+})();

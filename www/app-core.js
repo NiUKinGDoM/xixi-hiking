@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.5.5.5': '【优化】\n- **出问题时，设置页会自己冒出一块提示** —— 里面记着最近出过什么错；点「导出诊断信息」就能把完整记录导出发我，不用再靠你口头描述现象。\n\nMade by XiXi 💛',
     'v1.2.5.5.4': '【优化】\n- **更新说明以后只写你看得见的变化** —— 不会再夹带那些你根本不关心的技术细节了。\n\nMade by XiXi 💛',
     'v1.2.5.5.3': '【修复】\n- **桌面长按 App 的「记一笔」点了没反应** —— 现在能直接打开新增弹窗了。\n- **通知设置随时都能点到了** —— 以前只有没开通知时才显示那一行，开了反而找不到；现在设置页常驻这一项，能看到当前开没开，点一下直接跳到系统设置。\n\nMade by XiXi 💛',
     'v1.2.5.5.1': '【修复】\n- **看照片时标题和关闭键太靠上、底部按钮太靠下** —— 都往中间收了收，现在不会被手机顶部的状态栏和底部横条压住。\n- **翻上一张下一张时画面会抖一下** —— 照片的显示区域现在是固定大小，切图时标题和下面的按钮不会再跟着上下跳了。\n- **删除键一出现，底部按钮会挤在一起** —— 窄屏下自动收窄，四个键能排开了。\n\nMade by XiXi 💛',
@@ -296,7 +297,7 @@ window.__diagLogs = [];
             var last = q[q.length - 1];
             if (last && last.msg === msg && (Date.now() - (last.ts || 0)) < 60000) return;
             q.push({ ts: Date.now(), t: new Date().toLocaleString(), msg: String(msg).slice(0, 500) });
-            if (q.length > 20) q.shift();
+            if (q.length > 50) q.shift();   // ★2026-10-26 20 → 50：单次会话里连续出错时 20 条会被冲掉
             try { window.localStorage.setItem(CRASH_Q_KEY, JSON.stringify(q)); } catch (e3) { /* 忽略 */ }
         } catch (e4) { /* 忽略 */ }
     }
@@ -691,7 +692,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.5.5.4';
+var APP_VERSION = '1.2.5.5.5';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -899,7 +900,14 @@ function renderRemoteNotice() {
 // 用途：出问题时远程打开，用户截图就能给出完整现场，不必专门装 Debug 包。
 // ★每一项都单独 try —— 诊断卡绝不能因为某个值取不到而把设置页拖垮。
 function renderDebugCard() {
-    if (!RemoteConfig.bool('debugInfo', false)) return;
+    // ★2026-10-26 修「出问题只能靠用户口述」：原来必须远程开 debugInfo 才显示诊断卡，
+    //   等于「用户遇到 bug → 我远程开 → 让用户截图 → 我分析」四步来回。
+    //   现在：只要有落盘的崩溃记录（persistCrashEntry），诊断卡就**自动出现**，
+    //   用户直接截图即可，不必等我远程开开关。远程开着时行为不变。
+    var remoteOn = RemoteConfig.bool('debugInfo', false);
+    var crashQ = [];
+    try { crashQ = (typeof window.__getCrashQueue === 'function') ? (window.__getCrashQueue() || []) : []; } catch (e) { crashQ = []; }
+    if (!remoteOn && !crashQ.length) return;
     var host = document.getElementById('tab-settings');
     if (!host || document.getElementById('debugCard')) return;
     var lines = [];
@@ -918,19 +926,51 @@ function renderDebugCard() {
         lines.push('本地存储 ≈ ' + Math.round(kb / 1024) + ' KB');
     } catch (e) { /* 忽略 */ }
     try { lines.push('错误日志 ' + ((window.__diagLogs || []).length) + ' 条'); } catch (e) { /* 忽略 */ }
+    // ★2026-10-26 崩溃记录直接摆出来（最近 3 条），不用导出文件才能看到
+    if (crashQ.length) {
+        lines.push('—— 出错记录 ' + crashQ.length + ' 条（重启也保留）——');
+        for (var ci = Math.max(0, crashQ.length - 3); ci < crashQ.length; ci++) {
+            var cc = crashQ[ci] || {};
+            lines.push('· ' + (cc.t || '?') + '  ' + String(cc.msg || '').slice(0, 90));
+        }
+    }
     var wrap = document.createElement('div');
     wrap.id = 'debugCard';
     wrap.className = 'glass-panel';
     wrap.style.cssText = 'margin-top:0.5rem;margin-bottom:0.75rem;padding:12px 14px;font-size:12px;line-height:1.9;color:#52606f;word-break:break-all;';
     var t = document.createElement('div');
     t.style.cssText = 'font-weight:600;color:#334155;margin-bottom:4px;';
-    t.textContent = '诊断信息（远程开启）';
+    t.textContent = crashQ.length ? ('最近出过 ' + crashQ.length + ' 次错 —— 点下面导出，把文件发我') : '诊断信息（远程开启）';
     wrap.appendChild(t);
     for (var j = 0; j < lines.length; j++) {
         var d = document.createElement('div');
         d.textContent = lines[j];
         wrap.appendChild(d);
     }
+    // ★2026-10-26 集成「导出诊断信息」：原来要 设置→数据管理→导出诊断 三步，
+    //   而诊断卡恰恰就在"看到错误的地方"。这里直接给按钮，一步导出完整文件
+    //   （含版本 / 记录数 / 存储占用 / 全部内存日志 / 持久化崩溃队列）——比让用户截图信息全得多。
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;';
+    var expBtn = document.createElement('button');
+    expBtn.textContent = '导出诊断信息';
+    expBtn.style.cssText = 'padding:5px 12px;font-size:12px;border-radius:8px;cursor:pointer;background:rgba(96,165,250,0.18);border:1px solid rgba(59,130,246,0.45);color:#1d4ed8;';
+    expBtn.addEventListener('click', function () {
+        try { if (typeof exportDiagnostics === 'function') exportDiagnostics(); } catch (e) { }
+    });
+    btnRow.appendChild(expBtn);
+    if (crashQ.length) {
+        var clr = document.createElement('button');
+        clr.textContent = '清除这些记录';
+        clr.style.cssText = 'padding:5px 12px;font-size:12px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.5);border:1px solid rgba(100,116,139,0.3);color:#475569;';
+        clr.addEventListener('click', function () {
+            try { if (typeof window.__clearCrashQueue === 'function') window.__clearCrashQueue(); } catch (e) { }
+            try { var w = document.getElementById('debugCard'); if (w) w.parentNode.removeChild(w); } catch (e) { }
+            AppState.debugInfo = false;
+        });
+        btnRow.appendChild(clr);
+    }
+    wrap.appendChild(btnRow);
     host.insertBefore(wrap, host.firstChild);
     AppState.debugInfo = true;
 }
