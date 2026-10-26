@@ -519,7 +519,20 @@ function showUpdateModal(info) {
     closeOpenModals(); // ★2026-08-29 防重入
     const modal = document.createElement('div');
     modal.className = 'confirm-modal modal-backdrop-animate';
-    var bodyText = (info.body || '').trim();   // ★2026-09-18 去掉 400 字符硬截断（更新弹窗日志曾显示不全；内容区已有 max-height+滚动兜底）
+    // ★2026-10-26 修「更新弹窗里出现表格和工程说明」：
+    //   原来弹窗直接渲染 GitHub Release 的 body（上游 d.body），而那份是**给 Release 页面写的技术文档**
+    //   （含验证结果表格、门禁项数、构建细节）⇒ 用户看到一堆看不懂的东西。
+    //   现在优先用 App 内置 BUILTIN_CHANGELOG 的对应版本条目（手机端文案，只写用户可感知的变化）；
+    //   只有内置没这个版本（例如推送了未来版本包）才回退到 GitHub body，并滤掉表格。
+    var _builtinBody = null;
+    try {
+        if (typeof BUILTIN_CHANGELOG !== 'undefined' && info && info.tag) {
+            _builtinBody = BUILTIN_CHANGELOG['v' + String(info.tag).replace(/^v/, '')] || null;
+        }
+    } catch (eB) { _builtinBody = null; }
+    var bodyText = ((_builtinBody || info.body) || '').trim();
+    // 兜底：万一走到 GitHub body，把 markdown 表格行与多余空行清掉
+    bodyText = bodyText.replace(/^\|.*\|\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();   // ★2026-09-18 去掉 400 字符硬截断（更新弹窗日志曾显示不全；内容区已有 max-height+滚动兜底）
     bodyText = bodyText.replace(/^##[^\n]*\n\s*/i, '');   // 去掉 markdown 标题行（弹窗标题已含版本号，且与设置页日志观感一致）
     var pal = changelogPalette();   // ★2026-09-18 与「更新日志」共用配色
     // ★2026-09-07 直装判定：本地已下载过且版本一致 → 不再重下，直接弹「立即安装」
