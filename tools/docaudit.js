@@ -143,6 +143,10 @@ const PAIRS = [
     // ★2026-09-20 新增：开发侧改动记录（用户：「开发侧的你告诉我就行，要我能看得着」）
     ['docs/开发侧改动记录.md', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, 'docs', '开发侧改动记录.md')],
     ['开发侧改动记录.md（根）', path.join(PROJ, '开发侧改动记录.md'), path.join(GH, '开发侧改动记录.md')],
+    // ★2026-10-26 补齐与 doc-sync.js 的差值（此前 docaudit 缺这 3 项 → 它们双端不一致也查不出来）
+    ['docs/功能与体验改进方案.md', path.join(PROJ, '功能与体验改进方案.md'), path.join(GH, 'docs', '功能与体验改进方案.md')],
+    ['docs/CF-下载统计-配置步骤.md', path.join(PROJ, 'CF-下载统计-配置步骤.md'), path.join(GH, 'docs', 'CF-下载统计-配置步骤.md')],
+    ['docs/BUG彻查报告-2026-09-20.md', path.join(PROJ, 'BUG彻查报告-2026-09-20.md'), path.join(GH, 'docs', 'BUG彻查报告-2026-09-20.md')],
 ];
 // ★比较前归一化换行符（Git autocrlf 会 CRLF→LF，纯字节比较会误报）
 const _n = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
