@@ -122,6 +122,7 @@ if [ "$FAST" = "1" ]; then
   # ★2026-10-27 修正：--fast 只放**秒级**套件。此前把 themecheck（≈4min）与
   #   stresscheck（≈4min）也塞进 fast 分支 —— 名义"秒级"实际要跑 8 分钟，fast 失去意义。
   _run "文档新鲜度（版本/结构漂移）"   "$NODE" tools/docfresh.js
+  _run "门禁套件一致性（.sh ↔ .js）"  "$NODE" tools/suiteguard.js
   _run "弹窗内联宽度锁定"                     "$NODE" tools/modalwidth.js --quiet
   _run "数据层/语法自检"                      "$NODE" test.js
   _run "官网下载入口（Pages Function）"       "$NODE" tools/sitetest.js
@@ -140,6 +141,7 @@ else
   _run "主题（浅/深）视觉检查"         "$NODE" tools/themecheck.js
   _run "地基压测（泄漏/性能/边界）"    "$NODE" tools/stresscheck.js
   _run "文档新鲜度（版本/结构漂移）"   "$NODE" tools/docfresh.js
+  _run "门禁套件一致性（.sh ↔ .js）"  "$NODE" tools/suiteguard.js
   _run "弹窗内联宽度锁定"                     "$NODE" tools/modalwidth.js --quiet
   _run "官网下载入口（Pages Function）"       "$NODE" tools/sitetest.js
   _run "官网更新日志同步（vs BUILTIN）"       "$NODE" tools/sitechangelog.js --check

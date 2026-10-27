@@ -35,6 +35,7 @@ const SUITES = [
   { key: 'theme', name: '主题（浅/深）视觉检查', file: 'tools/themecheck.js', timeout: 240000 },
   { key: 'stress', name: '地基压测（泄漏/性能/边界）', file: 'tools/stresscheck.js', timeout: 240000 },
   { key: 'docfresh', name: '文档新鲜度（版本/结构漂移）', file: 'tools/docfresh.js', timeout: 60000 },
+  { key: 'suiteguard', name: '门禁套件一致性（.sh ↔ .js）', file: 'tools/suiteguard.js', timeout: 30000 },
   // ★2026-09-29 新增：官网下载入口是唯一跑在 CF 边缘的代码，本地页面自检碰不到
   { key: 'sitetest', name: '官网下载入口（Pages Function）', file: 'tools/sitetest.js', timeout: 30000 },
   // ★2026-09-29 新增：官网「更新日志」段必须与 App 内置 BUILTIN 保持同步
@@ -44,7 +45,7 @@ const SUITES = [
 
 let list = SUITES;
 // ★2026-09-18 改按 key 取（原来用下标 slice，新增套件会把原有套件悄悄挤掉）
-if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test', 'sitetest', 'sitecl', 'docfresh'].indexOf(s.key) >= 0);
+if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test', 'sitetest', 'sitecl', 'docfresh', 'suiteguard'].indexOf(s.key) >= 0);
 else if (has('no-e2e')) list = SUITES.filter((s) => s.key !== 'e2e');
 if (onlyArg) list = SUITES.filter((s) => s.key === onlyArg);
 

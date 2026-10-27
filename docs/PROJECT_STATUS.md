@@ -25,6 +25,8 @@
    `if (typeof showUpdateModal === 'function') { …49 项… }` —— 函数缺失时**静默跳过 49 项**，仍打印「0 失败」。收敛期间就是项数从 302 掉到 253 才发现的。
 3. **「发现新版本」弹窗读的是 App 内置 `BUILTIN_CHANGELOG`**（不是 GitHub Release body；仅内置缺该版本时才回退，且会滤掉表格）。**改更新说明 = 改 BUILTIN**；`-release.md` 也不许写表格与工程词。
 
+- **门禁套件一致性**：`node tools/suiteguard.js` —— 比对 `checkall.sh` 与 `checkall.js` 的套件清单。
+  **★为什么要它**：两份实现，`.sh` 本机手动跑、**`.js` 是 `ship prepare` 发版流程跑的**；theme/stress/docfresh 曾只加进 `.sh` ⇒ **发版时根本不跑**，连续几轮无人察觉。现在不一致就报红（`siteaudit` 仅 `--online` 属已知合理差异，已在脚本里白名单注明）。
 - **文档新鲜度**：`node tools/docfresh.js`（只查）/ `--fix`（自动修）。
   **扫描全部 .md/.html 里的「当前状态」表述**（当前版本号 / versionCode / CACHE_NAME / N 个 JS·CSS / 文件行数），
   与代码真值（`APP_VERSION` / `build.gradle` / `sw.js` / `index.html` / 实际行数）比对。
