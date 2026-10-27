@@ -16,7 +16,7 @@
 # 用法：
 #   bash tools/checkall.sh              # 全量（含 E2E，最慢约 3~5 分钟）
 #   bash tools/checkall.sh --no-e2e     # 跳过 E2E（约 40 秒）
-#   bash tools/checkall.sh --fast       # smoke + modalw + test + sitetest + sitecl
+#   bash tools/checkall.sh --fast       # smoke + docfresh + modalw + test + sitetest + sitecl（秒级）
 #   bash tools/checkall.sh --online     # 再加线上站点体检（siteaudit，需网络，约 +60s）
 # 退出码：0 = 全过；1 = 有失败（可直接当门禁）
 #
@@ -119,8 +119,8 @@ echo ""
 
 if [ "$FAST" = "1" ]; then
   run_smoke
-  _run "主题（浅/深）视觉检查"         "$NODE" tools/themecheck.js
-  _run "地基压测（泄漏/性能/边界）"    "$NODE" tools/stresscheck.js
+  # ★2026-10-27 修正：--fast 只放**秒级**套件。此前把 themecheck（≈4min）与
+  #   stresscheck（≈4min）也塞进 fast 分支 —— 名义"秒级"实际要跑 8 分钟，fast 失去意义。
   _run "文档新鲜度（版本/结构漂移）"   "$NODE" tools/docfresh.js
   _run "弹窗内联宽度锁定"                     "$NODE" tools/modalwidth.js --quiet
   _run "数据层/语法自检"                      "$NODE" test.js

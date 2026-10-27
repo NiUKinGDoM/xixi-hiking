@@ -256,6 +256,27 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 
 **(d) 结果**：`docfresh` 报 **可自动修正 0 份**；仅 `PROJECT_STATUS.md`、`开发侧改动记录.md` 的历史行被正确跳过。**以后文档漂移由门禁报红，不再靠记清单。**
 
+**(e) 及时度（★这轮最关键的修复）**
+原以为「进了 checkall 就安全了」，实际不是 —— **`checkall` 有两份实现**：
+- `checkall.sh`（bash，本机手动跑，11 套）
+- `checkall.js`（Node，**`ship.js prepare` 发版流程跑的是这份**，只有 9 套）
+
+⇒ themecheck / stresscheck / docfresh **只加进了 .sh**，**发版时根本不跑**。
+更糟的是 `checkall.sh --fast` 里还被塞进了 themecheck + stresscheck（各 ≈4 分钟）—— **名义"秒级"实际要跑 8 分钟**。
+
+已修：
+1. **`checkall.js` 补齐 3 套**（theme 57 / stress 18 / docfresh 1）→ 9 套 → **12 套**，`ship prepare` 现在会跑。
+2. **`checkall.js --fast` 加入 docfresh**（1 秒级，值得每次跑）。
+3. **`checkall.sh --fast` 瘦身**：移除 theme/stress，保留 docfresh → **实测 8 分钟 → 8 秒**（456 项全绿）。
+
+**三层防线**（现在才算完整）：
+| 场景 | 命令 | 耗时 | 覆盖 |
+|---|---|---|---|
+| 改完随手查 | `checkall.sh --fast` | **8s** | 冒烟 + 文档新鲜度 + 弹窗宽度 + 数据层 + 官网 2 项 |
+| 提交前全量 | `checkall.sh` | ≈2min | 12 套 1002 项 |
+| **发版自动** | `ship.js prepare` | 内含 | **checkall.js 12 套（含文档新鲜度）** |
+
+
 **⑤ 查 bug** — ① 「记一笔」快捷方式无反应：`onNewIntent` 只存动作、**没通知 WebView 消费**，补 `evalConsumeNotifyAction()`；② 「发现新版本」弹窗出现表格和工程说明：弹窗读的是 **GitHub Release body** 不是 BUILTIN，改为 BUILTIN 优先 + 滤表格；③ `docaudit` 配对表比 `doc-sync` 少 3 条，导致 3 份文档双端不一致查不出来，已补齐。
 
 **⑥ 可观测性** — 错误链路本就完整（`error`+`unhandledrejection` → 内存 100 条 + 持久化崩溃队列 + 配网盘时自动上报），**我曾两次误判「没有」**（只搜了 `window.onerror` 一种写法）。现在闭环：**出错 → 设置页自动冒卡片 → 点导出 → 把 txt 发我**。

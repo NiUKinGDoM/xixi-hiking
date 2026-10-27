@@ -30,6 +30,11 @@ const SUITES = [
   { key: 'p0p3', name: 'P0P3 链路自检', file: '_test_p0p3.js', timeout: 300000 },
   { key: 'e2e', name: 'E2E 真实渲染回归', file: 'e2e/run.js', timeout: 420000 },
   { key: 'modalw', name: '弹窗内联宽度锁定（源码扫描）', file: 'tools/modalwidth.js', args: ['--quiet'], timeout: 30000 },
+  // ★2026-10-27 补齐：以下 3 套此前只加进了 checkall.sh，**checkall.js 里没有** ⇒
+  //   `ship.js prepare` 走的是 checkall.js ⇒ 发版时这三项根本不跑（文档漂移/视觉回归/地基问题漏检）。
+  { key: 'theme', name: '主题（浅/深）视觉检查', file: 'tools/themecheck.js', timeout: 240000 },
+  { key: 'stress', name: '地基压测（泄漏/性能/边界）', file: 'tools/stresscheck.js', timeout: 240000 },
+  { key: 'docfresh', name: '文档新鲜度（版本/结构漂移）', file: 'tools/docfresh.js', timeout: 60000 },
   // ★2026-09-29 新增：官网下载入口是唯一跑在 CF 边缘的代码，本地页面自检碰不到
   { key: 'sitetest', name: '官网下载入口（Pages Function）', file: 'tools/sitetest.js', timeout: 30000 },
   // ★2026-09-29 新增：官网「更新日志」段必须与 App 内置 BUILTIN 保持同步
@@ -39,7 +44,7 @@ const SUITES = [
 
 let list = SUITES;
 // ★2026-09-18 改按 key 取（原来用下标 slice，新增套件会把原有套件悄悄挤掉）
-if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test', 'sitetest', 'sitecl'].indexOf(s.key) >= 0);
+if (has('fast')) list = SUITES.filter((s) => ['smoke', 'modalw', 'test', 'sitetest', 'sitecl', 'docfresh'].indexOf(s.key) >= 0);
 else if (has('no-e2e')) list = SUITES.filter((s) => s.key !== 'e2e');
 if (onlyArg) list = SUITES.filter((s) => s.key === onlyArg);
 
