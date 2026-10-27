@@ -25,6 +25,13 @@
    `if (typeof showUpdateModal === 'function') { …49 项… }` —— 函数缺失时**静默跳过 49 项**，仍打印「0 失败」。收敛期间就是项数从 302 掉到 253 才发现的。
 3. **「发现新版本」弹窗读的是 App 内置 `BUILTIN_CHANGELOG`**（不是 GitHub Release body；仅内置缺该版本时才回退，且会滤掉表格）。**改更新说明 = 改 BUILTIN**；`-release.md` 也不许写表格与工程词。
 
+- **文档新鲜度**：`node tools/docfresh.js`（只查）/ `--fix`（自动修）。
+  **扫描全部 .md/.html 里的「当前状态」表述**（当前版本号 / versionCode / CACHE_NAME / N 个 JS·CSS / 文件行数），
+  与代码真值（`APP_VERSION` / `build.gradle` / `sw.js` / `index.html` / 实际行数）比对。
+  **★按行判断：含 `→` / 曾经 / 原来 / 旧 / 之前 / 历史 / 拆 的行视为「历史陈述」，一律跳过不改**（改了就成篡改历史）。
+  已进 `checkall`（1 项），**文档一漂移就报红** —— 发版前不用再靠脑子记"该改哪几份"。
+  历史类文件（当日日志 / 版本存档 / `tools/notes/*-doc.txt`·`*-release.md` / `code-map.md`）只提示不修改。
+
 ### 🧰 常用命令速查（本项目已机制化，别再临场写一次性脚本）
 
 ```bash

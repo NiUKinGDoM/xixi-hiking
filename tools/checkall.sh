@@ -121,6 +121,7 @@ if [ "$FAST" = "1" ]; then
   run_smoke
   _run "主题（浅/深）视觉检查"         "$NODE" tools/themecheck.js
   _run "地基压测（泄漏/性能/边界）"    "$NODE" tools/stresscheck.js
+  _run "文档新鲜度（版本/结构漂移）"   "$NODE" tools/docfresh.js
   _run "弹窗内联宽度锁定"                     "$NODE" tools/modalwidth.js --quiet
   _run "数据层/语法自检"                      "$NODE" test.js
   _run "官网下载入口（Pages Function）"       "$NODE" tools/sitetest.js
@@ -138,6 +139,7 @@ else
   fi
   _run "主题（浅/深）视觉检查"         "$NODE" tools/themecheck.js
   _run "地基压测（泄漏/性能/边界）"    "$NODE" tools/stresscheck.js
+  _run "文档新鲜度（版本/结构漂移）"   "$NODE" tools/docfresh.js
   _run "弹窗内联宽度锁定"                     "$NODE" tools/modalwidth.js --quiet
   _run "官网下载入口（Pages Function）"       "$NODE" tools/sitetest.js
   _run "官网更新日志同步（vs BUILTIN）"       "$NODE" tools/sitechangelog.js --check
