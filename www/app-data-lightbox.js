@@ -761,7 +761,10 @@ function showFirstRecordTip() {
             }
             clearInterval(timer);
             if (localStorage.getItem(FIRST_RECORD_TIP_KEY)) return;
-            localStorage.setItem(FIRST_RECORD_TIP_KEY, '1');
+            // ★2026-10-29 加 try：本处在 setInterval 回调里，外层 try/catch 包不住异步回调，
+            //   配额满/隐私模式抛异常会变成未捕获错误（进崩溃队列）且中断后续语句。
+            //   写失败就不弹了 —— 存储已满时用户更需要清理空间，引导卡也没意义。
+            try { localStorage.setItem(FIRST_RECORD_TIP_KEY, '1'); } catch (e) { return; }
             renderFirstRecordTipCard();
         }, 400);
     } catch (e) { /* 静默 */ }
