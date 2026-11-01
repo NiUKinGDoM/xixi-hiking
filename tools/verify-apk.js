@@ -26,7 +26,24 @@ const SIGN_EXPECT = '9396fee4e13f3fd1f939d66820d0ca623187be62234fcfcc621577b63cc
 
 // ★2026-11-01 支持 HIKING_BUILD_DIR：宿主的 TEMP 会被改到子目录（如 workbuddy-update-xxx），
 //   硬编码 os.tmpdir() 会让构建产物与验包脚本看到两个不同目录。
-const BUILD_DIR = process.env.HIKING_BUILD_DIR || path.join(os.tmpdir(), 'hiking-build');
+// ★2026-11-01 构建目录解析：宿主的 TEMP 会被改到子目录（如 %TEMP%\workbuddy-update-x64-workbuddy），
+//   而 android 工程通常留在标准的 ...\AppData\Local\Temp\hiking-build。
+//   优先级：显式 HIKING_BUILD_DIR → os.tmpdir()（若含 android 工程）→ %LOCALAPPDATA%\Temp（标准位）→ 兜底 os.tmpdir()。
+function resolveBuildDir() {
+    if (process.env.HIKING_BUILD_DIR) return process.env.HIKING_BUILD_DIR;
+    const cands = [
+        path.join(os.tmpdir(), 'hiking-build'),
+        path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'Temp', 'hiking-build')
+    ];
+    // ★判据必须是「真有 Gradle 工程」（android/settings.gradle），不能只看 android 目录 ——
+    //   release.js 会先建出空壳的 android/app/src/main/assets，只看目录存在就会误选空壳。
+    for (const c of cands) {
+        try { if (fs.existsSync(path.join(c, 'android', 'settings.gradle'))) return c; } catch (e) { }
+    }
+    return cands[0];
+}
+
+const BUILD_DIR = resolveBuildDir();
 const apk = process.argv[2] || path.join(BUILD_DIR, 'android/app/build/outputs/apk/release/app-release.apk');
 
 if (!fs.existsSync(apk)) { console.error('✗ APK 不存在: ' + apk); process.exit(1); }
