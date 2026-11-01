@@ -2418,11 +2418,30 @@
     border-radius: 20px;
     overflow: hidden;
 }
-/* 整页不做过渡：只让共享元素动，其他内容直接替换 */
+/* 整页只做极短交叉淡化（80ms）。
+   ★2026-11-01 修「转场时先黑一下」：原先写 animation:none 让新旧快照瞬间切换，
+   换快照那一帧可能出现空白/黑帧；改成极短淡入淡出即可遮住，观感上仍是"只有卡片在动"。 */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-    animation: none;
+    animation-duration: 80ms;
+    animation-timing-function: linear;
 }
+/* ★2026-11-01 核心修复：转场期间禁掉弹窗自身的 modal-fade-scale 入场动画。
+   原因：该动画从 opacity:0 / scale(.8) 起，startViewTransition 拍「新快照」时内容还是透明的，
+        只剩 rgba(0,0,0,.3) 的遮罩 ⇒ 用户看到「先黑一下」。转场由 View Transition 接管外观，
+        内容必须立刻完全不透明。
+   判据用内联 view-transition-name（转场时由 JS 设置，动画结束清空），不改 JS。 */
+.record-detail-modal[style*="view-transition-name"] .modal-fade-scale,
+.record-detail-modal[style*="view-transition-name"] > .confirm-modal-content,
+.confirm-modal[style*="view-transition-name"] .modal-fade-scale,
+.confirm-modal[style*="view-transition-name"] > .confirm-modal-content,
+.planned-detail-modal[style*="view-transition-name"] .modal-fade-scale,
+.planned-detail-modal[style*="view-transition-name"] > .confirm-modal-content {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
 /* 系统「减少动效」时彻底关掉（双保险，vtEnabled 里已判一次） */
 @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(vt-record-card),

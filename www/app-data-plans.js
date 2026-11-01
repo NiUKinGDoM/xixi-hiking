@@ -1607,7 +1607,27 @@ function attachPlannedTripsEventListeners() {
                     return;
                 }
                 // ★2026-09-04 阅读态 v2：点行打开计划详情弹窗
-                openPlannedDetailModal(trip.id);
+                if (typeof vtEnabled !== 'function' || !vtEnabled()) { openPlannedDetailModal(trip.id); return; }
+                // ★2026-11-01 一镜到底：计划卡片同样从点击处展开（与记录卡片一致的体验）
+                try {
+                    document.querySelectorAll('.record-detail-modal').forEach(function (m) { m.style.viewTransitionName = ''; });
+                    row.style.viewTransitionName = 'vt-record-card';
+                    var vt = document.startViewTransition(function () {
+                        openPlannedDetailModal(trip.id);
+                        row.style.viewTransitionName = '';
+                        var mEl = document.querySelector('.record-detail-modal');
+                        if (mEl) mEl.style.viewTransitionName = 'vt-record-card';
+                    });
+                    var clearVtName = function () {
+                        var mEl = document.querySelector('.record-detail-modal');
+                        if (mEl) mEl.style.viewTransitionName = '';
+                    };
+                    if (vt && vt.finished && vt.finished.then) vt.finished.then(clearVtName).catch(clearVtName);
+                    setTimeout(clearVtName, 420);
+                } catch (e0) {
+                    try { row.style.viewTransitionName = ''; } catch (e1) { }
+                    openPlannedDetailModal(trip.id);
+                }
             });
         }
         
