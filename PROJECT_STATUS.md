@@ -1,7 +1,7 @@
 # XiXiの徒步小记 — 项目状态交接文档
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
-> 最后更新：2026-11-01（v1.2.5.5.7 / vc310）  
+> 最后更新：2026-11-01（v1.2.5.5.8 / vc311）  
 > ★**本版 v1.2.5.5.6**：更新弹窗改读 App 内置文案（此前读 GitHub Release body，导致弹窗里出现验证表格与门禁项数）；回退在线文案时自动滤掉 markdown 表格。  
 > 🧊 **功能冻结（2026-09-10 起）**：功能已闭环无缺口——**只修 bug / 做安全与兼容，不再新增功能**；确需新增须用户明确点名
 > ★★2026-09-09 网页版正式通道迁移：**Cloudflare Pages 固定域名 <https://xixi-hiking.pages.dev>（\*\*已接 Git 集成：push master → Pages 自动构建部署（项目源已切 Git、Root directory=www）→ 发布不再需要任何手动上传；**）  
@@ -867,6 +867,16 @@ XSS（记录页字段全过 `escapeHtml`，注入 `<img onerror>`/`<script>`/`<s
 - 【样式】320ms `cubic-bezier(0.2,0.8,0.2,1)`，圆角 20px 跟随卡片；**整页 root 不做淡入淡出**（否则整页闪一下更花）；`prefers-reduced-motion` 时整套关闭。
 - 【验证】浏览器实测转场真触发（拦到 `startViewTransition` 调用）、弹窗正常开关、name 无残留；全量门禁 **1003 / 0**。
 - 【踩坑】第一版改错了位置 —— 改的是山册视图的点击，真正记录列表的绑定在 `app-data-detail.js:293`（`attachEventListeners` 里按 `row-<id>` 绑定）。探针一开始也找错元素（用了 `data-id`，实际是 `id="row-..."`），修正后才验证通过。
+### v1.2.5.5.8 —— 修转场黑闪 + 计划卡片也走一镜到底
+
+> 用户：「现在卡片跳出来之后会先黑一下，你先找问题」「所有类似卡片都用上这个效果」
+
+- 【根因】**黑闪不是内容，是遮罩**。弹窗内容是 `<div class="confirm-modal-content modal-fade-scale">`，该动画从 `opacity:0 / scale(.8)` 起。`startViewTransition` 拍「新快照」时内容仍透明 ⇒ 快照里只剩 `rgba(0,0,0,.35)` 遮罩 ⇒ 看起来"黑一下"。
+- 【修法 ①】转场期间禁用弹窗自身入场动画：`.record-detail-modal[style*="view-transition-name"] .modal-fade-scale { animation:none; opacity:1; transform:none }`。判据用内联 `view-transition-name`（转场时 JS 设、结束清空），**无需改 JS**。
+- 【修法 ②】`::view-transition-old/new(root)` 从 `animation:none` 改为 **80ms 极短交叉淡化** —— 瞬间换快照可能留空白帧。
+- 【扩展】**计划卡片**接入转场（`app-data-plans.js` 行点击）。计划详情弹窗复用同一个 `.record-detail-modal` class，样式修复自动覆盖。现覆盖三类：记录列表行 / 山册卡片 / 计划行。
+- 【未覆盖】确认框、设置、政策等弹窗**刻意不加** —— 它们不是"从某张卡片展开"的语义。
+- 【验证】转场中 60ms 采样：内容 `opacity=1`、`animation=none`、`transform=none`；门禁 **1003 / 0**。
 - **正式版 v1.2.3.7（vc282）** —— 折叠屏【外屏】窄屏适配（≤350px：底栏收窄 302→198px / 概览矮卡 3 列→1 列 / 标题与同步文案允许折行 / 整页横向溢出归零）（2026-10-09）
   - **用户指令**：「能否适配一下折叠屏外屏？外屏一般比较窄，app 里的字会显示不全，显示...」→ 随后「发」（并明确选择**升号**发布）。
   - **★升号判定**：外屏适配改了用户可见的排版行为（窄屏下底栏/矮卡/标题布局变化）→ 不适用「同号修正重发」，按常规**升号** v1.2.3.6 → **v1.2.3.7**（vc281 → vc282）。
