@@ -2405,3 +2405,28 @@
             border-color: rgba(148, 163, 184, 0.6);
             color: #e5e7eb;
         }
+
+/* ===== ★2026-11-01 一镜到底转场（View Transitions API）=====
+   原理：startViewTransition 会给变更前后各拍一张快照，浏览器自动在新旧之间做形变过渡。
+   这里只让「记录卡片 ↔ 详情弹窗」这一对动，其余内容瞬间替换（不做整页淡入淡出，
+   否则会看到整页闪一下，反而更花）。 */
+::view-transition-old(vt-record-card),
+::view-transition-new(vt-record-card) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* 圆角跟随卡片，避免矩形快照冲出圆角容器 */
+    border-radius: 20px;
+    overflow: hidden;
+}
+/* 整页不做过渡：只让共享元素动，其他内容直接替换 */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+/* 系统「减少动效」时彻底关掉（双保险，vtEnabled 里已判一次） */
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(vt-record-card),
+    ::view-transition-new(vt-record-card) {
+        animation: none;
+    }
+}

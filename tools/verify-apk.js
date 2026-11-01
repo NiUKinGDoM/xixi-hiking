@@ -24,7 +24,10 @@ const BT = path.join(PROJ, 'android-sdk/build-tools/34.0.0');
 const JAVA = path.join(PROJ, 'jdk-21.0.12/bin/java.exe');
 const SIGN_EXPECT = '9396fee4e13f3fd1f939d66820d0ca623187be62234fcfcc621577b63ccf8899';
 
-const apk = process.argv[2] || path.join(os.tmpdir(), 'hiking-build/android/app/build/outputs/apk/release/app-release.apk');
+// ★2026-11-01 支持 HIKING_BUILD_DIR：宿主的 TEMP 会被改到子目录（如 workbuddy-update-xxx），
+//   硬编码 os.tmpdir() 会让构建产物与验包脚本看到两个不同目录。
+const BUILD_DIR = process.env.HIKING_BUILD_DIR || path.join(os.tmpdir(), 'hiking-build');
+const apk = process.argv[2] || path.join(BUILD_DIR, 'android/app/build/outputs/apk/release/app-release.apk');
 
 if (!fs.existsSync(apk)) { console.error('✗ APK 不存在: ' + apk); process.exit(1); }
 console.log('== verify-apk ==\nAPK: ' + apk + '  (' + (fs.statSync(apk).size / 1048576).toFixed(2) + ' MB)\n');

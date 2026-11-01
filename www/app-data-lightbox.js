@@ -1503,7 +1503,31 @@ function renderOnThisDay() {
         body.innerHTML = '<div id="onThisDayRow" style="display:flex;align-items:center;gap:12px;cursor:pointer;">' + thumb + '<div style="flex:1;min-width:0;">' + '<div style="font-size:12px;color:' + sub + ';margin-bottom:2px;">' + hintLabel + '</div>' + '<div style="font-size:16px;font-weight:700;color:' + strong + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(r.name || '未命名') + '</div>' + (meta.length ? '<div style="font-size:12px;color:' + sub + ';margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + meta.join(' · ') + '</div>' : '') + '</div>' + '<span class="material-icons" style="font-size:20px;color:' + sub + ';flex-shrink:0;">chevron_right</span>' + '</div>';
         card.style.display = 'block';
         var row = document.getElementById('onThisDayRow');
-        if (row) row.addEventListener('click', function () { triggerHaptic(12); if (typeof openRecordDetailModal === 'function') openRecordDetailModal(r.id); });
+        if (row) row.addEventListener('click', function () {
+            triggerHaptic(12);
+            if (typeof openRecordDetailModal !== 'function') return;
+            // ★2026-11-01 一镜到底：卡片从点击处展开成详情，返回时收回原位。
+            //   不支持/被关掉时走原路径，视觉与改造前完全一致。
+            if (typeof vtEnabled !== 'function' || !vtEnabled()) { openRecordDetailModal(r.id); return; }
+            try {
+                row.style.viewTransitionName = 'vt-record-card';
+                var vt = document.startViewTransition(function () {
+                    openRecordDetailModal(r.id);
+                    row.style.viewTransitionName = '';          // 行让出唯一 name
+                    var mEl = document.querySelector('.record-detail-modal');
+                    if (mEl) mEl.style.viewTransitionName = 'vt-record-card';
+                });
+                if (vt && vt.finished && vt.finished.then) {
+                    vt.finished.then(function () {
+                        var mEl = document.querySelector('.record-detail-modal');
+                        if (mEl) mEl.style.viewTransitionName = '';
+                    }).catch(function () { });
+                }
+            } catch (e0) {
+                try { row.style.viewTransitionName = ''; } catch (e1) { }
+                openRecordDetailModal(r.id);
+            }
+        });
         try { loadPhotoThumbs(r.id); } catch (eP) { /* 缩略图失败不影响文字 */ }
     } catch (e) { /* 那年今日失败绝不影响概览渲染 */ }
 }

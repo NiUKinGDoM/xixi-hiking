@@ -289,7 +289,30 @@ function attachEventListeners() {
                     return;
                 }
                 // ★2026-09-04 阅读态 v2：点行打开居中详情弹窗（不再直接进编辑表格）
-                openRecordDetailModal(record.id);
+                if (typeof vtEnabled !== 'function' || !vtEnabled()) { openRecordDetailModal(record.id); return; }
+                // ★2026-11-01 一镜到底：卡片从点击处展开成详情，退出时收回原位。
+                //   不支持 / 被远程关掉 / 系统开了「减少动效」→ 走原路径，视觉与改造前完全一致。
+                try {
+                    // 先清掉可能的残留 name（连续点两条记录时旧弹窗可能还带着 name）
+                    document.querySelectorAll('.record-detail-modal').forEach(function (m) { m.style.viewTransitionName = ''; });
+                    row.style.viewTransitionName = 'vt-record-card';
+                    var vt = document.startViewTransition(function () {
+                        openRecordDetailModal(record.id);
+                        row.style.viewTransitionName = '';                      // 行让出唯一 name
+                        var mEl = document.querySelector('.record-detail-modal');
+                        if (mEl) mEl.style.viewTransitionName = 'vt-record-card';
+                    });
+                    // 动画结束后清 name（.finished 在无头/异常环境可能不 resolve，用定时器兜底）
+                    var clearVtName = function () {
+                        var mEl = document.querySelector('.record-detail-modal');
+                        if (mEl) mEl.style.viewTransitionName = '';
+                    };
+                    if (vt && vt.finished && vt.finished.then) vt.finished.then(clearVtName).catch(clearVtName);
+                    setTimeout(clearVtName, 420);
+                } catch (e0) {
+                    try { row.style.viewTransitionName = ''; } catch (e1) { }
+                    openRecordDetailModal(record.id);
+                }
             };
             row.addEventListener('click', rowHandler);
             eventListeners.push({ element: row, event: 'click', handler: rowHandler });

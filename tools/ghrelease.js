@@ -22,7 +22,9 @@ const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const REPO = 'NiUKinGDoM/xixi-hiking';
-const DEFAULT_APK = path.join(os.tmpdir(), 'hiking-build/android/app/build/outputs/apk/release/app-release.apk');
+// ★2026-11-01 同 verify-apk：构建目录以 HIKING_BUILD_DIR 为准（临时文件仍用 tmpdir）
+const BUILD_DIR = process.env.HIKING_BUILD_DIR || path.join(os.tmpdir(), 'hiking-build');
+const DEFAULT_APK = path.join(BUILD_DIR, 'android/app/build/outputs/apk/release/app-release.apk');
 
 const args = process.argv.slice(2);
 const KEEP = args.includes('--keep-apk');
