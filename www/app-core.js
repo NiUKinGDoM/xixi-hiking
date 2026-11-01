@@ -24,6 +24,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !
 // ★2026-08-27 关于页：查看更新日志（★2026-08-31 纯本地内置，无需联网；不再联网拉取）
 // 发布新版本时记得把 Release body 摘要追加到最前面（保持最新在前）
 var BUILTIN_CHANGELOG = {
+    'v1.2.5.5.9': '【调整】\n- **撤掉了上一版加的卡片展开动画** —— 试下来你觉得效果不好，就回到原来的方式。点卡片还是正常打开详情，只是不再从卡片位置"长"出来。\n\nMade by XiXi 💛',
     'v1.2.5.5.8': '【优化】\n- **点卡片展开时不再先黑一下了** —— 以前弹窗是"从透明慢慢变出来"，那一瞬只剩半透明黑底，看着像闪了一下；现在内容直接就位，只有卡片在动。\n- **计划卡片也有这个效果了** —— 记录、山册、计划，三种卡片点开都是从原位置展开。\n\nMade by XiXi 💛',
     'v1.2.5.5.7': '【体验】\n- **点记录卡片，详情现在是从卡片里"长"出来的** —— 返回时再收回原位，不再是整页跳一下。（系统开了「减少动效」的会保持原样）\n\nMade by XiXi 💛',
     'v1.2.5.5.6': '【修复】\n- **上次说「更新说明只写看得见的变化」，但没真正做到** —— 弹窗其实一直读的是另一个来源，里面还是那些技术细节和表格。这次是真的改了，弹窗现在只显示你能看懂的内容。\n\nMade by XiXi 💛',
@@ -695,7 +696,7 @@ function applySchemaMigrations(list, migrations) {
     return out;
 }
 // ★当前应用版本（2026-08-11：应用内检查更新用；bump 版本时必须同步）
-var APP_VERSION = '1.2.5.5.8';
+var APP_VERSION = '1.2.5.5.9';
 // ★2026-08-25 分享卡背景外置 share-bg.jpg（原 base64 内置 276KB → 移除，HTML 瘦身）
 // ★2026-08-21 去灵光化：本地存储封装（替代原灵光平台 window.lingguang.storage，功能等价）
 var AppStore = {
@@ -827,7 +828,6 @@ const RemoteConfig = {
 // 只放「本次及以后新增」的可变状态；老变量（records / plannedTrips / showFps 等）保持原样，
 // 由后续改动自然收敛进来，禁止一次性大改（当年 126 个顶层变量的教训）。
 const AppState = {
-    viewTransition: true,    // ★2026-11-01 一镜到底转场（View Transitions API）总开关，可在运行时关掉
     noticeId: '',            // B2 远程公告：当前已展示的公告 id（用户关掉后不再弹同一条）
     debugInfo: false         // B3 诊断信息：设置页是否显示运行时诊断卡
 };
@@ -851,29 +851,6 @@ function getPhotoOpts() {
 //   ★必须带 id：用户关掉后把 id 记进 localStorage，同一条不再骚扰（换 id 才再次出现）
 //   ★text 走 textContent（不解析 HTML）⇒ 远程内容无法注入标签，天然免疫 XSS；
 //     url 只接受 http(s) 且用同窗口跳转（App 内 WebView 对 target=_blank 支持不稳定）
-// ★2026-11-01 一镜到底 / 无缝转场（View Transitions API，Web 层对等实现）
-//   背景：金标联盟的 SharedView Kit 是 Android 原生能力，我们是 Capacitor + WebView 用不了；
-//         Web 层等效方案是 document.startViewTransition（Chrome 111+，Android System WebView 同源）。
-//   ★四重保险，任一不满足就退回原动画（不带任何转场）：
-//     ① AppState.viewTransition 总开关（运行时可控）② 远程配置 viewTransition（出问题不用发版就能关）
-//     ③ 浏览器能力检测 ④ 尊重系统「减少动效」（prefers-reduced-motion）
-function vtEnabled() {
-    try {
-        if (!AppState.viewTransition) return false;
-        if (typeof RemoteConfig !== 'undefined' && RemoteConfig.bool && !RemoteConfig.bool('viewTransition', true)) return false;
-        if (typeof document.startViewTransition !== 'function') return false;
-        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-        return true;
-    } catch (e) { return false; }
-}
-
-// 把一次 DOM 变更包进转场；不满足条件时直接执行（行为与原实现完全一致）
-function vtRun(doUpdate) {
-    if (!vtEnabled()) { doUpdate(); return null; }
-    try { return document.startViewTransition(doUpdate); }
-    catch (e) { doUpdate(); return null; }
-}
-
 function renderRemoteNotice() {
     var n = RemoteConfig.get('notice', null);
     if (!n || typeof n !== 'object') return;
