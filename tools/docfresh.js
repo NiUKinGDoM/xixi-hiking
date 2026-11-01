@@ -86,7 +86,12 @@ const RULES = [
         id: '当前版本号',
         // 仅这些前缀后的版本号视为「当前状态」
         re: /(当前版本\s*|最后更新[：:]\s*\d{4}-\d{2}-\d{2}（|★\*\*本版\s*|真值[：:]\s*)(v?\d+\.\d+\.\d+\.\d+)(（vc\d+）|\s*\/\s*vc\d+)/g,
-        fix: (full, pre, oldV, post) => pre + (oldV.startsWith('v') ? 'v' : '') + VER + '（vc' + VC + '）',
+        // ★2026-11-01 保留原分隔符：`（vX / vcN`（斜杠）与 `（vX（vcN）` 都按原样写回，
+        //   否则会把前者改坏成 `（vX（vcN）` —— 括号套括号。
+        fix: (full, pre, oldV, post) => {
+            const v = (oldV.startsWith('v') ? 'v' : '') + VER;
+            return pre + v + (/^\s*\/\s*vc/.test(String(post)) ? ' / vc' + VC : '（vc' + VC + '）');
+        },
     },
     {
         id: 'CACHE_NAME 现值',
