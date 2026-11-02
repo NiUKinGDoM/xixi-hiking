@@ -7,7 +7,8 @@ const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const fs = require('fs');
 const path = require('path');
-const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+// ★可被 CI 覆盖：Linux runner 没 Edge，用 E2E_BROWSER 指向预装的 Chrome
+const EDGE = process.env.E2E_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const BASE = 'http://127.0.0.1:8123/index.html';
 const SHOTS = path.resolve(__dirname, 'shots');
 const BASELINE = path.join(SHOTS, process.env.E2E_BASELINE || 'baseline');   // E2E_BASELINE=baseline-obf 验证混淆副本

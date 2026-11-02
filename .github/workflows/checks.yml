@@ -16,3 +16,21 @@ jobs:
           node-version: '24'
       - name: 自检（语法 / 关键函数 / 死标识符 / HTML 配对 / 版本一致性）
         run: node test.js
+
+  e2e-render:
+    # ★真实渲染 + 交互回归（133 项）。首次上线先不阻断
+    #  （镜像基线截图来自 Windows Edge，Linux 渲染差异可能误报），
+    #  稳定后删掉 continue-on-error 即可变成阻断门。
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: 安装依赖
+        run: npm install --no-audit --no-fund
+      - name: 真实渲染回归
+        env:
+          E2E_BROWSER: /usr/bin/google-chrome
+        run: node e2e/run.js
