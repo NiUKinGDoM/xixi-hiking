@@ -16,7 +16,14 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const PROJ = path.resolve(ROOT, '..');
-const PS = [path.join(PROJ, 'PROJECT_STATUS.md'), path.join(PROJ, 'backups/github-同步目录/xixi-hiking/docs/PROJECT_STATUS.md')];
+// ★★2026-11-02：补第三处落点 —— 主工程自己的 docs/PROJECT_STATUS.md。
+//   它不在 doc-sync 的同步链里（doc-sync 的 dst 是 GH 副本），只能靠这里同步；
+//   漏掉就会让 test.js 报「文档版本不一致」（v1.2.5.9 发版时真实踩到）。
+const PS = [
+  path.join(PROJ, 'PROJECT_STATUS.md'),
+  path.join(PROJ, 'backups/github-同步目录/xixi-hiking/docs/PROJECT_STATUS.md'),
+  path.join(ROOT, 'docs/PROJECT_STATUS.md'),
+];
 const CL = path.join(ROOT, 'CHANGELOG.md');
 
 const args = process.argv.slice(2);
@@ -77,7 +84,9 @@ for (const p of PS) {
   // c) 在第一个「正式版 v」条目行前插入新条目（幂等：已有该版本条目则跳过）
   const marker = '- **正式版 v';
   const i = s.indexOf(marker);
-  if (s.includes('- **正式版 v' + ver + '**')) {
+  // ★2026-11-02：幂等再加一条 —— 也认 release body 那种「## vX 更新内容」标题，
+  //   否则传错格式的文件会重复插入（v1.2.5.9 发版时真实踩到，插了两份）。
+  if (s.includes('- **正式版 v' + ver + '**') || s.includes('## v' + ver + ' 更新内容')) {
     console.log('ℹ ' + path.basename(p) + ' 已有 v' + ver + ' 正式版条目，跳过插入（幂等）');
   } else if (i < 0) {
     console.log('⚠ ' + path.basename(p) + ' 找不到「正式版 v」锚点');
