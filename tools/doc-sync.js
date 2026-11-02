@@ -37,7 +37,9 @@ const PAIRS = [
     // ★ 双落点（步骤 1）：会话根 → GH/docs/
     ['docs/PROJECT_STATUS.md', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'docs/PROJECT_STATUS.md')],
     // ★ 双落点（步骤 2）：会话根 → GH 根（GitHub 网页默认显示这份）
-    ['PROJECT_STATUS.md（根）', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'PROJECT_STATUS.md')],
+    // ★★2026-11-02：仓库根那份 PROJECT_STATUS.md 已删（与 docs/ 副本双份打架，CI 版本检查会误报）。
+    //   今后只保留 docs/PROJECT_STATUS.md 一份权威副本，所以这条映射取消。
+    // ['PROJECT_STATUS.md（根）', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'PROJECT_STATUS.md')],
     ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs/给新模型的提示词.md')],
     ['给新模型的提示词.md（根）', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, '给新模型的提示词.md')],
     ['docs/DEVICE-CHECKLIST.md', path.join(ROOT, 'docs/DEVICE-CHECKLIST.md'), path.join(GH, 'docs/DEVICE-CHECKLIST.md')],
