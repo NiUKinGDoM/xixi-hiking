@@ -1,0 +1,10 @@
+### v1.2.5.0 —— 长说明弹窗统一收窄（72vh + 内容区独立滚动）
+
+- 【优化】**数据管理说明 / 隐私政策 / 免责声明等长弹窗统一 72vh**（用户「数据管理说明的弹窗太大了，统一一下这种长弹窗的尺寸」）
+  - 根因：mdl-lg 内容需 690px，落在 86vh 上限 ⇒ 折叠屏外屏（320×780）占屏 **86%**、上下仅剩 ≈55px 且内容溢出。
+  - 修法：`.confirm-modal-content.mdl-lg { max-height:72vh }`；mdl-sm/md 不动（内容自然高本就低于 72vh）。
+- 【修复】**收窄后按钮被滚出视野**（自测 12 档屏发现：数据管理说明全尺寸 BTN_HIDDEN，隐私/免责在 320×640、375×667 也 BTN_HIDDEN）
+  - 新增 `.doc-modal` flex 纵向布局：title/buttons `flex-shrink:0`，message `flex:1 1 auto;min-height:0;overflow-y:auto` ⇒ 内容区独立滚动、按钮固定弹窗底部。
+  - 隐私/免责 message 的内联 `max-height:55vh` 移除（改由 flex 自适应）；仅挂这三个说明弹窗，不涉记录/计划详情表单。
+- 【例外】**使用前请确认（showLegalConsentModal）保留 86vh** —— title + message(55vh) + 按钮(86px) 在 72vh 下会把按钮滚出，首次开箱必经流程按钮必须可见。
+- 【验证】12 档竖屏（320×640 → 884×1104）说明类全无 BTN_HIDDEN、均 ≤72%；深色模式一致；mdl-sm 短弹窗仍 86vh / 24% 未被波及；全量门禁 926/0。

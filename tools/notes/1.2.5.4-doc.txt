@@ -1,0 +1,25 @@
+### v1.2.5.4（同号修正重发）—— 远程配置 A/B/C 全面接入 + 省电模式（含关模糊）+ 用户文案改说人话
+
+> 内部技术记录。用户可见文案在 `app-core.js` 的 `BUILTIN_CHANGELOG`（日常口语，只写可感知内容）。
+
+- 【新增】**远程配置 A/B/C 全面接入**（改造前已在 v1.2.5.3 之后成型，本版才进 APK）
+  - A 类数值：`photoMaxSide` / `photoQuality` / `pageSize` / `syncMaxFiles` / `davTimeoutRead`·`Write` / `hapticDefault` / `fpsDefault`。
+    实现方式一律「保留原 const 做默认值 + 函数式读取」：`getPageSize()`（替换 app-data.js 5 处 + app-data-plans.js 5 处）、`getSyncMaxFiles()`（app-sync 1 处）、`getPhotoOpts()`（compressImage）。
+  - B 类：`powerSaveDefault`（省电模式）、`notice{id,text,url,urlText}`（公告卡）、`debugInfo`（诊断卡）。
+  - C 类：`text{welcome.title/sub/where, empty.records/plans, toast.needBind/badCloudFile/backupOk/saveFail}`。
+  - `RemoteConfig` 补 `num/bool/text`（带默认值与夹紧，配置按不可信输入处理）；实测 `pageSize:999→50`、`quality:5→0.95`、`syncMaxFiles:"abc"→20`。
+- 【新增】**省电模式**（`body.power-save`）：停 aurora 无限动画 + 停 `will-change` + 停 `.tab-page/.page-transition` 转场 + **关全站 `backdrop-filter`**（通配 + 伪元素）。
+  - **★关模糊的代价与补偿**（首版漏了这条，被用户指出「文案里把没做说成优点」）：模糊没了，半透明背景必须改由不透明度承担可读性 ——
+    - `body.power-save { --glass-alpha: 0.85; --glass-alpha-tabbar: 0.85 }`（默认 0.10，元素再乘 0.4~1.1）
+    - `.confirm-modal-content` 0.15 → **0.92**（深色 0.94）、`.bottom-tabbar` 0.2 → **0.86**（深色 0.90）、`.toast-glass` → 0.92 深底
+    - 页面内 `.glass-panel`（0.05）**保持低透**：有 1px 边框分界，拉实反而失层次
+  - 实测：模糊元素 **24 → 0**；动画 27→19；`will-change` 10→7。
+- 【新增】**远程公告** `renderRemoteNotice()`：插到 `#tab-overview` 顶部；空 `id` 完全不显示；关闭写 `hiking_notice_closed`；文本走 `textContent`（实测 `<b>` 不被解析）、url 只收 http(s)、同窗口跳转。
+- 【新增】**诊断卡** `renderDebugCard()`：`debugInfo:true` 时在 `#tab-settings` 顶部插只读卡（版本/记录/计划/存储/错误数），每项独立 try。
+- 【新增】**平台能力检测 `Caps` + `hideUnsupportedSettings()`**：iOS 网页隐藏「震动反馈」（iOS 全系 WebKit，无 `navigator.vibrate`）与「检查更新」（装不了 APK）。**判定必须叠加 `!isIOS`** —— 桌面 Chromium 有 `navigator.vibrate`，只靠能力检测会误判。`iPadOS 13+` 用「MacIntel + maxTouchPoints>1」识别。只改 `display:none`，元素留 DOM。
+- 【新增】**`AppState` 命名空间**（`powerSave`/`noticeId`/`debugInfo`）—— 落实「新功能一律 AppState.xxx」。
+- 【修 bug】`sitechangelog.js` 的 `items.filter(x => x.t === 'li')` 把【新增】/【优化】分类全过滤（文件头注释承诺「作为小标题」但从未渲染）⇒ 官网每版平铺。改为按序渲染 `<li class="rel-sec">` + `site/assets/site.css` 补样式。
+- 【工具】`e2e/inspect.js` 支持 `--ua`。★Playwright **没有 `page.setUserAgent`**（那是 Puppeteer），UA 只能在 `newContext` 传。
+- 【控制面板】`functions/config.js` 升 **v2**，A/B/C 全部 key 连注释写入，以后只改这一个文件 + push。
+- 【坑】**图标字体是子集化的（128KB / 26 字形）**：新增 `battery_saver`/`campaign` 会显示成方框 ⇒ 省电复用 `brightness_auto`、公告复用 `info`。
+- 【验证】全量门禁 **926/0**；设置页 8 项高度统一 75px、title 15 / desc 12；iOS 隐藏后 7 项间距与桌面完全一致（10px 无空洞）。

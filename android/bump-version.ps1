@@ -47,11 +47,12 @@ $newContent = $newContent -replace 'versionName\s+"[^"]+"', "versionName `"$newN
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($gradleFile, $newContent, $utf8NoBom)
 
-# 同步 index.html：版本显示 + version 字段
+# 同步 index.html：版本显示 + version 字段 + APP_VERSION（应用内更新用）
 if (Test-Path $htmlFile) {
     $html = Get-Content $htmlFile -Raw
     $html2 = $html -replace '版本 [\d.]+', "版本 $newName"
     $html2 = $html2 -replace "version:\s*'[\d.]+'", "version: '$newName'"
+    $html2 = $html2 -replace "APP_VERSION = '[\d.]+'", "APP_VERSION = '$newName'"
     if ($html2 -ne $html) {
         [System.IO.File]::WriteAllText($htmlFile, $html2, $utf8NoBom)
         Write-Output "[bump-version] index.html 已同步版本号"

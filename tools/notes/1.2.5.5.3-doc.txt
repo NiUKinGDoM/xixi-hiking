@@ -1,0 +1,15 @@
+### v1.2.5.5.3 —— 修「记一笔」快捷方式 + 通知入口常显
+
+> 用户：「桌面长按软件出来的记一笔，还是跳不到编辑新增弹窗那一步」+「你说的要开通知权限，也把开关加到我的页面，让我们有地方点」。
+
+- 【修复】**桌面快捷方式「记一笔」热启动无反应**
+  - **根因**：`MainActivity.onNewIntent()`（App 已在后台时点快捷方式走这条路）只把动作存进 `pendingNotifyAction`，**没有通知 WebView 去消费**；原来只能等 `visibilitychange` 触发，而部分机型从桌面 shortcut 唤起时**不触发 visibilitychange** ⇒ 动作一直躺着、弹窗永不出现。
+  - **修法**：新增 `evalConsumeNotifyAction()`，在 `onNewIntent` 里主动 `evaluateJavascript` 调 `window.__consumeNotifyAction()`（与 `onResume` 同款手法；JS 侧幂等，重复调用无副作用）。
+- 【修复】**通知入口改为常显**
+  - 排查中发现：`#notifyPermItem` 的 JS 实现（`app-sync.js` 的 `refreshNotifyPermRow()`）**其实早就完整**（查权限 / 点击跳系统设置 / visibilitychange+pageshow+resume 三重监听）。我一度重复实现了一份 `refreshNotifyPermItem`，已**回滚**。
+  - **真问题是设计**：原实现 `el.style.display = granted ? 'none' : 'flex'` —— **权限一开整行就消失**，用户想主动查看/修改无处可点。
+  - **改为常显 + 状态化**：未开 → 橙色 `notifications_off` +「通知权限未开启」+「点这里去系统设置开启…」；已开 → 绿色 `notifications` +「通知已开启」+「计划提醒、备份提醒会正常弹到通知栏」。点击一律跳系统通知设置。网页版无桥 → 仍然隐藏。
+  - 图标只用子集内已有字形（`notifications` / `notifications_off` 均在用），不引入新字形。
+- 【顺带】`app-init.js` 的 `switchTab` 里补一次刷新（切到设置页时重查，权限可能刚在系统设置里被打开）。
+- 【验证】浏览器模拟原生桥三态实测：无桥隐藏 ✅ / 未授权常显橙色 ✅ / 点击触发 `openNotificationSettings` ✅ / 已授权常显绿色 ✅。原生路径（intent）无法在浏览器验证，需真机确认。
+- 【注意】本次改了 `MainActivity.java` → **必须重新构建 APK**。

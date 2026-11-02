@@ -1,0 +1,9 @@
+### v1.2.5.5.9 —— 回滚一镜到底转场（恢复 v1.2.5.5.6 的交互）
+
+> 用户：「算了，效果不是很好，恢复到 1.2.5.5.6 版本吧」
+
+- 【回滚】**www 全量回到 `ef5e0fe`（v1.2.5.5.6）状态**：移除 View Transitions 全部代码（`AppState.viewTransition` / `vtEnabled` / `vtRun` / 三处行点击的转场包裹 / `app.css` 的 `::view-transition-*` 样式）。弹窗恢复原「淡入缩放」入场动画。
+- 【保留】v1.2.5.5.6 之后**与转场无关**的修复仍在：`app-data-lightbox.js` 引导卡的 `localStorage.setItem` try 兜底（10-29 修的）。
+- 【为何不直接发 1.2.5.5.6】**安卓不允许 versionCode 降级** —— 用户手机已装 vc311，装 vc309 会「应用未安装」。所以发 **vc312 / 1.2.5.5.9**，代码内容等于 1.2.5.5.6。
+- 【版本号】`APP_VERSION` 先对齐到 1.2.5.5.8（与 build.gradle 一致）再 `bump --resend` → 1.2.5.5.9（避免撞已发布的 5.7/5.8）。`CACHE_NAME` v96 → **v99**（跳过已用的 v97/v98，保证网页版缓存必刷）。
+- 【验证】回滚后 `vtEnabled` 计数 0；门禁 1003 / 0。

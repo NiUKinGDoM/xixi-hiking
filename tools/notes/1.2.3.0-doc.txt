@@ -1,0 +1,21 @@
+### 🔧 v1.2.3.0：App 内新增「官方网站」入口（2026-09-29 · 用户「在app里增加官网链接，也作为新增写到更新日志里。完事之后同步」）
+
+> **状态：准备发布**（升号 v1.2.3.0 / vc275；★按四段满 10 进位规则，`v1.2.2.10` 的下一版是 `v1.2.3.0`，不是 `1.2.2.11`）。上一轮残留的官网 `/download` 直链也随本次同步一起上线。
+
+- **① App 内「官方网站」入口**（用户指令「在app里增加官网链接，也作为新增写到更新日志里」）：
+  - **位置** —— 设置页「关于应用」卡片，版本号下方、描述与按钮组之间（`id="officialSiteBtn"`，class `about-site ripple-effect`）。
+  - **★跳转方式必须用 `window.location.href`（不能 `window.open`）** —— Capacitor WebView 的 `shouldOverrideUrlLoading` **只拦截「当前页导航」**，`window.open(url,'_blank')` 不会触发原生拦截 → 冷门 WebView 上表现为**点了完全没反应**。与既有 GitHub 图标保持同一写法。目标地址 `https://xixi-hiking-site.pages.dev/`。
+  - **★图标用内联 SVG，不用 `material-icons` 字体** —— 探针实测发现图标字体未加载时**会露出 ligature 文字 "public"**；改用 14px 内联地球 SVG（符合「禁图像 logo、用 inline SVG」偏好）。
+  - **样式** —— 新增 `.about-card .about-site`，**完全对齐 `.about-tag`**（同 13px / 700 / `#4f46e5`，深色 `#a5b4fc`），只多一条下划线，不引入第三套链接视觉。
+  - **守卫** —— `test.js` 316 → **319**（入口在位 / 事件已绑定 / **跳转方式必须 `location.href` 且不得含 `window.open`**）。**★反向验证**：换成 `window.open` → 精确报红 1 条（318/1）→ 还原 319/0 ✓
+  - **实测** —— **四档窄屏（320/360/390/412）× 深浅双模式全通过**（无折行、无横向溢出、与 `Made by XiXi` 行不重叠）；**对比度像素实测：浅色 5.12 / 深色 12.90**（均 ≥4.5 达标）。
+- **② 五项优化（本轮另一批）**：
+  - **① 设计统一性** —— 修掉全站唯一一处玻璃配方漂移（灯箱「保存」按钮漏 `saturate(150%)`）。同类问题**第三次**出现 → 结论：必须跑 `designcheck` 机器体检。
+  - **② 底层代码清理** —— `tools/snippets/` 6 个体检片段从「零校验」纳入 `smoke.js`（新增 `snippet: true` 模式 + wrap 校验法）。**反向验证**通过。
+  - **③ 流畅度帧率** —— 四页实测 60fps / jank 0 / 无屏外动画 → **刻意不改**（60 是设备刷新率上限，无优化余量）。
+  - **④ 文档** —— 双端 8 组一致，`docaudit` J 段 ✅。
+  - **⑤ 查 bug** —— 修 `deleteRecord()` 把落盘挂在 `animationend` 上的**静默丢操作** bug（探针实测确认：调删除后内存与 localStorage 均未变）。改为**先落盘再播动画**（与批量删除口径统一）。
+- **③ 工具链修复** —— `ghsync.js` 的 diff 核对清单 `CHECK` 此前写死 site 下三个 html，**漏了 `site/functions/download.js`**（`/download` 直链的唯一实现）→ 该文件「复制得到、但从不核对」＝**自检假绿**。已补入。
+- **④ 官网 `/download` 直链上线**（上一轮遗留）—— `site/functions/download.js`：安卓 → 302 APK 资产直链（不跳 GitHub 网页）；iPhone/桌面 → 302 网页版；三层兜底绝不给死链。本地自检 **16/16 全过**。
+- **实测汇总** —— 可用自检 **872 项**（smoke 34 + iOS 10 + test **319** + test-ui 30 + P0P3 299 + E2E 126 + 弹窗宽度 38 + 官网 Function 16）。★`smoke.js` 本机仍 EBUSY 假失败（32 项全报「语法错误: 」空 stderr）→ 已用**逐文件直跑**替代验证（全部 JS `node --check` 0 失败、6 个片段 wrap 后 6/6 通过）。
+- **发布链路** —— 回退点 `backups/prev-1.2.2.10/` → bump v1.2.3.0（vc275）+ sw 缓存 → 构建 → 验包 → `ghsync --push` → `ghrelease` 发布 + APK 上传 digest 校验 → 官网同步 push → 网页版复核。

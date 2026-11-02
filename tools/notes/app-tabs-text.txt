@@ -1,0 +1,246 @@
+
+══════════ overview ══════════
+analytics
+统计概览
+总记录数
+37
+次
+hiking
+总里程
+654.50
+km
+route
+总用时
+238h 5m
+schedule
+最高海拔
+5276
+m
+terrain
+height
+平均海拔
+2376m
+star
+平均难度
+3.4级
+schedule
+平均用时
+6h 26m
+emoji_events
+我的里程碑
+13 / 17
+chevron_right
+local_fire_department
+徒步足迹
+2026年9月
+expand_more
+calendar_view_month
+回顾
+一
+二
+三
+四
+五
+六
+日
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+本月徒步 2 次 · 累计爬升 6782m
+
+══════════ records ══════════
+terrain
+记录
+总计: 37条记录
+done_all
+add
+landscape
+山册
+列表视图 · 全部记录按时间排列，点一行可查看
+名称
+unfold_more
+	
+记录时间
+arrow_downward
+	操作
+landscape
+2026年
+11 次
+太白山
+	2026-09-20 06:40	
+delete
+冰晶顶
+	2026-09-06 05:20	
+delete
+鳌太线
+	2026-08-29 07:00	
+delete
+东梁
+	2026-08-16 04:50	
+delete
+首阳山
+	2026-07-25 06:10	
+delete
+跑马梁
+	2026-07-04 05:40	
+delete
+翠华山
+	2026-06-14 08:10	
+delete
+南五台
+	2026-05-24 07:30	
+delete
+嘉午台
+	2026-05-02 06:00	
+delete
+子午峪
+	2026-04-12 08:40	
+delete
+1-10 / 共37条
+chevron_right
+
+══════════ plans ══════════
+event_note
+计划
+总计: 4条计划
+view_list
+列表
+日历视图 · 哪天有行程一眼看清，点日期看当天安排
+chevron_left
+2026年9月
+chevron_right
+日
+一
+二
+三
+四
+五
+六
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+本月计划 1 条
+event
+9月26日 周六
+华山 · 西峰上北峰下
+已过期 2 天
+Lv4 · 2154m
+完成/延期
+删除
+
+══════════ settings ══════════
+settings
+设置
+storage
+数据管理
+info
+download
+导入数据
+upload
+导出数据
+delete_forever
+抹掉所有足迹（记录 / 照片 / 计划）
+cloud_upload
+上传
+cloud_download
+下载
+folder_open
+管理
+🧪 弹窗示例：管理云端备份（网页预览）
+还没有绑定
+绑定后：换手机不用重填配置，记录自动备份到你的网盘
+绑定账号
+autorenew
+自动同步
+数据变更后自动上传备份
+还没连接云端 · 点这里配置备份
+chevron_right
+palette
+外观
+brightness_auto
+跟随系统外观模式
+自动跟随系统深色/浅色切换
+dark_mode
+外观模式
+手动切换深色 / 浅色
+tune
+杂项
+photo_library
+照片占用（点开看详情）
+暂无照片
+speed
+显示帧率
+在顶栏显示实时帧率监控
+vibration
+震动反馈
+点击按钮时轻微震动
+system_update_alt
+检查更新
+检测并安装新版本
+chevron_right
+info
+关于应用
+🏔️
+徒步小记
+版本 1.2.2.10
+hiking 徒步第 1263 天 · 从 2023年4月15日 出发
+一款由 XiXi 亲手制作的徒步记录小软件：记录每一次徒步、登山的足迹，统计海拔与难度，规划下一次出发。
+隐私政策
+免责声明
+支持作者
+更新日志
+Made by XiXi

@@ -1,0 +1,12 @@
+### v1.2.4.10 —— 支持作者三键对齐 + 山册连接图标对齐 + 抽屉山名标题
+
+- 【修复】**支持作者弹窗三键被挤成竖排**（用户「支付宝按钮里的字分成两行」）
+  - 根因：`.confirm-modal-buttons` 全局 `flex-wrap:wrap` + `.confirm-btn-cancel` 的 `min-width:96px!important` 挤占，「关闭」占 77px 不缩，微信/支付宝（`flex:1`）被压到 22~46px；中文 min-content=单字宽 ⇒「支付宝」竖排（按钮被撑到 95px 高）。
+  - 修法：按钮行加 `flex-wrap:nowrap`；微信/支付宝加 `white-space:nowrap`；关闭键内联 `min-width:0!important;padding:9px 12px!important`（77→49px）。
+- 【修复】**山册抽屉「连接」图标与文字错位**（用户「连接和它的小标志不在一行」）
+  - 实测 icon 674.5~692.5（18px）、文字 681.5~692.5（11px）底部对齐 ⇒ 图标顶部浮出 7px。根因 = inline + `vertical-align:-2px`。
+  - 修法：改 `display:inline-flex;align-items:center;gap:3px;line-height:1`，图标去 `vertical-align` ⇒ 中心差 0、按钮高 26→22px。
+- 【优化】**山册同时展开 ≥2 个抽屉时，下面的抽屉加山名标题**（用户「打开≥两个山册卡片时下面卡片都加标题」）
+  - 新增 `syncMtnDrawerTitles()`：按 DOM 顺序第 1 个打开的抽屉不加标题（紧贴卡头能对上），其余显示「序号 + 山名」。
+  - 新增 `.mb-drawer-title` + `.mb-drawer-seal`；连带补 `.mb-drawer > .mb-drawer-title + * { border-top:none }`（防新增标题后内容块顶部多一条分隔线）。
+- 【验证】全量门禁 926/0；图标中心差 0；双展开 太白 none / 朱雀 flex（「03 朱雀」）。
