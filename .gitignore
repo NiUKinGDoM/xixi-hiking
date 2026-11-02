@@ -1,31 +1,18 @@
-# ===== 敏感文件（绝不提交） =====
-# 签名密钥：泄露=他人可伪造你的 App 签名
-*.keystore
-*.jks
-*.p12
-# 本机 SDK 路径（每台电脑不同）
-local.properties
-
-# ===== 构建产物 / 临时文件 =====
+# 依赖与构建产物（体积大，可由 npm/cap 重建）
 node_modules/
-build/
-*.apk
-*.aab
-*.log
-_c.js
-_check.py
-_*.tmp
-
-# ===== Android/Gradle =====
-.gradle/
-.idea/
-*.iml
-captures/
-.externalNativeBuild/
-.cxx/
 android/app/build/
 android/build/
+android/.gradle/
+android/local.properties
 
-# ===== 系统文件 =====
+# 视觉基线截图（与 GitHub 镜像保持一致：不同步）
+e2e/shots/
+e2e/posters/
+
+# 杂项
+*.log
 .DS_Store
 Thumbs.db
+
+# 工作区记忆目录（不属于工程）
+.workbuddy/

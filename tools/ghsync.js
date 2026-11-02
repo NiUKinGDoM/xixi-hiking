@@ -30,7 +30,11 @@ const DRY = has('dry-run');
 // ---- 同步清单 ----
 const WWW_FILES = ['index.html', 'app.css', 'app-modal.css', 'app-form.css', 'app-core.js', 'app-data.js', 'app-data-detail.js', 'app-data-lightbox.js', 'app-data-heatmap.js', 'app-data-plans.js', 'app-data-plan-detail.js', 'app-sync.js', 'app-init.js', 'share-bg.jpg', 'sw.js'];
 const ROOT_FILES = ['README.md', 'CHANGELOG.md', 'prev-snapshot.js', 'bump.js', 'test.js', 'test-ui.js',
-  '_test_p0p3.js', '_test_batch3.js'];   // ★2026-09-15 补入：P0P3 断言集与历史批次脚本原仅存于本地
+  '_test_p0p3.js', '_test_batch3.js',
+  // ★★2026-11-02：package.json / package-lock.json 必须同步。
+  //   上一版漏了它们 → CI 里 `npm install` 装不到 playwright-core
+  //   → e2e/run.js 报 Cannot find module。凡 CI 要用的依赖都得在清单里。
+  'package.json', 'package-lock.json', '.gitignore'];   // ★2026-09-15 补入：P0P3 断言集与历史批次脚本原仅存于本地
 // ★2026-09-29 核实：`PROJECT_STATUS.md` / `开发侧改动记录.md` / `给新模型的提示词.md`
 //   的位置在**会话根目录**（`PROJ = ROOT/..`），不在主工程 hiking-app3/ 里 ——
 //   它们由 doc-sync.js 负责双端同步（PROJ ↔ GH docs/），**不归 ghsync 管**。

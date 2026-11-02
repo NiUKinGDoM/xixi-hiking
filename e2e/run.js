@@ -8,7 +8,10 @@ const { PNG } = require('pngjs');
 const fs = require('fs');
 const path = require('path');
 // ★可被 CI 覆盖：Linux runner 没 Edge，用 E2E_BROWSER 指向预装的 Chrome
-const EDGE = process.env.E2E_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+// ★留空 = 用 playwright 自带 chromium（CI 用）；Windows 本地默认走 Edge
+const EDGE = process.env.E2E_BROWSER !== undefined
+  ? (process.env.E2E_BROWSER || null)
+  : 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const BASE = 'http://127.0.0.1:8123/index.html';
 const SHOTS = path.resolve(__dirname, 'shots');
 const BASELINE = path.join(SHOTS, process.env.E2E_BASELINE || 'baseline');   // E2E_BASELINE=baseline-obf 验证混淆副本
@@ -46,9 +49,9 @@ function serverUp() {
     srv.unref();
   }
 
-  if (!fs.existsSync(EDGE)) { console.error('Edge 未找到:', EDGE); process.exit(1); }
+  if (EDGE && !fs.existsSync(EDGE)) { console.error('浏览器未找到:', EDGE); process.exit(1); }
   fs.mkdirSync(BASELINE, { recursive: true });
-  const browser = await chromium.launch({ executablePath: EDGE, headless: true });
+  const browser = await chromium.launch(EDGE ? { executablePath: EDGE, headless: true } : { headless: true });
   const ctx = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 1,
