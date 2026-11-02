@@ -530,7 +530,9 @@ try {
     badMarks.length === 0 ? ok('外部编辑器注入检测（无 data-page-node-id 等标记）') : bad('检测到外部注入标记: ' + badMarks.join(', '));
     // ★两种布局都要成立（2026-11-02）：主工程里文档在上一级；
     //   GitHub 仓库副本里文档就在根目录 —— 硬编码 '..' 会让 CI 必红。
+    // ★优先顺序：仓库副本的权威副本在 docs/（doc-sync 落点）→ 主工程根 → 会话根
     const _psPath = [
+        path.join(__dirname, 'docs', 'PROJECT_STATUS.md'),
         path.join(__dirname, 'PROJECT_STATUS.md'),
         path.join(__dirname, '..', 'PROJECT_STATUS.md'),
     ].find((x) => fs.existsSync(x));
