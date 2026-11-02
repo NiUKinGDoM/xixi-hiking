@@ -1,0 +1,18 @@
+name: checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  selfcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 自检（语法 / 关键函数 / 死标识符 / HTML 配对 / 版本一致性）
+        run: node test.js
