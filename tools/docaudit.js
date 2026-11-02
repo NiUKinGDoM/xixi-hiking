@@ -132,7 +132,8 @@ const PAIRS = [
     ['README.md', path.join(ROOT, 'README.md'), path.join(GH, 'README.md')],
     ['CHANGELOG.md', path.join(ROOT, 'CHANGELOG.md'), path.join(GH, 'CHANGELOG.md')],
     ['docs/PROJECT_STATUS.md', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'docs', 'PROJECT_STATUS.md')],
-    ['PROJECT_STATUS.md（根）', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'PROJECT_STATUS.md')],
+    // ★2026-11-02：与 doc-sync 对齐 —— 仓库根那份已废弃，只保留 docs/PROJECT_STATUS.md 一份权威副本。
+    // ['PROJECT_STATUS.md（根）', path.join(PROJ, 'PROJECT_STATUS.md'), path.join(GH, 'PROJECT_STATUS.md')],
     // ★2026-09-14 补漏：本文件同样是双端的，此前未纳入检查
     ['docs/给新模型的提示词.md', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, 'docs', '给新模型的提示词.md')],
     ['给新模型的提示词.md（根）', path.join(PROJ, '给新模型的提示词.md'), path.join(GH, '给新模型的提示词.md')],
