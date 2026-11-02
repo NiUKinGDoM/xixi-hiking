@@ -528,7 +528,14 @@ try {
         if (t.indexOf('data-editor-injected') >= 0) badMarks.push(f + ':data-editor-injected');
     });
     badMarks.length === 0 ? ok('外部编辑器注入检测（无 data-page-node-id 等标记）') : bad('检测到外部注入标记: ' + badMarks.join(', '));
-    const ps = fs.readFileSync(path.join(__dirname, '..', 'PROJECT_STATUS.md'), 'utf8');
+    // ★两种布局都要成立（2026-11-02）：主工程里文档在上一级；
+    //   GitHub 仓库副本里文档就在根目录 —— 硬编码 '..' 会让 CI 必红。
+    const _psPath = [
+        path.join(__dirname, 'PROJECT_STATUS.md'),
+        path.join(__dirname, '..', 'PROJECT_STATUS.md'),
+    ].find((x) => fs.existsSync(x));
+    if (!_psPath) throw new Error('PROJECT_STATUS.md 未找到');
+    const ps = fs.readFileSync(_psPath, 'utf8');
     const m1 = ps.match(/最后更新：\d{4}-\d{2}-\d{2}（v([\d.]+) \/ vc(\d+)）/);
     const av = (fs.readFileSync(path.join(wwwDir, 'app-core.js'), 'utf8').match(/APP_VERSION = '([\d.]+)'/) || [])[1];
     (m1 && av && m1[1] === av) ? ok('文档版本一致（PROJECT_STATUS = ' + av + '）') : bad('文档版本不一致: PROJECT_STATUS=' + (m1 ? m1[1] : '?') + ' APP=' + av);
