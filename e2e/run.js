@@ -1229,6 +1229,18 @@ function serverUp() {
 
   await browser.close();
   console.log('--- 页面 JS 错误(' + errors.length + '):', errors.slice(0, 5).join(' ;; ') || '无');
-  console.log('===== E2E: ' + pass + ' 通过 / ' + fail + ' 失败 =====');
+  console.log('===== E2E: ' + pass + ' \u901a\u8fc7 / ' + fail + ' \u5931\u8d25 =====');
+  // \u2605\u81ea\u52a8\u6e05\u7406\uff082026-11-02\uff09\uff1a\u5168\u7eff\u65f6\u5220\u6389 .latest.png\u3002\u5b83\u4eec\u53ea\u662f\u672c\u6b21\u5bf9\u6bd4\u7528\u7684\u4e34\u65f6\u56fe\uff0c
+  //   \u4e0d\u5220\u4f1a\u4e00\u76f4\u5806\u5728 e2e/shots/\uff08audit \u6bcf\u6b21\u90fd\u62a5\u300c\u672a\u6e05\u7406\u622a\u56fe 10 \u9879\u300d\uff09\u3002
+  //   \u6709\u5931\u8d25\u65f6\u4fdd\u7559\uff1a\u90a3\u65f6\u5019\u56fe\u662f\u552f\u4e00\u8bc1\u636e\u3002
+  if (fail === 0) {
+    try {
+      let n = 0;
+      for (const f of fs.readdirSync(SHOTS)) {
+        if (f.endsWith('.latest.png')) { fs.unlinkSync(path.join(SHOTS, f)); n++; }
+      }
+      if (n > 0) console.log('\u5df2\u81ea\u52a8\u6e05\u7406 ' + n + ' \u5f20 .latest.png\uff08\u57fa\u7ebf baseline/ \u4e0d\u52a8\uff09');
+    } catch (e) { /* \u6e05\u7406\u5931\u8d25\u4e0d\u5f71\u54cd\u7ed3\u679c */ }
+  }
   process.exit(fail > 0 ? 1 : 0);
 })().catch((e) => { console.error('E2E 异常:', e); process.exit(2); });
