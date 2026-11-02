@@ -1,3 +1,6 @@
+
+> 💡 这个项目始于 **2025 年 12 月 5 日** 的灵光一闪。在那之前，它作为雏形已经迭代过 **203 版**；独立成现在的形态后，又改了 **313 版**（对应 vc313）。
+
 > ⚠️ **2026-11-02：原生版（Android）已移出本目录**
 > 原 `hiking-native/` → `C:\Users\NIU-XC\Desktop\buddy\hiking-native-20261102`
 > 本目录此后**只放网页版/PWA**（`hiking-app3/`）。原生版构建见其目录内 `构建说明-ANDROID.md`。
@@ -6,6 +9,15 @@
 
 > **本文件是换模型/换人的第一入口**。阅读顺序：本文件 → `.workbuddy/memory/MEMORY.md`（精炼铁律）→ `.workbuddy/memory/` 下最新日期日志（今日明细）即可完整接手。  
 > 最后更新：2026-11-02（v1.2.5.6 / vc313）  
+
+
+### 已撤回的两条误判（2026-11-02，**勿再改**）
+
+- **「名称 ⇅ 是假控件」——错的。** 网页版 `data-sort="name"` → `handleSort('name')` → `currentSort.field='name'` → `renderTable()`，**真按名称排序**。
+  （原生版那条才是假的：点它翻转的是时间排序，已删。两个版本行为不同，切勿套用。）
+- **「搜索框位置很怪」——它本来就是滚动浮出式搜索条。** `.global-search-bar` 是 `position:fixed; bottom:calc(120px + safe-area)`，
+  默认 `opacity:0 + translateY(18px)`，只有 `.show`（下滚时或有关键词时）才滑出。截图里出现是因为截图处于滚动态，不是错位。
+  真正该改的只有一点：它弹出时会遮住列表最后几条 → 给列表容器加 `padding-bottom` 避让即可。
 
 ## 工程化收尾（2026-11-02）
 
