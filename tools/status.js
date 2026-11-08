@@ -67,9 +67,10 @@ if (core.indexOf("'" + 'v' + av + "'") >= 0 || core.indexOf('"v' + av + '"') >= 
 else warn('v' + av + ' 缺 BUILTIN 条目（App 内「更新日志」会少这一版）');
 
 // ---------- ③ 本地 git（纯 fs 读 ref，不 spawn） ----------
-console.log('\n【本地 git（GH 副本）】');
+const MAIN_GIT = path.join(ROOT, '.git');
+console.log('\n【本地 git（主工程）】');
 function readGitRef(rel) {
-  const gitDir = path.join(GH, '.git');
+  const gitDir = MAIN_GIT;
   try {
     const p = path.join(gitDir, rel);
     if (fs.existsSync(p)) {
@@ -87,8 +88,7 @@ function readGitRef(rel) {
   } catch (e) { /* 无 packed-refs 也正常 */ }
   return null;
 }
-if (!fs.existsSync(GH)) { warn('GH 副本不存在: ' + GH); }
-else if (!fs.existsSync(path.join(GH, '.git'))) { warn('GH 副本不是 git 工作区: ' + GH); }
+if (!fs.existsSync(MAIN_GIT)) { warn('主工程不是 git 工作区: ' + ROOT); }
 else {
   const head = readGitRef('HEAD');
   const local = readGitRef('refs/heads/master');
