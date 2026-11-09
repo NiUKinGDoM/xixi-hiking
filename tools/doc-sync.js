@@ -70,6 +70,21 @@ console.log('  注：本工具比的是「主工程 ↔ 本地 GH 副本」。�
 let diff = 0, missing = [], synced = 0;
 for (const [name, a, b] of PAIRS) {
     const ea = fs.existsSync(a), eb = fs.existsSync(b);
+
+    // ★★2026-11-09：第三落点 —— 主工程 docs/。它原本不在任何同步链里（dst 只有 GH 副本），
+    //   会留下「主工程 docs 停在旧版」的孤儿副本（2026-11-09 体检 J 段真实红项：
+    //   提示词 sw 号还写 v98、缺「2025-12-05」引言块）。独立于副本比对，每次都校验。
+    if (!REVERSE && APPLY && ea) {
+      try {
+        const mainDocs = path.join(ROOT, 'docs');
+        const extra = path.join(mainDocs, path.basename(b));
+        if (fs.existsSync(mainDocs) && fs.existsSync(extra) && path.resolve(extra) !== path.resolve(b)
+            && norm(fs.readFileSync(a)) !== norm(fs.readFileSync(extra))) {
+          fs.copyFileSync(a, extra);
+          console.log('  ↗  ' + name.padEnd(28) + '主工程 docs/ 已同步');
+        }
+      } catch (e) { /* 失败不影响主流程 */ }
+    }
     if (!ea || !eb) {
         const miss = !ea ? '主工程缺' : '副本缺';
         // ★2026-10-19「副本缺」且主工程有 → --apply 时自动创建（新纳入清单的文档首次同步）。
