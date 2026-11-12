@@ -989,3 +989,38 @@ if (document.readyState === 'loading') {
     vv.addEventListener('scroll', upd);
     upd();
 })();
+
+
+/* ★★2026-11-12 iOS PWA 云备份常驻提醒（TASK_iOS-PWA 二期）
+ * 只在 navigator.standalone === true（从主屏图标启动）且云备份未配置时显示，
+ * 配好后永久隐藏。不拦人、不弹窗，就是概览页顶部一行小字。
+ * 「去配置」= 切到设置页并滚到云备份卡片。 */
+(function () {
+    function refreshCloudHint() {
+        var el = document.getElementById('cloudBackupHint');
+        if (!el) return;
+        if (window.navigator.standalone !== true) { el.style.display = 'none'; return; }
+        var cfg = null;
+        try { cfg = AppStore.getItem(SYNC_CONFIG_KEY); } catch (e) { cfg = null; }
+        var configured = !!(cfg && cfg.server && cfg.username && cfg.password);
+        el.style.display = configured ? 'none' : 'flex';
+    }
+    window.refreshCloudHint = refreshCloudHint;
+
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (t && t.closest && t.closest('#bottomTabBar .tab-btn')) { setTimeout(refreshCloudHint, 80); }
+        if (t && t.id === 'cloudHintGo') {
+            var btn = document.querySelector('#bottomTabBar .tab-btn[data-tab="settings"]');
+            if (btn) btn.click();
+            setTimeout(function () {
+                var card = document.getElementById('syncAccountCard');
+                if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 260);
+        }
+    }, true);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(refreshCloudHint, 300); });
+    } else { setTimeout(refreshCloudHint, 300); }
+})();

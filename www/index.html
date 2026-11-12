@@ -103,6 +103,12 @@
             </div>
             
             <div id="tab-overview" class="tab-page">
+            <!-- ★2026-11-12 iOS PWA 云备份常驻提醒（TASK_iOS-PWA 二期）：只在主屏模式 + 云备份未配置时显示，
+                 配好后永久隐藏。需求来自「iPhone 清缓存=删库」，提示条不拦人、只是一行常驻小字。 -->
+            <div id="cloudBackupHint" class="cloud-hint" style="display:none;">
+                <span class="cloud-hint-tx">数据存在这个浏览器里，清理缓存会丢。配好云备份更安心。</span>
+                <button id="cloudHintGo" type="button" class="cloud-hint-go">去配置</button>
+            </div>
             <!-- ★2026-09-05 首次引导（三步卡 P1-6）：仅「新装 + 零记录 + 未看过」出现一次；三步 = 写记录/看山册/看计划日历，点圆点或「下一条」切换，✕ 关闭后不再打扰 -->
             <div id="welcomeBanner" class="glass-panel" style="display:none;margin-top:0.5rem;margin-bottom:0.75rem;padding:16px 16px 14px;"><div style="display:flex;align-items:flex-start;gap:11px;">
                     <span class="material-icons wb-ic" style="font-size:24px;color:rgba(99,102,241,0.9);flex-shrink:0;margin-top:1px;">insights</span>

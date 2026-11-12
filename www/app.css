@@ -58,6 +58,42 @@
             --glass-alpha-tabbar: 0.10;
         }
         
+        /* ★★2026-11-12 iOS PWA 云备份常驻提醒（TASK_iOS-PWA 二期）
+           玻璃配方与底栏完全一致（rgba .2 + blur 2px + saturate 150% + 同色描边），
+           不新造视觉；圆角 12、字号 12 与项目其它小卡一致。 */
+        .cloud-hint {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0 10px;
+            padding: 9px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px) saturate(150%);
+            -webkit-backdrop-filter: blur(2px) saturate(150%);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .cloud-hint-tx {
+            flex: 1;
+            min-width: 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #52606f;
+        }
+        .dark-mode .cloud-hint-tx { color: #cbd5e1; }
+        .cloud-hint-go {
+            flex-shrink: 0;
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4f46e5;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            cursor: pointer;
+        }
+        .dark-mode .cloud-hint-go { color: #c7d2fe; background: rgba(99, 102, 241, 0.16); }
+
         /* 白色模式文字覆盖 */
         .text-white { color: #1e293b !important; }
         .text-white\/90 { color: #334155 !important; }
