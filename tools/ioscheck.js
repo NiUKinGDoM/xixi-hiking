@@ -228,8 +228,13 @@ function get(url, timeout) {
         { re: /100dvh|100vh/, desc: '\u89c6\u53e3\u9ad8\u5ea6\uff08iOS \u5730\u5740\u680f\u6536\u653e\uff09' },
         { re: /-webkit-overflow-scrolling/, desc: '\u6eda\u52a8\u987a\u6ed1' }
     ];
+    // ★★2026-11-12：原先只扫 index.html（内联样式）→ 项目 CSS 全在外部文件里，
+    //   必然全部报「未检测到」= 假红。改为拼接三份 CSS（表单必须最后，与页面引入顺序一致）。
+    const cssText = ['app.css', 'app-modal.css', 'app-form.css'].map(function (f) {
+        try { return fs.readFileSync(path.join(WWW, f), 'utf8').replace(/\r\n/g, '\n'); } catch (e) { return ''; }
+    }).join('\n');
     CSS_NEED.forEach(function (c) {
-        const n = (idxText.match(new RegExp(c.re.source, 'g')) || []).length;
+        const n = ((idxText + '\n' + cssText).match(new RegExp(c.re.source, 'g')) || []).length;
         if (n > 0) ok(c.desc + ' \u2014 ' + n + ' \u5904');
         else warn(c.desc + ' \u2014 \u672a\u68c0\u6d4b\u5230');
     });

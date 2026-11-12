@@ -972,3 +972,20 @@ if (document.readyState === 'loading') {
     }, 600);
 
 }
+
+
+/* ★★2026-11-12 iOS 软键盘适配（TASK_iOS-PWA 第10项）
+ * iOS 弹出键盘时 window.innerHeight 不变，只有 visualViewport.height 变小；
+ * 靠它算出键盘高度 → 给 body 打 kb-open → CSS 把底栏藏起来，避免被顶飞/压住输入框。
+ * 没有 visualViewport 的浏览器（老 Safari / 部分 WebView）直接跳过，行为与改动前完全一致。 */
+(function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var upd = function () {
+        var kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        document.body.classList.toggle('kb-open', kb > 80);
+    };
+    vv.addEventListener('resize', upd);
+    vv.addEventListener('scroll', upd);
+    upd();
+})();

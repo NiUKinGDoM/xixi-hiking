@@ -913,6 +913,15 @@
             transition: background-color 0.2s ease, border-color 0.3s ease, box-shadow 0.3s ease; /* 切换提速 */
             /* v1.4.10.5 修复：提升渲染层 + 原地淡入，避免 WebView 加载期 fixed+translateX 抖动（从左边滑向中间） */
             transform: translateX(-50%) translateZ(0);
+
+        /* ★★2026-11-12 iOS 软键盘（TASK_iOS-PWA 第10项）：键盘弹出时底栏藏起来。
+           iOS 键盘会顶飞 position:fixed 底栏，而且底栏会正好压住正在输入的表单。 */
+        body.kb-open .bottom-tabbar {
+            transform: translateX(-50%) translateY(140%) translateZ(0);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
             will-change: transform;
             animation: tabbarFadeIn 0.35s ease-out both;
         }
