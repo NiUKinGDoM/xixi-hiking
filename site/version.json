@@ -1,9 +1,9 @@
 {
-  "tag": "v1.1.1.9",
-  "version": "1.1.1.9",
-  "apk": "tuxiaoji-v1.1.1.9.apk",
-  "url": "https://github.com/NiUKinGDoM/xixi-hiking-note/releases/download/v1.1.1.9/tuxiaoji-v1.1.1.9.apk",
-  "notes": "【修复】\n- 修好「明明发了新版，检测更新却一直显示已是最新」\n\n【说明】\n- 原因是更新清单的 CDN 缓存读到了旧数据，App 拿它一比就以为不用更新\n- 现在会依次问四个地址，有任何一个说有新版本就立刻告诉你；旧数据直接忽略\n- 这次界面没变，装上后点「检测更新」应该就能看到 v1.1.1.9 了",
-  "published": "2026-11-16T17:25:51",
+  "tag": "v1.1.1.10",
+  "version": "1.1.1.10",
+  "apk": "tuxiaoji-v1.1.1.10.apk",
+  "url": "https://github.com/NiUKinGDoM/xixi-hiking-note/releases/download/v1.1.1.10/tuxiaoji-v1.1.1.10.apk",
+  "notes": "【修复】\n- 检测更新再补一处：官网备份源去掉了可能被拦截的参数，确保能读到新版\n- 这版界面没变化，装上后点「检测更新」应该就能收到新版本了",
+  "published": "2026-11-16T17:41:53",
   "source": "native-app"
 }
