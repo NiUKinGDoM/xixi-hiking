@@ -1,9 +1,9 @@
 {
-  "tag": "v1.1.1.10",
-  "version": "1.1.1.10",
-  "apk": "tuxiaoji-v1.1.1.10.apk",
-  "url": "https://github.com/NiUKinGDoM/xixi-hiking-note/releases/download/v1.1.1.10/tuxiaoji-v1.1.1.10.apk",
-  "notes": "【修复】\n- 检测更新再补一处：官网备份源去掉了可能被拦截的参数，确保能读到新版\n- 这版界面没变化，装上后点「检测更新」应该就能收到新版本了",
-  "published": "2026-11-16T17:41:53",
+  "tag": "v1.1.2.0",
+  "version": "1.1.2.0",
+  "apk": "tuxiaoji-v1.1.2.0.apk",
+  "url": "https://github.com/NiUKinGDoM/xixi-hiking-note/releases/download/v1.1.2.0/tuxiaoji-v1.1.2.0.apk",
+  "notes": "【修复】\n- 检测更新更快了：先问最可靠的官网地址，不用再干等几个慢节点超时\n- 修好一个打包检查报错（不影响使用，但会挡住发版）\n\n【优化】\n- 日历视图翻月、选日期时不再整表重算，计划多了更跟手\n- 这版界面没变化，六项例行体检全绿",
+  "published": "2026-11-23T00:44:21",
   "source": "native-app"
 }
