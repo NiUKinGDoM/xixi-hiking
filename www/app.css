@@ -949,17 +949,21 @@
             transition: background-color 0.2s ease, border-color 0.3s ease, box-shadow 0.3s ease; /* 切换提速 */
             /* v1.4.10.5 修复：提升渲染层 + 原地淡入，避免 WebView 加载期 fixed+translateX 抖动（从左边滑向中间） */
             transform: translateX(-50%) translateZ(0);
-
-        /* ★★2026-11-12 iOS 软键盘（TASK_iOS-PWA 第10项）：键盘弹出时底栏藏起来。
-           iOS 键盘会顶飞 position:fixed 底栏，而且底栏会正好压住正在输入的表单。 */
+            will-change: transform;
+            animation: tabbarFadeIn 0.35s ease-out both;
+        }
+        /* ★★2026-11-23 修复（★关键）：这条规则原先被误嵌在 .bottom-tabbar {...} 内部，
+           现代浏览器 CSS 嵌套会把它解析成「& body.kb-open .bottom-tabbar」（后代选择器），
+           永远匹配不到 → iOS 键盘弹出时底栏根本没藏，正好压住正在输入的表单。
+           移出来成为独立顶层规则后才真正生效。 */
         body.kb-open .bottom-tabbar {
+            /* animation:none 必须：基础块的 tabbarFadeIn 用 fill-mode:both 把 opacity 锁死在 1，
+               不关掉它这里 opacity:0 永远不生效（transform 移屏仍生效，但双保险失效） */
+            animation: none;
             transform: translateX(-50%) translateY(140%) translateZ(0);
             opacity: 0;
             pointer-events: none;
             transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-            will-change: transform;
-            animation: tabbarFadeIn 0.35s ease-out both;
         }
         @keyframes tabbarFadeIn {
             from { opacity: 0; }

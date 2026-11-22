@@ -23,7 +23,9 @@
  * ★2026-10-10 v61→v62：CSS 外置到 www/app.css（index.html 6721→726 行）—— 必须 bump 强制作废旧缓存
  * ★2026-10-10 v62→v63：同号重发(第4次) —— .glass-btn 去光泽带渐变 + 修 box-shadow 声明失效（www 内容变了，必须 bump 强制旧壳失效）
  */
-const CACHE_NAME = 'xixi-hiking-v100';   // ★2026-11-01 v1.2.5.6：回滚转场（四段号回归）
+// ★2026-11-23 v100→v101：iOS 数据导出改系统分享 + 键盘底栏 CSS 嵌套修复 —— www 内容变了，必须 bump 强制作废旧壳失效，
+//   否则现有 PWA 用户 stale-while-revalidate 第一次仍拿旧 JS/CSS，本次修复不生效。
+const CACHE_NAME = 'xixi-hiking-v101';   // ★2026-11-23：iOS PWA 修复批次（导出/分享卡/键盘底栏），强制旧壳失效
 // 静态资源（cache-first：离线最稳、二次加载最快）
 const STATIC_RE = /\.(js|css|woff2?|png|jpe?g|svg|webp|ico)$/i;
 const CORE_ASSETS = ['./', './index.html', './app.css', './app-modal.css', './app-form.css', './share-bg.jpg', './app-core.js', './app-data.js', './app-data-detail.js', './app-data-lightbox.js', './app-data-heatmap.js', './app-data-plans.js', './app-data-plan-detail.js', './app-sync.js', './app-init.js', './assets/support-qr-wechat.jpg', './assets/support-qr-alipay.jpg', './assets/fonts/material-icons.woff2', './assets/vendor/tailwind4.1.13.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];

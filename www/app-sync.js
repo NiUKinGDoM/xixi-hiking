@@ -2539,11 +2539,11 @@ async function performBackupExport(includePhotos, opts) {
             const bytes = new Uint8Array(bin.length);
             for (var bi = 0; bi < bin.length; bi++) bytes[bi] = bin.charCodeAt(bi);
             const blob = new Blob([bytes], { type: mime });
-            const url = URL.createObjectURL(blob);
             if (isIOSWebview()) {
-                window.open(url, '_blank');
-                showSuccessMessage('备份已生成，已打开预览（长按/分享可存储）');
+                // ★2026-11-22 iOS 修复：走系统分享链（原 window.open 在 await 后必被弹窗拦截，且 zip 预览是乱码）
+                await saveFileIOS(blob, fileName, mime);
             } else {
+                const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url; a.download = fileName;
                 document.body.appendChild(a);
@@ -2638,11 +2638,16 @@ function showImportModal() {
 function importBackup() {
     const fileInput = document.getElementById('backupFileInput');
     if (!fileInput) return;
+    // ★2026-11-22 iOS 修复：iOS Safari 的 accept 对 application/zip 匹配不可靠（文件选择器里 zip 变灰选不了）
+    //   → iOS 上放宽为不限制类型，选进来后再按 PK 头 / 文本自行判断，坏的给明确提示
+    if (isIOSWebview()) fileInput.accept = '';
     fileInput.click();
     fileInput.onchange = function (e) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
+        // ★2026-11-22 iOS：从「文件」/iCloud 选的文件常需先下载，读失败会静默 → 明确提示
+        reader.onerror = function () { showErrorMessage('读取备份文件失败，请确认文件已下载到本地后重试'); };
         reader.onload = function (ev) {
             try {
                 if (typeof ev.target.result === 'string') {

@@ -345,17 +345,17 @@ function exportDiagnostics() {
                 else showErrorMessage('导出诊断失败');
             } else {
                 var blob = new Blob([full], { type: 'text/plain;charset=utf-8' });
-                var url = URL.createObjectURL(blob);
                 if (isIOSWebview()) {
-                    window.open(url, '_blank');
-                    showSuccessMessage('诊断已生成，已打开预览（长按/分享可存储）');
+                    // ★2026-11-22 iOS 修复：接系统分享链；顺带修掉原来此分支连弹两次、且自相矛盾的提示
+                    saveFileIOS(blob, 'xixi_diagnostics.txt', 'text/plain;charset=utf-8');
                 } else {
+                    var url = URL.createObjectURL(blob);
                     var a = document.createElement('a');
                     a.href = url; a.download = 'xixi_diagnostics.txt';
                     document.body.appendChild(a); a.click();
                     setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+                    showSuccessMessage('诊断信息已开始下载');
                 }
-                showSuccessMessage('诊断信息已开始下载');
             }
         } catch (e) { showErrorMessage('导出诊断失败'); }
     }
@@ -1247,8 +1247,75 @@ async function generateShareCard(record) {
 function isIOSWebview() {
     return /iP(hone|ad|od)/.test(navigator.userAgent) && !window.MSStream;
 }
+// ★2026-11-22 iOS 数据导出修复：备份/诊断原来走 window.open(blobUrl) —— 两个硬伤：
+//   ① 在 await 打包后才开新窗，用户手势早已丢失 → Safari 弹窗拦截器直接掐掉，点了「没反应」；
+//   ② zip 是二进制，即使开了新窗口也是乱码，「长按/分享可存储」那句提示根本做不到。
+//   改成与分享卡同款的系统分享链：Web Share(files) → a.download → 新窗口兜底。
+//   app-core.js 先于 app-sync.js 加载，备份/诊断/分享卡三处共用。
+async function saveFileIOS(blob, fileName, mime) {
+    // 1) 系统分享面板：iOS 15+ 支持文件共享，可「存储到文件」或发微信 —— iOS 上正道
+    if (navigator.share && typeof navigator.canShare === 'function') {
+        var file = null;
+        try { file = new File([blob], fileName, { type: mime }); } catch (e0) { file = null; }
+        if (file) {
+            try {
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: fileName });
+                    showSuccessMessage('已调起分享，选「存储到文件」保存');
+                    return;
+                }
+            } catch (eS) {
+                // 用户主动取消 → 不再降级，尊重选择
+                if (eS && eS.name === 'AbortError') return;
+                // 其余（手势失效 / 该类型不可共享）→ 继续降级
+            }
+        }
+    }
+    // 2) 标准下载：iOS 13+ Safari 支持 a.download，静默存到「文件」App 下载项
+    try {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+        showSuccessMessage('备份已保存到「文件」App 或下载目录');
+        return;
+    } catch (eD) { /* 继续兜底 */ }
+    // 3) 最后兜底：新窗口预览（文本/html 可长按；zip 无解，但至少不是「点了没反应」）
+    try {
+        window.open(URL.createObjectURL(blob), '_blank');
+        showSuccessMessage('已打开预览，长按可保存');
+    } catch (eW) {
+        showErrorMessage('导出失败：设备不允许保存文件');
+    }
+}
 // ★2026-08-25 iOS 网页端分享卡导出（降级链：系统分享 → a.download → 新窗口长按保存）
 function shareCardImage(dataUrl, fileName) {
+    // ★2026-11-23 重构降级链：原实现两个 hidden bug——
+    //   ① 系统分享失败（含 await 生成卡后丢失用户手势 → NotAllowedError）时 catch 只「忽略」，
+    //      函数直接结束、不走任何兜底 ⇒ iOS 上「点了没反应」；
+    //   ② iOS 上 a[download] 不抛异常只是静默无效 → 第 3 步 window.open 兜底永远走不到。
+    //   现在统一走 fallback()：iOS 跳过无效下载直接开图片新窗；分享失败也回落到它。
+    function fallback() {
+        if (!isIOSWebview()) {
+            // 标准下载（Android Chrome / 桌面正常）
+            try {
+                var a = document.createElement('a');
+                a.href = dataUrl; a.download = fileName;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { a.remove(); }, 500);
+                showSuccessMessage('分享卡已开始下载');
+                return;
+            } catch (e) { /* 继续兜底 */ }
+        }
+        // iOS 兜底：新窗口打开图片，长按保存（系统分享不可用/失败时）
+        try {
+            window.open(dataUrl, '_blank');
+            showSuccessMessage('图片已打开，长按可保存');
+        } catch (e2) {
+            showErrorMessage('保存失败，请长按图片保存');
+        }
+    }
     // 1. 系统分享面板（iOS/Android 移动端最优：可存相册/发微信）
     if (navigator.share && typeof navigator.canShare === 'function') {
         try {
@@ -1259,23 +1326,16 @@ function shareCardImage(dataUrl, fileName) {
             if (navigator.canShare({ files: [file] })) {
                 navigator.share({ files: [file], title: fileName })
                     .then(function () { showSuccessMessage('分享卡已生成'); })
-                    .catch(function () { /* 用户取消，忽略 */ });
+                    .catch(function (err) {
+                        // 用户主动取消 → 不打扰；其余失败（无手势/被拒）→ 走兜底，不能「点了没反应」
+                        if (err && err.name === 'AbortError') return;
+                        fallback();
+                    });
                 return;
             }
         } catch (e) { /* File 构造不支持（旧 iOS）→ 继续降级 */ }
     }
-    // 2. 标准下载（Android Chrome / 桌面正常）
-    try {
-        var a = document.createElement('a');
-        a.href = dataUrl; a.download = fileName;
-        document.body.appendChild(a); a.click();
-        setTimeout(function () { a.remove(); }, 500);
-        showSuccessMessage('分享卡已开始下载');
-    } catch (e) {
-        // 3. iOS 兜底：新窗口打开图片，长按保存
-        window.open(dataUrl, '_blank');
-        showSuccessMessage('图片已打开，长按可保存');
-    }
+    fallback();
 }
 // 圆角矩形辅助
 // ★2026-08-27 五项优化：roundRect 死代码已删（分享卡重构后零调用）
