@@ -2387,6 +2387,30 @@ function exportRecords() {
     showExportModal();
 }
 
+// ★★2026-11-23 iOS PWA 导出预打包缓存：
+//   iOS 上 a[download] 被 Apple 禁用，唯一保存路径 = navigator.share({files})，
+//   而它必须在点击的同步手势栈里调用（await 后手势失效）。备份打包是 async 的，
+//   所以弹窗一打开就先异步打包好缓存，点按钮时直接同步分享，手势不丢。
+//   完整备份在 iOS 上改产「含照片的 HTML」（text/html 在 iOS 分享白名单；zip 不在）。
+var iosExportCache = { full: null, data: null, key: '' };
+function prebuildIOSBackup(opts) {
+    if (!isIOSWebview()) return;
+    var key = JSON.stringify(opts || {});
+    if (iosExportCache.key === key && iosExportCache.full && iosExportCache.data) return; // 同配置已备好
+    iosExportCache = { full: null, data: null, key: key };
+    showLoadingToast('正在准备备份…');
+    var dateStr = new Date().toISOString().replace(/[-:TZ]/g, '').slice(0, 14);
+    Promise.all([
+        buildFullBackupHTML(true, opts).then(function (html) {
+            iosExportCache.full = { blob: new Blob([html], { type: 'text/html;charset=utf-8' }), name: 'XiXi徒步备份-' + dateStr + '.html' };
+        }),
+        buildFullBackupHTML(false, opts).then(function (html) {
+            iosExportCache.data = { blob: new Blob([html], { type: 'text/html;charset=utf-8' }), name: 'XiXi纯数据备份-' + dateStr + '.html' };
+        })
+    ]).catch(function (e) { console.error('iOS 备份预打包失败:', e); })
+      .then(function () { hideLoadingToast(); });
+}
+
 function showExportModal() {
     closeOpenModals(); // ★2026-08-29 全局防重入（替代原 exportModal 单查重，防任意弹窗叠加）
 
@@ -2441,6 +2465,11 @@ function showExportModal() {
     const exportRecordsBtn = document.getElementById('exportRecordsBtn');
     const exportDataOnlyBtn = document.getElementById('exportDataOnlyBtn');
     const exportDiagBtn = document.getElementById('exportDiagBtn');
+    // ★2026-11-23 iOS 上完整备份改产 HTML（zip 无法系统分享），文案同步改准，别让用户找 .zip
+    if (isIOSWebview() && exportRecordsBtn) {
+        var fullLabel = exportRecordsBtn.querySelector('span:last-child');
+        if (fullLabel) fullLabel.textContent = '导出完整备份（含照片）';
+    }
 
     const closeModal = () => {
         // ★2026-08-27 淡出关闭取消（用户要求）：与确认弹窗一致，直接移除
@@ -2470,15 +2499,29 @@ function showExportModal() {
     const syncPwdToggle = function () {
         if (pwdWrap) pwdWrap.style.display = (cfgChk && cfgChk.checked) ? 'block' : 'none';
     };
-    if (cfgChk) cfgChk.addEventListener('change', syncPwdToggle);
+    // ★2026-11-23 配置勾选变化 → iOS 预打包缓存失效，重新打包（保证缓存内容与勾选一致）
+    if (cfgChk) cfgChk.addEventListener('change', function () { syncPwdToggle(); prebuildIOSBackup(readBackupSyncOpts()); });
+    const pwdChk = document.getElementById('exportIncludeSyncPwd');
+    if (pwdChk) pwdChk.addEventListener('change', function () { prebuildIOSBackup(readBackupSyncOpts()); });
     syncPwdToggle();
+    // 弹窗一打开就预打包 iOS 备份（异步，不占用户手势）
+    prebuildIOSBackup(readBackupSyncOpts());
+
+    // ★2026-11-23 iOS 上同步分享：缓存就绪 → 在点击手势栈内直接调 saveFileIOS（text/html 白名单）
+    function iosSaveFromCache(kind) {
+        var cached = iosExportCache[kind];
+        if (!cached) { showErrorMessage('备份还在准备中，请稍等片刻再点一次'); return; }
+        saveFileIOS(cached.blob, cached.name, 'text/html;charset=utf-8');
+    }
     exportRecordsBtn.addEventListener('click', async () => {
         const opts = readBackupSyncOpts();
+        if (isIOSWebview()) { closeModal(); iosSaveFromCache('full'); return; }
         closeModal();
         await performBackupExport(true, opts);
     });
     exportDataOnlyBtn.addEventListener('click', async () => {
         const opts = readBackupSyncOpts();
+        if (isIOSWebview()) { closeModal(); iosSaveFromCache('data'); return; }
         closeModal();
         await performBackupExport(false, opts);
     });

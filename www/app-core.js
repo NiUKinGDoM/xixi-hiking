@@ -1252,41 +1252,31 @@ function isIOSWebview() {
 //   ② zip 是二进制，即使开了新窗口也是乱码，「长按/分享可存储」那句提示根本做不到。
 //   改成与分享卡同款的系统分享链：Web Share(files) → a.download → 新窗口兜底。
 //   app-core.js 先于 app-sync.js 加载，备份/诊断/分享卡三处共用。
-async function saveFileIOS(blob, fileName, mime) {
-    // 1) 系统分享面板：iOS 15+ 支持文件共享，可「存储到文件」或发微信 —— iOS 上正道
-    if (navigator.share && typeof navigator.canShare === 'function') {
-        var file = null;
-        try { file = new File([blob], fileName, { type: mime }); } catch (e0) { file = null; }
-        if (file) {
-            try {
-                if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: fileName });
-                    showSuccessMessage('已调起分享，选「存储到文件」保存');
-                    return;
-                }
-            } catch (eS) {
-                // 用户主动取消 → 不再降级，尊重选择
-                if (eS && eS.name === 'AbortError') return;
-                // 其余（手势失效 / 该类型不可共享）→ 继续降级
-            }
-        }
+// ★★2026-11-23 重写：iOS PWA 上 a[download] 被 Apple 硬性禁用（脚本触发静默无效，FileSaver.js 也退化），
+//   原「第2步 a.download + 无脑报成功」= 用户看到「已保存」但文件 App 里根本没有 → 假成功。
+//   唯一正道 = 系统分享面板 navigator.share({files})，且：① 类型须在白名单（text/html、text/plain、图片/PDF；zip 不在）
+//   ② 必须在用户点击的同步手势栈里调用（transient activation，await 之后会失效）。
+//   所以：调用方必须先把文件准备好（在点击同步栈里直接调本函数），本函数不做任何 await。
+function saveFileIOS(blob, fileName, mime) {
+    var file = null;
+    try { file = new File([blob], fileName, { type: mime }); } catch (e0) { file = null; }
+    if (!file) { showErrorMessage('导出失败：设备不支持生成文件'); return false; }
+    if (!navigator.share || typeof navigator.canShare !== 'function' || !navigator.canShare({ files: [file] })) {
+        // 类型不可分享（如 zip）或系统分享不可用 —— 如实告知，绝不再报「已保存」
+        showErrorMessage('此格式无法保存到文件；请导出「纯数据备份」或用 Safari 打开本页重试');
+        return false;
     }
-    // 2) 标准下载：iOS 13+ Safari 支持 a.download，静默存到「文件」App 下载项
     try {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url; a.download = fileName;
-        document.body.appendChild(a); a.click();
-        setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
-        showSuccessMessage('备份已保存到「文件」App 或下载目录');
-        return;
-    } catch (eD) { /* 继续兜底 */ }
-    // 3) 最后兜底：新窗口预览（文本/html 可长按；zip 无解，但至少不是「点了没反应」）
-    try {
-        window.open(URL.createObjectURL(blob), '_blank');
-        showSuccessMessage('已打开预览，长按可保存');
-    } catch (eW) {
-        showErrorMessage('导出失败：设备不允许保存文件');
+        navigator.share({ files: [file], title: fileName })
+            .then(function () { showSuccessMessage('已调起分享，选「存储到文件」保存'); })
+            .catch(function (eS) {
+                if (eS && eS.name === 'AbortError') return;   // 用户主动取消，不打扰
+                showErrorMessage('分享失败：请在分享面板选「存储到文件」；若没弹出面板请用 Safari 重试');
+            });
+        return true;
+    } catch (e) {
+        showErrorMessage('导出失败：' + (e && e.message ? e.message : '设备不允许分享文件'));
+        return false;
     }
 }
 // ★2026-08-25 iOS 网页端分享卡导出（降级链：系统分享 → a.download → 新窗口长按保存）
